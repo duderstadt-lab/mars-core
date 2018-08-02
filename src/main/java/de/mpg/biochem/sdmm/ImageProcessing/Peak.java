@@ -1,0 +1,150 @@
+package de.mpg.biochem.sdmm.ImageProcessing;
+
+import net.imglib2.RealLocalizable;
+
+//This is a class that contains all the information about peaks
+//here we implement RealLocalizable so that we can pass lists of peaks to
+//other imglib2 libraries that do cool things.
+//for example we pass Peaks to KDTree to make searching a list of peak positions in 2D much faster !
+//For the implementation to work all we have to do is provide the four methods at the bottom that provide the positions in x and y...
+
+public class Peak implements RealLocalizable {
+	//Used during peak linking to assign UID molecule numbers
+	String UID;
+	
+	double x,y, height, baseline, sigma;
+	double xError,yError, heightError, baselineError, sigmaError;
+	double pixelValue;
+	boolean valid = true;
+	Peak(double[] values, double[] errors) {
+		baseline = values[0];
+		height = values[1];
+		x = values[2];
+		y = values[3];
+		sigma = values[4];
+
+		baselineError = errors[0];
+		heightError = errors[1];
+		xError = errors[2];
+		yError = errors[3];
+		sigmaError = errors[4];
+	}
+	Peak(double x, double y, double height, double baseline, double sigma) {
+		this.x = x;
+		this.y = y;
+		this.height = height;
+		this.baseline = baseline;
+		this.sigma = sigma;
+	}
+	Peak(double x, double y, double pixelValue) {
+		this.x = x;
+		this.y = y;
+		this.pixelValue = pixelValue;
+	}
+	
+	Peak(Peak peak) {
+		this.x = peak.x;
+		this.y = peak.y;
+		this.baseline = peak.baseline;
+		this.height = peak.height;
+		this.sigma = peak.sigma;
+		this.xError = peak.xError;
+		this.yError = peak.yError;
+		this.baselineError = peak.baselineError;
+		this.heightError = peak.heightError;
+		this.sigmaError = peak.sigmaError;
+		this.pixelValue = peak.pixelValue;
+		this.UID = peak.UID;
+	}
+	
+	//Getters
+	double getX() {
+		return x;
+	}
+	double getY() {
+		return y;
+	}
+	double getHeight() {
+		return height;
+	}
+	double getBaseline() {
+		return baseline;
+	}
+	double getSigma() {
+		return sigma;
+	}
+	double getPixelValue() {
+		return pixelValue;
+	}
+	boolean isValid() {
+		return valid;
+	}
+	public String getUID() {
+		return UID;
+	}
+	
+	//Setters
+	public void setValues(double[] values) {
+		this.baseline = values[0];
+		this.height = values[1];
+		this.x = values[2];
+		this.y = values[3];
+		this.sigma = values[4];
+	}
+	
+	public void setErrorValues(double[] errors) {
+		this.baselineError = errors[0];
+		this.heightError = errors[1];
+		this.xError = errors[2];
+		this.yError = errors[3];
+		this.sigmaError = errors[4];
+	}
+	
+	//used for pixel sort in the peak finder
+	//and for rejection of bad fits.
+	public void setValid() {
+		valid = true;
+	}
+	public void setNotValid() {
+		valid = false;
+	}	
+	public void setUID(String UID) {
+		this.UID = UID;
+	}
+	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
+	@Override
+	public int numDimensions() {
+		// We make no effort to think beyond 2 dimensions !
+		return 2;
+	}
+	@Override
+	public double getDoublePosition(int arg0) {
+		if (arg0 == 0) {
+			return x;
+		} else if (arg0 == 1) {
+			return y;
+		} else {
+			return -1;
+		}
+	}
+	@Override
+	public float getFloatPosition(int arg0) {
+		if (arg0 == 0) {
+			return (float)x;
+		} else if (arg0 == 1) {
+			return (float)y;
+		} else {
+			return -1;
+		}
+	}
+	@Override
+	public void localize(float[] arg0) {
+		arg0[0] = (float)x;
+		arg0[1] = (float)y;
+	}
+	@Override
+	public void localize(double[] arg0) {
+		arg0[0] = x;
+		arg0[1] = y;
+	}
+}

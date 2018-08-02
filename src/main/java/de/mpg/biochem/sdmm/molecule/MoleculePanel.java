@@ -1,0 +1,741 @@
+package de.mpg.biochem.sdmm.molecule;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
+
+import de.mpg.biochem.sdmm.plot.CurvePlot;
+import de.mpg.biochem.sdmm.plot.PlotProperties;
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
+
+public class MoleculePanel extends JPanel {
+	private JTextField UIDLabel, ImageMetaDataUIDLabel;
+	
+	private JTabbedPane dataANDPlot;
+	
+	private JTable DataTable;
+	private AbstractTableModel DataTableModel;
+	
+	private CurvePlot plotPanel;
+	
+	private JTable ParameterTable;
+	private AbstractTableModel ParameterTableModel;
+	private String[] ParameterList;
+	
+	private JTable TagTable;
+	private AbstractTableModel TagTableModel;
+	private String[] TagList;
+	
+	private JTextArea notes;
+	
+	private Molecule molecule;
+	private MoleculeArchive archive;
+	
+	private JTable moleculeIndex;
+	private AbstractTableModel moleculeIndexTableModel;
+	private TableRowSorter moleculeSorter;
+	
+	private JTextField moleculeSearchField;
+	
+	public MoleculePanel(MoleculeArchive archive) {
+		this.archive = archive;
+		molecule = archive.get(0);
+		
+		buildPanel();
+	}
+	
+	private void buildPanel() {
+		//MOLECULE INDEX LIST
+		//Need to build the datamodel backed by the archive index...
+		moleculeIndexTableModel = new AbstractTableModel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getValueAt(int rowIndex, int columnIndex) {
+				if (columnIndex == 0) {
+					return "" + rowIndex;
+				} else if (columnIndex == 1) {
+					return archive.getUIDAtIndex(rowIndex);
+				} else if (columnIndex == 2) {
+					return archive.getTagList(archive.getUIDAtIndex(rowIndex));
+				}
+				return null;
+			}
+			
+			@Override
+			public String getColumnName(int columnIndex) {
+				if (columnIndex == 0) {
+					return "Index";
+				} else if (columnIndex ==1) {
+					return "UID";
+				} else if (columnIndex == 2) {
+					return "Tags";
+				}	
+				return null;
+			}
+
+			@Override
+			public int getRowCount() {
+				return archive.getNumberOfMolecules();
+			}
+			
+			@Override
+			public int getColumnCount() {
+				return 3;
+			}
+			
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex)  {
+				return false;
+			}
+		};
+		
+		moleculeIndex = new JTable(moleculeIndexTableModel);
+		moleculeIndex.setFont(new Font("Menlo", Font.PLAIN, 12));
+		moleculeIndex.setRowSelectionAllowed(true);
+		moleculeIndex.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		ListSelectionModel rowSM = moleculeIndex.getSelectionModel();
+        rowSM.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                //Ignore extra messages.
+                if (e.getValueIsAdjusting()) return;
+
+                ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+                if (!lsm.isSelectionEmpty()) {
+                    int selectedRow = lsm.getMinSelectionIndex();
+                    archive.set(molecule);
+                    molecule = archive.get((String)moleculeIndex.getValueAt(selectedRow, 1));
+                    updateAll();
+                }
+            }
+        });
+
+		moleculeIndex.getColumnModel().getColumn(0).setMinWidth(70);
+		moleculeIndex.getColumnModel().getColumn(1).setMinWidth(150);
+		
+		JScrollPane moleculeIndexScrollPane = new JScrollPane(moleculeIndex);
+
+		JPanel westPane = new JPanel();
+		westPane.setLayout(new BorderLayout());
+		
+		moleculeSorter = new TableRowSorter<AbstractTableModel>(moleculeIndexTableModel);
+		moleculeIndex.setRowSorter(moleculeSorter);
+		
+		moleculeSearchField = new JTextField();
+		
+		moleculeSearchField.getDocument().addDocumentListener(
+	        new DocumentListener() {
+	            public void changedUpdate(DocumentEvent e) {
+	                filterMoleculeIndex();
+	            }
+	            public void insertUpdate(DocumentEvent e) {
+	            	filterMoleculeIndex();
+	            }
+	            public void removeUpdate(DocumentEvent e) {
+	            	filterMoleculeIndex();
+	            }
+	        });
+
+		westPane.add(moleculeIndexScrollPane, BorderLayout.CENTER);
+		westPane.add(moleculeSearchField, BorderLayout.SOUTH);
+		
+		//PROPERTIES OF MOLECULE AT INDEX
+		//This properties panel will be a JSplitPane on the right side.
+		//That contains UID, Metadata, etc...
+		JPanel propsPanel = buildPropertiesPanel();
+		
+		//Now we build the middle tabbed panel with all the tables
+		dataANDPlot = new JTabbedPane();
+		builddataANDPlot();
+		
+		//Now we need to build the global layout with splipanes
+		//First we build a right splitpane
+		JPanel rightPane = new JPanel();
+		rightPane.setLayout(new BorderLayout());
+		rightPane.add(dataANDPlot, BorderLayout.CENTER);
+		rightPane.add(propsPanel, BorderLayout.EAST);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+				westPane, rightPane);
+		
+		splitPane.setDividerLocation(300);
+		
+		moleculeIndex.setRowSelectionInterval(0, 0);
+		
+		setLayout(new BorderLayout());
+		add(splitPane, BorderLayout.CENTER);
+	}
+	
+	private void builddataANDPlot() {
+		dataANDPlot.removeAll();
+		
+		JScrollPane tablePane = buildDataTable();
+		dataANDPlot.addTab("DataTable", tablePane);
+		
+		if (molecule.getSegmentTables().size() > 0) {
+			for (String[] YX: molecule.getSegmentTables().keySet()) {
+				JScrollPane segmentTablePane = buildSegmentsTable(YX);
+				dataANDPlot.addTab(YX[0] + " " + YX[1], segmentTablePane);
+			}
+		}
+	}
+	
+	private JScrollPane buildDataTable() {
+		DataTableModel = new AbstractTableModel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex) {
+				if (columnIndex == 0)
+					return rowIndex + 1;
+				
+				return molecule.getDataTable().getValue(columnIndex - 1, rowIndex);
+			}
+			
+			@Override
+			public String getColumnName(int columnIndex) {
+				if (columnIndex == 0)
+					return "Row";
+				
+				return molecule.getDataTable().getColumnHeader(columnIndex - 1);
+			}
+
+			@Override
+			public int getRowCount() {
+				return molecule.getDataTable().getRowCount();
+			}
+			
+			@Override
+			public int getColumnCount() {
+				return molecule.getDataTable().getColumnCount() + 1;
+			}
+			
+			@Override
+			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				double value = Double.parseDouble((String)aValue);
+				molecule.getDataTable().set(columnIndex - 1, rowIndex, value);
+			}
+			
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex)  {
+				return columnIndex > 0;
+			}
+		};
+		
+		DataTable = new JTable(DataTableModel);
+		DataTable.setAutoCreateColumnsFromModel(true);
+		DataTable.setRowSelectionAllowed(true);
+		DataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		
+		for (int i = 0; i < DataTable.getColumnCount(); i++)
+			DataTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		DataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		
+		JScrollPane scrollPane = new JScrollPane(DataTable);
+		
+		//Dimension dim = new Dimension(DataTable.getColumnCount()*75 + 5, 500);
+		
+		//scrollPane.setMinimumSize(dim);
+		//scrollPane.setMaximumSize(dim);
+		//scrollPane.setPreferredSize(dim);
+		
+		return scrollPane;
+	}
+	
+	public JPanel buildPropertiesPanel() {
+		JPanel propPanel = new JPanel();
+		propPanel.setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor = GridBagConstraints.NORTH;
+		
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		
+		gbc.insets = new Insets(10, 10, 10, 10);
+		
+		//UID and image UID for this molecule
+		JLabel uidName = new JLabel("UID");
+		uidName.setFont(new Font("Menlo", Font.BOLD, 12));
+		propPanel.add(uidName, gbc);
+		
+        gbc.gridy += 1;
+		UIDLabel = new JTextField("" + molecule.getUID());
+		UIDLabel.setFont(new Font("Menlo", Font.PLAIN, 12));
+		UIDLabel.setEditable(false);
+		UIDLabel.setBackground(null);
+		propPanel.add(UIDLabel, gbc);
+		
+		gbc.gridy += 1;
+		JLabel imageMetaName = new JLabel("ImageMetaDataUID");
+		imageMetaName.setFont(new Font("Menlo", Font.BOLD, 12));
+		propPanel.add(imageMetaName, gbc);
+		
+		gbc.gridy += 1;
+		ImageMetaDataUIDLabel = new JTextField("" + molecule.getImageMetaDataUID());
+		ImageMetaDataUIDLabel.setFont(new Font("Menlo", Font.PLAIN, 12));
+		ImageMetaDataUIDLabel.setEditable(false);
+		ImageMetaDataUIDLabel.setBackground(null);
+		propPanel.add(ImageMetaDataUIDLabel, gbc);
+		
+		gbc.gridy += 1;
+		JPanel paramPanel = buildParameterPanel();
+		propPanel.add(paramPanel, gbc);
+		
+		gbc.gridy += 1;
+		JPanel tagsPanel = buildTagsPanel();
+		propPanel.add(tagsPanel, gbc);
+		
+		gbc.gridy += 1;
+		gbc.anchor = GridBagConstraints.CENTER;
+		gbc.insets = new Insets(10, 10, 10, 10);
+		JLabel notesName = new JLabel("Notes");
+		notesName.setFont(new Font("Menlo", Font.BOLD, 12));
+		propPanel.add(notesName, gbc);
+		
+		gbc.insets = new Insets(0, 10, 0, 10);
+		
+		notes = new JTextArea(molecule.getNotes());
+        JScrollPane noteScroll = new JScrollPane(notes);
+        
+        notes.getDocument().addDocumentListener(
+	        new DocumentListener() {
+	            public void changedUpdate(DocumentEvent e) {
+	                molecule.setNotes(notes.getText());
+	            }
+	            public void insertUpdate(DocumentEvent e) {
+	            	molecule.setNotes(notes.getText());
+	            }
+	            public void removeUpdate(DocumentEvent e) {
+	            	molecule.setNotes(notes.getText());
+	            }
+	        });
+		
+        Dimension dim = new Dimension(200 + 5, 100);
+		
+        noteScroll.setMinimumSize(dim);
+        noteScroll.setMaximumSize(dim);
+        noteScroll.setPreferredSize(dim);
+        
+		gbc.gridy += 1;
+		propPanel.add(noteScroll, gbc);
+		
+		return propPanel;
+	}
+	
+	public JPanel buildParameterPanel() {
+		updateParameterList();
+		
+		ParameterTableModel = new AbstractTableModel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex) {
+				if (columnIndex == 0) {
+					return ParameterList[rowIndex];
+				}
+				
+				return molecule.getParameters().get(ParameterList[rowIndex]);
+			}
+			
+			@Override
+			public String getColumnName(int columnIndex) {
+				if (columnIndex == 0)
+					return "Parameter";
+				else
+					return "Value";
+			}
+
+			@Override
+			public int getRowCount() {
+				return ParameterList.length;
+			}
+			
+			@Override
+			public int getColumnCount() {
+				return 2;
+			}
+			
+			@Override
+			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				double value = Double.parseDouble((String)aValue);
+				molecule.setParameter(ParameterList[rowIndex], value);
+			}
+			
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex)  {
+				return columnIndex > 0;
+			}
+		};
+		
+		JPanel parameterPanel = new JPanel();
+		parameterPanel.setLayout(new GridBagLayout());
+		
+		GridBagConstraints parameterPanelGBC = new GridBagConstraints();
+		parameterPanelGBC.anchor = GridBagConstraints.NORTH;
+		parameterPanelGBC.insets = new Insets(0, 10, 0, 10);
+		
+		parameterPanelGBC.weightx = 1;
+		parameterPanelGBC.weighty = 1;
+		
+		parameterPanelGBC.gridx = 0;
+		parameterPanelGBC.gridy = 0;
+		
+		parameterPanelGBC.insets = new Insets(10, 10, 10, 10);
+		JLabel parameterName = new JLabel("Parameters");
+		parameterName.setFont(new Font("Menlo", Font.BOLD, 12));
+		parameterPanel.add(parameterName, parameterPanelGBC);
+		
+		ParameterTable = new JTable(ParameterTableModel);
+		ParameterTable.setAutoCreateColumnsFromModel(true);
+		ParameterTable.setRowSelectionAllowed(true);
+		ParameterTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
+			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		ParameterTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		
+		JScrollPane ParameterScrollPane = new JScrollPane(ParameterTable);
+		
+		Dimension dim2 = new Dimension(ParameterTable.getColumnCount()*100 + 5, 100);
+		
+		ParameterScrollPane.setMinimumSize(dim2);
+		ParameterScrollPane.setMaximumSize(dim2);
+		ParameterScrollPane.setPreferredSize(dim2);
+		
+		parameterPanelGBC.gridy += 1;
+		parameterPanelGBC.insets = new Insets(0, 5, 0, 5);
+		parameterPanel.add(ParameterScrollPane, parameterPanelGBC);
+		
+		JPanel AddPanel = new JPanel();
+		AddPanel.setLayout(new BorderLayout());
+		JTextField newParameter = new JTextField(10);
+		Dimension dimParm = new Dimension(130, 20);
+		newParameter.setMinimumSize(dimParm);
+		AddPanel.add(newParameter, BorderLayout.CENTER);
+		JButton Add = new JButton("Add");
+		Add.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!newParameter.getText().equals("")) {
+					molecule.setParameter(newParameter.getText(), 0);
+					updateParameterList();
+					ParameterTableModel.fireTableDataChanged();
+				}
+			}
+		});
+		AddPanel.add(Add, BorderLayout.EAST);
+		
+		parameterPanelGBC.gridy += 1;
+		parameterPanelGBC.insets = new Insets(0, 5, 0, 5);
+		ParameterScrollPane.setMinimumSize(dim2);
+		ParameterScrollPane.setMaximumSize(dim2);
+		ParameterScrollPane.setPreferredSize(dim2);
+		
+		parameterPanel.add(AddPanel, parameterPanelGBC);
+		
+		JButton Remove = new JButton("Remove");
+		Remove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (ParameterTable.getSelectedRow() != -1) {
+					String param = (String)ParameterTable.getValueAt(ParameterTable.getSelectedRow(), 0);
+					molecule.removeParameter(param);
+					updateParameterList();
+					ParameterTableModel.fireTableDataChanged();
+				}
+			}
+		});
+		
+		parameterPanelGBC.gridy += 1;
+		parameterPanelGBC.anchor = GridBagConstraints.EAST;
+		parameterPanel.add(Remove, parameterPanelGBC);
+		
+		return parameterPanel;
+	}
+	
+	public JPanel buildTagsPanel() {
+		TagTableModel = new AbstractTableModel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex) {
+				return TagList[rowIndex];
+			}
+			
+			@Override
+			public String getColumnName(int columnIndex) {
+				return "Tag";
+			}
+
+			@Override
+			public int getRowCount() {
+				return TagList.length;
+			}
+			
+			@Override
+			public int getColumnCount() {
+				return 1;
+			}
+		};
+		
+		JPanel tagPanel = new JPanel();
+		tagPanel.setLayout(new GridBagLayout());
+		
+		GridBagConstraints tagPanelGBC = new GridBagConstraints();
+		tagPanelGBC.anchor = GridBagConstraints.NORTH;
+		tagPanelGBC.insets = new Insets(10, 10, 10, 10);
+		
+		tagPanelGBC.weightx = 1;
+		tagPanelGBC.weighty = 1;
+		
+		tagPanelGBC.gridx = 0;
+		tagPanelGBC.gridy = 0;
+		
+		JLabel tagsName = new JLabel("Tags");
+		tagsName.setFont(new Font("Menlo", Font.BOLD, 12));
+		tagPanel.add(tagsName, tagPanelGBC);
+		
+		TagTable = new JTable(TagTableModel);
+		TagTable.setAutoCreateColumnsFromModel(true);
+		TagTable.setRowSelectionAllowed(true);
+		TagTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		TagTable.getColumnModel().getColumn(0).sizeWidthToFit();
+		
+		//TagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		
+		JScrollPane TagScrollPane = new JScrollPane(TagTable);
+		
+		Dimension dim3 = new Dimension(200 + 5, 100);
+		
+		TagScrollPane.setMinimumSize(dim3);
+		TagScrollPane.setMaximumSize(dim3);
+		TagScrollPane.setPreferredSize(dim3);
+		
+		tagPanelGBC.gridx = 0;
+		tagPanelGBC.gridy = 1;
+		tagPanelGBC.insets = new Insets(0, 10, 0, 10);
+		tagPanel.add(TagScrollPane, tagPanelGBC);
+		
+		JPanel AddPanel = new JPanel();
+		AddPanel.setLayout(new BorderLayout());
+		JTextField newTag = new JTextField(10);
+		Dimension dimTag = new Dimension(130, 20);
+		newTag.setMinimumSize(dimTag);
+		AddPanel.add(newTag, BorderLayout.CENTER);
+		JButton Add = new JButton("Add");
+		Add.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!newTag.getText().equals("")) {
+					molecule.addTag(newTag.getText());
+					updateTagList();
+					TagTableModel.fireTableDataChanged();
+				}
+			}
+		});
+		AddPanel.add(Add, BorderLayout.EAST);
+		
+		tagPanelGBC.gridx = 0;
+		tagPanelGBC.gridy = 2;
+		tagPanelGBC.insets = new Insets(0, 5, 0, 5);
+		
+		tagPanel.add(AddPanel, tagPanelGBC);
+		
+		JButton Remove = new JButton("Remove");
+		Remove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (TagTable.getSelectedRow() != -1) {
+					String tag = (String)TagTable.getValueAt(TagTable.getSelectedRow(), 0);
+					molecule.removeTag(tag);
+					updateTagList();
+					TagTableModel.fireTableDataChanged();
+				}
+			}
+		});
+		tagPanelGBC.gridx = 0;
+		tagPanelGBC.gridy = 3;
+		tagPanelGBC.anchor = GridBagConstraints.EAST;
+		tagPanel.add(Remove, tagPanelGBC);
+		
+		return tagPanel;
+	}
+	
+	public JScrollPane buildSegmentsTable(String[] YX) {		
+		AbstractTableModel SegmentTableModel = new AbstractTableModel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex) {
+				if (columnIndex == 0)
+					return rowIndex + 1;
+				
+				return molecule.getSegmentsTable(YX).getValue(columnIndex - 1, rowIndex);
+			}
+			
+			@Override
+			public String getColumnName(int columnIndex) {
+				if (columnIndex == 0)
+					return "Row";
+				
+				return molecule.getSegmentsTable(YX).getColumnHeader(columnIndex - 1);
+			}
+
+			@Override
+			public int getRowCount() {
+				return molecule.getSegmentsTable(YX).getRowCount();
+			}
+			
+			@Override
+			public int getColumnCount() {
+				return molecule.getSegmentsTable(YX).getColumnCount() + 1;
+			}
+			
+			@Override
+			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				double value = Double.parseDouble((String)aValue);
+				molecule.getSegmentsTable(YX).set(columnIndex - 1, rowIndex, value);
+			}
+			
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex)  {
+				return columnIndex > 0;
+			}
+		};
+			
+		JTable segTable = new JTable(SegmentTableModel);
+		segTable.setAutoCreateColumnsFromModel(true);
+		segTable.setRowSelectionAllowed(true);
+		segTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		
+		for (int i = 0; i < segTable.getColumnCount(); i++)
+			segTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		segTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		
+		JScrollPane SegScrollPane = new JScrollPane(segTable);
+		
+		Dimension SegDim = new Dimension(segTable.getColumnCount()*75 + 5, 150);
+		
+		SegScrollPane.setMinimumSize(SegDim);
+		SegScrollPane.setMaximumSize(SegDim);
+		SegScrollPane.setPreferredSize(SegDim);
+		
+		return SegScrollPane;
+	}
+	
+	public void addPlot(ArrayList<PlotProperties> props) {
+		if (dataANDPlot.indexOfTab("Plot") != -1) 
+			dataANDPlot.removeTabAt(dataANDPlot.indexOfTab("Plot"));
+    	 
+		plotPanel = new CurvePlot(props, molecule);
+    	plotPanel.showPlot();
+	 	plotPanel.setName("Plot");
+	 	dataANDPlot.add(plotPanel, 0);
+	 	dataANDPlot.setSelectedIndex(0);
+	}
+
+	public void updateAll() {
+		updateParameterList();
+		updateTagList();
+		
+		//Update molecule labels
+		UIDLabel.setText(molecule.getUID());
+		UIDLabel.repaint();
+		ImageMetaDataUIDLabel.setText(molecule.getImageMetaDataUID());
+		ImageMetaDataUIDLabel.repaint();
+		
+		//Update DataTable
+		DataTableModel.fireTableStructureChanged();
+		for (int i = 0; i < DataTable.getColumnCount(); i++)
+			DataTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		//Update Parameter list
+		ParameterTableModel.fireTableStructureChanged();
+		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
+			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		//Update TagList
+		TagTableModel.fireTableStructureChanged();
+		for (int i = 0; i < TagTable.getColumnCount(); i++)
+			TagTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		notes.setText(molecule.getNotes());
+		
+		int startTab = 1;
+		
+		//Update Plot
+		if (plotPanel != null) {
+			plotPanel.setMolecule(molecule);
+			plotPanel.showPlot();
+			startTab = 2;
+		}
+		
+		//Update ChangePoint tables...
+		for (int i=startTab;i<dataANDPlot.getTabCount();i++)
+			dataANDPlot.remove(i);
+		
+		if (molecule.getSegmentTables().size() > 0) {
+			for (String[] YX: molecule.getSegmentTables().keySet()) {
+				JScrollPane segmentTablePane = buildSegmentsTable(YX);
+				dataANDPlot.addTab(YX[0] + " " + YX[1], segmentTablePane);
+			}
+		}
+	}
+	
+	private void filterMoleculeIndex() {
+        RowFilter<AbstractTableModel, Object> rf = null;
+        //If current expression doesn't parse, don't update.
+        try {
+            rf = RowFilter.regexFilter(moleculeSearchField.getText(), 0, 1, 2);
+        } catch (java.util.regex.PatternSyntaxException e) {
+            return;
+        }
+        moleculeSorter.setRowFilter(rf);
+    }
+	
+	public void updateParameterList() {
+		ParameterList = new String[molecule.getParameters().keySet().size()];
+		molecule.getParameters().keySet().toArray(ParameterList);
+	}
+	
+	public void updateTagList() {
+		TagList = new String[molecule.getTags().size()];
+		molecule.getTags().toArray(TagList);
+	}
+	
+	public Molecule getMolecule() {
+		return molecule;
+	}
+}

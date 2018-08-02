@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>23.1.0</version>
+		<relativePath />
+	</parent>
+
+	<groupId>de.mpg.biochem.sdmm</groupId>
+	<artifactId>SDMM_Plugins</artifactId>
+	<version>2.0.0-SNAPSHOT</version>
+
+	<name>SDMMPlugins</name>
+	<url>http://biochem.mpg.de/duderstadt/</url>
+	<inceptionYear>2018</inceptionYear>
+	<organization>
+		<name>My Company</name>
+		<url>http://biochem.mpg.de/duderstadt/</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>Simplified BSD License</name>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<!-- See https://imagej.net/Team -->
+		<developer>
+			<id>ctrueden</id>
+			<name>Curtis Rueden</name>
+			<url>http://imagej.net/User:Rueden</url>
+			<roles>
+				<role>founder</role>
+				<role>lead</role>
+				<role>developer</role>
+				<role>debugger</role>
+				<role>reviewer</role>
+				<role>support</role>
+				<role>maintainer</role>
+			</roles>
+		</developer>
+	</developers>
+	<contributors>
+		<contributor>
+			<name>Yili Zhao</name>
+			<url>http://imagej.net/User:Panovr</url>
+			<roles><role>founder</role></roles>
+			<properties><id>panovr</id></properties>
+		</contributor>
+	</contributors>
+	
+	
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:git://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2</connection>
+		<developerConnection>scm:git:git@laue.biochem.mpg.de/SDMM/SDMM_Plugins_v2.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>git@laue.biochem.mpg.de:SDMM/SDMM_Plugins_v2.git</url>
+	</scm>
+	<issueManagement>
+		<system>GItLab Issues</system>
+		<url>http://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>None</system>
+	</ciManagement>
+
+	<properties>
+		<package-name>com.mycompany.imagej</package-name>
+		<main-class>com.mycompany.imagej.GaussFiltering</main-class>
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.copyrightOwners>My Company, Inc.</license.copyrightOwners>
+	</properties>
+	
+	<repositories>
+		<repository>
+			<id>imagej.public</id>
+			<url>http://maven.imagej.net/content/groups/public</url>
+		</repository>
+	</repositories>
+	
+		<build>
+	    <plugins>
+	    <plugin>
+		    <groupId>org.apache.maven.plugins</groupId>
+		    <artifactId>maven-enforcer-plugin</artifactId>
+		    <executions>
+		        <execution>
+		            <id>enforce-versions</id>
+		            <goals>
+		                <goal>enforce</goal>
+		            </goals>
+		        </execution>
+		    </executions>
+		    <configuration>
+		        <rules>
+		            <AlwaysPass />
+		        </rules>
+		        <fail>false</fail>
+		    </configuration>
+		</plugin>
+	    </plugins>
+	    <resources>
+	    <resource>
+	      <directory>src/main/resources</directory>
+	      <includes>
+	        <include>project.properties</include>
+	      </includes>
+	      <filtering>true</filtering>
+	    </resource>
+	  </resources>
+	  </build>
+
+	<dependencies>
+	    <dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-ij</artifactId>
+			<version>2.0.0-beta-42</version>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>fiji-lib</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.9.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.directory.studio</groupId>
+			<artifactId>org.apache.commons.codec</artifactId>
+			<version>1.8</version>
+		</dependency>
+		<dependency>
+			<groupId>net.openhft</groupId>
+			<artifactId>chronicle-map</artifactId>
+			<version>3.14.5</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-smile</artifactId>
+			<version>2.9.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.chrylis</groupId>
+			<artifactId>base58-codec</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+	</dependencies>
+	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data conforming to the ImageJ2 API.</description>
+</project>
