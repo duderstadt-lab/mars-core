@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import javax.swing.JPanel;
 
 import de.mpg.biochem.sdmm.molecule.Molecule;
+import de.mpg.biochem.sdmm.plot.Plot.Type;
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 
 //This will hold single and multicurve plots that go in the Plot panel of the
 //Molecule Archive window...
@@ -22,7 +24,7 @@ public class CurvePlot extends JPanel {
 	
 	public CurvePlot(Molecule molecule) {
 		plot_properties = new ArrayList<PlotProperties>();
-		PlotProperties curve = new PlotProperties("curve", "x", "y", Color.black, 0, Color.red, false);
+		PlotProperties curve = new PlotProperties("curve", "x", "y", Color.black, 0, Color.red);
 		plot_properties.add(curve);
 		this.molecule = molecule;
 		
@@ -83,13 +85,22 @@ public class CurvePlot extends JPanel {
 			break;
 		}
 		
-		if (props.drawSegments()) {
-			//Not sure exactly why the end need a 2. The index of the end of group columns is correct.
-			//Guess it is just because the index starts at 0 and the coordinate sets are put in a linear array.
-			double[] seg_xs = molecule.getSegmentsTable(props.xColumnName(), props.yColumnName()).getColumnAsDoubles(props.xColumnName());
-			double[] seg_ys = molecule.getSegmentsTable(props.xColumnName(), props.yColumnName()).getColumnAsDoubles(props.yColumnName());
+		SDMMResultsTable segmentsTable = molecule.getSegmentsTable(props.yColumnName(), props.xColumnName());
+		
+		if (props.drawSegments() && segmentsTable != null) {
 			
-			plot.addSegmentPlot(seg_xs, seg_ys, 0, seg_xs.length, props.getSegmentsColor(), 2.0f, props.getCurveName() + " Segments");
+			int numSegments = segmentsTable.getRowCount();
+			double[] seg_xs = new double[numSegments*2];
+			double[] seg_ys = new double[numSegments*2];
+			
+			for (int i = 0; i < numSegments*2 ; i+=2) {
+				seg_xs[i] = segmentsTable.getValue("x1", i/2);
+				seg_xs[i+1] = segmentsTable.getValue("x2", i/2);
+				
+				seg_ys[i] = segmentsTable.getValue("y1", i/2);
+				seg_ys[i+1] = segmentsTable.getValue("y2", i/2);
+			}
+			plot.addSegmentPlot(seg_xs, seg_ys, props.getSegmentsColor(), 2.0f, props.getCurveName() + " Segments");
 		}
 	}
 	

@@ -29,7 +29,7 @@ import net.imagej.ops.Initializable;
 import javax.swing.JLabel;
 
 @Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Molecule Utils>Generate bps and Time")
-public class generate_bps extends DynamicCommand implements Command, Initializable {
+public class GenerateBPSCommand extends DynamicCommand implements Command, Initializable {
 	
 	@Parameter
 	private LogService logService;
@@ -140,7 +140,9 @@ public class generate_bps extends DynamicCommand implements Command, Initializab
 		
 		if (conversionType.equals("Reversal")) {
 			//Loop through each molecule and extract the start and end regions for reversal
-			archive.getMolecules().parallelStream().forEach(molecule -> {
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				Molecule molecule = archive.get(UID);
+				
 				double ff_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, ff_start, ff_end);
 				double rf_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, rf_start, rf_end);
 				double f_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, f_start, f_end);
@@ -178,12 +180,16 @@ public class generate_bps extends DynamicCommand implements Command, Initializab
 					
 					molecule.getDataTable().setValue(distance_column_name, j, output);
 				}
+				
+				archive.set(molecule);
 			});
 		} else if (conversionType.equals("Region")) {
 			
 			//We loop through all molecules, find mean in background region, subtract it
 			//and transform to correct units...
-			archive.getMolecules().parallelStream().forEach(molecule -> {
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				Molecule molecule = archive.get(UID);
+				
 				//First we set to global start and end for the region
 				//Then if the molecule has parameters those override the global values
 				int tab_bg_start = bg_start;
@@ -199,6 +205,8 @@ public class generate_bps extends DynamicCommand implements Command, Initializab
 					double bps = (molecule.getDataTable().getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
 					molecule.getDataTable().setValue(distance_column_name, j, bps);
 				}
+				
+				archive.set(molecule);
 			});
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

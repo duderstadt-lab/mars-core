@@ -42,9 +42,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	@Parameter
     private UIService uiService;
     
-    //@Parameter(label="MoleculeArchive", choices = {"a", "b", "c"})
-	//private String archiveName;
-    
     @Parameter(label="MoleculeArchive")
   	private MoleculeArchive archive;
     
@@ -70,9 +67,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	
     @Override
 	public void initialize() {
-    	//final MutableModuleItem<String> tableItems = getInfo().getMutableInput("archiveName", String.class);
-		//tableItems.setChoices(moleculeArchiveService.getArchiveNames());
-		
 		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
 		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
 		
@@ -81,7 +75,9 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	}
 	@Override
 	public void run() {		
-		//archive = moleculeArchiveService.getArchive(archiveName);
+		//Lock the window so it can't be changed while processing
+		if (!uiService.isHeadless())
+			archive.getWindow().lockArchive();
 		
 		//Build log message
 		LogBuilder builder = new LogBuilder();
@@ -123,7 +119,13 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        //This will spawn a bunch of threads that will analyze molecules individually in parallel 
 	        //and put the changepoint tables back into the same molecule record
 	        
-	        forkJoinPool.submit(() -> IntStream.range(0, archive.getNumberOfMolecules()).parallel().forEach(i -> findChangePoints(archive.get(i)))).get();
+	        forkJoinPool.submit(() -> IntStream.range(0, archive.getNumberOfMolecules()).parallel().forEach(i -> {
+	        		Molecule molecule = archive.get(i);
+	        		
+	        		findChangePoints(molecule);
+	        		
+	        		archive.set(molecule);
+	        })).get();
 	        
 	        progressUpdating.set(false);
 	        
@@ -143,6 +145,12 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(builder.endBlock(true));
+	    
+		//Unlock the window so it can be changed
+	    if (!uiService.isHeadless()) {
+	    	archive.getWindow().updateAll();
+			archive.getWindow().unlockArchive();
+		}
 	}
 	
 	private void findChangePoints(Molecule molecule) {

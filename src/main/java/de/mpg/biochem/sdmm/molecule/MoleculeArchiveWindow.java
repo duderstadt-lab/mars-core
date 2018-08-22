@@ -41,6 +41,8 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -73,6 +75,7 @@ public class MoleculeArchiveWindow {
 
     private MoleculeArchive archive;
 	
+    private boolean lockArchive = false;
 	private JFrame frame;
 	
 	private JTabbedPane tabbedPane = new JTabbedPane();
@@ -123,8 +126,14 @@ public class MoleculeArchiveWindow {
 		createFrame(name);
 	}
 	
-	public void update() {
-		comments.setText(archive.getComments());
+	public void updateAll() {
+		//We just update everything when the tab is changed.
+    	//We could just update the selected tab but it probably doesn't matter much.
+		propertiesTab = archiveProperties();
+		tabbedPane.setComponentAt(0, propertiesTab);
+        imageMetaDataPanel.updateAll();
+        moleculePanel.updateAll();
+        comments.setText(archive.getComments());
 		log.setText(archive.getLog());
 	}
 	
@@ -146,6 +155,16 @@ public class MoleculeArchiveWindow {
 		
 		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		
+		tabbedPane.addChangeListener(new ChangeListener() {
+	        public void stateChanged(ChangeEvent e) {
+	        	//Prevent change if archive is locked
+	        	if (lockArchive)
+	        		tabbedPane.setSelectedIndex(0);
+	        	else
+	        		updateAll();
+	        }
+	    });
+		
 		JMenu fileMenu = new JMenu("File");
 		JMenuBar mb = new JMenuBar();
 		mb.add(fileMenu);
@@ -153,22 +172,26 @@ public class MoleculeArchiveWindow {
 		fileMenu.add(saveAsMenuItem);
 		saveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 archive.set(moleculePanel.getMolecule());
-	 			 if (archive.getFile() != null) {
-	 				archive.save();
-	 			 } else {
-	 				File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
-	 				archive.saveAs(file);
-	 			 }
+	        	 if (!lockArchive) {
+		        	 archive.set(moleculePanel.getMolecule());
+		 			 if (archive.getFile() != null) {
+		 				archive.save();
+		 			 } else {
+		 				File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
+		 				archive.saveAs(file);
+		 			 }
+	        	 }
 	          }
 	       });
 		saveAsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 //Add yama ending if not there ??
-	        	 File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
-	        	 if (file != null) {
-		 			 archive.set(moleculePanel.getMolecule());
-		 			 archive.saveAs(file);
+	        	 if (!lockArchive) {
+		        	 //Add yama ending if not there ??
+		        	 File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
+		        	 if (file != null) {
+			 			 archive.set(moleculePanel.getMolecule());
+			 			 archive.saveAs(file);
+		        	 }
 	        	 }
 	          }
 	       });
@@ -186,67 +209,72 @@ public class MoleculeArchiveWindow {
 		plotMenu.add(singleCurveMenuItem);
 		singleCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1);
-	        	dialog.showDialog();
-	        	if (dialog.wasCanceled())
-	     			return;
-	        	
-	        	//Need to put this so the final values and properly
-	        	dialog.update(dialog);
-	        	ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
-	        	PlotProperties curve1 = new PlotProperties("Curve", dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor(), false);
-	        	props.add(curve1);
-	        	 
-	        	moleculePanel.addCurvePlot(props);
-	        	 
+	        	 if (!lockArchive) {
+		        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1);
+		        	dialog.showDialog();
+		        	if (dialog.wasCanceled())
+		     			return;
+		        	
+		        	//Need to put this so the final values and properly
+		        	dialog.update(dialog);
+		        	ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
+		        	PlotProperties curve1 = new PlotProperties("Curve", dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor());
+		        	props.add(curve1);
+		        	 
+		        	moleculePanel.addCurvePlot(props);
+	        	 }
 	          }
 	       });
 		
 		plotMenu.add(multiCurveMenuItem);
 		multiCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	//First we ask how many curves will be added
-	        	 GenericDialog Numdialog = new GenericDialog("MultiPlot");
-	     		 Numdialog.addNumericField("Number_of_curves", 2, 0);
-	     		 Numdialog.showDialog();
-	     		
-	     		 if (Numdialog.wasCanceled())
-	     			return;
-	     		
-	     		 int curveNum = (int)Numdialog.getNextNumber(); 
-	        	 
-	        	 PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), curveNum);
-	        	 dialog.showDialog();
-	        	 //Need to put this so the final values and properly
-	        	 dialog.update(dialog);
-	        	 ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
-	        	 //Need to add None options for segments curve and then use inputs below and above
-	        	 
-	        	 for (int i=0;i<curveNum;i++) {
-	        		 String yName = dialog.getNextYColumnName();
-	        		 props.add(new PlotProperties(yName + " " + dialog.getXColumnName(), dialog.getXColumnName(), yName, dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor(), false));
+	        	 if (!lockArchive) {
+		        	//First we ask how many curves will be added
+		        	 GenericDialog Numdialog = new GenericDialog("MultiPlot");
+		     		 Numdialog.addNumericField("Number_of_curves", 2, 0);
+		     		 Numdialog.showDialog();
+		     		
+		     		 if (Numdialog.wasCanceled())
+		     			return;
+		     		
+		     		 int curveNum = (int)Numdialog.getNextNumber(); 
+		        	 
+		        	 PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), curveNum);
+		        	 dialog.showDialog();
+		        	 //Need to put this so the final values and properly
+		        	 dialog.update(dialog);
+		        	 ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
+		        	 //Need to add None options for segments curve and then use inputs below and above
+		        	 
+		        	 for (int i=0;i<curveNum;i++) {
+		        		 String yName = dialog.getNextYColumnName();
+		        		 props.add(new PlotProperties(yName + " " + dialog.getXColumnName(), dialog.getXColumnName(), yName, dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor()));
+		        	 }
+		        	 moleculePanel.addCurvePlot(props);
 	        	 }
-	        	 moleculePanel.addCurvePlot(props);
 	          }
 	       });
 		
 		plotMenu.add(multiPlotMenuItem);
 		multiPlotMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-        	 //First we ask how many plots will be added
-	        	GenericDialog dialog = new GenericDialog("Multiple Plots");
-	        	String[] columnNames = archive.get(0).getDataTable().getColumnHeadings();
-	     		dialog.addChoice("x_column", columnNames, "Time (s)");
-	     		dialog.addNumericField("Number_of_plots", 2, 0);
-	     		dialog.showDialog();
-	     		
-	     		if (dialog.wasCanceled())
-	     			return;
-	     		
-	     		 String xColumnName = dialog.getNextChoice();
-	     		 int plotNum = (int)dialog.getNextNumber(); 
-		     		 
-		         moleculePanel.addMulitplePlots(plotNum, xColumnName);
+	        	 if (!lockArchive) {
+	        	    //First we ask how many plots will be added
+		        	GenericDialog dialog = new GenericDialog("Multiple Plots");
+		        	String[] columnNames = archive.get(0).getDataTable().getColumnHeadings();
+		     		dialog.addChoice("x_column", columnNames, "Time (s)");
+		     		dialog.addNumericField("Number_of_plots", 2, 0);
+		     		dialog.showDialog();
+		     		
+		     		if (dialog.wasCanceled())
+		     			return;
+		     		
+		     		 String xColumnName = dialog.getNextChoice();
+		     		 int plotNum = (int)dialog.getNextNumber(); 
+			     		 
+			         moleculePanel.addMulitplePlots(plotNum, xColumnName);
+	        	 }
 	          }
 	       });
 		
@@ -256,20 +284,21 @@ public class MoleculeArchiveWindow {
 		toolsMenu.add(deleteMenuItem);
 		deleteMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	GenericDialog dialog = new GenericDialog("Delete Molecules");
-	     		dialog.addStringField("Tag", "delete me", 30);
-	     		dialog.showDialog();
-	     		
-	     		if (dialog.wasCanceled())
-	     			return;
-	     		
-	     		 String tagToDelete = dialog.getNextString();
-	     		 archive.deleteMoleculesWithTag(tagToDelete);
-		     		 
-	     		 moleculePanel.updateAll();
+	        	 if (!lockArchive) {
+		        	GenericDialog dialog = new GenericDialog("Delete Molecules");
+		     		dialog.addStringField("Tag", "delete me", 30);
+		     		dialog.showDialog();
+		     		
+		     		if (dialog.wasCanceled())
+		     			return;
+		     		
+		     		 String tagToDelete = dialog.getNextString();
+		     		 archive.deleteMoleculesWithTag(tagToDelete);
+			     		 
+		     		 moleculePanel.updateAll();
+	        	 }
 	          }
 	       });
-
 
 		frame = new JFrame(title);
 		frame.setLocation(pos_x, pos_y);
@@ -284,11 +313,10 @@ public class MoleculeArchiveWindow {
  			pos_x = 100;
  			pos_y = 130;
  		}
- 		frame.addWindowListener(new WindowAdapter()
- 	      {
- 	         public void windowClosing(WindowEvent e)
- 	         {
- 	           close();
+ 		frame.addWindowListener(new WindowAdapter() {
+ 	         public void windowClosing(WindowEvent e) {
+ 	        	if (!lockArchive)
+ 	        		close();
  	         }
  	      });
 		frame.setLayout(new BorderLayout());
@@ -406,6 +434,17 @@ public class MoleculeArchiveWindow {
 		log.setEditable(false);
         JScrollPane pane = new JScrollPane(log);
 		return pane;
+	}
+	
+	//We add an lockArchive for duing processing steps
+	public void lockArchive() {
+		lockArchive = true;
+		//We move to the general properties pane
+		tabbedPane.setSelectedIndex(0);
+	}
+	
+	public void unlockArchive() {
+		lockArchive = false;
 	}
 	
 	public MoleculeArchive getArchive() {

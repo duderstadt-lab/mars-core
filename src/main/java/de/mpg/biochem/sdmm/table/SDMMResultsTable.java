@@ -187,6 +187,14 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		setValue(getColumnIndex(column), row, value);
 	}
 	
+	public boolean hasColumn(String colName) {
+		for (String column : getColumnHeadingList()) {
+			if (column.equals(colName))
+				return true;
+		}
+		return false;
+	}
+	
 	//Here are some utility methods add for common operations..
 	public double max(String column) {
 		if (get(column) == null)

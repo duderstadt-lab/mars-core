@@ -11,6 +11,7 @@ import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -20,13 +21,21 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import de.mpg.biochem.sdmm.molecule.Molecule;
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 
 public class PlotPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	private RoiManager roiManager;
-	private JComboBox xColumnComboBox;
+	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
+	
+	protected String[] SegColors = {"none", "black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
+	
+	//More Colors
+	Color darkGreen = new Color(25, 123, 48);
+	
 	private JComboBox yColumnComboBox;
+	private JComboBox yColor;
+	private JComboBox SegmentColor;
 	private JComboBox typeComboBox = new JComboBox(new String[]{"Line", "Scatter"});
 	public Plot plot = new Plot();
 	private String caption = "";
@@ -34,6 +43,8 @@ public class PlotPanel extends JPanel {
 	private int type = 0;
 	private String xColumnName;
 	private String yColumnName;
+	private String curveColor;
+	private String segmentColor;
 	
 	private Molecule molecule;
 	
@@ -42,15 +53,26 @@ public class PlotPanel extends JPanel {
 		
 		String[] columns = molecule.getDataTable().getColumnHeadings();
 		yColumnComboBox = new JComboBox(columns);
-		yColumnComboBox.setSelectedItem("bps");
+		yColor = new JComboBox(colors);
+		SegmentColor = new JComboBox(SegColors);
+		
 		
 		JPanel panel = new JPanel(new GridLayout(0, 2));
-		panel.add(new JLabel("y_column"));
+		panel.add(new JLabel("y column"));
+		yColumnComboBox.setSelectedItem("bps");
 		panel.add(yColumnComboBox);
 		
-		panel.add(new JLabel("plot_type"));
+		panel.add(new JLabel("color"));
+		yColor.setSelectedItem("black");
+		panel.add(yColor);
+		
+		panel.add(new JLabel("plot type"));
 		typeComboBox.setSelectedItem("Line");
 		panel.add(typeComboBox);
+		
+		panel.add(new JLabel("segments"));
+		SegmentColor.setSelectedItem("red");
+		panel.add(SegmentColor);
 		
 		JPanel leftPanel = new JPanel();
 		leftPanel.add(panel);
@@ -67,12 +89,14 @@ public class PlotPanel extends JPanel {
   		yColumnName = (String)yColumnComboBox.getSelectedItem();
   		if (xColumnName.equals(" ") || yColumnName.equals(" ")) 
   			return;
+  		segmentColor = (String)SegmentColor.getSelectedItem();
+  		curveColor = (String)yColor.getSelectedItem();
 		
 		caption = String.format("UID = %s", molecule.getUID());
 		
   		type = typeComboBox.getSelectedIndex();
   		
-      	PlotProperties curve = new PlotProperties("Curve", xColumnName, yColumnName, Color.black, type, Color.red, false);
+      	PlotProperties curve = new PlotProperties("Curve", xColumnName, yColumnName, getColorFromName(curveColor), type, getColorFromName(segmentColor));
 		drawCurve(curve);
 		
 		plot.setPlotTitle(" ");
@@ -99,13 +123,22 @@ public class PlotPanel extends JPanel {
 			break;
 		}
 		
-		if (props.drawSegments()) {
-			//Not sure exactly why the end need a 2. The index of the end of group columns is correct.
-			//Guess it is just because the index starts at 0 and the coordinate sets are put in a linear array.
-			double[] seg_xs = molecule.getSegmentsTable(props.xColumnName(), props.yColumnName()).getColumnAsDoubles(props.xColumnName());
-			double[] seg_ys = molecule.getSegmentsTable(props.xColumnName(), props.yColumnName()).getColumnAsDoubles(props.yColumnName());
+		SDMMResultsTable segmentsTable = molecule.getSegmentsTable(props.yColumnName(), props.xColumnName());
+		
+		if (props.drawSegments() && segmentsTable != null) {
 			
-			plot.addSegmentPlot(seg_xs, seg_ys, 0, seg_xs.length, props.getSegmentsColor(), 2.0f, props.getCurveName() + " Segments");
+			int numSegments = segmentsTable.getRowCount();
+			double[] seg_xs = new double[numSegments*2];
+			double[] seg_ys = new double[numSegments*2];
+			
+			for (int i = 0; i < numSegments*2 ; i+=2) {
+				seg_xs[i] = segmentsTable.getValue("x1", i/2);
+				seg_xs[i+1] = segmentsTable.getValue("x2", i/2);
+				
+				seg_ys[i] = segmentsTable.getValue("y1", i/2);
+				seg_ys[i+1] = segmentsTable.getValue("y2", i/2);
+			}
+			plot.addSegmentPlot(seg_xs, seg_ys, props.getSegmentsColor(), 2.0f, props.getCurveName() + " Segments");
 		}
 	}
 	
@@ -121,6 +154,18 @@ public class PlotPanel extends JPanel {
 	public Molecule getMolecule() {
 		return molecule;
 	}
-	
+	private Color getColorFromName(String color_name) {
+		if (color_name.equals("none"))
+			return null;
+		try {
+			if (color_name.equals("dark green"))
+				return darkGreen;
+			Field field = Class.forName("java.awt.Color").getField(color_name);
+			return (Color)field.get(null);
+		} catch (Exception e) {
+			//can't happen since only the colors specified above can be picked and those all exist...
+		}
+		return Color.black;
+	}
 }
 

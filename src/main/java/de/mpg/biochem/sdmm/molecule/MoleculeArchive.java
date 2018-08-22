@@ -407,6 +407,10 @@ public class MoleculeArchive {
 		return imageMetaData.get(idstr);
 	}
 	
+	public Collection<ImageMetaData> getImageMetaData() {
+		return imageMetaData.values();
+	}
+	
 	//Getters and Setters.
 	
 	public int getNumberOfMolecules() {
@@ -446,11 +450,8 @@ public class MoleculeArchive {
 		return get(moleculeIndex.get(index));
 	}
 	
-	public Collection<Molecule> getMolecules() {
-		if (virtual)
-			return archive.values();
-		else
-			return molecules.values();
+	public Collection<String> getMoleculeUIDs() {
+		return moleculeIndex;
 	}
 	
 	public String getTagList(String UID) {

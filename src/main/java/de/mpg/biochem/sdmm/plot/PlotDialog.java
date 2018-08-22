@@ -30,7 +30,9 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	
 	private int type = 0;
 	
-	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "white", "yellow"};
+	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
+	
+	protected String[] SegColors = {"none", "black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
 	
 	//More Colors
 	Color darkGreen = new Color(25, 123, 48);
@@ -53,10 +55,12 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		if (curveNumber == 1) {
 			addChoice("y_column", columns, "x");
 			addChoice("color", colors, "black");
+			addChoice("segments", SegColors, "red");
 		} else {
 			for (int i=0;i<curveNumber;i++) {
 				addChoice("y" + (i+1) + "_column", columns, "x");
 				addChoice("y" + (i+1) + "_color", colors, "black");
+				addChoice("y" + (i+1) + "_segments", SegColors, "red");
 			}
 		}
 
@@ -112,6 +116,8 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	}
 	
 	private Color getColorFromName(String color_name) {
+		if (color_name.equals("none"))
+			return null;
 		try {
 			if (color_name.equals("dark green"))
 				return darkGreen;
@@ -133,6 +139,7 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		for (int i=0;i<curveNumber;i++) {
 			yColumns[i] = dialog.getNextChoice();
 			color_choices[i] = getColorFromName(dialog.getNextChoice());
+			segment_color_choices[i] = getColorFromName(dialog.getNextChoice());
 		}
 		type = dialog.getNextChoiceIndex(); 
 	}

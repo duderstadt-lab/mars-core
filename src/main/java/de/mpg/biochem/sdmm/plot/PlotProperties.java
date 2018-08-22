@@ -3,19 +3,17 @@ package de.mpg.biochem.sdmm.plot;
 import java.awt.Color;
 
 public class PlotProperties {
-		public String xColumn;
-		public String yColumn;
-		public int type = 0;
+		private String xColumn;
+		private String yColumn;
+		private int type = 0;
 		
-		public String CurveName;
-		
-		public boolean drawSegments = false;
+		private String CurveName;
 		
 		//Add color setting?
-		public Color color = Color.black;
-		public Color segments_color = Color.red;
+		private Color color = Color.black;
+		private Color segments_color = Color.red;
 		
-		public PlotProperties(String CurveName, String xColumn, String yColumn, Color color, int type, Color segments_color, boolean drawSegments) {
+		public PlotProperties(String CurveName, String xColumn, String yColumn, Color color, int type, Color segments_color) {
 			this.CurveName = CurveName;
 			this.xColumn = xColumn;
 			this.yColumn = yColumn;
@@ -33,7 +31,10 @@ public class PlotProperties {
 		}
 		
 		public boolean drawSegments() {
-			return drawSegments;
+			if (segments_color == null)
+				return false;
+			else
+				return true;
 		}
 		
 		public Color getColor() {

@@ -31,29 +31,29 @@ public class Molecule {
 	final static int DECIMAL_PLACE_PRECISION = 7;
 	
 	//Unique ID used for Chronicle map storage and universal identification.
-	String UID;
+	private String UID;
 	
 	//Reference to MoleculeArchive containing the molecule
-	MoleculeArchive parent;
+	private	MoleculeArchive parent;
 	
 	//UID of ImageMetaData associated wit this molecule.
-	String imageMetaDataUID;
+	private String imageMetaDataUID;
 	
 	//For any notes to be made about the molecule
-	String notes;
+	private String notes;
 	
 	//tags added for filtering...
-	LinkedHashSet<String> tags;
+	private LinkedHashSet<String> tags;
 	
 	//Hashmap that maps string parameters to doubles
-	LinkedHashMap<String, Double> parameters;
+	private LinkedHashMap<String, Double> parameters;
 	
 	//DataTable with raw data and converted data etc.. 
-	SDMMResultsTable datatable;
+	private SDMMResultsTable datatable;
 	
 	//Segments tables resulting from change point fitting
 	//String is XColumn + YColumn
-	LinkedHashMap<String, SDMMResultsTable> segments;
+	private LinkedHashMap<String, SDMMResultsTable> segments;
 	
 	//This is a bit ugly, but we want to keep track of
 	//both columns used for the changepoint plot
@@ -61,7 +61,7 @@ public class Molecule {
 	//it uses object ref and keys never match... so we just keep track here 
 	//and add them tomorrow above. There are other ways but I think ultimately
 	//this will be the most robust...
-	LinkedHashMap<String,String[]> segmentsColumns;
+	private LinkedHashMap<String,String[]> segmentsColumns;
 	
 	public Molecule(JsonParser jParser) {
 		datatable = new SDMMResultsTable();
@@ -367,22 +367,20 @@ public class Molecule {
 		String str = columnNames[0] + " " + columnNames[1];
 		segmentsColumns.put(str, columnNames);
 		segments.put(str, segs);
-		
-		logService.info(UID + " segmentsColumns size " + segmentsColumns.size());
-		for (String key: segmentsColumns.keySet()) 
-			logService.info(UID + " " + key + " " + segmentsColumns.get(key)[0] + " " + segmentsColumns.get(key)[1]);
-		
-		logService.info(UID + " segments size " + segments.size());
-		for (String key: segments.keySet())
-			logService.info(UID + " " + key);
 	}
 	
 	public String[] getSegmentTableColumns(String key) {
-		return segmentsColumns.get(key);
+		if (segmentsColumns.containsKey(key))
+			return segmentsColumns.get(key);
+		else
+			return null;
 	}
 	
 	public SDMMResultsTable getSegmentsTable(String key) {
-		return segments.get(key);
+		if (segments.containsKey(key))
+			return segments.get(key);
+		else 
+			return null;
 	}
 	
 	public void removeSegmentsTable(String yColumnName, String xColumnName) {
@@ -430,7 +428,7 @@ public class Molecule {
 		parent = archive;
 	}
 	
-	public double[] roundArray(double[] input) {
+	private double[] roundArray(double[] input) {
 		double[] output = new double[input.length];
 		for (int i=0;i<input.length;i++) {
 			output[i] = DoubleRounder.round(input[i], DECIMAL_PLACE_PRECISION);

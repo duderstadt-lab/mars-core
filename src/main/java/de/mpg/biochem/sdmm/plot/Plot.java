@@ -142,7 +142,7 @@ public class Plot extends JComponent implements ActionListener {
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
 	private JMenuItem copyMenuItem = new JMenuItem("Copy");
 	private JMenuItem selectRegionMenuItem = new JMenuItem("Select Region");
-	private JMenuItem addDataSet = new JMenuItem("add Plot");
+	//private JMenuItem addDataSet = new JMenuItem("add Plot");
 	private JMenuItem fitData = new JMenuItem("fit");
 	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	
@@ -162,7 +162,7 @@ public class Plot extends JComponent implements ActionListener {
 		saveMenuItem.addActionListener(this);
 		copyMenuItem.addActionListener(this);
 		selectRegionMenuItem.addActionListener(this);
-		addDataSet.addActionListener(this);
+		//addDataSet.addActionListener(this);
 		fitData.addActionListener(this);
 		propertiesMenuItem.addActionListener(this);
 		
@@ -172,7 +172,7 @@ public class Plot extends JComponent implements ActionListener {
 		menu.add(saveMenuItem);
 		menu.add(copyMenuItem);
 		//menu.add(adjustAxisMenuItem);
-		menu.add(addDataSet);
+		//menu.add(addDataSet);
 		menu.add(fitData);
 		menu.add(propertiesMenuItem);
 		

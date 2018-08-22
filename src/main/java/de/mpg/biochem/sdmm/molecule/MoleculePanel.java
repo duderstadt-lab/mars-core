@@ -717,6 +717,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	public void updateAll() {
 		if (archive.get(molecule.getUID()) == null) {
 			molecule = archive.get(0);
+		} else {
+			//Need to reload the current molecule if
+			//working in virtual storage
+			//This ensures if a command changed the values
+			//The new values are loaded 
+			//this prevents overwritting when switching records
+			//in the window..
+			molecule = archive.get(molecule.getUID());
 		}
 		
 		//Update index table in case tags were changed
