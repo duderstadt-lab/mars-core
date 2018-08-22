@@ -31,13 +31,14 @@ public class SDMMResultsTableView extends AbstractDisplayViewer<SDMMResultsTable
 		//We add it to the ResultsTableService if it hasn't been added already
 		if (resultsTableService.getResultsTable(results.getName()) == null) {
 			resultsTableService.addTable(results);
+			
+			//We also create a new window since we assume it is a new table...
+			new SDMMResultsTableWindow(results.getName(), results, resultsTableService);
 		} else {
 			//We update the table if it is already open
 			//This is really ugly at the moment and in the future should be implemented through display
 			resultsTableService.getResultsTable(results.getName()).getWindow().update();
-		}
-		
-		new SDMMResultsTableWindow(results.getName(), results, resultsTableService);
+		}	
 	}
 
 	@Override

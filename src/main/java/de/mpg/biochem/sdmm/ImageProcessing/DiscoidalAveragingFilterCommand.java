@@ -15,6 +15,12 @@ import org.scijava.plugin.Plugin;
 import ij.ImagePlus;
 
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 @Plugin(type = Command.class,
 menuPath = "Plugins>SDMM Plugins>Image Processing>Discoidal Averaging Filter")
@@ -41,6 +47,43 @@ public class DiscoidalAveragingFilterCommand<T extends RealType< T >> implements
 
 	@Override
 	public void run() {
+		/*
+		ArrayList<Integer> lis = new ArrayList<Integer>();
+		Random ran = new Random();
+		
+		
+		for (int i=0;i<100000000;i++) {
+			lis.add(ran.nextInt(1000000000));
+		}
+		
+		logService.info(""+ lis.get(0));
+		logService.info(""+ lis.get(1));
+		logService.info(""+ lis.get(2));
+		logService.info(""+ lis.get(3));
+		
+		
+		
+		ForkJoinPool customThreadPool = new ForkJoinPool(8);
+		List<Integer> output2 = null;
+		
+		double time = System.currentTimeMillis();
+		try {
+			output2 = customThreadPool.submit(
+			  () -> lis.parallelStream().sorted().collect(Collectors.toList())).get();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		logService.info("Time " + (System.currentTimeMillis() - time));
+		logService.info(""+ output2.get(0));
+		logService.info(""+ output2.get(1));
+		logService.info(""+ output2.get(2));
+		logService.info(""+ output2.get(3));
+		*/
 		output = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(input, innerRadius, outerRadius);
 	}
 

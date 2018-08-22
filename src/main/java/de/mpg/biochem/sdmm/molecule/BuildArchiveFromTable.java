@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
-import de.mpg.biochem.sdmm.util.SDMMPluginsService;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
@@ -35,9 +35,6 @@ public class BuildArchiveFromTable extends DynamicCommand implements Initializab
 	
 	@Parameter
 	private ResultsTableService resultsTableService;
-	
-	@Parameter
-    private SDMMPluginsService sdmmPluginsService;
 	
     @Parameter
     private UIService uiService;
@@ -72,31 +69,26 @@ public class BuildArchiveFromTable extends DynamicCommand implements Initializab
 			return;
 		}
 		
-		String log = "***************** Building MoleculeArchive from Table *****************\n";
-		log += "Time             : " + new java.util.Date() + "\n";
-		log += "Version          : " + sdmmPluginsService.getVersion() + "\n";
-		log += "Git Build        : " + sdmmPluginsService.getBuild() + "\n";
-		log += "From Table       : " + tableName + "\n";
-		log += "New Archive Name : " + name;
+		LogBuilder builder = new LogBuilder();
 		
-		logService.info("***************** Building MoleculeArchive from Table *****************");
-		logService.info("Time             : " + new java.util.Date());
-		logService.info("Version          : " + sdmmPluginsService.getVersion());
-		logService.info("Git Build        : " + sdmmPluginsService.getBuild());
-		logService.info("From Table       : " + tableName);
-		logService.info("New Archive Name : " + name);
+		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
+
+		builder.addParameter("From Table", tableName);
+		builder.addParameter("New Archive Name", name);
 		
 		MoleculeArchive archive = new MoleculeArchive(name, resultsTableService.getResultsTable(tableName), resultsTableService, moleculeArchiveService, virtual);
-		
-		archive.addLogMessage(log, false);
-		
-		archive.addLogMessage("Molecules addeded  : " + archive.getNumberOfMolecules());
-		
-        moleculeArchiveService.addArchive(archive);
-        archive.addLogMessage("Added to MoleculeArchiveService");
+
+		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
+		log += builder.buildParameterList();
         
-        archive.addLogMessage("********************************* Success *********************************");
-        archive.addLogMessage(" ");
+		moleculeArchiveService.addArchive(archive);
+		
+		log += "Added to MoleculeArchiveService\n";
+		log += builder.endBlock(true);
+        
+        archive.addLogMessage(log);
+        
+        logService.info(log);
         
         moleculeArchiveService.show(name, archive);
 	}

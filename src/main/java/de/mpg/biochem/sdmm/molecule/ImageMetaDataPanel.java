@@ -1,6 +1,7 @@
 package de.mpg.biochem.sdmm.molecule;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -21,8 +22,11 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.lang3.StringUtils;
@@ -100,9 +104,12 @@ public class ImageMetaDataPanel extends JPanel {
 		};
 		
 		imageMetaDataIndex = new JTable(imageMetaDataTableModel);
+		//imageMetaDataIndex.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		imageMetaDataIndex.setFont(new Font("Menlo", Font.PLAIN, 12));
 		imageMetaDataIndex.setRowSelectionAllowed(true);
 		imageMetaDataIndex.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		resizeColumnWidth(imageMetaDataIndex);
 		
 		ListSelectionModel rowIMD = imageMetaDataIndex.getSelectionModel();
 		rowIMD.addListSelectionListener(new ListSelectionListener() {
@@ -119,8 +126,11 @@ public class ImageMetaDataPanel extends JPanel {
             }
         });
 
-		imageMetaDataIndex.getColumnModel().getColumn(0).setMinWidth(80);
-		imageMetaDataIndex.getColumnModel().getColumn(1).setMinWidth(150);
+		//for (int i=0; i<imageMetaDataIndex.getColumnCount();i++)
+		//	imageMetaDataIndex.getColumnModel().getColumn(i).sizeWidthToFit();
+		
+		//imageMetaDataIndex.getColumnModel().getColumn(0).setMinWidth(80);
+		//imageMetaDataIndex.getColumnModel().getColumn(1).setMinWidth(150);
 		
 		JScrollPane imageMetaDataIndexScrollPane = new JScrollPane(imageMetaDataIndex);
 
@@ -128,6 +138,9 @@ public class ImageMetaDataPanel extends JPanel {
 		westPane.setLayout(new BorderLayout());
 		
 		imageMetaDataSorter = new TableRowSorter<AbstractTableModel>(imageMetaDataTableModel);
+		for (int i=0;i<imageMetaDataTableModel.getColumnCount();i++)
+			imageMetaDataSorter.setSortable(i, false);
+		
 		imageMetaDataIndex.setRowSorter(imageMetaDataSorter);
 		
 		imageMetaDataSearchField = new JTextField();
@@ -320,16 +333,16 @@ public class ImageMetaDataPanel extends JPanel {
 			}
 		};
 		
-		DataTable = new JTable(DataTableModel);
+		DataTable = new JTable(DataTableModel);		
 		DataTable.setAutoCreateColumnsFromModel(true);
 		DataTable.setRowSelectionAllowed(true);
 		DataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		resizeColumnWidth(DataTable);
+		DataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		
 		for (int i = 0; i < DataTable.getColumnCount(); i++) {
 			DataTable.getColumnModel().getColumn(i).sizeWidthToFit();
 		}
-		
-		DataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		
 		JScrollPane scrollPane = new JScrollPane(DataTable);
 		
@@ -379,5 +392,20 @@ public class ImageMetaDataPanel extends JPanel {
 	
 	public ImageMetaData getImageMetaData() {
 		return imageMetaData;
+	}
+	
+	public void resizeColumnWidth(JTable table) {
+	    final TableColumnModel columnModel = table.getColumnModel();
+	    for (int column = 0; column < table.getColumnCount(); column++) {
+	        int width = 15; // Min width
+	        for (int row = 0; row < table.getRowCount(); row++) {
+	            TableCellRenderer renderer = table.getCellRenderer(row, column);
+	            Component comp = table.prepareRenderer(renderer, row, column);
+	            width = Math.max(comp.getPreferredSize().width +1 , width);
+	        }
+	        if(width > 300)
+	            width=300;
+	        columnModel.getColumn(column).setPreferredWidth(width);
+	    }
 	}
 }

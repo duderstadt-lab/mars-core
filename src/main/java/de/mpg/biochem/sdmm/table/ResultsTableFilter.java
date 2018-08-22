@@ -94,6 +94,8 @@ public class ResultsTableFilter extends DynamicCommand implements Initializable 
 		tableItems.setChoices(resultsTableService.getTableNames());
 		
 		final MutableModuleItem<String> filterTableItems = getInfo().getMutableInput("filterTableName", String.class);
+		//ArrayList<String> tableNames = resultsTableService.getColumnNames();
+		//tableNames.add(0, "None");
 		filterTableItems.setChoices(resultsTableService.getTableNames());
 		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("columnName", String.class);

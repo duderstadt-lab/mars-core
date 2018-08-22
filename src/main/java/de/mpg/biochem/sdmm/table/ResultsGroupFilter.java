@@ -18,8 +18,8 @@ public class ResultsGroupFilter extends DynamicCommand implements Initializable 
     @Parameter
     private UIService uiService;
     
-    @Parameter(label="Table", choices = {"a", "b", "c"})
-	private String tableName;
+    @Parameter(label="Table")
+    private SDMMResultsTable table;
 	
 	@Parameter(label="Group Column", choices = {"a", "b", "c"})
 	private String group;
@@ -33,10 +33,7 @@ public class ResultsGroupFilter extends DynamicCommand implements Initializable 
 	// -- Initializable methods --
 
 	@Override
-	public void initialize() {
-        final MutableModuleItem<String> tableItems = getInfo().getMutableInput("tableName", String.class);
-		tableItems.setChoices(resultsTableService.getTableNames());
-		
+	public void initialize() {		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("group", String.class);
 		columnItems.setChoices(resultsTableService.getColumnNames());
 	}
@@ -45,8 +42,6 @@ public class ResultsGroupFilter extends DynamicCommand implements Initializable 
 	
 	@Override
 	public void run() {
-		SDMMResultsTable table = resultsTableService.getResultsTable(tableName);
-		
 		// sort on group column
 		ResultsTableSorter.sort(table, true, group);
 		
@@ -74,6 +69,6 @@ public class ResultsGroupFilter extends DynamicCommand implements Initializable 
 		if (count < min || count > max)
 			rtl.removeRange(0, to);
 		
-		uiService.show(tableName, table);
+		uiService.show(table.getName(), table);
 	}
 }

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
@@ -68,6 +69,17 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		for (int i=0;i<columns.length;i++) {
 			columns[i] = get(i).getHeader();
 		}
+		return columns;
+	}
+	
+	public ArrayList<String> getColumnHeadingList() {
+		ArrayList<String> columns = new ArrayList<String>();
+	
+		for (int i=0;i<getColumnCount();i++) {
+			if(!columns.contains(getColumnHeader(i)))
+				columns.add(getColumnHeader(i));
+		}
+		
 		return columns;
 	}
 	
@@ -156,6 +168,102 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 			new ImgPlus<>(img, name, axes);
 		// TODO: Once ImgPlus has a place for row & column labels, add those too.
 		return imgPlus;
+	}
+	
+	@Override
+	public String toString() {
+		return name;
+	}
+	
+	//This used to be a method in ResultsTable
+	//I reimplement it here but I guess they might add it in the future...
+	public double getValue(String column, int row) {
+		return getValue(getColumnIndex(column), row);
+	}
+	
+	//Also reimplementing this method from ResultTable
+	//maybe they add it later...
+	public void setValue(String column, int row, double value) {
+		setValue(getColumnIndex(column), row, value);
+	}
+	
+	//Here are some utility methods add for common operations..
+	public double max(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double max = get(column, 0);
+		//order doesn't matter so we use an iterator
+		for (double value: get(column)) {
+			if (max < value)
+				max = value;
+		}
+		return max;
+	}
+	
+	public double min(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double min = get(column, 0);
+		//order doesn't matter so we use an iterator
+		for (double value: get(column)) {
+			if (min > value)
+				min = value;
+		}
+		return min;
+	}
+	
+	public double mean(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double sum = 0;
+		int count = 0;
+		for (int i = 0; i < getRowCount();i++) {
+			sum += getValue(column, i);
+			count++;
+		}
+		return sum/count;
+	}
+	
+	public double mean(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(meanColumn) == null || rowSelectionColumn == null)
+			return Double.NaN;
+		double sum = 0;
+		int count = 0;
+		for (int i = 0; i < getRowCount();i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				sum += getValue(meanColumn, i);
+				count++;
+			}
+		}
+		return sum/count;
+	}
+	
+	public double std(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double mean = mean(column);
+		double diffSquares = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			diffSquares += (mean - get(column, i))*(mean - get(column, i));
+		}
+		
+		return Math.sqrt(diffSquares/(getRowCount()-1));
+	}
+	
+	public double std(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(meanColumn) == null || rowSelectionColumn == null)
+			return Double.NaN;
+		double mean = mean(meanColumn, rowSelectionColumn, rangeStart, rangeEnd);
+		double diffSquares = 0;
+		int count = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				diffSquares += (mean - get(meanColumn, i))*(mean - get(meanColumn, i));
+				count++;
+			}
+		}
+		
+		return Math.sqrt(diffSquares/(count-1));
 	}
 
 	// -- Internal methods --

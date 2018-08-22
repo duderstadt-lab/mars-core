@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.plugin.Parameter;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -33,35 +34,31 @@ import net.imagej.table.IntColumn;
 import io.scif.services.FormatService;
 
 public class ImageMetaData {
-	
 	//Unique ID used for universal identification and indexing.
-	String UID;
+	private String UID;
 	
 	//Any comments specific to the data collection
 	//a possible issue, the condition collected etc..
-	String Comments;
+	private String Comments;
 	
-	String Microscope;
+	private String Microscope;
 	
 	//Directory where the images are stored..
-	String SourceDirectory;
+	private String SourceDirectory;
 	
 	//Date and time when the data was collected...
-	String CollectionDate;
+	private String CollectionDate;
 	
 	//Table that maps slices to times
-	GenericTable DataTable;
+	private GenericTable DataTable;
 	
 	// Required Services
     private MoleculeArchiveService moleculeArchiveService;
     
     
     //Used for making JsonParser isntances..
-    //We make a static becasue we just need to it make parsers so we don't multiple copies..
+    //We make it static becasue we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
-    
-    //Fall back if no frameRate is given...
-    //double timeBetweenFrames = 1;
 	
 	public ImageMetaData(ImagePlus img, MoleculeArchiveService moleculeArchiveService, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.moleculeArchiveService = moleculeArchiveService;
@@ -82,6 +79,10 @@ public class ImageMetaData {
 		}
 	}
 	
+	public ImageMetaData(JsonParser jParser) throws IOException {
+		fromJSON(jParser);
+	}
+	
 	//Generate a unique ID using a hash of all headerlabel information...
 	private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
 		String allLabels = "";
@@ -89,10 +90,6 @@ public class ImageMetaData {
 			allLabels += headerLabels.get(i);
 		
 		return moleculeArchiveService.getFNV1aBase58(allLabels);
-	}
-	
-	public ImageMetaData(JsonParser jParser) throws IOException {
-		fromJSON(jParser);
 	}
 	
 	private void buildMetaDataGeneric(ImagePlus img) {
@@ -125,7 +122,8 @@ public class ImageMetaData {
 				timeCol.add((double)(getNorPixMillisecondTime(headerLabels.get(i).substring(10)) - t0)/1000);
 			}
 		} catch (ParseException e) {
-			e.printStackTrace();
+			moleculeArchiveService.getLogService().error("There seems to be a problem with the Image header Labels. Are you sure they are the correction Norpix format?");
+			//e.printStackTrace();
 		}
 		
 		//Create the table and add all the columns...
@@ -152,8 +150,12 @@ public class ImageMetaData {
 				columns.put(fieldname, col);
 			}
 			
+			DoubleColumn sliceCol = new DoubleColumn("slice");
+			
 			//Now we loop through all frame headerLabels and build the table
 			for (int i=1;i<=headerLabels.size();i++) {
+				sliceCol.add((double)i);
+				
 				jParser = jfactory.createParser(headerLabels.get(i).substring(headerLabels.get(i).indexOf("{")));
 				
 				//Just to skip to the first field
@@ -166,9 +168,36 @@ public class ImageMetaData {
 				}
 			}
 			
+			//Let's generate the Time column using the micromanager ElapsedTime-ms
+			//For Dobby and the Andor camera this is alwasy in the frame hearders
+			//but it might be the case that for Winky this is not in the header
+			//or not an output...
+			//We could condense all of this into the loop below but then the column order 
+			//would not be ideal
+			DoubleColumn timeCol = new DoubleColumn("Time (s)");
+			GenericColumn elapsedTime = columns.get("ElapsedTime-ms");
+			//Get t0 in seconds...
+			double t0 = Double.valueOf((String)elapsedTime.get(0))/1000;
+			timeCol.add(0.0);
+			
+			for(int i=1;i<elapsedTime.size();i++) {
+				//Get tn in seconds...
+				double tn = Double.valueOf((String)elapsedTime.get(i))/1000;
+				timeCol.add(DoubleRounder.round(tn - t0, 3));
+			}
+			
 			DataTable = new DefaultGenericTable();
+			DataTable.add(sliceCol);
+			DataTable.add(timeCol);
 			for(String str: columns.keySet()) {
-				DataTable.add(columns.get(str));
+	    		boolean ExcludedColumn = false;
+	    		
+	    		for (int i=0;i<column_exclude_list.length;i++) {
+	    			if (str.equals(column_exclude_list[i]))
+	    				ExcludedColumn = true;
+	    		}
+	    		if (!ExcludedColumn)
+					DataTable.add(columns.get(str));
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -335,4 +364,167 @@ public class ImageMetaData {
 	public String getComments() {
 		return Comments;
 	}
+	
+	//DataTable column exclusion list
+	private String[] column_exclude_list = new String[]{
+			"MCL NanoDrive XY Stage-Name", 
+			 "Core-Initialize",
+			 "Andor-FanMode",
+			 "Andor-SpuriousNoiseFilterDescription",
+			 "Filter wheel 1-Label",
+			 "Optospin Controller-Positions",
+			 "Andor-BaselineClamp",
+			 "Intensity637-TriggerInputLine",
+			 "Intensity561-Block voltage",
+			 "MCL NanoDrive XY Stage-Lower x limit",
+			 "Andor-CountConvert",
+			 "Filter wheel 2-Label",
+			 "Intensity637-SupportsTriggering",
+			 "Andor-SpuriousNoiseFilterThreshold",
+			 "MCL NanoDrive Z Stage-Serial Number",
+			 "Andor-Region of Interest",
+			 "MCL NanoDrive XY Stage-Description",
+			 "Andor-Advanced | Snap Image Timing Mode",
+			 "Andor-CoolerMode",
+			 "Intensity561-MaxVolts",
+			 "Andor-Shutter (Internal)",
+			 "Intensity488-Sequenceable",
+			 "MCL NanoDrive XY Stage-Settling Time X axis (ms)",
+			 "Filter wheel 1-HubID",
+			 "Andor-Pre-Amp-Gain",
+			 "Filter wheel 2-Wheel Mode",
+			 "Andor-EMSwitch",
+			 "Andor-Shutter Closing Time",
+			 "Intensity637-Demo",
+			 "Andor-1. Camera Information : | Type | Model | Serial No. |",
+			 "Intensity561-SupportsTriggering",
+			 "Intensity561-Sequenceable",
+			 "Intensity488-IOChannel",
+			 "Intensity561-Demo",
+			 "MCL NanoDrive Z Stage-Description",
+			 "DigitalIO-IOChannel",
+			 "Intensity637-MinVolts",
+			 "Filter wheel 2-HubID",
+			 "Filter wheel 1-Mode",
+			 "Andor-KeepCleanTime",
+			 "Andor-ReadMode",
+			 "TimeFirst",
+			 "Andor-Camera",
+			 "Intensity532-Description",
+			 "Core-Camera",
+			 "Core-SLM",
+			 "Filter wheel 2- Spins",
+			 "Filter wheel 1- Position Locked",
+			 "Andor-CountConvertWavelength",
+			 "Intensity488-TriggerSequenceLength",
+			 "Filter wheel 1- Spins",
+			 "DigitalIO-TriggerSequenceLength",
+			 "Core-ChannelGroup",
+			 "DigitalIO-Sequenceable",
+			 "DigitalIO-TriggerInputLine",
+			 "DigitalIO-ClosedPosition",
+			 "Intensity637-Sequenceable",
+			 "PixelSizeUm",
+			 "MCL NanoDrive Z Stage-Calibration",
+			 "Intensity637-TriggerSequenceLength",
+			 "Andor-Shutter Opening Time",
+			 "Intensity561-MinVolts",
+			 "Intensity488-MaxVolts",
+			 "Intensity637-Name",
+			 "MCL NanoDrive XY Stage-Upper y limit",
+			 "MCL NanoDrive XY Stage-Set origin here",
+			 "Filter wheel 1-Wheel Mode",
+			 "Andor-FrameTransfer Help",
+			 "Intensity488-Name",
+			 "Optospin Controller-serial number",
+			 "MCL TIRF-Lock-TransposeMirrorX",
+			 "Andor-SpuriousNoiseFilter",
+			 "MCL TIRF-Lock-TransposeMirrorY",
+			 "Andor-OptAcquireMode",
+			 "Intensity488-MinVolts",
+			 "Filter wheel 2-Description",
+			 "Andor-Description",
+			 "DigitalIO-OutputChannel",
+			 "MCL TIRF-Lock-Name",
+			 "MCL TIRF-Lock-Serial number",
+			 "Andor-Advanced | Snap Image Additional Delay (ms)",
+			 "Intensity532-Block voltage",
+			 "Intensity488-SupportsTriggering",
+			 "Intensity532-MaxVolts",
+			 "Intensity488-TriggerInputLine",
+			 "Intensity637-Description",
+			 "Andor-TransposeCorrection",
+			 "MCL TIRF-Lock-Description",
+			 "MCL NanoDrive XY Stage-Settling Time Y axis (ms)",
+			 "Intensity532-MinVolts",
+			 "MCL NanoDrive Z Stage-Set origin here",
+			 "DigitalIO-SupportsTriggering",
+			 "MCL NanoDrive XY Stage-Handle",
+			 "Intensity637-Block voltage",
+			 "MCL NanoDrive Z Stage-Upper Limit",
+			 "MCL NanoDrive XY Stage-TransposeMirrorY",
+			 "Filter wheel 2-Mode",
+			 "MCL NanoDrive XY Stage-TransposeMirrorX",
+			 "Intensity488-Block voltage",
+			 "Filter wheel 2- Position Locked",
+			 "Core-Galvo",
+			 "MCL NanoDrive XY Stage-Serial number",
+			 "CameraChannelIndex",
+			 "Intensity488-Description",
+			 "Core-Focus",
+			 "MCL NanoDrive XY Stage-Upper x limit",
+			 "Intensity532-IOChannel",
+			 "Optospin Controller-Filter Wheel Spin",
+			 "Core-ImageProcessor",
+			 "Intensity532-Demo",
+			 "Andor-Output_Amplifier",
+			 "Intensity561-IOChannel",
+			 "Intensity532-Name",
+			 "MCL NanoDrive Z Stage-Lower Limit",
+			 "MCL NanoDrive Z Stage-Settling time Z axis (ms)",
+			 "Core-AutoShutter",
+			 "Core-XYStage",
+			 "Intensity637-MaxVolts",
+			 "DigitalIO-Description",
+			 "Filter wheel 2-Name",
+			 "Andor-Isolated Crop Mode",
+			 "Core-AutoFocus",
+			 "Intensity561-Name",
+			 "Intensity532-Sequenceable",
+			 "BitDepth",
+			 "Slice",
+			 "Intensity561-TriggerSequenceLength",
+			 "MCL NanoDrive Z Stage-Device Handle",
+			 "DigitalIO-Name",
+			 "Intensity488-Demo",
+			 "Core-Shutter",
+			 "Intensity561-TriggerInputLine",
+			 "Intensity561-Description",
+			 "MCL NanoDrive Z Stage-Axis being used as Z axis",
+			 "Core-TimeoutMs",
+			 "MCL NanoDrive Z Stage-Name",
+			 "Optospin Controller-Optospin serial number",
+			 "Filter wheel 1-Name",
+			 "Intensity532-TriggerSequenceLength",
+			 "MCL NanoDrive XY Stage-Lower y limit",
+			 "Andor-TransposeMirrorX",
+			 "Andor-TransposeMirrorY",
+			 "Intensity532-TriggerInputLine",
+			 "Optospin Controller-Name",
+			 "Andor-TransposeXY",
+			 "Intensity532-SupportsTriggering",
+			 "Andor-Shutter (External)",
+			 "SlicesFirst",
+			 "Optospin Controller-Description",
+			 "Andor-CCDTemperature Help",
+			 "Intensity637-IOChannel",
+			 "MCL NanoDrive XY Stage-Set position Y (um)",
+			 "Filter wheel 1-Description",
+			 "Andor-TimeOut",
+			 "Andor-Trigger",
+			 "MCL NanoDrive XY Stage-Set position X (um)",
+			 "MCL NanoDrive Z Stage-Set position Z (um)",
+			 "Andor-OptAcquireMode Description",
+			 "SliceIndex"
+	};
 }

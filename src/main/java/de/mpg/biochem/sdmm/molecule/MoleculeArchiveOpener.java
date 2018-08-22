@@ -21,7 +21,7 @@ import org.scijava.widget.FileWidget;
 import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
-import de.mpg.biochem.sdmm.util.SDMMPluginsService;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
@@ -30,9 +30,6 @@ import javax.swing.filechooser.FileSystemView;
 public class MoleculeArchiveOpener extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-    private SDMMPluginsService sdmmPluginsService;
 	
     @Parameter
     private UIService uiService;
@@ -61,43 +58,29 @@ public class MoleculeArchiveOpener extends DynamicCommand {
 			return;
 		}
 		
-		String log = "************************* Opening MoleculeArchive *************************\n";
-		log += "Time             : " + new java.util.Date() + "\n";
-		log += "Version          : " + sdmmPluginsService.getVersion() + "\n";
-		log += "Git Build        : " + sdmmPluginsService.getBuild() + "\n";
-		log += "Loading File     : " + file.getAbsolutePath() + "\n";
-		log += "Archive Name     : " + name;
+		LogBuilder builder = new LogBuilder();
 		
-		logService.info("************************* Opening MoleculeArchive *************************");
-		logService.info("Time             : " + new java.util.Date());
-		logService.info("Version          : " + sdmmPluginsService.getVersion());
-		logService.info("Git Build        : " + sdmmPluginsService.getBuild());
-		logService.info("Loading File     : " + file.getAbsolutePath());
-		logService.info("Archive Name     : " + name);
+		String log = builder.buildTitleBlock("Opening MoleculeArchive");
+		builder.addParameter("Loading File", file.getAbsolutePath());
+		builder.addParameter("Archive Name", name);
+		
+		log += builder.buildParameterList();
+		
+		logService.info(log);
 		
 		try {
 			MoleculeArchive archive = new MoleculeArchive(name,file,moleculeArchiveService,virtual);
-			
-			archive.addLogMessage(log, false);
-			
-			archive.addLogMessage("Molecules Loaded : " + archive.getNumberOfMolecules());
-			
 	        moleculeArchiveService.addArchive(archive);
-	        archive.addLogMessage("Added to MoleculeArchiveService");
-	        
-	        archive.addLogMessage("********************************* Success *********************************");
-	        archive.addLogMessage(" ");
-	        
 	        moleculeArchiveService.show(name, archive);
-	        
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");
-			logService.error("********************************* Failure *********************************");
+			logService.error(builder.endBlock(false));
 		} catch (IOException e) {
 			e.printStackTrace();
 			logService.error("IOException - does the yama file exist?");
-			logService.error("********************************* Failure *********************************");
+			logService.error(builder.endBlock(false));
 		}
+		logService.info(builder.endBlock(true));
 	}
 }

@@ -3,6 +3,7 @@ package de.mpg.biochem.sdmm.molecule;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -100,6 +101,8 @@ public class MoleculeArchiveWindow {
 	private JMenuItem multiCurveMenuItem = new JMenuItem("Multiple Curves");
 	private JMenuItem multiPlotMenuItem = new JMenuItem("Multiple Plots");
 	
+	private JMenuItem deleteMenuItem = new JMenuItem("Delete Molecules");
+	
 	//static so that window locations are offset...
 	static int pos_x = 100;
 	static int pos_y = 130;
@@ -126,7 +129,6 @@ public class MoleculeArchiveWindow {
 	}
 	
 	private void createFrame(String title) {
-		
 		propertiesTab = archiveProperties();
 		tabbedPane.addTab("Properties", propertiesTab);
 		
@@ -172,16 +174,16 @@ public class MoleculeArchiveWindow {
 	       });
 		
 		
-		JMenu toolsMenu = new JMenu("Tools");
-		mb.add(toolsMenu);
-		toolsMenu.add(addMetaDataMenuItem);
+		JMenu plotMenu = new JMenu("Plot");
+		mb.add(plotMenu);
+		//toolsMenu.add(addMetaDataMenuItem);
 		addMetaDataMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 //File imageFolder = uiService.chooseFile(archive.getFile(), FileWidget.DIRECTORY_STYLE);
 	 			 //archive.addImageMetaData(new ImageMetaData(imageFolder, moleculeArchiveService, "Odin"));
 	          }
 	       });
-		toolsMenu.add(singleCurveMenuItem);
+		plotMenu.add(singleCurveMenuItem);
 		singleCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1);
@@ -195,16 +197,16 @@ public class MoleculeArchiveWindow {
 	        	PlotProperties curve1 = new PlotProperties("Curve", dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor(), false);
 	        	props.add(curve1);
 	        	 
-	        	moleculePanel.addPlot(props);
+	        	moleculePanel.addCurvePlot(props);
 	        	 
 	          }
 	       });
 		
-		toolsMenu.add(multiCurveMenuItem);
+		plotMenu.add(multiCurveMenuItem);
 		multiCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 //First we ask how many curves will be added
-	        	 GenericDialog Numdialog = new GenericDialog("Multicurve Plot");
+	        	//First we ask how many curves will be added
+	        	 GenericDialog Numdialog = new GenericDialog("MultiPlot");
 	     		 Numdialog.addNumericField("Number_of_curves", 2, 0);
 	     		 Numdialog.showDialog();
 	     		
@@ -224,14 +226,47 @@ public class MoleculeArchiveWindow {
 	        		 String yName = dialog.getNextYColumnName();
 	        		 props.add(new PlotProperties(yName + " " + dialog.getXColumnName(), dialog.getXColumnName(), yName, dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor(), false));
 	        	 }
-	        	 moleculePanel.addPlot(props);
+	        	 moleculePanel.addCurvePlot(props);
 	          }
 	       });
 		
-		toolsMenu.add(multiPlotMenuItem);
+		plotMenu.add(multiPlotMenuItem);
 		multiPlotMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 //plotPanel =
+        	 //First we ask how many plots will be added
+	        	GenericDialog dialog = new GenericDialog("Multiple Plots");
+	        	String[] columnNames = archive.get(0).getDataTable().getColumnHeadings();
+	     		dialog.addChoice("x_column", columnNames, "Time (s)");
+	     		dialog.addNumericField("Number_of_plots", 2, 0);
+	     		dialog.showDialog();
+	     		
+	     		if (dialog.wasCanceled())
+	     			return;
+	     		
+	     		 String xColumnName = dialog.getNextChoice();
+	     		 int plotNum = (int)dialog.getNextNumber(); 
+		     		 
+		         moleculePanel.addMulitplePlots(plotNum, xColumnName);
+	          }
+	       });
+		
+		JMenu toolsMenu = new JMenu("Tools");
+		mb.add(toolsMenu);
+		
+		toolsMenu.add(deleteMenuItem);
+		deleteMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	GenericDialog dialog = new GenericDialog("Delete Molecules");
+	     		dialog.addStringField("Tag", "delete me", 30);
+	     		dialog.showDialog();
+	     		
+	     		if (dialog.wasCanceled())
+	     			return;
+	     		
+	     		 String tagToDelete = dialog.getNextString();
+	     		 archive.deleteMoleculesWithTag(tagToDelete);
+		     		 
+	     		 moleculePanel.updateAll();
 	          }
 	       });
 
@@ -389,7 +424,7 @@ public class MoleculeArchiveWindow {
 		frame.setVisible(false);
 		frame.dispose();
 		
-		moleculeArchiveService.removeArchive(frame.getTitle());
+		moleculeArchiveService.removeArchive(archive);
 	}
 	
 	public void setArchiveService(MoleculeArchiveService moleculeArchiveService) {

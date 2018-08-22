@@ -11,12 +11,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -24,6 +27,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 public class Molecule {
+	//Precision in number of decimal places for output arrays
+	final static int DECIMAL_PLACE_PRECISION = 7;
+	
 	//Unique ID used for Chronicle map storage and universal identification.
 	String UID;
 	
@@ -46,14 +52,20 @@ public class Molecule {
 	SDMMResultsTable datatable;
 	
 	//Segments tables resulting from change point fitting
-	//String[] has two elements (y and x) in that order describing which columns were used for KCP analysis.
-	LinkedHashMap<String[], SDMMResultsTable> segments;
+	//String is XColumn + YColumn
+	LinkedHashMap<String, SDMMResultsTable> segments;
+	
+	//This is a bit ugly, but we want to keep track of
+	//both columns used for the changepoint plot
+	//However, if you use a String[] array as a key 
+	//it uses object ref and keys never match... so we just keep track here 
+	//and add them tomorrow above. There are other ways but I think ultimately
+	//this will be the most robust...
+	LinkedHashMap<String,String[]> segmentsColumns;
 	
 	public Molecule(JsonParser jParser) {
 		datatable = new SDMMResultsTable();
-		segments = new LinkedHashMap<>();
-		parameters = new LinkedHashMap<>();
-		tags = new LinkedHashSet<String>();
+		initializeVariables();
 		try {
 			fromJSON(jParser);
 		} catch (IOException e) {
@@ -68,9 +80,7 @@ public class Molecule {
 	public Molecule(JsonParser jParser, LogService logService) {
 		this.logService = logService;
 		datatable = new SDMMResultsTable();
-		segments = new LinkedHashMap<>();
-		parameters = new LinkedHashMap<>();
-		tags = new LinkedHashSet<String>();
+		initializeVariables();
 		try {
 			fromJSON(jParser);
 		} catch (IOException e) {
@@ -83,15 +93,18 @@ public class Molecule {
 	public Molecule(String UID) {
 		this.UID = UID;
 		datatable = new SDMMResultsTable();
-		segments = new LinkedHashMap<>();
-		parameters = new LinkedHashMap<>();
-		tags = new LinkedHashSet<String>();
+		initializeVariables();
 	}
 
 	public Molecule(String UID, SDMMResultsTable results) {
 		this.UID = UID;
 		datatable = results;
+		initializeVariables();
+	}
+	
+	private void initializeVariables() {
 		segments = new LinkedHashMap<>();
+		segmentsColumns = new LinkedHashMap<>();
 		parameters = new LinkedHashMap<>();
 		tags = new LinkedHashSet<String>();
 	}
@@ -133,7 +146,7 @@ public class Molecule {
 			jGenerator.writeObjectFieldStart("DataTable");
 			for (int i=0;i<datatable.getColumnCount();i++) {
 				jGenerator.writeFieldName(datatable.getColumnHeader(i));
-		 		jGenerator.writeArray(datatable.get(i).getArray(), 0, datatable.getRowCount());
+		 		jGenerator.writeArray(roundArray(datatable.get(i).getArray()), 0, datatable.getRowCount());
 			}
 			jGenerator.writeEndObject();
 		}
@@ -141,14 +154,15 @@ public class Molecule {
 		//Write out segment tables generated from KCP as object that have two fields that store the x column and y column names used during KCP
 		if (segments.size() > 0) {
 			jGenerator.writeArrayFieldStart("SegmentTables");
-			for (String[] YX:segments.keySet()) {
+			for (String tableName:segments.keySet()) {
 				jGenerator.writeStartObject();
+				String[] YX = segmentsColumns.get(tableName);
 				jGenerator.writeStringField("yColumnName", YX[0]);
 				jGenerator.writeStringField("xColumnName", YX[1]);
-				if (segments.get(YX).size() > 0) {
-					for (int i=0;i<segments.get(YX).getColumnCount();i++) {
-						jGenerator.writeFieldName(segments.get(YX).getColumnHeader(i));
-				 		jGenerator.writeArray(segments.get(YX).get(i).getArray(), 0, segments.get(YX).getRowCount());
+				if (segments.get(tableName).size() > 0) {
+					for (int i=0;i<segments.get(tableName).getColumnCount();i++) {
+						jGenerator.writeFieldName(segments.get(tableName).getColumnHeader(i));
+				 		jGenerator.writeArray(roundArray(segments.get(tableName).get(i).getArray()), 0, segments.get(tableName).getRowCount());
 					}
 				}
 				jGenerator.writeEndObject();
@@ -250,11 +264,24 @@ public class Molecule {
 			    		jParser.nextToken();
 			    		
 			    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    			column.add(jParser.getDoubleValue());
+			    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
+			    				String str = jParser.getValueAsString();
+			    				if (Objects.equals(str, new String("Infinity"))) {
+			    					column.add(Double.POSITIVE_INFINITY);
+			    				} else if (Objects.equals(str, new String("-Infinity"))) {
+			    					column.add(Double.NEGATIVE_INFINITY);
+			    				} else if (Objects.equals(str, new String("NaN"))) {
+			    					column.add(Double.NaN);
+			    				}
+			    			} else {
+			    				column.add(jParser.getDoubleValue());
+			    			}
 			    		}
 			    		segmenttable.add(column);
 			    	}
-			    	segments.put(columnNames, segmenttable);
+			    	String str = columnNames[0] + " " + columnNames[1];
+			    	segmentsColumns.put(str, columnNames);
+			    	segments.put(str, segmenttable);
 		    	}
 		    }
 		}
@@ -313,6 +340,14 @@ public class Molecule {
 		return parameters.get(parameter);
 	}
 	
+	public boolean hasParameter(String parameter) {
+		return parameters.containsKey(parameter);
+	}
+	
+	public boolean hasTag(String tag) {
+		return tags.contains(tag);
+	}
+	
 	public LinkedHashMap<String, Double> getParameters() {
 		return parameters;
 	}
@@ -329,17 +364,38 @@ public class Molecule {
 	}
 	
 	public void setSegmentsTable(String[] columnNames, SDMMResultsTable segs) {
-		segments.put(columnNames, segs);
+		String str = columnNames[0] + " " + columnNames[1];
+		segmentsColumns.put(str, columnNames);
+		segments.put(str, segs);
+		
+		logService.info(UID + " segmentsColumns size " + segmentsColumns.size());
+		for (String key: segmentsColumns.keySet()) 
+			logService.info(UID + " " + key + " " + segmentsColumns.get(key)[0] + " " + segmentsColumns.get(key)[1]);
+		
+		logService.info(UID + " segments size " + segments.size());
+		for (String key: segments.keySet())
+			logService.info(UID + " " + key);
 	}
 	
-	public void removeSegmentsTable(String xColumnName, String yColumnName) {
+	public String[] getSegmentTableColumns(String key) {
+		return segmentsColumns.get(key);
+	}
+	
+	public SDMMResultsTable getSegmentsTable(String key) {
+		return segments.get(key);
+	}
+	
+	public void removeSegmentsTable(String yColumnName, String xColumnName) {
 		String[] columnNames = new String[2];
-		columnNames[0] = xColumnName;
-		columnNames[1] = yColumnName;
+		columnNames[0] = yColumnName;
+		columnNames[1] = xColumnName;
+		removeSegmentsTable(columnNames);
 	}
 	
 	public void removeSegmentsTable(String[] columnNames) {
-		segments.remove(columnNames);
+		String str = columnNames[0] + " " + columnNames[1];
+		segmentsColumns.remove(str);
+		segments.remove(str);
 	}
 	
 	public SDMMResultsTable getSegmentsTable(String yColumnName, String xColumnName) {
@@ -349,12 +405,13 @@ public class Molecule {
 		return getSegmentsTable(columnNames);
 	}
 	
-	public LinkedHashMap<String[], SDMMResultsTable> getSegmentTables() {
+	public LinkedHashMap<String, SDMMResultsTable> getSegmentTables() {
 		return segments;
 	}
 	
 	public SDMMResultsTable getSegmentsTable(String[] columnNames) {
-		return segments.get(columnNames);
+		String str = columnNames[0] + " " + columnNames[1];
+		return segments.get(str);
 	}
 	
 	public SDMMResultsTable getDataTable() {
@@ -371,5 +428,13 @@ public class Molecule {
 	
 	public void setParentArchive(MoleculeArchive archive) {
 		parent = archive;
+	}
+	
+	public double[] roundArray(double[] input) {
+		double[] output = new double[input.length];
+		for (int i=0;i<input.length;i++) {
+			output[i] = DoubleRounder.round(input[i], DECIMAL_PLACE_PRECISION);
+		}
+		return output;
 	}
 }

@@ -65,14 +65,22 @@ public class PeakFinder<T extends RealType<T>> {
 	}
 	
 	public ArrayList<Peak> findPeaks(ImagePlus ip) {
+		return findPeaks(ip, -1);
+	}
+	
+	public ArrayList<Peak> findPeaks(ImagePlus ip, int slice) {
 		Roi roi = ip.getRoi();
 		if (roi == null) {
 			roi = new Roi(new Rectangle(0, 0, ip.getWidth() - 1, ip.getHeight() - 1));
 		}
-		return findPeaks(ip, roi);
+		return findPeaks(ip, roi, slice);
 	}
 	
 	public ArrayList<Peak> findPeaks(ImagePlus ip, Roi region) {
+		return findPeaks(ip, region, -1);
+	}
+	
+	public ArrayList<Peak> findPeaks(ImagePlus ip, Roi region, int slice) {
 		
 		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>();
 		
@@ -93,8 +101,8 @@ public class PeakFinder<T extends RealType<T>> {
 		min[0] = roi.x;
 		min[1] = roi.y;
 		long[] max = new long[2];
-		max[0] = roi.x + roi.width;
-		max[1] = roi.y + roi.height;
+		max[0] = roi.x + roi.width - 1;
+		max[1] = roi.y + roi.height - 1;
 		
 		final Iterable< T > roi_region = Views.interval( image, min, max );
 		
@@ -136,7 +144,7 @@ public class PeakFinder<T extends RealType<T>> {
 			 double pixel = roiCursor.next().getRealDouble();
 			
 			 if ( pixel > t ) {
-				 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel));
+				 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
 	         }
 		}
 		

@@ -14,13 +14,13 @@
 
 	<groupId>de.mpg.biochem.sdmm</groupId>
 	<artifactId>SDMM_Plugins</artifactId>
-	<version>2.0.0-SNAPSHOT</version>
+	<version>2.0.0-SNAPSHOT-beta1</version>
 
-	<name>SDMMPlugins</name>
+	<name>SDMM_Plugins</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
-		<name>My Company</name>
+		<name>Max Planck Institute of Biochemistry</name>
 		<url>http://biochem.mpg.de/duderstadt/</url>
 	</organization>
 	<licenses>
@@ -33,9 +33,9 @@
 	<developers>
 		<!-- See https://imagej.net/Team -->
 		<developer>
-			<id>ctrueden</id>
-			<name>Curtis Rueden</name>
-			<url>http://imagej.net/User:Rueden</url>
+			<id>karlduderstadt</id>
+			<name>Karl Duderstadt</name>
+			<url>http://biochem.mpg.de/duderstadt/</url>
 			<roles>
 				<role>founder</role>
 				<role>lead</role>
@@ -47,22 +47,6 @@
 			</roles>
 		</developer>
 	</developers>
-	<contributors>
-		<contributor>
-			<name>Yili Zhao</name>
-			<url>http://imagej.net/User:Panovr</url>
-			<roles><role>founder</role></roles>
-			<properties><id>panovr</id></properties>
-		</contributor>
-	</contributors>
-	
-	
-	<mailingLists>
-		<mailingList>
-			<name>ImageJ Forum</name>
-			<archive>http://forum.imagej.net/</archive>
-		</mailingList>
-	</mailingLists>
 
 	<scm>
 		<connection>scm:git:git://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2</connection>
@@ -71,7 +55,7 @@
 		<url>git@laue.biochem.mpg.de:SDMM/SDMM_Plugins_v2.git</url>
 	</scm>
 	<issueManagement>
-		<system>GItLab Issues</system>
+		<system>GitLab Issues</system>
 		<url>http://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2/issues</url>
 	</issueManagement>
 	<ciManagement>
@@ -79,10 +63,9 @@
 	</ciManagement>
 
 	<properties>
-		<package-name>com.mycompany.imagej</package-name>
-		<main-class>com.mycompany.imagej.GaussFiltering</main-class>
+		<package-name>de.mpg.biochem.sdmm</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
-		<license.copyrightOwners>My Company, Inc.</license.copyrightOwners>
+		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 	</properties>
 	
 	<repositories>
@@ -168,6 +151,16 @@
 			<artifactId>base58-codec</artifactId>
 			<version>1.2.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.decimal4j</groupId>
+			<artifactId>decimal4j</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-ui-swing</artifactId>
+			<version>0.10.0</version>
+		</dependency>
 	</dependencies>
-	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data conforming to the ImageJ2 API.</description>
+	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data for the Structure and Dynamics of Molecular Machines research group. Conforms to the ImageJ2 API.</description>
 </project>

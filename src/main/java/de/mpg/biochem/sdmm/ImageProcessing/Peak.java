@@ -12,6 +12,11 @@ public class Peak implements RealLocalizable {
 	//Used during peak linking to assign UID molecule numbers
 	String UID;
 	
+	int slice;
+	
+	//Used for multithreded Peak linking..
+	Peak forwardLink, backwardLink;
+	
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue;
@@ -41,7 +46,12 @@ public class Peak implements RealLocalizable {
 		this.y = y;
 		this.pixelValue = pixelValue;
 	}
-	
+	Peak(double x, double y, double pixelValue, int slice) {
+		this.x = x;
+		this.y = y;
+		this.pixelValue = pixelValue;
+		this.slice = slice;
+	}
 	Peak(Peak peak) {
 		this.x = peak.x;
 		this.y = peak.y;
@@ -55,6 +65,7 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = peak.sigmaError;
 		this.pixelValue = peak.pixelValue;
 		this.UID = peak.UID;
+		this.slice = peak.slice;
 	}
 	
 	//Getters
@@ -81,6 +92,12 @@ public class Peak implements RealLocalizable {
 	}
 	public String getUID() {
 		return UID;
+	}
+	public int getSlice() {
+		return slice;
+	}
+	public void setSlice(int slice) {
+		this.slice = slice;
 	}
 	
 	//Setters
@@ -111,6 +128,27 @@ public class Peak implements RealLocalizable {
 	public void setUID(String UID) {
 		this.UID = UID;
 	}
+	
+	//Sets the reference to the next peak in the trajectory
+	public void setForwardLink(Peak link) {
+		this.forwardLink = link;
+	}
+	
+	//Gets the reference to the next peak in the trajectory
+	public Peak getForwardLink() {
+		return forwardLink;
+	}
+	
+	//Sets the reference to the previous peak in the trajectory
+	public void setBackwardLink(Peak link) {
+		this.backwardLink = link;
+	}
+	
+	//Gets the reference to the previous peak in the trajectory
+	public Peak getBackwardLink() {
+		return backwardLink;
+	}
+	
 	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
 	@Override
 	public int numDimensions() {

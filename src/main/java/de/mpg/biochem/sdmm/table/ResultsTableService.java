@@ -17,6 +17,7 @@ import java.util.Random;
 import org.scijava.command.Command;
 import org.scijava.event.EventHandler;
 import org.scijava.log.LogService;
+//import org.scijava.object.ObjectService;
 import org.scijava.object.event.ObjectCreatedEvent;
 import org.scijava.service.*;
 import org.scijava.plugin.Parameter;
@@ -29,6 +30,7 @@ import net.imagej.ImageJService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.PluginInfo;
+import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 
 @Plugin(type = Service.class)
@@ -39,27 +41,41 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
     
     @Parameter
     private LogService logService;
+    
+    @Parameter
+    private ScriptService scriptService;
 	
+    //@Parameter
+    //private ObjectService objectService;
+    
 	private Map<String, SDMMResultsTable> tables;
 	
 	@Override
 	public void initialize() {
 		// This Service method is called when the service is first created.
 		tables = new LinkedHashMap<>();
+		
+		scriptService.addAlias(SDMMResultsTable.class);
 	}
 	
 	public void addTable(SDMMResultsTable table) {
 		tables.put(table.getName(), table);
+		//objectService.addObject(table);
+		
 	}
 	
 	public void removeResultsTable(String name) {
-		if (tables.containsKey(name))
-			tables.remove(name);			
+		if (tables.containsKey(name)) {
+			//objectService.removeObject(tables.get(name));
+			tables.remove(name);		
+		}
 	}
 	
 	public void removeResultsTable(SDMMResultsTable table) {
-		if (tables.containsKey(table.getName()))
+		if (tables.containsKey(table.getName())) {
+			//objectService.removeObject(table);
 			tables.remove(table.getName());
+		}
 	}
 	
 	public void rename(String oldName, String newName) {

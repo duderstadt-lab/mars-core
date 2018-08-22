@@ -59,6 +59,8 @@ import javax.swing.JRadioButtonMenuItem;
 //import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import de.mpg.biochem.sdmm.molecule.Molecule;
+import de.mpg.biochem.sdmm.molecule.MoleculeChangedListener;
 import ij.gui.GenericDialog;
 import ij.IJ;
 import ij.Prefs;
@@ -86,10 +88,9 @@ public class Plot extends JComponent implements ActionListener {
 	
 	private AffineTransform transform;
 	
-	private static ResultsTable pointsTable = new ResultsTable();
-	
 	//will allow for entry of starting and stopping times in the points table.
 	private static int pointsStart = 0;
+	private Molecule molecule;
 	
 	//Added KED for getting points with p button:
 	Point2D.Double selectedCoordinate;
@@ -203,34 +204,30 @@ public class Plot extends JComponent implements ActionListener {
 	        		   if (sigmaStartStop) {
 		        		   switch (pointsStart) {
 			        		   case 0:
-			        			   pointsTable.incrementCounter();
-			        			   pointsTable.addValue("molecule", group_number);
-			        			   pointsTable.addValue("bg_start", selectedCoordinate.getX());
+			        			   molecule.setParameter("bg_start", selectedCoordinate.getX());
 			        			   pointsStart = 1;
 			        			   break;
 			        		   case 1:
-			        			   pointsTable.addValue("bg_end", selectedCoordinate.getX());
+			        			   molecule.setParameter("bg_end", selectedCoordinate.getX());
 			        			   pointsStart = 2;
 			        			   break;
 			        		   case 2:
-			        			   pointsTable.addValue("start", selectedCoordinate.getX());
+			        			   molecule.setParameter("start", selectedCoordinate.getX());
 			        			   pointsStart = 3;
 			        			   break;
 			        		   case 3:
-			        			   pointsTable.addValue("end", selectedCoordinate.getX());
+			        			   molecule.setParameter("end", selectedCoordinate.getX());
 			        			   pointsStart = 0;
 			        			   break;
 		        		   }
 	        		   } else {
 	        			   switch (pointsStart) {
 		        		   case 0:
-		        			   pointsTable.incrementCounter();
-		        			   pointsTable.addValue("molecule", group_number);
-		        			   pointsTable.addValue("start", selectedCoordinate.getX());
+		        			   molecule.setParameter("start", selectedCoordinate.getX());
 		        			   pointsStart = 1;
 		        			   break;
 		        		   case 1:
-		        			   pointsTable.addValue("end", selectedCoordinate.getX());
+		        			   molecule.setParameter("end", selectedCoordinate.getX());
 		        			   pointsStart = 0;
 		        			   break;
 		        		   case 2:
@@ -241,6 +238,7 @@ public class Plot extends JComponent implements ActionListener {
 		        			   break;
 	        			   }
 	        		   }
+	        		   notifyMoleculeChangedListeners();
 	        	   }
 	           }
 	       });
@@ -1242,6 +1240,7 @@ public class Plot extends JComponent implements ActionListener {
 	}
 	
 	private ArrayList<BoundsChangedListener> listeners =  new ArrayList<BoundsChangedListener>();
+	private ArrayList<MoleculeChangedListener> molListeners = new ArrayList<MoleculeChangedListener>();
 	
 	public void addBoundsChangedListener(BoundsChangedListener listener) {
 		listeners.add(listener);
@@ -1252,8 +1251,25 @@ public class Plot extends JComponent implements ActionListener {
 			listener.boundsChanged(bounds, leftMargin);
 	}
 	
+	public void addMoleculeChangedListener(MoleculeChangedListener listener) {
+		molListeners.add(listener);
+	}
+	
+	public void notifyMoleculeChangedListeners() {
+		for (MoleculeChangedListener listener: molListeners)
+			listener.MoleculeChanged(molecule);
+	}
+	
 	public void setPlotTitle(String plotTitle) {
 		this.plotTitle = plotTitle;
+	}
+	
+	public void setMolecule(Molecule molecule) {
+		this.molecule = molecule;
+	}
+	
+	public Molecule getMolecule() {
+		return molecule;
 	}
 	
 	/**

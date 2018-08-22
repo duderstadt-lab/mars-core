@@ -9,7 +9,7 @@ import ij.process.ImageProcessor;
 import ij.gui.PointRoi;
 
 import org.scijava.module.MutableModuleItem;
-
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -27,6 +27,7 @@ import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
@@ -293,6 +294,14 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			maxError[3] = PeakFitter_maxErrorY;
 			maxError[4] = PeakFitter_maxErrorSigma;
 			
+			//Build log
+			LogBuilder builder = new LogBuilder();
+			
+			String log = builder.buildTitleBlock("Peak Tracker");
+			
+			addInputParameterLog(builder);
+			log += builder.buildParameterList();
+			
 			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
 			
 			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
@@ -301,6 +310,12 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
 			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			
+			//Output first part of log message...
+			logService.info(log);
+			
+			double starttime = System.currentTimeMillis();
+			logService.info("Finding and Fitting Peaks...");
 		    try {
 		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
 		    	//Waiting call back to update the progress bar!!
@@ -321,8 +336,13 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the slice number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> PeakStack.put(i, findPeaksInSlice(i)))).get();
-		        
+		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> { 
+		        	ArrayList<Peak> peaks = findPeaksInSlice(i);
+		        	//Don't add to stack unless peaks were detected.
+		        	if (peaks.size() > 0)
+		        		PeakStack.put(i, peaks);
+		        })).get();
+
 		        progressUpdating.set(false);
 		        
 		        statusService.showProgress(100, 100);
@@ -330,9 +350,17 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		        
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
+				logService.info(builder.endBlock(true));
 		    } finally {
 		        forkJoinPool.shutdown();
 		    }
+		    
+		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+		    
+		    //for (int i=1;i<=PeakStack.size();i++) {
+		    //	logService.info("found " + PeakStack.get(i).size() + "peaks in slice " + i);
+		    //	logService.info("peak 0 x " + PeakStack.get(i).get(0).getX() + " y " + PeakStack.get(i).get(0).getY());
+		    //}
 		    
 		    //Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
@@ -348,7 +376,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, PeakTracker_minTrajectoryLength);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, PeakTracker_minTrajectoryLength, logService);
 		    
 		    archive = new MoleculeArchive("Molecule Archive", moleculeArchiveService);
 			
@@ -356,11 +384,22 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			archive.addImageMetaData(metaData);
 		    
 		    tracker.track(PeakStack, archive);
-			
+		    
 		    //Make sure the output archive has the correct name
 			getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
 		    
 			image.setRoi(startingRoi);
+			
+			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+			
+			log += builder.endBlock(true);
+			archive.addLogMessage(log);
+			
+			if (archive.getNumberOfMolecules() == 0) {
+				logService.info("No molecules found. Maybe there is a problem with your settings");
+				archive = null;
+			}
+			logService.info(builder.endBlock(true));
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
@@ -374,18 +413,18 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, processor));
+			ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, processor), slice);
 			fitPeaks(processor, peaks);
 			return peaks;
 		}
 		
-		public ArrayList<Peak> findPeaks(ImagePlus imp) {
+		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
 			ArrayList<Peak> peaks;
 			
 			if (useROI) {
-		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, w, h));
+		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, w, h), slice);
 			} else {
-				peaks = finder.findPeaks(imp);
+				peaks = finder.findPeaks(imp, slice);
 			}
 			
 			if (peaks == null)
@@ -427,5 +466,44 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 				peak.setValues(p);
 				peak.setErrorValues(e);
 			}
+		}
+		
+		private void addInputParameterLog(LogBuilder builder) {
+			builder.addParameter("Image Title", image.getTitle());
+			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+			builder.addParameter("useROI", String.valueOf(useROI));
+			builder.addParameter("ROI x0", String.valueOf(x0));
+			builder.addParameter("ROI y0", String.valueOf(y0));
+			builder.addParameter("ROI w", String.valueOf(w));
+			builder.addParameter("ROI h", String.valueOf(h));
+			builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
+			builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
+			builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
+			builder.addParameter("Threshold", String.valueOf(threshold));
+			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
+			builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
+			builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));
+			builder.addParameter("Initial Sigma", String.valueOf(PeakFitter_initialSigma));
+			builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
+			builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
+			builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
+			builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
+			builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
+			builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
+			builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
+			builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
+			builder.addParameter("Check Max Difference Baseline", String.valueOf(PeakTracker_ckMaxDifferenceBaseline));
+			builder.addParameter("Max Difference Baseline", String.valueOf(PeakTracker_maxDifferenceBaseline));
+			builder.addParameter("Check Max Difference Height", String.valueOf(PeakTracker_ckMaxDifferenceHeight));
+			builder.addParameter("Max Difference Height", String.valueOf(PeakTracker_maxDifferenceHeight));
+			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
+			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
+			builder.addParameter("Check Max Difference Sigma", String.valueOf(PeakTracker_ckMaxDifferenceSigma));
+			builder.addParameter("Max Difference Sigma", String.valueOf(PeakTracker_maxDifferenceSigma));
+			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));
+			builder.addParameter("Min trajectory length", String.valueOf(PeakTracker_minTrajectoryLength));
+			builder.addParameter("Microscope", microscope);
+			builder.addParameter("Format", imageFormat);
 		}
 }

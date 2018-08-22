@@ -19,6 +19,7 @@ import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -56,7 +57,7 @@ import net.openhft.chronicle.map.*;
 import net.imagej.table.*;
 
 public class MoleculeArchive {
-	String name;
+	private String name;
 	
 	//Services that the archive will need access to but that are not initialized..
 	private MoleculeArchiveWindow win;
@@ -80,7 +81,7 @@ public class MoleculeArchive {
 	
 	//This is a list of molecule keys that will define the index and be used for retrieval from the ChronicleMap in virtual memory
 	//or retrieval from the molecules array in memory
-	//This array defines the absolute set of molecules considered to be in the archive for purposes of saving reading etc...
+	//This array defines the absolute set of molecules considered to be in the archive for purposes of saving and reading etc...
 	private ArrayList<String> moleculeIndex;
 	//This is a map index of tags for searching in molecule tables etc..
 	private ConcurrentMap<String, String> tagIndex;
@@ -89,10 +90,10 @@ public class MoleculeArchive {
 	//Otherwise if working in virtual memory it is left null..
 	private ConcurrentMap<String, Molecule> molecules;
 	
-	File persistedFile;
+	private File persistedFile;
 	
 	//By default we work virtual
-	boolean virtual = true;
+	private boolean virtual = true;
 	
 	//Constructor for creating an empty molecule archive...	
 	public MoleculeArchive(String name, MoleculeArchiveService moleculeArchiveService) {
@@ -152,6 +153,7 @@ public class MoleculeArchive {
 	
 	private void initializeVariables() {
 		moleculeIndex = new ArrayList<>();  
+		
 		tagIndex = new ConcurrentHashMap<>();
 		
 		imageMetaDataIndex = new ArrayList<>();
@@ -226,7 +228,7 @@ public class MoleculeArchive {
 		inputStream.close();
 		
 		//Once we are done reading we should update molecule archive properties
-		//updateMoleculeArchiveProperties();		
+		updateArchiveProperties();		
 	}
 	
 	private void buildFromTable(SDMMResultsTable results) {
@@ -372,10 +374,14 @@ public class MoleculeArchive {
 		}
 	}
 	
+	//Method for adding molecules to the archive
+	//A key assumption here is that we never try to add two molecules that have the same key
+	//So the idea is that we would only ever call this method once for a molecule with a given UID.
 	public void add(Molecule molecule) {
 		//We should increment the numberOfMolecules and set the correct index for molecule
 		if (moleculeIndex.contains(molecule.getUID())) {
-			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".", true);
+			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".");
+			logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
 		} else {
 			moleculeIndex.add(molecule.getUID());
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
@@ -440,8 +446,18 @@ public class MoleculeArchive {
 		return get(moleculeIndex.get(index));
 	}
 	
+	public Collection<Molecule> getMolecules() {
+		if (virtual)
+			return archive.values();
+		else
+			return molecules.values();
+	}
+	
 	public String getTagList(String UID) {
-		return tagIndex.get(UID);
+		if (UID == null)
+			return null;
+		else
+			return tagIndex.get(UID);
 	}
 	
 	public void set(Molecule molecule) {
@@ -467,6 +483,33 @@ public class MoleculeArchive {
 		} else {
 			tagIndex.remove(molecule.getUID());
 		}
+	}
+	
+	public void deleteMoleculesWithTag(String tag) {
+		//We should do this with streams but for the moment this is faster
+		ArrayList<String> newMoleculeIndex = new ArrayList<String>();
+		
+		for (String UID : moleculeIndex) {
+			Molecule mol;
+			if (virtual) {
+				mol = archive.get(UID);
+			} else {
+				mol = molecules.get(UID);
+			}
+			
+			if (mol.hasTag(tag)) {
+				if (virtual) {
+					archive.remove(UID);
+				} else {
+					molecules.remove(UID);
+				}
+			} else {
+				newMoleculeIndex.add(mol.getUID());
+			}
+		}
+		
+		moleculeIndex = newMoleculeIndex;
+		archiveProperties.setNumberOfMolecules(moleculeIndex.size());	
 	}
 	
 	//Retrieve molecule based on UUID58 key
@@ -522,14 +565,7 @@ public class MoleculeArchive {
 	}
 	
 	public void addLogMessage(String message) {
-		addLogMessage(message, true);
-	}
-	
-	public void addLogMessage(String message, boolean global) {
 		archiveProperties.addLogMessage(message);
-		if (global) {
-			logService.info(message);
-		}
 	}
 	
 	public LogService getLogService() {
@@ -554,9 +590,9 @@ public class MoleculeArchive {
 	}
 	
 	//average size of molecules in the archive based on 20 samples..
-	//Computationally expensive and only done for binary (smile) format
+	//Computationally expensive
 	//Since this is only important for the construction of the chronicle map.
-	public double getByteSize(Molecule mol) {
+	private double getByteSize(Molecule mol) {
 		ByteArrayOutputStream sizeStream = new ByteArrayOutputStream();
 		//SmileGenerator jGenerator;
 		JsonGenerator jGenerator;
@@ -635,5 +671,10 @@ public class MoleculeArchive {
 		public MoleculeMarshaller readResolve() {
 		    return INSTANCE;
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return name;
 	}
 }

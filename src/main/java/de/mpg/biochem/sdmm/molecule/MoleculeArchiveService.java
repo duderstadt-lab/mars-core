@@ -10,13 +10,17 @@ import java.util.UUID;
 import com.chrylis.codec.base58.Base58Codec;
 import com.chrylis.codec.base58.Base58UUID;
 
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import io.scif.services.FormatService;
+
+//import org.scijava.object.ObjectService;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
@@ -39,28 +43,40 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private StatusService statusService;
     
+    @Parameter
+    private ScriptService scriptService;
+    
+    //@Parameter
+    //private ObjectService objectService;
+    
 	private Map<String, MoleculeArchive> archives;
 	
 	@Override
 	public void initialize() {
 		// This Service method is called when the service is first created.
 		archives = new LinkedHashMap<>();
+		
+		scriptService.addAlias(MoleculeArchive.class);
 	}
 	
 	public void addArchive(MoleculeArchive archive) {
 		archives.put(archive.getName(), archive);
+		//objectService.addObject(archive);
 	}
 	
 	public void removeArchive(String title) {
 		if (archives.containsKey(title)) {
+			//objectService.removeObject(archives.get(title));
 			archives.get(title).destroy();
 			archives.remove(title);		
 		}
 	}
 	
-	public void removeResultsTable(MoleculeArchive archive) {
-		if (archives.containsKey(archive.getName()))
+	public void removeArchive(MoleculeArchive archive) {
+		if (archives.containsKey(archive.getName())) {
+			//objectService.removeObject(archive);
 			archives.remove(archive.getName());
+		}
 	}
 	
 	public void rename(String oldName, String newName) {
@@ -81,6 +97,23 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 				archives.get(name).setWindow(win);
 			}
 		}
+	}
+	
+	public ArrayList<String> getColumnNames() {
+		ArrayList<String> columns = new ArrayList<String>();
+	
+		for (MoleculeArchive archive: archives.values()) {
+			//We assume all the molecules have the same columns
+			//I think this should be strickly enforced
+			SDMMResultsTable datatable = archive.get(0).getDataTable();
+			
+			for (int i=0;i<datatable.getColumnCount();i++) {
+				if(!columns.contains(datatable.getColumnHeader(i)))
+					columns.add(datatable.getColumnHeader(i));
+			}
+		}
+		
+		return columns;
 	}
 	
 	public ArrayList<String> getArchiveNames() {

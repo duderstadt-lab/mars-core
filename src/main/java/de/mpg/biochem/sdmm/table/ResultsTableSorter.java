@@ -21,10 +21,10 @@ public class ResultsTableSorter extends DynamicCommand implements Initializable 
 	
     @Parameter
     private UIService uiService;
-    
-    @Parameter(label="Table", choices = {"a", "b", "c"})
-	private String tableName;
 	
+    @Parameter(label="Table")
+    private SDMMResultsTable table;
+    
     @Parameter(label="Column", choices = {"a", "b", "c"})
 	private String column;
     
@@ -34,19 +34,13 @@ public class ResultsTableSorter extends DynamicCommand implements Initializable 
 	@Parameter(label="ascending")
 	private boolean ascending;
 	
-	private SDMMResultsTable table;
-	
 	// -- Initializable methods --
 
 	@Override
 	public void initialize() {
-        final MutableModuleItem<String> tableItems = getInfo().getMutableInput("tableName", String.class);
-		tableItems.setChoices(resultsTableService.getTableNames());
 		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
 		columnItems.setChoices(resultsTableService.getColumnNames());
-		
-		//headings2[0] = "no grouping"; Needs to be added...
 		
 		final MutableModuleItem<String> groupItems = getInfo().getMutableInput("group", String.class);
 		
@@ -59,15 +53,13 @@ public class ResultsTableSorter extends DynamicCommand implements Initializable 
 	
 	@Override
 	public void run() {
-		table = resultsTableService.getResultsTable(tableName);
-		
 		if (group.equals("no group")) {
 			sort(table, ascending, column);
 		} else {
 			sort(table, ascending, group, column);
 		}
 		
-		uiService.show(tableName, table);
+		uiService.show(table.getName(), table);
 	}
 	
 	public static void sort(SDMMResultsTable table, final boolean ascending, String... columns) {

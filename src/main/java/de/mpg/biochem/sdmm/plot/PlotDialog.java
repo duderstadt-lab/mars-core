@@ -21,10 +21,12 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	//Can be one for single curve mode and more for multicurve mode...
 	private String[] yColumns;
 	private Color[] color_choices;
+	private Color[] segment_color_choices;
 	
 	//Indexes for retrieving the values from the arrays above.
 	private int yColumn_index = 0;
 	private int color_choice_index = 0;
+	private int segment_color_choice_index = 0;
 	
 	private int type = 0;
 	
@@ -44,6 +46,7 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		String[] types = {"line plot", "scatter plot", "bar graph"};
 		yColumns = new String[curveNumber];
 		color_choices = new Color[curveNumber];
+		segment_color_choices = new Color[curveNumber];
 		
 		addChoice("x_column", columns, "slice");
 		
@@ -81,12 +84,12 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	}
 	
 	public Color getNextSegmentCurveColor() {
-        Color curveColor = color_choices[color_choice_index];
+        Color curveColor = segment_color_choices[segment_color_choice_index];
 		
-		if (color_choice_index == color_choices.length - 1) {
-			color_choice_index = 0;
+		if (segment_color_choice_index == segment_color_choices.length - 1) {
+			segment_color_choice_index = 0;
 		} else {
-			color_choice_index++;
+			segment_color_choice_index++;
 		}
 
 		return curveColor;

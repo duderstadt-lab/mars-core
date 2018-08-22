@@ -52,6 +52,7 @@ public class CurvePlot extends JPanel {
 		//plot.setPlotTitle(String.format("UID = %s", molecule.getUID()));
 		
 		plot.setPlotTitle(" ");
+		plot.setMolecule(molecule);
 		
 		for (PlotProperties props: plot_properties) {
 			drawCurve(props);
@@ -100,6 +101,10 @@ public class CurvePlot extends JPanel {
 	public void setMolecule(Molecule molecule) {
 		this.molecule = molecule;
 		showPlot();
+	}
+	
+	public Plot getPlot() {
+		return plot;
 	}
 }
 
