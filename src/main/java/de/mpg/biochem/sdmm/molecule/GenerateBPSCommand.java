@@ -43,8 +43,8 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	@Parameter
     private UIService uiService;
     
-    @Parameter(label="MoleculeArchive", choices = {"a", "b", "c"})
-	private String archiveName;
+    @Parameter(label="MoleculeArchive")
+    private MoleculeArchive archive;
     
     @Parameter(label="X Column", choices = {"a", "b", "c"})
 	private String Xcolumn;
@@ -54,9 +54,6 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	
 	@Parameter(label="um per pixel")
 	private double um_per_pixel = 1.56;
-	
-	//@Parameter(label="seconds per slice")
-	//private double seconds_per_slice = 0.5;
 	
 	@Parameter(label="global bps per um")
 	private double global_bps_per_um = 3000;
@@ -121,8 +118,6 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	
 	@Override
 	public void run() {		
-		MoleculeArchive archive = moleculeArchiveService.getArchive(archiveName);
-		
 		//Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
 		
@@ -136,6 +131,11 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		
 		//Output first part of log message...
 		logService.info(log);
+		
+		//Lock the window so it can't be changed while processing
+		if (!uiService.isHeadless())
+			archive.getWindow().lockArchive();
+		
 		archive.addLogMessage(log);
 		
 		if (conversionType.equals("Reversal")) {
@@ -212,10 +212,16 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(builder.endBlock(true));
 	    archive.addLogMessage(builder.endBlock(true));
+	    
+		//Unlock the window so it can be changed
+	    if (!uiService.isHeadless()) {
+	    	archive.getWindow().updateAll();
+			archive.getWindow().unlockArchive();
+		}	
 	}	
 	
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("MoleculeArchive", archiveName);
+		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("X Column", Xcolumn);
 		builder.addParameter("Y Column", Ycolumn);
 		builder.addParameter("um per pixel", String.valueOf(um_per_pixel));

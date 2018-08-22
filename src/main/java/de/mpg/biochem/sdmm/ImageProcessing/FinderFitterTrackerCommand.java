@@ -391,15 +391,15 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			image.setRoi(startingRoi);
 			
 			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-			
-			log += builder.endBlock(true);
-			archive.addLogMessage(log);
-			
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");
 				archive = null;
 			}
 			logService.info(builder.endBlock(true));
+
+			log += builder.endBlock(true);
+			archive.addLogMessage(log);
+			archive.addLogMessage("   ");			
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
