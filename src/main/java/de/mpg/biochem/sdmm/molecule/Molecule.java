@@ -210,7 +210,18 @@ public class Molecule {
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    		String subfieldname = jParser.getCurrentName();
 		    		jParser.nextToken();
-		    		parameters.put(subfieldname, jParser.getDoubleValue());
+		    		if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
+	    				String str = jParser.getValueAsString();
+	    				if (Objects.equals(str, new String("Infinity"))) {
+	    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("-Infinity"))) {
+	    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("NaN"))) {
+	    					parameters.put(subfieldname, Double.NaN);
+	    				}
+	    			} else {
+	    				parameters.put(subfieldname, jParser.getDoubleValue());
+	    			}
 		    	}
 		    }
 		    
