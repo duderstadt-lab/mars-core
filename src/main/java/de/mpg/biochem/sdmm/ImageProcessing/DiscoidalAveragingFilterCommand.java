@@ -9,6 +9,8 @@ import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -22,8 +24,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
-@Plugin(type = Command.class,
-menuPath = "Plugins>SDMM Plugins>Image Processing>Discoidal Averaging Filter")
+@Plugin(type = Command.class, label = "Discoidal Averaging Filter", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Image Processing", weight = 20,
+			mnemonic = 'm'),
+		@Menu(label = "Discoidal Averaging Filter", weight = 20, mnemonic = 'd')})
 public class DiscoidalAveragingFilterCommand<T extends RealType< T >> implements Command {
 	
 	@Parameter

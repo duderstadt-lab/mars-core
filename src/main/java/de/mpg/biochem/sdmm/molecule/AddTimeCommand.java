@@ -8,6 +8,8 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -18,7 +20,14 @@ import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Molecule Utils>Add Time")
+@Plugin(type = Command.class, label = "Add Time", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Molecule Utils", weight = 1,
+			mnemonic = 'm'),
+		@Menu(label = "Add Time", weight = 40, mnemonic = 'a')})
 public class AddTimeCommand extends DynamicCommand implements Command {
 	@Parameter
 	private LogService logService;

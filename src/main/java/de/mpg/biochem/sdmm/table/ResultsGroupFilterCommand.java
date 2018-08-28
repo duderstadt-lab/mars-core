@@ -2,15 +2,24 @@ package de.mpg.biochem.sdmm.table;
 
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
 import net.imagej.ops.Initializable;
-	
-@Plugin(type = Command.class, headless = true, menuPath = "Plugins>SDMM Plugins>Table Utils>Results Group Filter")
-public class ResultsGroupFilter extends DynamicCommand implements Initializable {
+
+@Plugin(type = Command.class, label = "Results Group Filter", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 't'),
+		@Menu(label = "Results Group Filter", weight = 40, mnemonic = 'g')})
+public class ResultsGroupFilterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter
     private ResultsTableService resultsTableService;
@@ -43,7 +52,7 @@ public class ResultsGroupFilter extends DynamicCommand implements Initializable 
 	@Override
 	public void run() {
 		// sort on group column
-		ResultsTableSorter.sort(table, true, group);
+		ResultsTableSorterCommand.sort(table, true, group);
 		
 		ResultsTableList rtl = new ResultsTableList(table);
 		

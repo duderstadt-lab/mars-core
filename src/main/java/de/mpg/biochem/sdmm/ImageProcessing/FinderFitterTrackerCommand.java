@@ -17,6 +17,8 @@ import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -70,8 +72,14 @@ import net.imglib2.img.ImagePlusAdapter;
 
 import de.mpg.biochem.sdmm.ImageProcessing.*;
 
-@Plugin(type = Command.class, headless = true,
-menuPath = "Plugins>SDMM Plugins>Image Processing>Peak Tracker")
+@Plugin(type = Command.class, label = "Peak Tracker", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Image Processing", weight = 20,
+			mnemonic = 'm'),
+		@Menu(label = "Peak Tracker", weight = 10, mnemonic = 'd')})
 public class FinderFitterTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED
 		@Parameter(required=false)
@@ -378,7 +386,15 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 		    tracker = new PeakTracker(maxDifference, ckMaxDifference, PeakTracker_minTrajectoryLength, logService);
 		    
-		    archive = new MoleculeArchive("Molecule Archive", moleculeArchiveService);
+		    //Let's make sure we create a unique archive name...
+		    String newName = "archive";
+		    int num = 1;
+		    while (moleculeArchiveService.getArchive(newName + ".yama") != null) {
+		    	newName = "archive" + num;
+		    	num++;
+		    }
+		    
+		    archive = new MoleculeArchive(newName + ".yama", moleculeArchiveService);
 			
 		    ImageMetaData metaData = new ImageMetaData(image, moleculeArchiveService, microscope, imageFormat, metaDataStack);
 			archive.addImageMetaData(metaData);

@@ -11,7 +11,9 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
@@ -28,7 +30,14 @@ import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Molecule Utils>Build archive from table")
+@Plugin(type = Command.class, label = "Build archive from table", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Molecule Utils", weight = 1,
+			mnemonic = 'm'),
+		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
 public class BuildArchiveFromTable extends DynamicCommand implements Initializable {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;

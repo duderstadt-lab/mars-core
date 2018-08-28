@@ -8,7 +8,9 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -20,7 +22,14 @@ import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Molecule Utils>Region Difference Calculator")
+@Plugin(type = Command.class, label = "Region Difference Calculator", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Molecule Utils", weight = 1,
+			mnemonic = 'm'),
+		@Menu(label = "Region Difference Calculator", weight = 20, mnemonic = 'o')})
 public class RegionDifferenceCalculatorCommand extends DynamicCommand implements Command, Initializable {
 	@Parameter
 	private LogService logService;

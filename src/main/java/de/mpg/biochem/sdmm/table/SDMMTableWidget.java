@@ -6,7 +6,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.widget.*;
@@ -15,7 +14,7 @@ import org.scijava.widget.WidgetModel;
 import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**
- * Swing implementation of multiple choice selector widget for SDMMResutlsTable selection.
+ * Swing implementation of multiple choice selector widget for SDMMResutlsTable.
  * 
  * @author Karl Duderstadt
  */
@@ -24,9 +23,6 @@ public class SDMMTableWidget extends SwingInputWidget<SDMMResultsTable> implemen
 
 	@Parameter
     private ResultsTableService resultsTableService;
-	
-	@Parameter
-	private LogService logService;	
 		
 	private JComboBox<Object> comboBox;
 
@@ -68,12 +64,10 @@ public class SDMMTableWidget extends SwingInputWidget<SDMMResultsTable> implemen
 		return super.supports(model) && model.isType(SDMMResultsTable.class) && resultsTableService.getTableNames().size() > 0;
 	}
 
-	// -- AbstractUIInputWidget methods ---
-
 	@Override
 	public void doRefresh() {
-	//	final String value = get().getValue().toString();
-	//	if (value.equals(comboBox.getSelectedItem())) return; // no change
-	//	comboBox.setSelectedItem(value);
+		//final String value = get().getValue().toString();
+		//if (value.equals(comboBox.getSelectedItem())) return; // no change
+		//comboBox.setSelectedItem(value);
 	}
 }

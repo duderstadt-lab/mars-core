@@ -33,11 +33,11 @@ public class MoleculeArchiveView extends AbstractDisplayViewer<MoleculeArchive> 
 			moleculeArchiveService.addArchive(archive);
 			
 			//We also create a new window since we assume it is a new MoleculeArchive...
-			new MoleculeArchiveWindow(archive.getName(), archive, moleculeArchiveService);
+			new MoleculeArchiveWindow(archive, moleculeArchiveService);
 		} else {
 			//We update the table if it is already open
 			//This is really ugly at the moment and in the future should be implemented through display
-			moleculeArchiveService.getArchive(archive.getName()).getWindow().update();
+			moleculeArchiveService.getArchive(archive.getName()).getWindow().updateAll();
 		}
 	}
 

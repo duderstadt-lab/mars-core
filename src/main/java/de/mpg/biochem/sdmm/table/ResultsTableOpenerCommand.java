@@ -10,16 +10,25 @@ import java.nio.file.Paths;
 
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 import org.scijava.log.*;
+import org.scijava.menu.MenuConstants;
 
 import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Table Utils>Open ResultsTable")
-public class ResultsTableOpener implements Command {
+@Plugin(type = Command.class, label = "Open ResultsTable", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 't'),
+		@Menu(label = "Open ResultsTable", weight = 1, mnemonic = 'o')})
+public class ResultsTableOpenerCommand implements Command {
 	
 	@Parameter
     private ResultsTableService resultsTableService;
@@ -48,7 +57,7 @@ public class ResultsTableOpener implements Command {
 		uiService.show(results.getName(), results);
 	}
 	
-	public ResultsTableOpener() {}
+	public ResultsTableOpenerCommand() {}
 	
 	public SDMMResultsTable open(String absolutePath) {
 		File file = new File(absolutePath);

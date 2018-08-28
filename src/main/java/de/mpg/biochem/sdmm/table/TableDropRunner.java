@@ -95,7 +95,7 @@ public class TableDropRunner implements DropTargetListener, Runnable {
          		}
          	}
          	if (open) { 	
-         		ResultsTableOpener opener = new ResultsTableOpener();
+         		ResultsTableOpenerCommand opener = new ResultsTableOpenerCommand();
          		opener.setStatusService(statusService);
          		opener.setTableService(resultsTableService);
          		opener.setUIService(uiService);

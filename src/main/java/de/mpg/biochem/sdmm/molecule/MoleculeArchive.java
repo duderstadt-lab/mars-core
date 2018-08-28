@@ -290,7 +290,10 @@ public class MoleculeArchive {
 	
 	public void saveAs(File file) {
 		try {
-			//String filePath = file.getAbsolutePath();
+			String filePath = file.getAbsolutePath();
+			if (!filePath.endsWith(".yama")) {
+				file = new File(filePath + ".yama");
+			}
 			
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 			
@@ -348,6 +351,11 @@ public class MoleculeArchive {
 			//flush and close streams...
 			stream.flush();
 			stream.close();
+			
+			//Reset the file and name
+			this.file = file;
+			setName(file.getName());
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

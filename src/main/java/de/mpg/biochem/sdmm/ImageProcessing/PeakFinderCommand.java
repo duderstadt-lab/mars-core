@@ -16,6 +16,8 @@ import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -64,8 +66,14 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class, headless = true,
-menuPath = "Plugins>SDMM Plugins>Image Processing>Peak Finder")
+@Plugin(type = Command.class, label = "Peak Finder", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Image Processing", weight = 20,
+			mnemonic = 'm'),
+		@Menu(label = "Peak Finder", weight = 1, mnemonic = 'd')})
 public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable, Previewable {
 	
 	//GENERAL SERVICES NEEDED

@@ -13,7 +13,9 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -26,8 +28,14 @@ import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, headless = true,
-menuPath = "Plugins>SDMM Plugins>KCP>Change Point Finder")
+@Plugin(type = Command.class, headless = true, label = "Change Point Finder", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "KCP", weight = 30,
+			mnemonic = 'm'),
+		@Menu(label = "Change Point Finder", weight = 1, mnemonic = 'f')})
 public class KCPCommand extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED	
 	@Parameter

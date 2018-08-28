@@ -11,7 +11,9 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt;
@@ -21,8 +23,15 @@ import org.scijava.widget.FileWidget;
 
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Table Utils>Results Filter")
-public class ResultsTableFilter extends DynamicCommand implements Initializable {
+@Plugin(type = Command.class, label = "Results Filter", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 't'),
+		@Menu(label = "Results Filter", weight = 30, mnemonic = 'f')})
+public class ResultsTableFilterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter
     private ResultsTableService resultsTableService;

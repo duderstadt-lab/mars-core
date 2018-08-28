@@ -116,14 +116,14 @@ public class MoleculeArchiveWindow {
 		this.uiService = moleculeArchiveService.getUIService();
 	}
 	
-	public MoleculeArchiveWindow(String name, MoleculeArchive archive, MoleculeArchiveService moleculeArchiveService) {
+	public MoleculeArchiveWindow(MoleculeArchive archive, MoleculeArchiveService moleculeArchiveService) {
 		this.archive = archive;
 		this.moleculeArchiveService = moleculeArchiveService;
 		this.uiService = moleculeArchiveService.getUIService();
 
 	    UIManager.put("Label.font", new Font("Menlo", Font.PLAIN, 12));
 		
-		createFrame(name);
+		createFrame(archive.getName());
 	}
 	
 	public void updateAll() {
@@ -174,24 +174,32 @@ public class MoleculeArchiveWindow {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
 		        	 archive.set(moleculePanel.getMolecule());
+		        	 
 		 			 if (archive.getFile() != null) {
-		 				archive.save();
+		 				 if(archive.getFile().getName().equals(archive.getName())) {
+		 				 	archive.save();
+		 				 } else {
+		 					 //the archive name has changed... so let's check with the user about the new name...
+			 				saveAs(archive.getFile());
+		 				 }
 		 			 } else {
-		 				File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
-		 				archive.saveAs(file);
+		 				saveAs(new File(archive.getName()));
 		 			 }
+		 			updateAll();
 	        	 }
 	          }
 	       });
 		saveAsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-		        	 //Add yama ending if not there ??
-		        	 File file = uiService.chooseFile(archive.getFile(), FileWidget.SAVE_STYLE);
-		        	 if (file != null) {
-			 			 archive.set(moleculePanel.getMolecule());
-			 			 archive.saveAs(file);
-		        	 }
+	        		 	archive.set(moleculePanel.getMolecule());
+	        		 
+		 				if (archive.getFile() != null) {
+			 				saveAs(new File(archive.getFile(), archive.getName()));
+		 				} else {
+		 					saveAs(new File(archive.getName()));
+		 				}
+		 				updateAll();
 	        	 }
 	          }
 	       });
@@ -436,6 +444,16 @@ public class MoleculeArchiveWindow {
 		return pane;
 	}
 	
+	private boolean saveAs(File saveAsFile) {
+		File file = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
+		if (file != null) {
+			archive.saveAs(file);
+			frame.setTitle(archive.getName());
+			return true;
+		}
+		return false;
+	}
+	
 	//We add an lockArchive for duing processing steps
 	public void lockArchive() {
 		lockArchive = true;
@@ -453,8 +471,8 @@ public class MoleculeArchiveWindow {
 	
 	public void rename(String name) {
 		if (name != null) {
-
-			moleculeArchiveService.rename(frame.getTitle(), name);
+			moleculeArchiveService.rename(archive.getName(), name);
+			archive.setName(name);
 			frame.setTitle(name);
 		}
 	}

@@ -11,12 +11,15 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
+
+import org.scijava.menu.MenuConstants;
 
 import com.fasterxml.jackson.core.JsonParseException;
 
@@ -26,7 +29,14 @@ import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
 
-@Plugin(type = Command.class, menuPath = "Plugins>SDMM Plugins>Molecule Utils>Open MoleculeArchive")
+@Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Molecule Utils", weight = 1,
+			mnemonic = 'm'),
+		@Menu(label = "Open MoleculeArchive", weight = 1, mnemonic = 'o')})
 public class MoleculeArchiveOpener extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;

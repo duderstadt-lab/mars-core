@@ -6,15 +6,24 @@ import java.util.Comparator;
 
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, headless = true, menuPath = "Plugins>SDMM Plugins>Table Utils>Results Sorter")
-public class ResultsTableSorter extends DynamicCommand implements Initializable {
+@Plugin(type = Command.class, label = "Results Sorter", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 't'),
+		@Menu(label = "Results Sorter", weight = 20, mnemonic = 's')})
+public class ResultsTableSorterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter
     private ResultsTableService resultsTableService;

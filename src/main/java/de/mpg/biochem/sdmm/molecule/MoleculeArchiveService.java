@@ -91,9 +91,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			addArchive(archive);
 		if (!uiService.isHeadless()) {
 			if (archives.get(name).getWindow() != null) {
-				archives.get(name).getWindow().update();
+				archives.get(name).getWindow().updateAll();
 			} else {
-				MoleculeArchiveWindow win = new MoleculeArchiveWindow(name, archive, this);
+				MoleculeArchiveWindow win = new MoleculeArchiveWindow(archive, this);
 				archives.get(name).setWindow(win);
 			}
 		}
