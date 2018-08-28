@@ -20,17 +20,14 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import ij.ImagePlus;
 import io.scif.Format;
 import io.scif.FormatException;
 import io.scif.Metadata;
 import net.imagej.Dataset;
-import net.imagej.table.DefaultGenericTable;
 import net.imagej.table.DoubleColumn;
 import net.imagej.table.GenericColumn;
-import net.imagej.table.GenericTable;
-import net.imagej.table.IntColumn;
+import de.mpg.biochem.sdmm.table.*;
 import io.scif.services.FormatService;
 
 public class ImageMetaData {
@@ -50,7 +47,7 @@ public class ImageMetaData {
 	private String CollectionDate;
 	
 	//Table that maps slices to times
-	private GenericTable DataTable;
+	private SDMMGenericTable DataTable;
 	
 	// Required Services
     private MoleculeArchiveService moleculeArchiveService;
@@ -100,7 +97,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new DefaultGenericTable();
+		DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 	}
 	
@@ -127,7 +124,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new DefaultGenericTable();
+		DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 		DataTable.add(timeCol);
 		DataTable.add(labelCol);
@@ -186,7 +183,7 @@ public class ImageMetaData {
 				timeCol.add(DoubleRounder.round(tn - t0, 3));
 			}
 			
-			DataTable = new DefaultGenericTable();
+			DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
 			DataTable.add(sliceCol);
 			DataTable.add(timeCol);
 			for(String str: columns.keySet()) {
@@ -229,22 +226,8 @@ public class ImageMetaData {
  		
 		//Write out raw data table if there are columns
 		if (DataTable.size() > 0) {
-			jGenerator.writeObjectFieldStart("DataTable");
-			for (int i=0;i<DataTable.getColumnCount();i++) {
-				jGenerator.writeArrayFieldStart(DataTable.getColumnHeader(i));
-				for (int j=0;j<DataTable.getRowCount();j++) { 
-					
-					//If generic we assume it is a String column
-					if (DataTable.get(i) instanceof GenericColumn)
-						jGenerator.writeString((String)DataTable.get(i).get(j));
-					
-					if (DataTable.get(i) instanceof DoubleColumn)
-						jGenerator.writeNumber((Double)DataTable.get(i).get(j));
-
-				}
-				jGenerator.writeEndArray();
-			}
-			jGenerator.writeEndObject();
+			jGenerator.writeFieldName("DataTable");
+			DataTable.toJSON(jGenerator);
 		}
 		jGenerator.writeEndObject();
 	}
@@ -280,35 +263,9 @@ public class ImageMetaData {
 		    	Comments = jParser.getText();
 		    }
 		    
-		    if("DataTable".equals(fieldname)) {
-		    	//First we move past object start
-		    	jParser.nextToken();
-		    	
-		    	DataTable = new DefaultGenericTable();
-		    	
-		    	//Then we move through fields
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String ColumnName = jParser.getCurrentName();
-		    		
-		    		//Have to move past array start
-		    		jParser.nextToken();
-
-		    		GenericColumn gCol = new GenericColumn(ColumnName);
-		    		DoubleColumn dCol =  new DoubleColumn(ColumnName);
-					
-		    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			if (jParser.getCurrentToken().isNumeric()) {
-		    				dCol.add(jParser.getValueAsDouble());
-		    			} else {
-		    				gCol.add(jParser.getValueAsString());
-		    			}
-		    		}
-		    		if (dCol.size() > 1) {
-		    			DataTable.add(dCol);
-		    		} else {
-		    			DataTable.add(gCol);
-		    		}
-		    	}
+		    if("DataTable".equals(fieldname)) {		    	
+		    	DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
+		    	DataTable.fromJSON(jParser);
 		    }
 		}
 	}
@@ -341,7 +298,7 @@ public class ImageMetaData {
 		this.Microscope = Microscope;
 	}
 	
-	public GenericTable getDataTable() {
+	public SDMMGenericTable getDataTable() {
 		return DataTable;
 	}
 	

@@ -1,6 +1,7 @@
 package de.mpg.biochem.sdmm.molecule;
 
 import de.mpg.biochem.sdmm.table.*;
+import de.mpg.biochem.sdmm.util.SDMMMath;
 import net.imagej.table.DoubleColumn;
 import net.openhft.chronicle.bytes.BytesIn;
 import net.openhft.chronicle.bytes.BytesMarshallable;
@@ -27,9 +28,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 public class Molecule {
-	//Precision in number of decimal places for output arrays
-	final static int DECIMAL_PLACE_PRECISION = 7;
-	
 	//Unique ID used for Chronicle map storage and universal identification.
 	private String UID;
 	
@@ -141,31 +139,28 @@ public class Molecule {
 			jGenerator.writeEndObject();
 		}
  		
-		//Write out raw data table if there are columns
-		if (datatable.size() > 0) {
-			jGenerator.writeObjectFieldStart("DataTable");
-			for (int i=0;i<datatable.getColumnCount();i++) {
-				jGenerator.writeFieldName(datatable.getColumnHeader(i));
-		 		jGenerator.writeArray(roundArray(datatable.get(i).getArray()), 0, datatable.getRowCount());
-			}
-			jGenerator.writeEndObject();
+		//Write out data table (will do nothing if there are no columns
+		if (datatable.getColumnCount() > 0) {
+			jGenerator.writeFieldName("DataTable");
+			datatable.toJSON(jGenerator);
 		}
 		
 		//Write out segment tables generated from KCP as object that have two fields that store the x column and y column names used during KCP
 		if (segments.size() > 0) {
 			jGenerator.writeArrayFieldStart("SegmentTables");
 			for (String tableName:segments.keySet()) {
-				jGenerator.writeStartObject();
-				String[] YX = segmentsColumns.get(tableName);
-				jGenerator.writeStringField("yColumnName", YX[0]);
-				jGenerator.writeStringField("xColumnName", YX[1]);
 				if (segments.get(tableName).size() > 0) {
-					for (int i=0;i<segments.get(tableName).getColumnCount();i++) {
-						jGenerator.writeFieldName(segments.get(tableName).getColumnHeader(i));
-				 		jGenerator.writeArray(roundArray(segments.get(tableName).get(i).getArray()), 0, segments.get(tableName).getRowCount());
-					}
+					jGenerator.writeStartObject();
+					
+					String[] YX = segmentsColumns.get(tableName);
+					jGenerator.writeStringField("yColumnName", YX[0]);
+					jGenerator.writeStringField("xColumnName", YX[1]);
+					
+					jGenerator.writeFieldName("Table");
+					segments.get(tableName).toJSON(jGenerator);
+					
+					jGenerator.writeEndObject();
 				}
-				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
 		}
@@ -226,73 +221,36 @@ public class Molecule {
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {
-		    	//First we move past object start
-		    	jParser.nextToken();
-		    	
-		    	//Then we move through fields
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String ColumnName = jParser.getCurrentName();
-		    		
-		    		DoubleColumn column = new DoubleColumn(ColumnName);
-		    		
-		    		//Have to move past array start
-		    		jParser.nextToken();
-					
-		    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			column.add(jParser.getDoubleValue());
-		    		}
-		    		datatable.add(column);
-		    	}
+			    datatable.fromJSON(jParser);
 		    }
 		    
 		    if("SegmentTables".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    	//First we move past object start
-			    	jParser.nextToken();
-			    	
-			    	//Then move past field Name - xColumnName...
-			    	jParser.nextToken();
-			    	
-			    	//Should we create a special kind of table or just parse with a space?
-			    	String[] columnNames = new String[2];
-			    	columnNames[0] = jParser.getText();
-			    	
-			    	//Then move past the field and next field Name - yColumnName...
-			    	jParser.nextToken();
-			    	jParser.nextToken();
-			    	columnNames[1] = jParser.getText();
-			    	
-			    	SDMMResultsTable segmenttable = new SDMMResultsTable(columnNames[0] + " vs " + columnNames[1]);
-			    	
-			    	//Then we move through fields
 			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    		String ColumnName = jParser.getCurrentName();
-			    		
-			    		DoubleColumn column = new DoubleColumn(ColumnName);
-	
-			    		//Have to move past array start
-			    		jParser.nextToken();
-			    		
-			    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
-			    				String str = jParser.getValueAsString();
-			    				if (Objects.equals(str, new String("Infinity"))) {
-			    					column.add(Double.POSITIVE_INFINITY);
-			    				} else if (Objects.equals(str, new String("-Infinity"))) {
-			    					column.add(Double.NEGATIVE_INFINITY);
-			    				} else if (Objects.equals(str, new String("NaN"))) {
-			    					column.add(Double.NaN);
-			    				}
-			    			} else {
-			    				column.add(jParser.getDoubleValue());
-			    			}
-			    		}
-			    		segmenttable.add(column);
+				    	//Then move past field Name - xColumnName...
+				    	jParser.nextToken();
+				    	
+				    	//Should we create a special kind of table or just parse with a space?
+				    	String[] columnNames = new String[2];
+				    	columnNames[0] = jParser.getText();
+				    	
+				    	//Then move past the field and next field Name - yColumnName...
+				    	jParser.nextToken();
+				    	jParser.nextToken();
+				    	columnNames[1] = jParser.getText();
+				    	
+				    	SDMMResultsTable segmenttable = new SDMMResultsTable(columnNames[0] + " vs " + columnNames[1]);
+				    	
+				    	//Move past Table
+				    	jParser.nextToken();
+				    	
+				    	segmenttable.fromJSON(jParser);
+				    	
+				    	String str = columnNames[0] + " " + columnNames[1];
+				    	segmentsColumns.put(str, columnNames);
+				    	segments.put(str, segmenttable);
 			    	}
-			    	String str = columnNames[0] + " " + columnNames[1];
-			    	segmentsColumns.put(str, columnNames);
-			    	segments.put(str, segmenttable);
 		    	}
 		    }
 		}
@@ -437,13 +395,5 @@ public class Molecule {
 	
 	public void setParentArchive(MoleculeArchive archive) {
 		parent = archive;
-	}
-	
-	private double[] roundArray(double[] input) {
-		double[] output = new double[input.length];
-		for (int i=0;i<input.length;i++) {
-			output[i] = DoubleRounder.round(input[i], DECIMAL_PLACE_PRECISION);
-		}
-		return output;
 	}
 }

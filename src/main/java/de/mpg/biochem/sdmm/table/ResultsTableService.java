@@ -55,7 +55,10 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		// This Service method is called when the service is first created.
 		tables = new LinkedHashMap<>();
 		
+		//This allow for just the class name as an input 
+		//in scripts. Otherwise the whole path would have to be given..
 		scriptService.addAlias(SDMMResultsTable.class);
+		scriptService.addAlias(SDMMGenericTable.class);
 	}
 	
 	public void addTable(SDMMResultsTable table) {

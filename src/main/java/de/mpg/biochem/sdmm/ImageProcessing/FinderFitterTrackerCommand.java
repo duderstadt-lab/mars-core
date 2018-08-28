@@ -133,6 +133,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		@Parameter(label="Minimum distance between peaks (in pixels)")
 		private int minimumDistance;
 		
+		@Parameter(label="Find negative peaks")
+		private boolean findNegativePeaks = false;
+		
 		//PEAK FITTER
 		@Parameter(visibility = ItemVisibility.MESSAGE)
 		private final String fitterTitle =
@@ -281,9 +284,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			image.deleteRoi();
 			
 			if (useDiscoidalAveragingFilter) {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius);
+		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
 		    } else {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance);
+		    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
 		    }
 			
 			vary = new boolean[5];
@@ -497,6 +500,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
 			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
 			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 			builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
 			builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));

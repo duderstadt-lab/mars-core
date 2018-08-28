@@ -118,6 +118,7 @@ public class MoleculeArchiveWindow {
 	
 	public MoleculeArchiveWindow(MoleculeArchive archive, MoleculeArchiveService moleculeArchiveService) {
 		this.archive = archive;
+		archive.setWindow(this);
 		this.moleculeArchiveService = moleculeArchiveService;
 		this.uiService = moleculeArchiveService.getUIService();
 
@@ -480,8 +481,8 @@ public class MoleculeArchiveWindow {
 	public void close() {
 		frame.setVisible(false);
 		frame.dispose();
-		
-		moleculeArchiveService.removeArchive(archive);
+
+		moleculeArchiveService.removeArchive(archive.getName());
 	}
 	
 	public void setArchiveService(MoleculeArchiveService moleculeArchiveService) {

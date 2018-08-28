@@ -79,8 +79,12 @@ public class PeakFitter {
 		this.vary = vary;
 		this.precision = allowable_error;
 	}
-
+	
 	public void fitPeak(ImageProcessor ip, double[] p, double[] e) {
+		fitPeak(ip, p, e, false);
+	}
+
+	public void fitPeak(ImageProcessor ip, double[] p, double[] e, boolean findNegativePeaks) {
 		Rectangle roi = ip.getRoi();
 			
 		double[][] xs = new double[roi.width * roi.height][2];
@@ -102,6 +106,14 @@ public class PeakFitter {
 					min = n;
 				n++;
 			}
+		}
+		
+		//For fitting negative peaks we need to flip the min and max
+		if (findNegativePeaks) {
+			int tmpMax = max;
+			int tmpMin = min;
+			max = tmpMin;
+			min = tmpMax;
 		}
 		
 		double[] guess = {ys[min], ys[max] - ys[min], xs[max][0], xs[max][1], 1};

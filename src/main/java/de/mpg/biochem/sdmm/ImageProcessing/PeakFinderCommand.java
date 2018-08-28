@@ -125,6 +125,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Minimum distance between peaks (in pixels)")
 	private int minimumDistance;
 	
+	@Parameter(label="Find Negative Peaks")
+	private boolean findNegativePeaks = false;
+	
 	@Parameter(label="Generate peak count table")
 	private boolean generatePeakCountTable;
 	
@@ -189,6 +192,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private double PeakFitter_maxErrorSigma = 1;
 	
 	//Which columns to write in peak table
+	//TODO
 	@Parameter(label="Verbose table fit output")
 	private boolean PeakFitter_writeEverything = true;
 	
@@ -424,9 +428,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		ArrayList<Peak> peaks;
 		
 		if (useDiscoidalAveragingFilter) {
-	    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius);
+	    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
 	    } else {
-	    	finder = new PeakFinder< T >(threshold, minimumDistance);
+	    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
 	    }
 		
 		if (useROI) {
@@ -460,7 +464,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			p[4] = PeakFitter_initialSigma;
 			double[] e = new double[5];
 			
-			fitter.fitPeak(imp, p, e);
+			fitter.fitPeak(imp, p, e, findNegativePeaks);
 			
 			// First we reset valid since it was set to false for all peaks
 			// during the finding step to avoid finding the same peak twice.

@@ -33,6 +33,8 @@ public class PeakFinder<T extends RealType<T>> {
 	
 	//private static TextWindow log_window;
 	
+	private boolean findNegativePeaks = false;
+	
 	private double threshold = 6;
 	private int minimumDistance = 8;
 	
@@ -46,20 +48,22 @@ public class PeakFinder<T extends RealType<T>> {
 	// Can include a full list of all peaks
 	//Any prefiltering like DS should happen before the image is passed to the PeakFinder...
 	
-	public PeakFinder(double threshold, int minimumDistance, int DSinnerRadius, int DSouterRadius) {
+	public PeakFinder(double threshold, int minimumDistance, int DSinnerRadius, int DSouterRadius, boolean findNegativePeaks) {
 		this.useDiscoidalAveraging = true;
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
 		this.DSinnerRadius = DSinnerRadius;
 		this.DSouterRadius = DSouterRadius;
+		this.findNegativePeaks = findNegativePeaks;
 		
 		//log_window = new TextWindow("PeakFinder_Log", "", 400, 600);
 	}
 	
-	public PeakFinder(double threshold, int minimumDistance) {
+	public PeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks) {
 		this.useDiscoidalAveraging = false;
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
+		this.findNegativePeaks = findNegativePeaks;
 		
 		//log_window = new TextWindow("PeakFinder_Log", "", 400, 600);
 	}
@@ -80,18 +84,33 @@ public class PeakFinder<T extends RealType<T>> {
 		return findPeaks(ip, region, -1);
 	}
 	
-	public ArrayList<Peak> findPeaks(ImagePlus ip, Roi region, int slice) {
+	public ArrayList<Peak> findPeaks(ImagePlus imageIN, Roi region, int slice) {
 		
 		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>();
 		
 		//When the image is wrapped the Roi will be used and not the full image...
 		
+		//For finding DNAs we need to find negative peaks
+		//To make the least amount of changes, I will just invert the image before processing
+		//Then flip the values back at the end.
+		ImagePlus imp; 
+		if (findNegativePeaks) {
+			imp = imageIN.duplicate();
+			for (int x=0;x<imageIN.getWidth();x++) {
+				for (int y=0;y<imageIN.getHeight();y++) {
+					imp.getProcessor().setf(x, y, (-1)*imageIN.getProcessor().getf(x, y));
+				}
+			}
+		} else {
+			imp = imageIN;
+		}
+		
 		Img< T > image;
 		if (useDiscoidalAveraging) {
-			ImagePlus filtered_ip = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(ip.duplicate(), DSinnerRadius, DSouterRadius);
+			ImagePlus filtered_ip = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(imp.duplicate(), DSinnerRadius, DSouterRadius);
 			image = ImageJFunctions.wrapReal(filtered_ip);
 		} else { 
-			image = ImageJFunctions.wrapReal(ip);
+			image = ImageJFunctions.wrapReal(imp);
 		}
 		
 		Rectangle roi = region.getBounds();

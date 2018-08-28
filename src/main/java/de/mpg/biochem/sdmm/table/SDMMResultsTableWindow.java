@@ -266,7 +266,7 @@ public class SDMMResultsTableWindow implements ActionListener {
 		frame.dispose();
 		
 		results.clear();
-		resultsTableService.removeResultsTable(results);
+		resultsTableService.removeResultsTable(results.getName());
 	}
 	
 	/*

@@ -70,7 +70,21 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (ImageMetaData meta : archive.getImageMetaData()) {
-			metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
+			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
+				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
+			} else {
+				logService.error("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+				logService.error(builder.endBlock(false));
+				archive.addLogMessage("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+				archive.addLogMessage(builder.endBlock(false));
+				
+				//Unlock the window so it can be changed
+			    if (!uiService.isHeadless()) {
+			    	archive.getWindow().updateAll();
+					archive.getWindow().unlockArchive();
+				}
+				return;
+			}
 		}
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...

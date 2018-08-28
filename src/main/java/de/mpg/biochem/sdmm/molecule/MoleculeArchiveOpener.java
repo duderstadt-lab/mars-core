@@ -7,6 +7,7 @@ import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -56,6 +57,9 @@ public class MoleculeArchiveOpener extends DynamicCommand {
     @Parameter(label="Use virtual memory")
     private boolean virtual = true;
     
+	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
+	private MoleculeArchive archive;
+    
     @Override
 	public void run() {				
 		if (file == null)
@@ -79,17 +83,17 @@ public class MoleculeArchiveOpener extends DynamicCommand {
 		logService.info(log);
 		
 		try {
-			MoleculeArchive archive = new MoleculeArchive(name,file,moleculeArchiveService,virtual);
-	        moleculeArchiveService.addArchive(archive);
-	        moleculeArchiveService.show(name, archive);
+			archive = new MoleculeArchive(name,file,moleculeArchiveService,virtual);
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");
 			logService.error(builder.endBlock(false));
+			return;
 		} catch (IOException e) {
 			e.printStackTrace();
 			logService.error("IOException - does the yama file exist?");
 			logService.error(builder.endBlock(false));
+			return;
 		}
 		logService.info(builder.endBlock(true));
 	}
