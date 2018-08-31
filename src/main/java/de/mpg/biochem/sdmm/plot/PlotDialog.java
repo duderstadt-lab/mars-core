@@ -17,6 +17,7 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	private static final long serialVersionUID = 1L;
 
 	private String xColumn;
+	private String groupColumn;
 	
 	//Can be one for single curve mode and more for multicurve mode...
 	private String[] yColumns;
@@ -39,8 +40,12 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	
 	private int curveNumber = 1;
 	
-	public PlotDialog(String dialogTitle, SDMMResultsTable table, int curveNumber) {
+	private boolean groupsOption = false;
+	
+	public PlotDialog(String dialogTitle, SDMMResultsTable table, int curveNumber, boolean groupsOption) {
 		super(dialogTitle);
+		
+		this.groupsOption = groupsOption;
 		
 		this.curveNumber = curveNumber;
 		
@@ -65,6 +70,16 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		}
 
 		addChoice("type", types, types[type]);
+		
+		//Need to add a none options for groups
+		String[] gColumns = new String[columns.length+1];
+		gColumns[0] = "none";
+		for (int i=1;i < columns.length+1; i++) {
+			gColumns[i] = columns[i-1];
+		}
+		
+		if (groupsOption)
+			addChoice("group", gColumns, "none");
 		
 		update(this);
 	}
@@ -115,6 +130,10 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		return type;
 	}
 	
+	public String getGroupColumn() {
+		return groupColumn;
+	}
+	
 	private Color getColorFromName(String color_name) {
 		if (color_name.equals("none"))
 			return null;
@@ -142,6 +161,9 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 			segment_color_choices[i] = getColorFromName(dialog.getNextChoice());
 		}
 		type = dialog.getNextChoiceIndex(); 
+		
+		if (groupsOption)
+			groupColumn = dialog.getNextChoice();
 	}
 }
 

@@ -111,6 +111,10 @@ public class MoleculeArchiveWindow {
 	private JMenuItem multiPlotMenuItem = new JMenuItem("Multiple Plots");
 	
 	private JMenuItem deleteMenuItem = new JMenuItem("Delete Molecules");
+	//private JMenuItem generateNewMenuItem = new JMenuItem("Generate new archive");
+	//private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
+	private JMenuItem updateMenuItem = new JMenuItem("Update");
+	private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
 	
 	//static so that window locations are offset...
 	static int pos_x = 100;
@@ -227,12 +231,11 @@ public class MoleculeArchiveWindow {
 		singleCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-		        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1);
+		        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1, false);
 		        	dialog.showDialog();
 		        	if (dialog.wasCanceled())
 		     			return;
 		        	
-		        	//Need to put this so the final values and properly
 		        	dialog.update(dialog);
 		        	ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
 		        	PlotProperties curve1 = new PlotProperties("Curve", dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor());
@@ -257,7 +260,7 @@ public class MoleculeArchiveWindow {
 		     		
 		     		 int curveNum = (int)Numdialog.getNextNumber(); 
 		        	 
-		        	 PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), curveNum);
+		        	 PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), curveNum, false);
 		        	 dialog.showDialog();
 		        	 //Need to put this so the final values and properly
 		        	 dialog.update(dialog);
@@ -316,7 +319,21 @@ public class MoleculeArchiveWindow {
 	        	 }
 	          }
 	       });
-
+		
+		toolsMenu.add(updateMenuItem);
+		updateMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 updateAll();
+	          }
+	       });
+		
+		toolsMenu.add(unlockMenuItem);
+		deleteMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 unlockArchive();
+	          }
+	       });
+		
 		frame = new JFrame(title);
 		frame.setLocation(pos_x, pos_y);
 		pos_x += 10;

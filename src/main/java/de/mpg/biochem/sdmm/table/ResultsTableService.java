@@ -118,7 +118,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	
 	//Utility method returning HashMap of molecule numbers and start and stop index positions.
 	//Here we are assuming the table is already sorted on the groupColumn..
-	public LinkedHashMap<Integer, GroupIndices> find_group_indices(SDMMResultsTable table, String groupColumn) {
+	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(SDMMResultsTable table, String groupColumn) {
 		// make sure we sort on groupColumn
 		//ResultsTableSorter.sort(table, true, groupColumn);
 		

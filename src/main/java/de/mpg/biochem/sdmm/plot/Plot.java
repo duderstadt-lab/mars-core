@@ -129,7 +129,7 @@ public class Plot extends JComponent implements ActionListener {
 	protected Rectangle legendBounds = new Rectangle(0, 0, 0, 0);
 	protected Point mousePosition = new Point();
 	
-	private boolean gridlines = Prefs.get("plot.gridlines", true);
+	private boolean gridlines = false;
 	private boolean sigmaStartStop = Prefs.get("plot.sigma_start_stop", false);
 	private boolean show_legend = Prefs.get("plot.show_legend", true);
 	private boolean legend_box = Prefs.get("plot.legend_box", true);

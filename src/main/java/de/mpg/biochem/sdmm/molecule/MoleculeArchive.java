@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import javax.swing.JOptionPane;
+
 import org.apache.commons.io.FilenameUtils;
 
 import org.scijava.log.LogService;
@@ -57,6 +59,8 @@ import net.openhft.chronicle.hash.serialization.BytesReader;
 import net.openhft.chronicle.hash.serialization.BytesWriter;
 import net.openhft.chronicle.hash.serialization.impl.EnumMarshallable;
 import net.openhft.chronicle.map.*;
+
+import org.scijava.ui.*;
 
 import net.imagej.table.*;
 
@@ -133,7 +137,12 @@ public class MoleculeArchive {
 		initializeVariables();
 		
 		//We will load the archive into virtual memory to allow for very large archive sizes...
-		buildChronicleMap(numMolecules, averageSize);
+		try {
+			buildChronicleMap(numMolecules, averageSize);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	//Constructor for loading a moleculeArchive from file...
@@ -178,7 +187,6 @@ public class MoleculeArchive {
 		//The first object in the yama file has general information about the archive including
 		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
 		//if we are working virtual. So we load that information first
-		
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		
 		//Here we automatically detect the format of the JSON file
@@ -213,9 +221,10 @@ public class MoleculeArchive {
 		int numMolecules = archiveProperties.getNumberOfMolecules();
 		double averageSize = archiveProperties.getAverageMoleculeSize();
 		
+		boolean recover = false;
 		if (virtual) {
 			//We will load the archive into virtual memory to allow for very large archive sizes...
-			buildChronicleMap(numMolecules, averageSize);
+			recover = buildChronicleMap(numMolecules, averageSize);
 		} else {
 			//We will load the archive into normal memory for faster processing...
 			molecules = new ConcurrentHashMap<>();
@@ -227,6 +236,15 @@ public class MoleculeArchive {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					ImageMetaData imgMeta = new ImageMetaData(jParser);
 					addImageMetaData(imgMeta);
+				}
+				if (recover) {
+					moleculeIndex = new ArrayList<String>();
+					for (CharSequence key : archive.keySet()) {
+						moleculeIndex.add(key.toString());
+						updateTagIndex(archive.get(key));
+					}
+					archiveProperties.setNumberOfMolecules(moleculeIndex.size());
+					return;
 				}
 			}
 			
@@ -262,7 +280,12 @@ public class MoleculeArchive {
 		
 		if (virtual) {
 			//We will load the archive into virtual memory to allow for very large archive sizes...
-			buildChronicleMap(numMolecules, averageSize);
+			try {
+				buildChronicleMap(numMolecules, averageSize);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else {
 			//We will load the archive into normal memory for faster processing...
 			molecules = new ConcurrentHashMap<>();
@@ -374,23 +397,42 @@ public class MoleculeArchive {
 		}
 	}
 	
-	private void buildChronicleMap(int numMolecules, double averageSize) {
+	//Returns true if using recover mode.
+	private boolean buildChronicleMap(int numMolecules, double averageSize) throws IOException {		
 		persistedFile = new File(System.getProperty("java.io.tmpdir") + "/" + name + ".store");
-		//If there was already a store lets delete it...
-		//This would also be an opportunity for a recovery option for we leave it out for the moment.
-    	try {
+		
+		boolean exists = persistedFile.exists();
+		int recover = JOptionPane.NO_OPTION;
+		if (exists && !uiService.isHeadless()) {
+			recover = JOptionPane.showConfirmDialog(null,
+					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION);
+			
+			//recover = uiService.showDialog("Recover from virtual store?", "Recovery Mode", 
+			//		DialogPrompt.MessageType.QUESTION_MESSAGE, DialogPrompt.OptionType.YES_NO_OPTION);
+		}
+
+		if (exists && recover == JOptionPane.YES_OPTION) {
 			archive = ChronicleMap
 				    .of(CharSequence.class, Molecule.class)
 				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
 				    .name(name)
-				    .averageKey(moleculeArchiveService.getUUID58())
+				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
+				    .entries(numMolecules)
+				    .maxBloatFactor(2.0)
+				    .averageValueSize(averageSize)
+				    .recoverPersistedTo(persistedFile, true);
+			return true;
+		} else {
+			archive = ChronicleMap
+				    .of(CharSequence.class, Molecule.class)
+				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
+				    .name(name)
+				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
 				    .entries(numMolecules)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
 				    .createPersistedTo(persistedFile);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return false;
 		}
 	}
 	
@@ -676,7 +718,8 @@ public class MoleculeArchive {
 	static final class MoleculeMarshaller implements BytesReader<Molecule>, BytesWriter<Molecule>,
     EnumMarshallable<MoleculeMarshaller> {
 		public static final MoleculeMarshaller INSTANCE = new MoleculeMarshaller();
-		public static final JsonFactory jfactory = new JsonFactory();
+		//public static final JsonFactory jfactory = new JsonFactory();
+		public static final SmileFactory jfactory = new SmileFactory();
 		
 		private MoleculeMarshaller() {}
 		

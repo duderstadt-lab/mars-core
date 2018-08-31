@@ -1,6 +1,7 @@
 package de.mpg.biochem.sdmm.table;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
@@ -13,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -23,6 +25,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+
+import de.mpg.biochem.sdmm.plot.PlotDialog;
+import de.mpg.biochem.sdmm.plot.PlotProperties;
+import ij.gui.GenericDialog;
+
+import de.mpg.biochem.sdmm.plot.*;
 
 //import org.scijava.widget.FileWidget;
 
@@ -44,6 +52,10 @@ public class SDMMResultsTableWindow implements ActionListener {
 	private JMenuItem copyMenuItem = new JMenuItem("Copy", KeyEvent.VK_C);
 	private JMenuItem clearMenuItem = new JMenuItem("Clear");
 	private JMenuItem selectAllMenuItem = new JMenuItem("Select All", KeyEvent.VK_A);
+	
+	private JMenuItem singleCurveMenuItem = new JMenuItem("Single Curve");
+	//private JMenuItem multiCurveMenuItem = new JMenuItem("Multiple Curves");
+	//private JMenuItem multiPlotMenuItem = new JMenuItem("Multiple Plots");
 	
 	//private JMenuItem plotMenuItem = new JMenuItem("Plot", KeyEvent.VK_P);
 	
@@ -142,6 +154,26 @@ public class SDMMResultsTableWindow implements ActionListener {
 		editMenu.add(clearMenuItem);
 		editMenu.add(selectAllMenuItem);
 		mb.add(editMenu);
+		
+		JMenu plotMenu = new JMenu("Plot");
+		mb.add(plotMenu);
+		//toolsMenu.add(addMetaDataMenuItem);
+		/*
+		addMetaDataMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 //File imageFolder = uiService.chooseFile(archive.getFile(), FileWidget.DIRECTORY_STYLE);
+	 			 //archive.addImageMetaData(new ImageMetaData(imageFolder, moleculeArchiveService, "Odin"));
+	          }
+	       });
+	       */
+		plotMenu.add(singleCurveMenuItem);
+		singleCurveMenuItem.addActionListener(this);
+		
+		//plotMenu.add(multiCurveMenuItem);
+		//multiCurveMenuItem.addActionListener(this);
+		
+		//plotMenu.add(multiPlotMenuItem);
+		//multiPlotMenuItem.addActionListener(this);
 
 		// set action listeners
 		saveAsMenuItem.addActionListener(this);
@@ -198,6 +230,20 @@ public class SDMMResultsTableWindow implements ActionListener {
 			saveAs();
 		} else if (e.getSource() == exportToJSONMenuItem) {
 			exportToJSON();
+		} else if (e.getSource() == singleCurveMenuItem) {
+			PlotDialog dialog = new PlotDialog("Curve Plot", results, 1, true);
+			dialog.showDialog();
+        	if (dialog.wasCanceled())
+     			return;
+
+        	dialog.update(dialog);
+        	
+    		PlotData curve1 = new PlotData(results, dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getGroupColumn(), dialog.getCurveType(), results.getName());
+    		
+    		ArrayList<PlotData> plot_data = new ArrayList<PlotData>();
+    		plot_data.add(curve1);
+    		
+    		new ResultsPlotter(plot_data, results.getName(), dialog.getGroupColumn());
 		}
 	}
 	protected boolean saveAs() {

@@ -79,7 +79,12 @@ public class PlotPanel extends JPanel {
 		
 		setLayout(new BorderLayout());
 		add(leftPanel, BorderLayout.WEST);
-		add(plot);
+		
+		JPanel whitePLOT = new JPanel();
+		whitePLOT.setBackground(Color.WHITE);
+		whitePLOT.setLayout(new BorderLayout());
+		whitePLOT.add(plot, BorderLayout.CENTER);
+		add(whitePLOT, BorderLayout.CENTER);
 	}
 
 	public void showPlot() {
@@ -99,6 +104,7 @@ public class PlotPanel extends JPanel {
       	PlotProperties curve = new PlotProperties("Curve", xColumnName, yColumnName, getColorFromName(curveColor), type, getColorFromName(segmentColor));
 		drawCurve(curve);
 		
+		plot.setBackground(Color.WHITE);
 		plot.setPlotTitle(" ");
   		plot.setxAxisLabel(xColumnName);
   		plot.setyAxisLabel(yColumnName);
