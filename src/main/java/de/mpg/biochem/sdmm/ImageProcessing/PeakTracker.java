@@ -155,6 +155,9 @@ public class PeakTracker {
 					} else {
 						//Generate a new UID
 						String UID = MoleculeArchiveService.getUUID58();
+						if (UID == null) {
+							logService.info("Found a NULL");
+						}
 						from.setUID(UID);
 						to.setUID(UID);
 						trajectoryLengths.put(UID, 2);
@@ -271,6 +274,10 @@ public class PeakTracker {
 		while (peak.getForwardLink() != null) {
 			peak = peak.getForwardLink();
 			addPeakToTable(table, peak, peak.getSlice());
+		}
+		
+		if (startingPeak.getUID() == null) {
+			logService.info("Starting peaks has Null UID");
 		}
 
 		Molecule mol = new Molecule(startingPeak.getUID(), table);

@@ -34,7 +34,7 @@ import net.imagej.table.DoubleColumn;
 		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "KCP", weight = 30,
-			mnemonic = 'm'),
+			mnemonic = 'k'),
 		@Menu(label = "Change Point Finder", weight = 1, mnemonic = 'f')})
 public class KCPCommand extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED	

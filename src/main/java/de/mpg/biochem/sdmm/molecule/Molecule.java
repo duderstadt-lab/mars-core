@@ -50,14 +50,14 @@ public class Molecule {
 	private SDMMResultsTable datatable;
 	
 	//Segments tables resulting from change point fitting
-	//String is XColumn + YColumn
+	//String is XColumn + " vs " + YColumn
 	private LinkedHashMap<String, SDMMResultsTable> segments;
 	
 	//This is a bit ugly, but we want to keep track of
 	//both columns used for the changepoint plot
 	//However, if you use a String[] array as a key 
 	//it uses object ref and keys never match... so we just keep track here 
-	//and add them tomorrow above. There are other ways but I think ultimately
+	//and add them above. There are other ways but I think ultimately
 	//this will be the most robust...
 	private LinkedHashMap<String,String[]> segmentsColumns;
 	
@@ -240,16 +240,17 @@ public class Molecule {
 				    	jParser.nextToken();
 				    	columnNames[1] = jParser.getText();
 				    	
-				    	SDMMResultsTable segmenttable = new SDMMResultsTable(columnNames[0] + " vs " + columnNames[1]);
+				    	String tableKey = columnNames[0] + " vs " + columnNames[1];
+				    	
+				    	SDMMResultsTable segmenttable = new SDMMResultsTable(tableKey);
 				    	
 				    	//Move past Table
 				    	jParser.nextToken();
 				    	
 				    	segmenttable.fromJSON(jParser);
 				    	
-				    	String str = columnNames[0] + " " + columnNames[1];
-				    	segmentsColumns.put(str, columnNames);
-				    	segments.put(str, segmenttable);
+				    	segmentsColumns.put(tableKey, columnNames);
+				    	segments.put(tableKey, segmenttable);
 			    	}
 		    	}
 		    }
@@ -333,7 +334,7 @@ public class Molecule {
 	}
 	
 	public void setSegmentsTable(String[] columnNames, SDMMResultsTable segs) {
-		String str = columnNames[0] + " " + columnNames[1];
+		String str = columnNames[0] + " vs " + columnNames[1];
 		segmentsColumns.put(str, columnNames);
 		segments.put(str, segs);
 	}
@@ -372,12 +373,17 @@ public class Molecule {
 		return getSegmentsTable(columnNames);
 	}
 	
-	public LinkedHashMap<String, SDMMResultsTable> getSegmentTables() {
-		return segments;
+	//public LinkedHashMap<String, SDMMResultsTable> getSegmentTables() {
+	//	return segments;
+	//}
+	
+	public ArrayList<String> getSegmentTableNames() {
+		return new ArrayList<String>(segments.keySet());
 	}
 	
+	
 	public SDMMResultsTable getSegmentsTable(String[] columnNames) {
-		String str = columnNames[0] + " " + columnNames[1];
+		String str = columnNames[0] + " vs " + columnNames[1];
 		return segments.get(str);
 	}
 	

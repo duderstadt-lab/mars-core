@@ -62,7 +62,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.getWindow().lockArchive();
+			archive.lockArchive();
 		
 		archive.addLogMessage(log);
 		
@@ -112,10 +112,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	    archive.addLogMessage("  ");
 	    
 		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) {
-	    	archive.getWindow().updateAll();
-			archive.getWindow().unlockArchive();
-		}	
+	    if (!uiService.isHeadless())
+			archive.unlockArchive();	
 	}
 	
 	private HashMap<Double, Double> getSliceToTimeMap(String metaUID) {

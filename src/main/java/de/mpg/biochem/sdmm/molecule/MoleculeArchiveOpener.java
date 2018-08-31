@@ -21,6 +21,7 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 
 import com.fasterxml.jackson.core.JsonParseException;
 
@@ -84,6 +85,9 @@ public class MoleculeArchiveOpener extends DynamicCommand {
 		
 		try {
 			archive = new MoleculeArchive(name,file,moleculeArchiveService,virtual);
+			
+			getInfo().getOutput("archive", MoleculeArchive.class).setLabel(name);
+			
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");

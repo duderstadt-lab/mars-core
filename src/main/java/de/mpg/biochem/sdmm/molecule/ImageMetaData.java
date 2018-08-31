@@ -47,7 +47,7 @@ public class ImageMetaData {
 	private String CollectionDate;
 	
 	//Table that maps slices to times
-	private SDMMGenericTable DataTable;
+	private SDMMResultsTable DataTable;
 	
 	// Required Services
     private MoleculeArchiveService moleculeArchiveService;
@@ -97,7 +97,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
+		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 	}
 	
@@ -124,7 +124,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
+		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 		DataTable.add(timeCol);
 		DataTable.add(labelCol);
@@ -183,7 +183,7 @@ public class ImageMetaData {
 				timeCol.add(DoubleRounder.round(tn - t0, 3));
 			}
 			
-			DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
+			DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 			DataTable.add(sliceCol);
 			DataTable.add(timeCol);
 			for(String str: columns.keySet()) {
@@ -264,7 +264,7 @@ public class ImageMetaData {
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {		    	
-		    	DataTable = new SDMMGenericTable("ImageMetaData - " + UID);
+		    	DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		    	DataTable.fromJSON(jParser);
 		    }
 		}
@@ -298,7 +298,7 @@ public class ImageMetaData {
 		this.Microscope = Microscope;
 	}
 	
-	public SDMMGenericTable getDataTable() {
+	public SDMMResultsTable getDataTable() {
 		return DataTable;
 	}
 	

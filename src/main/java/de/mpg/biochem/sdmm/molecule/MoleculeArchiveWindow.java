@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.AbstractListModel;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -32,6 +33,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -74,6 +76,8 @@ public class MoleculeArchiveWindow {
     private UIService uiService;
 
     private MoleculeArchive archive;
+    
+    private boolean SMILEencoding = true;
 	
     private boolean lockArchive = false;
 	private JFrame frame;
@@ -96,9 +100,11 @@ public class MoleculeArchiveWindow {
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
 	private JMenuItem saveAsMenuItem = new JMenuItem("Save As");
 	
+	private JRadioButton JSONencodingButton, SMILEencodingButton;
+	
 	//private JMenuItem renameMenuItem = new JMenuItem("Rename");
 	
-	private JMenuItem addMetaDataMenuItem = new JMenuItem("Add ImageMetaData");
+	//private JMenuItem addMetaDataMenuItem = new JMenuItem("Add ImageMetaData");
 	
 	private JMenuItem singleCurveMenuItem = new JMenuItem("Single Curve");
 	private JMenuItem multiCurveMenuItem = new JMenuItem("Multiple Curves");
@@ -209,12 +215,14 @@ public class MoleculeArchiveWindow {
 		JMenu plotMenu = new JMenu("Plot");
 		mb.add(plotMenu);
 		//toolsMenu.add(addMetaDataMenuItem);
+		/*
 		addMetaDataMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 //File imageFolder = uiService.chooseFile(archive.getFile(), FileWidget.DIRECTORY_STYLE);
 	 			 //archive.addImageMetaData(new ImageMetaData(imageFolder, moleculeArchiveService, "Odin"));
 	          }
 	       });
+	       */
 		plotMenu.add(singleCurveMenuItem);
 		singleCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
@@ -332,7 +340,7 @@ public class MoleculeArchiveWindow {
 		frame.add(tabbedPane, BorderLayout.CENTER);
 		frame.setJMenuBar(mb);
 		frame.pack();
-		frame.setSize(800, 500);
+		frame.setSize(900, 700);
 		frame.setVisible(true);	
 	}
 	
@@ -386,11 +394,46 @@ public class MoleculeArchiveWindow {
 			panel.add(new JLabel("This archive is stored in normal memory."), gbc);
 		}
 		
-		gbc.gridy += 1;
-		panel.add(new JLabel("                                   "), gbc);
+		//gbc.gridy += 1;
+		//panel.add(new JLabel("                                   "), gbc);
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("                                   "), gbc);
+		panel.add(new JLabel("Encoding:                                 "), gbc);
+		
+		JSONencodingButton = new JRadioButton("JSON");
+		JSONencodingButton.setMnemonic(KeyEvent.VK_J);
+		JSONencodingButton.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 updateEncoding();
+	         }
+		});
+		gbc.gridy += 1;
+		panel.add(JSONencodingButton, gbc);
+		
+		SMILEencodingButton = new JRadioButton("Smile");
+	    SMILEencodingButton.setMnemonic(KeyEvent.VK_S);
+		SMILEencodingButton.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 updateEncoding();
+	         }
+		});
+		gbc.gridy += 1;
+		panel.add(SMILEencodingButton, gbc);
+		
+		//Group the radio buttons.
+	    ButtonGroup group = new ButtonGroup();
+	    group.add(JSONencodingButton);
+	    group.add(SMILEencodingButton);
+	    
+	    if (archive.isSMILEencoding()) {
+	    	SMILEencoding = true;
+	    	JSONencodingButton.setSelected(false);
+		    SMILEencodingButton.setSelected(true);
+	    } else {
+	    	SMILEencoding = false;
+	    	JSONencodingButton.setSelected(true);
+		    SMILEencodingButton.setSelected(false);
+	    }
 		
 		JPanel northPanel = new JPanel();
 		northPanel.setLayout(new GridBagLayout());	
@@ -463,7 +506,18 @@ public class MoleculeArchiveWindow {
 	}
 	
 	public void unlockArchive() {
+		updateAll();
 		lockArchive = false;
+	}
+	
+	public void updateEncoding() {
+		if (JSONencodingButton.isSelected()) {
+			archive.unsetSMILEencoding();
+			SMILEencoding = false;
+		} else if (SMILEencodingButton.isSelected()) {
+			archive.setSMILEencoding();
+			SMILEencoding = true;
+		}
 	}
 	
 	public MoleculeArchive getArchive() {

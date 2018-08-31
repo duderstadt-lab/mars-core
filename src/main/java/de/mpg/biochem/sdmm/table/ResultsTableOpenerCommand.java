@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.plugin.Menu;
@@ -15,10 +16,15 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
+import org.scijava.command.DynamicCommand;
+
+import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
+
 import org.scijava.log.*;
 import org.scijava.menu.MenuConstants;
 
 import net.imagej.table.DoubleColumn;
+import net.imagej.table.GenericColumn;
 
 @Plugin(type = Command.class, label = "Open ResultsTable", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -28,7 +34,7 @@ import net.imagej.table.DoubleColumn;
 		@Menu(label = "Table Utils", weight = 10,
 			mnemonic = 't'),
 		@Menu(label = "Open ResultsTable", weight = 1, mnemonic = 'o')})
-public class ResultsTableOpenerCommand implements Command {
+public class ResultsTableOpenerCommand extends DynamicCommand {
 	
 	@Parameter
     private ResultsTableService resultsTableService;
@@ -41,6 +47,9 @@ public class ResultsTableOpenerCommand implements Command {
     
     @Parameter
     private LogService logService;
+    
+    @Parameter(label="SDMMResultsTable", type = ItemIO.OUTPUT)
+    private SDMMResultsTable results;
 
 	@Override
 	public void run() {		
@@ -50,11 +59,10 @@ public class ResultsTableOpenerCommand implements Command {
 		if (file.getAbsolutePath() == null)
 			return;
 		
-		SDMMResultsTable results = open(file.getAbsolutePath());
+		results = open(file.getAbsolutePath());
 		results.setName(file.getName());
 		
-		resultsTableService.addTable(results);
-		uiService.show(results.getName(), results);
+		getInfo().getOutput("results", SDMMResultsTable.class).setLabel(results.getName());
 	}
 	
 	public ResultsTableOpenerCommand() {}
@@ -83,32 +91,59 @@ public class ResultsTableOpenerCommand implements Command {
             for (int i=firstColumn; i<headings.length; i++) {
                 headings[i] = headings[i].trim();
             }
-
-            for (int i=firstColumn; i<headings.length;i++) {
-            		rt.add(new DoubleColumn(headings[i]));
-            }
             
+            boolean[] stringColumn = new boolean[headings.length];
+
             int row = 0;
             for(String line = null; (line = br.readLine()) != null;) {
-               	rt.appendRow();
-            	    String[] items = line.split(cellSeparator);
-            	    for (int i=firstColumn; i<headings.length;i++) {
-            	    		   double value = Double.NaN;
-            	    	       if (items[i]==null)
-            	    	    	   	    continue;
-            	    			try {
-            	    				value = Double.parseDouble(items[i]);
-            	    			} catch (NumberFormatException e) {}
-            	    			
-            	    			rt.set(i - firstColumn, row, value);
-            	    }
-            	    readPosition += line.getBytes().length + lineSeparator.getBytes().length;
-            	    currentPercent = (int)Math.round(readPosition*1000/size_in_bytes);
-            	    if (currentPercent > currentPercentDone) {
-        	    		currentPercentDone = currentPercent;
-        	    		statusService.showStatus(currentPercent, 1000, "Opening file " + file.getName());
-            	    }
-            	    row++;
+        	    String[] items = line.split(cellSeparator);
+        	    
+        	    //During the first cycle we need to build the table with columns that are either 
+                //DoubleColumns or GenericColumns for numbers or strings
+            	//We need to detect this by what is in the first row...
+        	    if (row == 0) {
+        	    	for (int i=firstColumn; i<headings.length;i++) {
+        	    		if(items[i].equals("NaN") || items[i].equals("-Infinity") || items[i].equals("Infinity")) {
+        	    			//This should be a DoubleColumn
+        	    			rt.add(new DoubleColumn(headings[i]));
+        	    			stringColumn[i] = false;
+        	    		} else {
+        	    			double value = Double.NaN;
+        	    			try {
+         	    				value = Double.parseDouble(items[i]);
+         	    			} catch (NumberFormatException e) {}
+        	    			
+        	    			if (Double.isNaN(value)) {
+        	    				rt.add(new GenericColumn(headings[i]));
+        	    				stringColumn[i] = true;
+        	    			} else {
+        	    				rt.add(new DoubleColumn(headings[i]));
+        	    				stringColumn[i] = false;
+        	    			}
+        	    		}
+        	    	}
+        	    }
+        	    
+        	    rt.appendRow();
+        	    for (int i=firstColumn; i<headings.length;i++) {
+        	    	if (stringColumn[i]) {
+		    		   rt.setStringValue(i - firstColumn, row, items[i].trim());
+        	    	} else {
+        	    		double value = Double.NaN;
+		    			try {
+		    				value = Double.parseDouble(items[i]);
+		    			} catch (NumberFormatException e) {}
+		    			
+		    			rt.setValue(i - firstColumn, row, value);
+        	    	}
+        	    }
+        	    readPosition += line.getBytes().length + lineSeparator.getBytes().length;
+        	    currentPercent = (int)Math.round(readPosition*1000/size_in_bytes);
+        	    if (currentPercent > currentPercentDone) {
+    	    		currentPercentDone = currentPercent;
+    	    		statusService.showStatus(currentPercent, 1000, "Opening file " + file.getName());
+        	    }
+        	    row++;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -121,6 +156,8 @@ public class ResultsTableOpenerCommand implements Command {
 	}
 	
 	//Utility methods to set Parameters not initialized...
+	
+	//TO DO remove these are just run it as a command from the TableDropRunner...
 	public void setTableService(ResultsTableService resultsTableService) {
 		this.resultsTableService = resultsTableService;
 	}

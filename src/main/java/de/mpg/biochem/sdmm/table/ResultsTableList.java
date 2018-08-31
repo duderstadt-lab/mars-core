@@ -18,7 +18,7 @@ public class ResultsTableList extends AbstractList<double[]> {
 		double[] values = new double[table.getColumnCount()];
 		
 		for (int col = 0; col < values.length; col++)
-			values[col] = table.get(col, row);
+			values[col] = table.getValue(col, row);
 		
 		return values;
 	}

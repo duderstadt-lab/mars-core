@@ -20,6 +20,7 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -40,6 +41,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.core.format.MatchStrength;
 import com.fasterxml.jackson.dataformat.smile.*;
 import com.fasterxml.jackson.databind.*;
 
@@ -70,6 +74,9 @@ public class MoleculeArchive {
 	private MoleculeArchiveProperties archiveProperties;
 	
 	//This will maintain a list of the metaDatasets as an index with UID keys for each..
+	//Need to make sure all write operations are placed within synchronized blocks. synchronized(imageMetaDataIndex) { ... }
+	//To avoid thread issues.
+	//All read operations can be done in parallel no problem.
 	private ArrayList<String> imageMetaDataIndex;
 	//This will store all the ImageMetaData sets associated with the molecules
 	//molecules have a metadataUID that maps to these keys so it is clear which dataset they were from.
@@ -82,6 +89,9 @@ public class MoleculeArchive {
 	//This is a list of molecule keys that will define the index and be used for retrieval from the ChronicleMap in virtual memory
 	//or retrieval from the molecules array in memory
 	//This array defines the absolute set of molecules considered to be in the archive for purposes of saving and reading etc...
+	//Need to make sure all write operations are placed within synchronized blocks. synchronized(moleculeIndex) { ... }
+	//To avoid thread issues.
+	//All read operations can be done in parallel no problem.
 	private ArrayList<String> moleculeIndex;
 	//This is a map index of tags for searching in molecule tables etc..
 	private ConcurrentMap<String, String> tagIndex;
@@ -94,6 +104,9 @@ public class MoleculeArchive {
 	
 	//By default we work virtual
 	private boolean virtual = true;
+	
+	//determines whether the file is encoded in binary smile format
+	private boolean smileEncoding = true;
 	
 	//Constructor for creating an empty molecule archive...	
 	public MoleculeArchive(String name, MoleculeArchiveService moleculeArchiveService) {
@@ -152,11 +165,10 @@ public class MoleculeArchive {
 	}
 	
 	private void initializeVariables() {
-		moleculeIndex = new ArrayList<>();  
+		moleculeIndex = new ArrayList<String>();  
+		imageMetaDataIndex = new ArrayList<String>(); 
 		
 		tagIndex = new ConcurrentHashMap<>();
-		
-		imageMetaDataIndex = new ArrayList<>();
 		imageMetaData = new ConcurrentHashMap<>();
 		
 		archiveProperties = new MoleculeArchiveProperties(this);
@@ -166,23 +178,27 @@ public class MoleculeArchive {
 		//The first object in the yama file has general information about the archive including
 		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
 		//if we are working virtual. So we load that information first
-		//String format = FilenameUtils.getExtension(file.getName());
 		
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		
-		//Reader decoder = new InputStreamReader(inputStream, "UTF-8");
-		//BufferedReader buffered = new BufferedReader(decoder);
-		
-		JsonParser jParser;
-		//files are always json text and should have yama extension
-		//if (format.equals("yama")) {
-		//	SmileFactory jfactory = new SmileFactory();
-		//	jParser = jfactory.createParser(inputStream);
-		//} else {
-			//We assume the extension is .json
-			JsonFactory jfactory = new JsonFactory();
-			jParser = jfactory.createParser(inputStream);
-		//}
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
+	    
+	    if (match.getMatchedFormatName().equals("Smile")) {
+	    	smileEncoding = true;
+	    } else if (match.getMatchedFormatName().equals("JSON")) {
+	    	//This is included just for completeness in case we want to
+	    	//add a third format someday...
+	    	smileEncoding = false;
+	    } else {
+	    	//We default to JSON
+	    	smileEncoding = false;
+	    }
 		
 		jParser.nextToken();
 		jParser.nextToken();
@@ -298,17 +314,13 @@ public class MoleculeArchive {
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 			
 			JsonGenerator jGenerator;
-			//Need to offer second output option of just raw UTF-8 text..
-			//Seems like smile encoding actually makes larger files, so lets skip it for the moment.
-			//if (filePath.endsWith(".yama")) {
-			//	SmileFactory jfactory = new SmileFactory();
-			//	jGenerator = jfactory.createGenerator(stream);
-			//} else {
-				//Should have extension .yama.json
-				//Default to UTF-8 output...
+			if (smileEncoding) {
+				SmileFactory jfactory = new SmileFactory();
+				jGenerator = jfactory.createGenerator(stream);
+			} else {
 				JsonFactory jfactory = new JsonFactory();
 				jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-			//}
+			}
 			
 			//We have to have a starting { for the json...
 			jGenerator.writeStartObject();
@@ -391,7 +403,12 @@ public class MoleculeArchive {
 			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".");
 			logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
 		} else {
-			moleculeIndex.add(molecule.getUID());
+			//Need to make sure all write operations to moleculeIndex 
+			//are synchronized to avoid two thread working at the same time
+			//during a write operation
+			synchronized(moleculeIndex) {
+				moleculeIndex.add(molecule.getUID());
+			}
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 			if (virtual) {
 				archive.put(molecule.getUID(), molecule);
@@ -403,7 +420,10 @@ public class MoleculeArchive {
 	}
 	
 	public void addImageMetaData(ImageMetaData metaData) {
-		imageMetaDataIndex.add(metaData.getUID());
+		synchronized(imageMetaDataIndex) {
+			imageMetaDataIndex.add(metaData.getUID());
+		}
+		
 		imageMetaData.put(metaData.getUID(), metaData);
 	}
 	
@@ -458,7 +478,7 @@ public class MoleculeArchive {
 		return get(moleculeIndex.get(index));
 	}
 	
-	public Collection<String> getMoleculeUIDs() {
+	public ArrayList<String> getMoleculeUIDs() {
 		return moleculeIndex;
 	}
 	
@@ -491,6 +511,13 @@ public class MoleculeArchive {
 			tagIndex.put(molecule.getUID(), tagList);
 		} else {
 			tagIndex.remove(molecule.getUID());
+		}
+	}
+	
+	public void remove(String UID) {
+		molecules.remove(UID);
+		synchronized(moleculeIndex) {
+			moleculeIndex.remove(UID);
 		}
 	}
 	
@@ -569,6 +596,30 @@ public class MoleculeArchive {
 		this.win = win;
 	}
 	
+	public void lockArchive() {
+		if (win != null) {
+			win.lockArchive();
+		}
+	}
+	
+	public void unlockArchive() {
+		if (win != null) {
+			win.unlockArchive();
+		}
+	}
+	
+	public void setSMILEencoding() {
+		smileEncoding = true;
+	}
+	
+	public void unsetSMILEencoding() {
+		smileEncoding = false;
+	}
+	
+	public boolean isSMILEencoding() {
+		return smileEncoding;
+	}
+	
 	public MoleculeArchiveProperties getArchiveProperties() {
 		return archiveProperties;
 	}
@@ -632,9 +683,6 @@ public class MoleculeArchive {
 		@Override
 		public void write(Bytes out, Molecule toWrite) {
 			try {
-				//BufferedOutputStream bufferedStream = new BufferedOutputStream(out.outputStream());
-				//GZIPOutputStream stream = new GZIPOutputStream(bufferedStream);
-				//BufferedOutputStream stream = new BufferedOutputStream(out.outputStream());
 				OutputStream stream = out.outputStream();
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
@@ -644,9 +692,6 @@ public class MoleculeArchive {
 				
 				stream.flush();
 				stream.close();
-				
-				//bufferedStream.flush();
-				//bufferedStream.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -656,12 +701,7 @@ public class MoleculeArchive {
 		@Override
 		public Molecule read(Bytes in, Molecule using) {
 			try {
-				//InputStream inputStream = new GZIPInputStream(in.inputStream());
-				
 				InputStream inputStream = in.inputStream();
-				
-				//Reader decoder = new InputStreamReader(inputStream, "UTF-8");
-				//BufferedReader buffered = new BufferedReader(decoder);
 		
 				JsonParser jParser = jfactory.createParser(inputStream);
 	

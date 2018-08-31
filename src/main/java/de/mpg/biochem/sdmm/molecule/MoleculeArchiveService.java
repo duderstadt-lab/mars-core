@@ -116,6 +116,22 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return columns;
 	}
 	
+	public ArrayList<String> getSegmentTableNames() {
+		ArrayList<String> segTableNames = new ArrayList<String>();
+	
+		for (MoleculeArchive archive: archives.values()) {
+			//We assume all the molecules have the same segment tables
+			//I think this should be strickly enforced
+			for (String segTableName : archive.get(0).getSegmentTableNames()) {
+				if(!segTableNames.contains(segTableName))
+					segTableNames.add(segTableName);
+			}
+		}
+		
+		return segTableNames;
+	}
+	
+	
 	public ArrayList<String> getArchiveNames() {
 		return new ArrayList(archives.keySet());
 	}

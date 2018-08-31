@@ -35,7 +35,8 @@ import net.imglib2.type.numeric.real.DoubleType;
  * 
  * @author Karl Duderstadt
  */
-public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implements ResultsTable {
+//public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implements ResultsTable {
+public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
 
 	/**
 	 * 
@@ -49,7 +50,7 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	
 	private StringBuilder sb;
 	
-	private String name = new String("DoubleResultsTable");
+	private String name = new String("SDMMResultsTable");
 	
 	/** Creates an empty results table. */
 	public SDMMResultsTable() {
@@ -115,11 +116,15 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	}
 	
 	public double[] getColumnAsDoubles(String column) {
-		double[] col_array = new double[getRowCount()];
-		for (int i=0;i<col_array.length;i++) {
-			col_array[i] = get(column).getValue(i);
+		if (get(column) instanceof DoubleColumn) { 
+			double[] col_array = new double[getRowCount()];
+			for (int i=0;i<col_array.length;i++) {
+				col_array[i] = ((DoubleColumn)get(column)).getValue(i);
+			}
+			return col_array;
+		} else {
+			return null;
 		}
-		return col_array;
 	}
 	
 	//IMPORT/EXPORT METHODS
@@ -183,6 +188,10 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	
 	//TO FROM JSON MULTIPLE FORMATS
 	//jackson custom JSON serialization in column array format
+	//This was the old JSON format that makes smaller file sizes
+	//but this was replaced with a more common JSON table format 
+	//for compatibility with other software - Python, Vega etc..
+	/*
 	public void toJSONArrays(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
 		for (int i=0;i<getColumnCount();i++) {
@@ -223,6 +232,7 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
     		add(column);
     	}
 	}
+	*/
 	
 	//jackson custom JSON serialization in table format with schema and data objects
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
@@ -234,7 +244,11 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 			for (int i=0;i<getColumnCount();i++) {
 				jGenerator.writeStartObject();
 				jGenerator.writeStringField("name", getColumnHeader(i));
-				jGenerator.writeStringField("type", "number");
+				if(get(i) instanceof GenericColumn) {
+					jGenerator.writeStringField("type", "string");
+				} else if (get(i) instanceof DoubleColumn) {
+					jGenerator.writeStringField("type", "number");
+				}
 				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
@@ -245,7 +259,11 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 			for (int row=0;row<getRowCount();row++) {
 				jGenerator.writeStartObject();
 				for (int col=0;col<getColumnCount();col++) {
-					jGenerator.writeNumberField(getColumnHeader(col), SDMMMath.round(get(col, row)));
+					if (get(col) instanceof GenericColumn) {
+						jGenerator.writeStringField(getColumnHeader(col), (String)get(col, row));
+					} else if (get(col) instanceof DoubleColumn) {
+						jGenerator.writeNumberField(getColumnHeader(col), SDMMMath.round((double)get(col, row)));
+					}
 				}
 				jGenerator.writeEndObject();
 			}
@@ -256,9 +274,6 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	
 	//jackson custom JSON deserialization in table format with schema and data objects
 	public boolean fromJSON(JsonParser jParser) throws IOException {			
-		
-		//log_window = new TextWindow("fromJSONTable_Log", "", 400, 600);
-		
 		//First we move past object start
     	jParser.nextToken();
     	
@@ -289,14 +304,14 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	    	    				if ("type".equals(fieldname_L3)) {
 	    	    					jParser.nextToken();
 
-	    	    					if (!"number".equals(jParser.getText())) {
-	    	    						//There is a column that is not a number...
-	    	    						//You should use a SDMMGenericTable to open it...
-	    	    						return false;
+	    	    					if ("number".equals(jParser.getText())) {
+	    	    						add(new DoubleColumn(columnName));
+	    	    					} else if ("string".equals(jParser.getText())) {
+	    	    						add(new GenericColumn(columnName));
 	    	    					}
 	    	    				}
     	    				}
-	    		    		add(new DoubleColumn(columnName));
+	    		    		
     	    			}
     	    		}
     	    	}
@@ -314,17 +329,21 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		    			
 		    			//move to value token
 		    			jParser.nextToken();
-		    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
-		    				String str = jParser.getValueAsString();
-		    				if (Objects.equals(str, new String("Infinity"))) {
-		    					setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("-Infinity"))) {
-		    					setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("NaN"))) {
-		    					setValue(colname, rowIndex, Double.NaN);
-		    				}
-		    			} else {
-		    				setValue(colname, rowIndex, jParser.getDoubleValue());
+		    			if (get(colname) instanceof DoubleColumn) {
+			    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
+			    				String str = jParser.getValueAsString();
+			    				if (Objects.equals(str, new String("Infinity"))) {
+			    					setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
+			    				} else if (Objects.equals(str, new String("-Infinity"))) {
+			    					setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
+			    				} else if (Objects.equals(str, new String("NaN"))) {
+			    					setValue(colname, rowIndex, Double.NaN);
+			    				}
+			    			} else {
+			    				setValue(colname, rowIndex, jParser.getDoubleValue());
+			    			}
+		    			} else if (get(colname) instanceof GenericColumn) {
+		    				setValue(colname, rowIndex, jParser.getValueAsString());
 		    			}
 		    		}
 	    		}
@@ -334,7 +353,7 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	}
 	
 	//saveAs method for JSON Table format output...
-	public void saveAsJSON(String path) {
+	public boolean saveAsJSON(String path) {
 		try {
 			if (!path.endsWith(".json")) {
 				path += ".json";
@@ -356,7 +375,9 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return false;
 		}
+		return true;
 	}
 	
 	//open method for JSON Table format input...
@@ -376,33 +397,38 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		jParser.close();
 		inputStream.close();
 	}
-
-	@Override
-	public ImgPlus<DoubleType> img() {
-		final Img<DoubleType> img = new ResultsImg(this);
-		final AxisType[] axes = { Axes.X, Axes.Y };
-		final String name = "Results";
-		final ImgPlus<DoubleType> imgPlus =
-			new ImgPlus<>(img, name, axes);
-		// TODO: Once ImgPlus has a place for row & column labels, add those too.
-		return imgPlus;
-	}
 	
 	@Override
 	public String toString() {
 		return name;
 	}
 	
-	//This used to be a method in ResultsTable
-	//I reimplement it here but I guess they might add it in the future...
-	public double getValue(String column, int row) {
-		return getValue(getColumnIndex(column), row);
+	public void setValue(int col, int row, double value) {
+		setValue(getColumnHeader(col), row, value);
 	}
 	
-	//Also reimplementing this method from ResultTable
-	//maybe they add it later...
+	public void setStringValue(int col, int row, String value) {
+		((GenericColumn)get(getColumnHeader(col))).set(row, value);
+	}
+	
 	public void setValue(String column, int row, double value) {
-		setValue(getColumnIndex(column), row, value);
+		((DoubleColumn)get(column)).set(row, value);
+	}
+	
+	public void setValue(String column, int row, String value) {
+		((GenericColumn)get(column)).set(row, value);
+	}
+	
+	public double getValue(int col, int row) {
+		return getValue(getColumnHeader(col), row);
+	}
+	
+	public double getValue(String column, int index) {
+		return getDoubleColumn(column).get(index);
+	}
+	
+	public String getStringValue(String column, int index) {
+		return (String)get(column).get(index);
 	}
 	
 	public boolean hasColumn(String colName) {
@@ -413,13 +439,21 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		return false;
 	}
 	
+	public DoubleColumn getDoubleColumn(String column) {
+		return (DoubleColumn)get(column);
+	}
+	
+	public GenericColumn getGenericColumn(String column) {
+		return (GenericColumn)get(column);
+	}
+	
 	//Here are some utility methods add for common operations..
 	public double max(String column) {
 		if (get(column) == null)
 			return Double.NaN;
-		double max = get(column, 0);
+		double max = (double)get(column, 0);
 		//order doesn't matter so we use an iterator
-		for (double value: get(column)) {
+		for (double value: getDoubleColumn(column)) {
 			if (max < value)
 				max = value;
 		}
@@ -429,9 +463,9 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 	public double min(String column) {
 		if (get(column) == null)
 			return Double.NaN;
-		double min = get(column, 0);
+		double min = getDoubleColumn(column).get(0);
 		//order doesn't matter so we use an iterator
-		for (double value: get(column)) {
+		for (double value: getDoubleColumn(column)) {
 			if (min > value)
 				min = value;
 		}
@@ -470,7 +504,7 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		double mean = mean(column);
 		double diffSquares = 0;
 		for (int i = 0; i < getRowCount() ; i++) {
-			diffSquares += (mean - get(column, i))*(mean - get(column, i));
+			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
 		}
 		
 		return Math.sqrt(diffSquares/(getRowCount()-1));
@@ -484,19 +518,16 @@ public class SDMMResultsTable extends AbstractTable<DoubleColumn, Double> implem
 		int count = 0;
 		for (int i = 0; i < getRowCount() ; i++) {
 			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				diffSquares += (mean - get(meanColumn, i))*(mean - get(meanColumn, i));
+				diffSquares += (mean - getValue(meanColumn, i))*(mean - getValue(meanColumn, i));
 				count++;
 			}
 		}
 		
 		return Math.sqrt(diffSquares/(count-1));
 	}
-
-	// -- Internal methods --
-
+	
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
 	}
-
 }

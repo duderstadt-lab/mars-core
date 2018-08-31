@@ -79,10 +79,10 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	private void updateMinMax() {
 		table = resultsTableService.getResultsTable(tableName);
 		if (table.get(columnName) != null) {
-			min = max = table.get(columnName).get(0);
+			min = max = table.getDoubleColumn(columnName).get(0);
 			
 			//int index = 0;
-			for (double value: table.get(columnName)) {
+			for (double value: table.getDoubleColumn(columnName)) {
 				//logService.info("index " + index + " " + value);
 				//index++;
 				
@@ -136,7 +136,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		
 		double[] filterList = new double[0];
 		if (TableFilter) {
-			filterList = filterTable.get(columnName).getArray();
+			filterList = filterTable.getDoubleColumn(columnName).getArray();
 		}
 		
 		//If STDFilter was selected we have to calculate mean and STD before filtering
@@ -144,13 +144,13 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		double mean = 0;
 		if (STDFilter) {
 			for (int i = 0; i < table.getRowCount() ; i++) {
-				mean += table.get(columnName, i);
+				mean += table.getValue(columnName, i);
 			}
 			mean /= table.getRowCount();
 			
 			double diffSquares = 0;
 			for (int i = 0; i < table.getRowCount() ; i++) {
-				diffSquares += (mean - table.get(columnName, i))*(mean - table.get(columnName, i));
+				diffSquares += (mean - table.getValue(columnName, i))*(mean - table.getValue(columnName, i));
 			}
 			
 			STD = Math.sqrt(diffSquares/(table.getRowCount()-1));		
@@ -160,7 +160,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		//Another option is to take care of includeSelection only at the end.
 		ArrayList<Integer> deleteList = new ArrayList<Integer>(); 
 		for (int i = 0; i < table.getRowCount() ; i++) {
-			double value = table.get(columnName, i);
+			double value = table.getValue(columnName, i);
 			
 			if (Double.isNaN(value)) {
                 //Lets just remove all of the null values... They can't be filtered correctly

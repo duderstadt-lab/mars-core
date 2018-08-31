@@ -57,19 +57,19 @@ public class ResultsGroupFilterCommand extends DynamicCommand implements Initial
 		ResultsTableList rtl = new ResultsTableList(table);
 		
 		int to = table.getRowCount();
-		double currentGroup = table.get(group, to - 1);
+		double currentGroup = table.getValue(group, to - 1);
 		int count = 1;
 		
 		for (int row = table.getRowCount() - 2; row >= 0; row--) {
 			
-			if (table.get(group, row) == currentGroup) {
+			if (table.getValue(group, row) == currentGroup) {
 				count++;
 			} else {
 				if (count < min || count > max)
 					rtl.removeRange(row + 1, to);
 				
 				to = row + 1;
-				currentGroup = table.get(group, row);
+				currentGroup = table.getValue(group, row);
 				count = 1;
 			}
 			

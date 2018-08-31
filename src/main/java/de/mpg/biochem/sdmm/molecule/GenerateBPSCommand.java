@@ -143,7 +143,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.getWindow().lockArchive();
+			archive.lockArchive();
 		
 		archive.addLogMessage(log);
 		
@@ -176,7 +176,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 				molecule.getDataTable().appendColumn(distance_column_name);
 				
 				for (int j=0; j< molecule.getDataTable().getRowCount(); j++) {
-					double output = (molecule.getDataTable().get(Ycolumn, j) - attachment_Position)*um_per_pixel;
+					double output = (molecule.getDataTable().getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
 					if (output > 0)
 						output = (output - bead_radius)*mol_bps_per_um;
 					else if (output < 0)
@@ -222,11 +222,9 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	    logService.info(builder.endBlock(true));
 	    archive.addLogMessage(builder.endBlock(true));
 	    
-		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) {
-	    	archive.getWindow().updateAll();
-			archive.getWindow().unlockArchive();
-		}	
+	    //Unlock the window so it can be changed
+	    if (!uiService.isHeadless())
+			archive.unlockArchive();	
 	}	
 	
 	private void addInputParameterLog(LogBuilder builder) {

@@ -58,7 +58,6 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		//This allow for just the class name as an input 
 		//in scripts. Otherwise the whole path would have to be given..
 		scriptService.addAlias(SDMMResultsTable.class);
-		scriptService.addAlias(SDMMGenericTable.class);
 	}
 	
 	public void addTable(SDMMResultsTable table) {
@@ -128,10 +127,10 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		List<Integer> indices = new ArrayList<Integer>();
 		indices.add(0);
 		
-		int key = table.get(groupColumn, 0).intValue();
+		int key = (int)table.getValue(groupColumn, 0);
 		
 		for (int i = 1; i < table.getRowCount(); i++) {
-			if (key != table.get(groupColumn,i)) {
+			if (key != (int)table.getValue(groupColumn,i)) {
 				//Means we have encountered a new group so we add the key and start and end values
 				indices.add(i-1);
 				map.put(key, new GroupIndices(indices.get(0), indices.get(1)));
@@ -139,7 +138,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 				//Then we clean the indices and add the start of the next group
 				indices.clear();
 				indices.add(i);
-				key = table.get(groupColumn, i).intValue();
+				key = (int)table.getValue(groupColumn, i);
 			}
 		}
 
@@ -184,16 +183,4 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	public Class<ResultsTableService> getPluginType() {
 		return ResultsTableService.class;
 	}
-	
-	// Event Handlers
-	/*
-	@EventHandler
-	protected void onEvent(final ObjectCreatedEvent event) {
-		logService.info("event " + event.hashCode());
-		if (((Class) SDMMResultsTable.class).isAssignableFrom(event.getClass())) {
-			logService.info("A new table was created with the name " + ((SDMMResultsTable)event.getObject()).getName());
-		}
-	}
-	*/
-	//(List) objectService.getObjects(Display.class);
 }

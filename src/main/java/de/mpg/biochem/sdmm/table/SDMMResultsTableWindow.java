@@ -27,6 +27,7 @@ import javax.swing.table.AbstractTableModel;
 //import org.scijava.widget.FileWidget;
 
 import ij.io.SaveDialog;
+import net.imagej.table.DoubleColumn;
 
 public class SDMMResultsTableWindow implements ActionListener {
 	SDMMResultsTable results;
@@ -38,16 +39,13 @@ public class SDMMResultsTableWindow implements ActionListener {
 	JScrollPane scrollPane;
 	private AbstractTableModel tableModel;
 	private JMenuItem saveAsMenuItem = new JMenuItem("Save As", KeyEvent.VK_S);
+	private JMenuItem exportToJSONMenuItem = new JMenuItem("Export to JSON", KeyEvent.VK_E);
 	private JMenuItem renameMenuItem = new JMenuItem("Rename", KeyEvent.VK_R);
-	private JMenuItem duplicateMenuItem = new JMenuItem("Duplicate", KeyEvent.VK_D);
-	private JMenuItem cutMenuItem = new JMenuItem("Cut");
 	private JMenuItem copyMenuItem = new JMenuItem("Copy", KeyEvent.VK_C);
 	private JMenuItem clearMenuItem = new JMenuItem("Clear");
 	private JMenuItem selectAllMenuItem = new JMenuItem("Select All", KeyEvent.VK_A);
-	//private JMenuItem sortMenuItem = new JMenuItem("Sort", KeyEvent.VK_S);
+	
 	//private JMenuItem plotMenuItem = new JMenuItem("Plot", KeyEvent.VK_P);
-	//private JMenuItem filterMenuItem = new JMenuItem("Filter", KeyEvent.VK_F);
-	//private JMenuItem toImageJResultsTableMenuItem = new JMenuItem("To ImageJ Results Table");
 	
 	//static so that table locations are offset...
 	static int pos_x = 100;
@@ -77,7 +75,7 @@ public class SDMMResultsTableWindow implements ActionListener {
 				if (columnIndex == 0)
 					return rowIndex + 1;
 				
-				return results.getValue(columnIndex - 1, rowIndex);
+				return results.get(columnIndex - 1, rowIndex);
 			}
 			
 			@Override
@@ -100,8 +98,12 @@ public class SDMMResultsTableWindow implements ActionListener {
 			
 			@Override
 			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-				double value = Double.parseDouble((String)aValue);
-				results.set(columnIndex - 1, rowIndex, value);
+				if (results.get(columnIndex - 1)  instanceof DoubleColumn) {
+					results.set(columnIndex - 1, rowIndex, Double.valueOf((String)aValue));
+				} else {
+					//Otherwise we just put a String
+					results.set(columnIndex - 1, rowIndex, (String)aValue);
+				}
 			}
 			
 			@Override
@@ -127,8 +129,8 @@ public class SDMMResultsTableWindow implements ActionListener {
 		fileMenu.setMnemonic(KeyEvent.VK_F);
 		
 		fileMenu.add(saveAsMenuItem);
+		fileMenu.add(exportToJSONMenuItem);
 		fileMenu.add(renameMenuItem);
-		fileMenu.add(duplicateMenuItem);
 		
 		mb.add(fileMenu);
 		
@@ -136,31 +138,21 @@ public class SDMMResultsTableWindow implements ActionListener {
 		JMenu editMenu = new JMenu("Edit");
 		editMenu.setMnemonic(KeyEvent.VK_E);
 		
-		editMenu.add(cutMenuItem);
 		editMenu.add(copyMenuItem);
 		editMenu.add(clearMenuItem);
 		editMenu.add(selectAllMenuItem);
-		//editMenu.addSeparator();
-		//editMenu.add(filterMenuItem);
-		//editMenu.add(sortMenuItem);
-		//editMenu.add(plotMenuItem);
-		editMenu.addSeparator();
-		//editMenu.add(toImageJResultsTableMenuItem);
-		
 		mb.add(editMenu);
 
 		// set action listeners
 		saveAsMenuItem.addActionListener(this);
+		exportToJSONMenuItem.addActionListener(this);
 		renameMenuItem.addActionListener(this);
-		duplicateMenuItem.addActionListener(this);
-		cutMenuItem.addActionListener(this);
+		
 		copyMenuItem.addActionListener(this);
 		clearMenuItem.addActionListener(this);
 		selectAllMenuItem.addActionListener(this);
-		//filterMenuItem.addActionListener(this);
-		//sortMenuItem.addActionListener(this);
+
 		//plotMenuItem.addActionListener(this);
-		//toImageJResultsTableMenuItem.addActionListener(this);
 		
 		frame = new JFrame(name);
 		frame.setSize(400, 300);
@@ -204,32 +196,9 @@ public class SDMMResultsTableWindow implements ActionListener {
 			selectAll();
 		} else if (e.getSource() == saveAsMenuItem) {
 			saveAs();
+		} else if (e.getSource() == exportToJSONMenuItem) {
+			exportToJSON();
 		}
-		
-		/*
-		//if (e.getSource() == saveAsMenuItem)
-			//saveAs();
-		if (e.getSource() == renameMenuItem) {
-			String name = JOptionPane.showInputDialog("Table name", frame.getTitle());
-			rename(name);
-		} //else if (e.getSource() == duplicateMenuItem)
-			//duplicate();
-		else if (e.getSource() == cutMenuItem)
-			cut();
-		else if (e.getSource() == copyMenuItem)
-			copy();
-		else if (e.getSource() == clearMenuItem)
-			clear();
-		else if (e.getSource() == selectAllMenuItem)
-			selectAll();
-		//else if (e.getSource() == filterMenuItem)
-		//	filter();
-		//else if (e.getSource() == sortMenuItem)
-		//	sort();
-		//else if (e.getSource() == plotMenuItem)
-			//plot();
-		
-		*/
 	}
 	protected boolean saveAs() {
 		//String filename = frame.getTitle();
@@ -250,8 +219,16 @@ public class SDMMResultsTableWindow implements ActionListener {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return false;
 		}
 		return true;
+	}
+	protected boolean exportToJSON() {
+		SaveDialog sd = new SaveDialog("Export to JSON", frame.getTitle(), ".json");
+        String file = sd.getFileName();
+        if (file==null) return false;
+        String path = sd.getDirectory() + file;
+		return results.saveAsJSON(path);
 	}
 	
 	public void rename(String name) {
@@ -268,54 +245,6 @@ public class SDMMResultsTableWindow implements ActionListener {
 		results.clear();
 		resultsTableService.removeResultsTable(results.getName());
 	}
-	
-	/*
-	protected void duplicate() {
-		new ResultsTableWindow((ResultsTable) results.clone(), WindowManager.getUniqueName(frame.getTitle()));
-	}
-	
-	protected void cut() {
-		copy();
-		clear();
-	}
-	
-	protected void copy() {
-		
-		final int[] selectedRows = table.getSelectedRows();
-		
-		Transferable transferable = new Transferable() {
-			
-			@Override
-			public boolean isDataFlavorSupported(DataFlavor flavor) {
-				return DataFlavor.imageFlavor.equals(flavor);
-			}
-			
-			@Override
-			public DataFlavor[] getTransferDataFlavors() {
-				return new DataFlavor[]{DataFlavor.stringFlavor};
-			}
-			
-			@Override
-			public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-				
-				if (flavor.equals(DataFlavor.stringFlavor)) {
-					String csv = "";
-					
-					for (int i = 0; i < selectedRows.length; i++)
-						csv += results.getRowAsString(selectedRows[i]) + "\n";
-					
-					return csv;
-				}
-				else {
-					throw new UnsupportedFlavorException(flavor);
-				}
-			}
-		};
-		
-		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
-	}
-	
-	*/
 	
 	protected void clear() {
 		resultsTableService.delete(results, table.getSelectedRows());
