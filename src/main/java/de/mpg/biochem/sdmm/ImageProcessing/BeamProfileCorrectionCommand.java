@@ -48,7 +48,7 @@ import net.imglib2.type.numeric.RealType;
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Beam Profile Corrector", weight = 20, mnemonic = 'b')})
-public class BeamProfileCorrection<T extends RealType< T >> extends DynamicCommand implements Command {
+public class BeamProfileCorrectionCommand<T extends RealType< T >> extends DynamicCommand implements Command {
 	
 	@Parameter
 	private LogService logService;
