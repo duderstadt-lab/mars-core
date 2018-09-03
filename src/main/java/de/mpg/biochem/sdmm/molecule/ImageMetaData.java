@@ -36,7 +36,7 @@ public class ImageMetaData {
 	
 	//Any comments specific to the data collection
 	//a possible issue, the condition collected etc..
-	private String Comments;
+	private String log, Notes;
 	
 	private String Microscope;
 	
@@ -61,6 +61,7 @@ public class ImageMetaData {
 		this.moleculeArchiveService = moleculeArchiveService;
 		this.Microscope = Microscope;
 		this.SourceDirectory = img.getOriginalFileInfo().directory;
+		log = "";
 		
 		if (imageFormat.equals("NorPix")) {
 			UID = generateUID(headerLabels);
@@ -221,8 +222,11 @@ public class ImageMetaData {
 		if (CollectionDate != null)
 			jGenerator.writeStringField("CollectionDate", CollectionDate);
 		
-		if (Comments != null)
-			jGenerator.writeStringField("Comments", Comments);
+		if (Notes != null)
+			jGenerator.writeStringField("Notes", Notes);
+		
+		if (!log.equals(""))
+			jGenerator.writeStringField("Log", log);
  		
 		//Write out raw data table if there are columns
 		if (DataTable.size() > 0) {
@@ -258,9 +262,14 @@ public class ImageMetaData {
 		    	CollectionDate = jParser.getText();
 		    }
 		    
-		    if("Comments".equals(fieldname)) {
+		    if("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
-		    	Comments = jParser.getText();
+		    	Notes = jParser.getText();
+		    }
+		    
+		    if("Log".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	log = jParser.getText();
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {		    	
@@ -290,8 +299,8 @@ public class ImageMetaData {
 	}
 	
 	//Getters and Setters
-	public void setComments(String comments) {
-		this.Comments = comments;
+	public void setComments(String Notes) {
+		this.Notes = Notes;
 	}
 	
 	public void setMicroscopeName(String Microscope) {
@@ -319,7 +328,15 @@ public class ImageMetaData {
 	}
 	
 	public String getComments() {
-		return Comments;
+		return Notes;
+	}
+	
+	public void addLogMessage(String str) {
+		log += str + "\n";
+	}
+	
+	public String getLog() {
+		return log;
 	}
 	
 	//DataTable column exclusion list

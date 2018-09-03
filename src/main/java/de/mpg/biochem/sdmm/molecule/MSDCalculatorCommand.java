@@ -22,15 +22,15 @@ import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, label = "Region Difference Calculator", menu = {
+@Plugin(type = Command.class, label = "Mean Squared Displacement Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Region Difference Calculator", weight = 20, mnemonic = 'o')})
-public class RegionDifferenceCalculatorCommand extends DynamicCommand implements Command, Initializable {
+		@Menu(label = "Mean Squared Displacement Calculator", weight = 70, mnemonic = 'm')})
+public class MSDCalculatorCommand extends DynamicCommand implements Command, Initializable {
 	@Parameter
 	private LogService logService;
 	
@@ -46,34 +46,16 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
     @Parameter(label="MoleculeArchive")
     private MoleculeArchive archive;
     
-    @Parameter(label="X Column", choices = {"a", "b", "c"})
-	private String Xcolumn;
-    
-    @Parameter(label="Y Column", choices = {"a", "b", "c"})
-	private String Ycolumn;
-	
-    @Parameter(label="Region 1 start")
-	private int r1_start = 0;
-    
-    @Parameter(label="Region 1 end")
-	private int r1_end = 100;
-    
-    @Parameter(label="Region 2 start")
-	private int r2_start = 150;
-    
-    @Parameter(label="Region 2 end")
-	private int r2_end = 250;
+    @Parameter(label="Column", choices = {"a", "b", "c"})
+	private String column;
     
     @Parameter(label="Parameter Name")
-    private String paramName;
+    private String paramName = "column_MSD";
     
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
-		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
-		
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput("Ycolumn", String.class);
-		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
+		columnItems.setChoices(moleculeArchiveService.getColumnNames());
 	}
     
 	@Override
@@ -84,7 +66,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Region Difference Calculator");
+		String log = builder.buildTitleBlock("Mean Squared Displacement Calculator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -98,15 +80,11 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		archive.addLogMessage(log);
 		
-		//Loop through each molecule and add reversal difference value to parameters for each molecule
+		//Loop through each molecule and add MSD parameter for each
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			SDMMResultsTable datatable = molecule.getDataTable();
 			
-			double region1_mean = datatable.mean(Ycolumn, Xcolumn, r1_start, r1_end);
-			double region2_mean = datatable.mean(Ycolumn, Xcolumn, r2_start, r2_end);
-			
-			molecule.setParameter(paramName, region1_mean - region2_mean);
+			molecule.setParameter(paramName, molecule.getDataTable().msd(column));
 			
 			archive.set(molecule);
 		});
@@ -123,13 +101,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("X Column", Xcolumn);
-		builder.addParameter("Y Column", Ycolumn);
-		builder.addParameter("Region 1 start", String.valueOf(r1_start));
-		builder.addParameter("Region 1 end", String.valueOf(r1_end));
-		builder.addParameter("Region 2 start", String.valueOf(r2_start));
-		builder.addParameter("Region 2 end", String.valueOf(r2_end));
+		builder.addParameter("Column", column);
 		builder.addParameter("Parameter Name", paramName);
 	}
 }
-

@@ -485,7 +485,7 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	public double mean(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(meanColumn) == null || rowSelectionColumn == null)
+		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
 			return Double.NaN;
 		double sum = 0;
 		int count = 0;
@@ -510,8 +510,19 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return Math.sqrt(diffSquares/(getRowCount()-1));
 	}
 	
+	public double msd(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double mean = mean(column);
+		double diffSquares = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
+		}
+		return diffSquares/getRowCount();
+	}
+	
 	public double std(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(meanColumn) == null || rowSelectionColumn == null)
+		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
 			return Double.NaN;
 		double mean = mean(meanColumn, rowSelectionColumn, rangeStart, rangeEnd);
 		double diffSquares = 0;
@@ -524,6 +535,21 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 		
 		return Math.sqrt(diffSquares/(count-1));
+	}
+	
+	public double msd(String msdColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(msdColumn) == null || get(rowSelectionColumn) == null)
+			return Double.NaN;
+		double mean = mean(msdColumn, rowSelectionColumn, rangeStart, rangeEnd);
+		double diffSquares = 0;
+		int count = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				diffSquares += (getValue(msdColumn, i) - mean)*(getValue(msdColumn, i) - mean);
+				count++;
+			}
+		}
+		return diffSquares/count;
 	}
 	
 	@Override

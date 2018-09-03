@@ -36,11 +36,14 @@ import net.imagej.table.GenericColumn;
 
 public class ImageMetaDataPanel extends JPanel {
 	private ImageMetaData imageMetaData;
-	private MoleculeArchive archive;
 	
 	private JTextField UIDLabel, DateLabel, SourcePath;
 	private JTextField Microscope;
-	private JTextArea Comments;
+	private JTextArea Notes;
+	
+	//Log Tab Components
+	private JScrollPane logTab;
+	private JTextArea log;
 	
 	private JTabbedPane metaDataTabs;
 	
@@ -55,7 +58,6 @@ public class ImageMetaDataPanel extends JPanel {
 	private AbstractTableModel DataTableModel;
 	
 	public ImageMetaDataPanel(MoleculeArchive archive) {
-		this.archive = archive;
 		this.imageMetaData = archive.getImageMetaData(0);
 		
 		//METADATA INDEX LIST
@@ -183,24 +185,26 @@ public class ImageMetaDataPanel extends JPanel {
 		JScrollPane tablePane = buildMetaDataTable();
 		metaDataTabs.addTab("DataTable", tablePane);
 		
-		//Comments
-		Comments = new JTextArea(imageMetaData.getComments());
-        JScrollPane commentScroll = new JScrollPane(Comments);
+		//Notes
+		Notes = new JTextArea(imageMetaData.getComments());
+        JScrollPane commentScroll = new JScrollPane(Notes);
 		        
-        Comments.getDocument().addDocumentListener(
+        Notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Comments.getText());
+	            	imageMetaData.setComments(Notes.getText());
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Comments.getText());
+	            	imageMetaData.setComments(Notes.getText());
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Comments.getText());
+	            	imageMetaData.setComments(Notes.getText());
 	            }
 	        });
 		metaDataTabs.addTab("Notes", commentScroll);
 		
+		logTab = makeLogTab();
+		metaDataTabs.addTab("Log", logTab);	
 	}
 	
 	public JScrollPane buildMetaDataProperties() {
@@ -355,6 +359,14 @@ public class ImageMetaDataPanel extends JPanel {
 		
 		return scrollPane;
 	}
+
+	private JScrollPane makeLogTab() {
+		log = new JTextArea(imageMetaData.getLog());
+		log.setFont(new Font("Menlo", Font.PLAIN, 12));
+		log.setEditable(false);
+        JScrollPane pane = new JScrollPane(log);
+		return pane;
+	}
 	
 	public void updateAll() {
 		//Update Labels
@@ -364,8 +376,10 @@ public class ImageMetaDataPanel extends JPanel {
 		SourcePath.setText(imageMetaData.getSourceDirectory());
 		
 		//Update Comments
-		Comments.setText(imageMetaData.getComments());
+		Notes.setText(imageMetaData.getComments());
 				
+		//Update Log
+		log.setText(imageMetaData.getLog());
 				
 		//Update DataTable
 		DataTableModel.fireTableStructureChanged();

@@ -19,7 +19,7 @@ public class MoleculeArchiveProperties {
 	private int numberOfMolecules;
 	private double averageMoleculeSize;
 	private int numImageMetaData;
-	private String log, comments;
+	private String comments;
 	private LinkedHashSet<String> tags;
 	private LinkedHashSet<String> parameters;
 	
@@ -29,7 +29,6 @@ public class MoleculeArchiveProperties {
 		numberOfMolecules = 0;
 		averageMoleculeSize = 0;
 		numImageMetaData = 0;
-		log = "";
 		comments = "";
 		tags = new LinkedHashSet<String>();
 		parameters = new LinkedHashSet<String>();
@@ -41,7 +40,6 @@ public class MoleculeArchiveProperties {
 		numberOfMolecules = 0;
 		averageMoleculeSize = 0;
 		numImageMetaData = 0;
-		log = "";
 		comments = "";
 		tags = new LinkedHashSet<String>();
 		parameters = new LinkedHashSet<String>();
@@ -74,11 +72,8 @@ public class MoleculeArchiveProperties {
 			jGenerator.writeEndArray();
 		}
 		
-		if (!log.equals(""))
-			jGenerator.writeStringField("log", log);
-		
 		if (!comments.equals(""))
-			jGenerator.writeStringField("comments", comments);
+			jGenerator.writeStringField("Comments", comments);
 		
 		jGenerator.writeEndObject();
 	}
@@ -111,12 +106,7 @@ public class MoleculeArchiveProperties {
 		        }
 		    }
 		    
-		    if("log".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	log = jParser.getText();
-		    }
-		    
-		    if("comments".equals(fieldname)) {
+		    if("Comments".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	comments = jParser.getText();
 		    }
@@ -190,13 +180,5 @@ public class MoleculeArchiveProperties {
 	
 	public void setComments(String comments) {
 		this.comments = comments;
-	}
-	
-	public void addLogMessage(String str) {
-		log += str + "\n";
-	}
-	
-	public String getLog() {
-		return log;
 	}
 }

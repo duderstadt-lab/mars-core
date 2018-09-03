@@ -1,5 +1,6 @@
 package de.mpg.biochem.sdmm.molecule;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;

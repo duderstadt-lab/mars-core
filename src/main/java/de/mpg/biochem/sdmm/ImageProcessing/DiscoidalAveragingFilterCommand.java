@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 			mnemonic = 's'),
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
-		@Menu(label = "Discoidal Averaging Filter", weight = 30, mnemonic = 'd')})
+		@Menu(label = "Discoidal Averaging Filter", weight = 40, mnemonic = 'd')})
 public class DiscoidalAveragingFilterCommand<T extends RealType< T >> implements Command {
 	
 	@Parameter

@@ -38,13 +38,13 @@ public class Molecule {
 	private String imageMetaDataUID;
 	
 	//For any notes to be made about the molecule
-	private String notes;
+	private String Notes;
 	
 	//tags added for filtering...
-	private LinkedHashSet<String> tags;
+	private LinkedHashSet<String> Tags;
 	
 	//Hashmap that maps string parameters to doubles
-	private LinkedHashMap<String, Double> parameters;
+	private LinkedHashMap<String, Double> Parameters;
 	
 	//DataTable with raw data and converted data etc.. 
 	private SDMMResultsTable datatable;
@@ -72,22 +72,6 @@ public class Molecule {
 		}
 	}
 	
-	//Added for debugging..
-	private LogService logService;
-	
-	public Molecule(JsonParser jParser, LogService logService) {
-		this.logService = logService;
-		datatable = new SDMMResultsTable();
-		initializeVariables();
-		try {
-			fromJSON(jParser);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	//end Addition
-	
 	public Molecule(String UID) {
 		this.UID = UID;
 		datatable = new SDMMResultsTable();
@@ -103,8 +87,8 @@ public class Molecule {
 	private void initializeVariables() {
 		segments = new LinkedHashMap<>();
 		segmentsColumns = new LinkedHashMap<>();
-		parameters = new LinkedHashMap<>();
-		tags = new LinkedHashSet<String>();
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
 	}
 	
 	//jackson custom JSON serialization 
@@ -118,24 +102,24 @@ public class Molecule {
 			jGenerator.writeStringField("ImageMetaDataUID", imageMetaDataUID);
 		
 		//Write out notes if there are any
-		if (notes != null)
-			jGenerator.writeStringField("notes", notes);
+		if (Notes != null)
+			jGenerator.writeStringField("Notes", Notes);
 		
 		//Write out arrays of tags if tags have been added.
-		if (tags.size() > 0) {
-			jGenerator.writeFieldName("tags");
+		if (Tags.size() > 0) {
+			jGenerator.writeFieldName("Tags");
 			jGenerator.writeStartArray();
-			Iterator<String> iterator = tags.iterator();
+			Iterator<String> iterator = Tags.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());
 			jGenerator.writeEndArray();
 		}
 		
 		//Write out parameters, which are number fields used to filter and process the molecule..
-		if (parameters.size() > 0) {
+		if (Parameters.size() > 0) {
 			jGenerator.writeObjectFieldStart("Parameters");
-			for (String name:parameters.keySet())
-				jGenerator.writeNumberField(name, parameters.get(name));
+			for (String name:Parameters.keySet())
+				jGenerator.writeNumberField(name, Parameters.get(name));
 			jGenerator.writeEndObject();
 		}
  		
@@ -183,17 +167,17 @@ public class Molecule {
 		    	imageMetaDataUID = jParser.getText();
 		    }
 		    
-		    if ("notes".equals(fieldname)) {
+		    if ("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
-		        notes = jParser.getText();
+		        Notes = jParser.getText();
 		    }
 		    
-		    if("tags".equals(fieldname)) {
+		    if("Tags".equals(fieldname)) {
 		    	//First we move past object start ?
 		    	jParser.nextToken();
 		    	
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tags.add(jParser.getText());
+		            Tags.add(jParser.getText());
 		        }
 		    }
 			    
@@ -208,14 +192,14 @@ public class Molecule {
 		    		if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
 	    				String str = jParser.getValueAsString();
 	    				if (Objects.equals(str, new String("Infinity"))) {
-	    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
 	    				} else if (Objects.equals(str, new String("-Infinity"))) {
-	    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
 	    				} else if (Objects.equals(str, new String("NaN"))) {
-	    					parameters.put(subfieldname, Double.NaN);
+	    					Parameters.put(subfieldname, Double.NaN);
 	    				}
 	    			} else {
-	    				parameters.put(subfieldname, jParser.getDoubleValue());
+	    				Parameters.put(subfieldname, jParser.getDoubleValue());
 	    			}
 		    	}
 		    }
@@ -273,57 +257,61 @@ public class Molecule {
 	}
 
 	public String getNotes() {
-		return notes;
+		return Notes;
 	}
 	
-	public void setNotes(String notes) {
-		this.notes = notes;
+	public void setNotes(String Notes) {
+		this.Notes = Notes;
 	}
 	
-	public void addNote(String note) {
-		notes += note;
+	public void addNote(String Note) {
+		Notes += Note;
 	}
 	
 	public void addTag(String tag) {
-		tags.add(tag);
+		Tags.add(tag);
 		if (parent != null) {
 			parent.getArchiveProperties().addTag(tag);
 		}
 	}
 	
 	public void removeTag(String tag) {
-		tags.remove(tag);
+		Tags.remove(tag);
 	}
 	
 	public void setParameter(String parameter, double value) {
-		parameters.put(parameter, value);
+		Parameters.put(parameter, value);
 		if (parent != null) {
 			parent.getArchiveProperties().addParameter(parameter);
 		}
 	}
 	
 	public void removeParameter(String parameter) {
-		parameters.remove(parameter);
+		Parameters.remove(parameter);
 	}
 	
 	public double getParameter(String parameter) {
-		return parameters.get(parameter);
+		return Parameters.get(parameter);
 	}
 	
 	public boolean hasParameter(String parameter) {
-		return parameters.containsKey(parameter);
+		return Parameters.containsKey(parameter);
 	}
 	
 	public boolean hasTag(String tag) {
-		return tags.contains(tag);
+		return Tags.contains(tag);
+	}
+	
+	public boolean hasNoTags() {
+		return Tags.size() == 0;
 	}
 	
 	public LinkedHashMap<String, Double> getParameters() {
-		return parameters;
+		return Parameters;
 	}
 	
 	public LinkedHashSet<String> getTags() {
-		return tags;
+		return Tags;
 	}
 		
 	public void setSegmentsTable(String yColumnName, String xColumnName, SDMMResultsTable segs) {

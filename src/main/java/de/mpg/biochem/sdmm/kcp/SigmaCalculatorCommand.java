@@ -1,9 +1,7 @@
-package de.mpg.biochem.sdmm.molecule;
+package de.mpg.biochem.sdmm.kcp;
 
 import org.decimal4j.util.DoubleRounder;
 
-import org.scijava.ItemIO;
-import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -14,23 +12,22 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 
-import java.util.HashMap;
-
+import de.mpg.biochem.sdmm.molecule.*;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
 
-@Plugin(type = Command.class, label = "Region Difference Calculator", menu = {
+@Plugin(type = Command.class, headless = true, label = "Sigma Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
-			mnemonic = 'm'),
-		@Menu(label = "Region Difference Calculator", weight = 20, mnemonic = 'o')})
-public class RegionDifferenceCalculatorCommand extends DynamicCommand implements Command, Initializable {
+		@Menu(label = "KCP", weight = 30,
+			mnemonic = 'k'),
+		@Menu(label = "Sigma Calculator", weight = 20, mnemonic = 's')})
+public class SigmaCalculatorCommand extends DynamicCommand implements Command, Initializable {
 	@Parameter
 	private LogService logService;
 	
@@ -51,23 +48,19 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
     
     @Parameter(label="Y Column", choices = {"a", "b", "c"})
 	private String Ycolumn;
+    
+	@Parameter(label = "Region:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "all slices",
+					"defined below", "bg_start to bg_end" })
+	private String region;
 	
-    @Parameter(label="Region 1 start")
-	private int r1_start = 0;
+	@Parameter(label="from")
+	private double from = 1;
+	
+	@Parameter(label="to")
+	private double to = 500;
     
-    @Parameter(label="Region 1 end")
-	private int r1_end = 100;
-    
-    @Parameter(label="Region 2 start")
-	private int r2_start = 150;
-    
-    @Parameter(label="Region 2 end")
-	private int r2_end = 250;
-    
-    @Parameter(label="Parameter Name")
-    private String paramName;
-    
-	@Override
+    @Override
 	public void initialize() {
 		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
 		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
@@ -84,7 +77,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Region Difference Calculator");
+		String log = builder.buildTitleBlock("Sigma Calculator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -98,15 +91,23 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		archive.addLogMessage(log);
 		
-		//Loop through each molecule and add reversal difference value to parameters for each molecule
+		final String paramName = Ycolumn + "_sigma";
+		
+		//Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			SDMMResultsTable datatable = molecule.getDataTable();
 			
-			double region1_mean = datatable.mean(Ycolumn, Xcolumn, r1_start, r1_end);
-			double region2_mean = datatable.mean(Ycolumn, Xcolumn, r2_start, r2_end);
-			
-			molecule.setParameter(paramName, region1_mean - region2_mean);
+			if (region.equals("defined below")) {
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
+			} else if (region.equals("bg_start to bg_end")) {
+				double start = molecule.getParameter("bg_start");
+				double end = molecule.getParameter("bg_end");
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, start, end));
+			} else {
+				//WE assume this mean sigma for whole trace.
+				molecule.setParameter(paramName, datatable.std(Ycolumn));
+			}
 			
 			archive.set(molecule);
 		});
@@ -125,11 +126,11 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("X Column", Xcolumn);
 		builder.addParameter("Y Column", Ycolumn);
-		builder.addParameter("Region 1 start", String.valueOf(r1_start));
-		builder.addParameter("Region 1 end", String.valueOf(r1_end));
-		builder.addParameter("Region 2 start", String.valueOf(r2_start));
-		builder.addParameter("Region 2 end", String.valueOf(r2_end));
-		builder.addParameter("Parameter Name", paramName);
+		builder.addParameter("Region", region);
+		builder.addParameter("from", String.valueOf(from));
+		builder.addParameter("to", String.valueOf(to));
+		builder.addParameter("New parameter added", Ycolumn + "_sigma");
 	}
 }
+
 

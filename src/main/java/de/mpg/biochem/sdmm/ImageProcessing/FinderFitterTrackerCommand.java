@@ -404,6 +404,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 		    tracker.track(PeakStack, archive);
 		    
+		    //Reorder Molecules to Natural Order, so there is a common order
+		    //if we have to recover..
+		    archive.naturalOrderSortMoleculeIndex();
+		    
 		    //Make sure the output archive has the correct name
 			getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
 		    

@@ -39,14 +39,14 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 
 	@Override
 	public void run() {
-		
-		//output = calcDiscoidalAveragedImage(input, innerRadius, outerRadius);
 		output = calcDiscoidalAveragedImage(input, innerRadius, outerRadius);
 	}
 	
 	public static ImagePlus calcDiscoidalAveragedImage(ImagePlus ImgIn, int innerRadius, int outerRadius) {
-		ImageProcessor ip = ImgIn.getProcessor();
-		
+		return calcDiscoidalAveragedImage(ImgIn.getProcessor(), ImgIn.getTitle(), innerRadius, outerRadius);
+	}
+	
+	public static ImagePlus calcDiscoidalAveragedImage(ImageProcessor ip, String title, int innerRadius, int outerRadius) {
 		//First we general index offset for the local regions for averaging...
 		int[] innerOffsets;
 		int[] outerOffsets;
@@ -134,7 +134,7 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 			}
 		}
 		
-		ImagePlus ImgOut = new ImagePlus(ImgIn.getTitle() + " (DS Filtered)", duplicate);
+		ImagePlus ImgOut = new ImagePlus(title + " (DS Filtered)", duplicate);
 		return ImgOut;
 	}
 	

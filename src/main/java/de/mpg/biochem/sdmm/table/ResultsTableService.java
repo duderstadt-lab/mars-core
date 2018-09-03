@@ -152,7 +152,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		return tables.get(name);
 	}
 	
-	public void delete(SDMMResultsTable table, int[] rows) {
+	public void deleteRows(SDMMResultsTable table, int[] rows) {
 		if (rows.length == 0)
 			return;
 		

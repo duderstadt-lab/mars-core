@@ -1,5 +1,7 @@
 package de.mpg.biochem.sdmm.molecule;
 
+import static java.util.stream.Collectors.toList;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -76,8 +78,6 @@ public class MoleculeArchiveWindow {
     private UIService uiService;
 
     private MoleculeArchive archive;
-    
-    private boolean SMILEencoding = true;
 	
     private boolean lockArchive = false;
 	private JFrame frame;
@@ -92,10 +92,6 @@ public class MoleculeArchiveWindow {
 	//Comments Tab Components
 	private JScrollPane commentsTab;
 	private JTextArea comments;
-	
-	//Log Tab Components
-	private JScrollPane logTab;
-	private JTextArea log;
 	
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
 	private JMenuItem saveAsMenuItem = new JMenuItem("Save As");
@@ -145,7 +141,6 @@ public class MoleculeArchiveWindow {
         imageMetaDataPanel.updateAll();
         moleculePanel.updateAll();
         comments.setText(archive.getComments());
-		log.setText(archive.getLog());
 	}
 	
 	private void createFrame(String title) {
@@ -160,9 +155,6 @@ public class MoleculeArchiveWindow {
 		
 		commentsTab = makeCommentsTab();
 		tabbedPane.addTab("Comments", commentsTab);
-		
-		logTab = makeLogTab();
-		tabbedPane.addTab("Log", logTab);
 		
 		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		
@@ -306,15 +298,42 @@ public class MoleculeArchiveWindow {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
 		        	GenericDialog dialog = new GenericDialog("Delete Molecules");
-		     		dialog.addStringField("Tag", "delete me", 30);
+		     		dialog.addStringField("Tags (comma separated list)", "", 30);
+		     		dialog.addCheckbox("remove molecules with no tags", false);
 		     		dialog.showDialog();
 		     		
 		     		if (dialog.wasCanceled())
 		     			return;
 		     		
-		     		 String tagToDelete = dialog.getNextString();
-		     		 archive.deleteMoleculesWithTag(tagToDelete);
-			     		 
+		     		String tagsToDelete = dialog.getNextString();
+		     		
+		     		boolean removeWithNoTags = dialog.getNextBoolean();
+		     		
+		     		String[] tagList = tagsToDelete.split(",");
+		            for (int i=0; i<tagList.length; i++) {
+		            	tagList[i] = tagList[i].trim();
+		            }
+		     		 
+		            ArrayList<String> deleteUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
+		            	 	if (removeWithNoTags && archive.get(UID).getTags().size() == 0) {
+		            	 		return true;
+		            	 	}
+		            	 
+		     				boolean hasTag = false;
+		     				for (int i=0; i<tagList.length; i++) {
+		     		        	for (String tag : archive.get(UID).getTags()) {
+		     		        		if (tagList[i].equals(tag)) {
+		     		        			hasTag = true;
+		     		        		}
+		     		        	}
+		     		        }
+		     				return hasTag;
+		     			}).collect(toList());
+		             
+		             for (String UID : deleteUIDs) {
+		            	 archive.remove(UID);
+		             }
+		             
 		     		 moleculePanel.updateAll();
 	        	 }
 	          }
@@ -421,7 +440,7 @@ public class MoleculeArchiveWindow {
 		JSONencodingButton.setMnemonic(KeyEvent.VK_J);
 		JSONencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 updateEncoding();
+	        	archive.unsetSMILEencoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -431,7 +450,7 @@ public class MoleculeArchiveWindow {
 	    SMILEencodingButton.setMnemonic(KeyEvent.VK_S);
 		SMILEencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	 updateEncoding();
+	        	archive.setSMILEencoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -443,11 +462,9 @@ public class MoleculeArchiveWindow {
 	    group.add(SMILEencodingButton);
 	    
 	    if (archive.isSMILEencoding()) {
-	    	SMILEencoding = true;
 	    	JSONencodingButton.setSelected(false);
 		    SMILEencodingButton.setSelected(true);
 	    } else {
-	    	SMILEencoding = false;
 	    	JSONencodingButton.setSelected(true);
 		    SMILEencodingButton.setSelected(false);
 	    }
@@ -496,14 +513,6 @@ public class MoleculeArchiveWindow {
         JScrollPane pane = new JScrollPane(comments);
 		return pane;
 	}
-
-	private JScrollPane makeLogTab() {
-		log = new JTextArea(archive.getLog());
-		log.setFont(new Font("Menlo", Font.PLAIN, 12));
-		log.setEditable(false);
-        JScrollPane pane = new JScrollPane(log);
-		return pane;
-	}
 	
 	private boolean saveAs(File saveAsFile) {
 		File file = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
@@ -527,16 +536,6 @@ public class MoleculeArchiveWindow {
 		lockArchive = false;
 	}
 	
-	public void updateEncoding() {
-		if (JSONencodingButton.isSelected()) {
-			archive.unsetSMILEencoding();
-			SMILEencoding = false;
-		} else if (SMILEencodingButton.isSelected()) {
-			archive.setSMILEencoding();
-			SMILEencoding = true;
-		}
-	}
-	
 	public MoleculeArchive getArchive() {
 		return archive;
 	}
@@ -550,10 +549,9 @@ public class MoleculeArchiveWindow {
 	}
 	
 	public void close() {
+		moleculeArchiveService.removeArchive(archive.getName());
 		frame.setVisible(false);
 		frame.dispose();
-
-		moleculeArchiveService.removeArchive(archive.getName());
 	}
 	
 	public void setArchiveService(MoleculeArchiveService moleculeArchiveService) {

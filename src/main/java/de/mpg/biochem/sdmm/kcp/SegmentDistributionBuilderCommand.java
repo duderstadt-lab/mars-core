@@ -43,6 +43,8 @@ import ij.IJ;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 
+import static java.util.stream.Collectors.toList;
+
 @Plugin(type = Command.class, headless = true, label = "Change Point Finder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
@@ -103,7 +105,12 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	@Parameter(label="Number of cycles")
 	private int bootstrap_cycles = 100;
 	
-	@Parameter(label="only with Tags (comma separated list)")
+	@Parameter(label = "Include:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "All",
+					"Tagged with", "Untagged" })
+	private String include;
+	
+	@Parameter(label="Tags (comma separated list)")
 	private String tags = "";
 	
     @Parameter(label="Distribution", type = ItemIO.OUTPUT)
@@ -121,14 +128,31 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		if (!uiService.isHeadless())
 			archive.lockArchive();
 		
-		//First we parse tags to make a list...
-        String[] tagList = tags.split(",");
-        for (int i=0; i<tagList.length; i++) {
-        	tagList[i] = tagList[i].trim();
-        }
-		
-		//Build Collection of UIDs... for the moment all molecules..
-		ArrayList<String> UIDs = archive.getMoleculeUIDs();
+		//Build Collection of UIDs based on tags if they exist...
+        ArrayList<String> UIDs;
+		if (include.equals("Tagged with")) {
+			//First we parse tags to make a list...
+	        String[] tagList = tags.split(",");
+	        for (int i=0; i<tagList.length; i++) {
+	        	tagList[i] = tagList[i].trim();
+	        }
+			
+			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
+				boolean hasTag = false;
+				for (int i=0; i<tagList.length; i++) {
+		        	for (String tag : archive.get(UID).getTags()) {
+		        		if (tagList[i].equals(tag))
+		        			hasTag = true;
+		        	}
+		        }
+				return hasTag;
+			}).collect(toList());
+		} else if (include.equals("Untagged")) {
+			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasNoTags()).collect(toList());
+		} else {
+			//  we include All molecules...
+			UIDs = archive.getMoleculeUIDs();
+		}
 		
 		SegmentDistributionBuilder distBuilder = new SegmentDistributionBuilder(archive, UIDs, SegmentsTableName, Dstart, Dend, bins, logService);
 		

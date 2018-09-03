@@ -33,7 +33,7 @@ import net.imagej.table.DoubleColumn;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "KCP", weight = 30,
+		@Menu(label = "KCP", weight = 40,
 			mnemonic = 'k'),
 		@Menu(label = "Change Point Finder", weight = 1, mnemonic = 'f')})
 public class KCPCommand extends DynamicCommand implements Command, Initializable {
@@ -188,8 +188,8 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 		//Use global sigma or use local sigma or calculate sigma (in this order of priority)
 		double sigma = global_sigma;
-		if (molecule.hasParameter("sigma")) {
-			sigma = molecule.getParameter("sigma");
+		if (molecule.hasParameter(Ycolumn + "_sigma")) {
+			sigma = molecule.getParameter(Ycolumn + "_sigma");
 		} else if (molecule.hasParameter("bg_start") || molecule.hasParameter("bg_end")) {
 			sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
 		}

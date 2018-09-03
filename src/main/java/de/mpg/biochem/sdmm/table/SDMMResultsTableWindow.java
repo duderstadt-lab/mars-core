@@ -223,7 +223,7 @@ public class SDMMResultsTableWindow implements ActionListener {
 			String name = JOptionPane.showInputDialog("Table name", frame.getTitle());
 			rename(name);
 		} else if (e.getSource() == clearMenuItem) {
-			clear();
+			deleteRows();
 		} else if (e.getSource() == selectAllMenuItem) {
 			selectAll();
 		} else if (e.getSource() == saveAsMenuItem) {
@@ -285,15 +285,15 @@ public class SDMMResultsTableWindow implements ActionListener {
 	}
 	
 	public void close() {
+		resultsTableService.removeResultsTable(results.getName());
 		frame.setVisible(false);
 		frame.dispose();
 		
 		results.clear();
-		resultsTableService.removeResultsTable(results.getName());
 	}
 	
-	protected void clear() {
-		resultsTableService.delete(results, table.getSelectedRows());
+	protected void deleteRows() {
+		resultsTableService.deleteRows(results, table.getSelectedRows());
 		
 		table.clearSelection();
 		tableModel.fireTableDataChanged();

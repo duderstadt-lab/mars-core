@@ -61,6 +61,7 @@ import net.openhft.chronicle.hash.serialization.impl.EnumMarshallable;
 import net.openhft.chronicle.map.*;
 
 import org.scijava.ui.*;
+import static java.util.stream.Collectors.toList;
 
 import net.imagej.table.*;
 
@@ -238,11 +239,13 @@ public class MoleculeArchive {
 					addImageMetaData(imgMeta);
 				}
 				if (recover) {
-					moleculeIndex = new ArrayList<String>();
+					ArrayList<String> tempMoleculeIndex = new ArrayList<String>();
 					for (CharSequence key : archive.keySet()) {
-						moleculeIndex.add(key.toString());
+						tempMoleculeIndex.add(key.toString());
 						updateTagIndex(archive.get(key));
 					}
+					//Here we sort to natural order
+					moleculeIndex = (ArrayList<String>)tempMoleculeIndex.stream().sorted().collect(toList());
 					archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 					return;
 				}
@@ -251,7 +254,7 @@ public class MoleculeArchive {
 			if ("Molecules".equals(fieldName)) {
 				int molNum = 0;
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					add(new Molecule(jParser, logService));
+					add(new Molecule(jParser));
 					molNum++;
 					moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 				}
@@ -363,11 +366,9 @@ public class MoleculeArchive {
 			
 			jGenerator.writeArrayFieldStart("Molecules");
 			
+			//loop through all molecules in ChronicleMap and save the data...
 			Iterator<String> iterator = moleculeIndex.iterator();
 			if (virtual) {
-	    		//loop through all molecules in ChronicleMap and save the data...
-				//If we store the data as a byte array that is already JSON converted can we just write this directly
-				//to to the stream ??
 				while (iterator.hasNext()) {
 					archive.get(iterator.next()).toJSON(jGenerator);
 				}
@@ -399,13 +400,13 @@ public class MoleculeArchive {
 	
 	//Returns true if using recover mode.
 	private boolean buildChronicleMap(int numMolecules, double averageSize) throws IOException {		
-		persistedFile = new File(System.getProperty("java.io.tmpdir") + "/" + name + ".store");
+		persistedFile = new File(file.getParentFile() + "/" + name + ".store");
 		
 		boolean exists = persistedFile.exists();
 		int recover = JOptionPane.NO_OPTION;
 		if (exists && !uiService.isHeadless()) {
 			recover = JOptionPane.showConfirmDialog(null,
-					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION);
+					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
 			
 			//recover = uiService.showDialog("Recover from virtual store?", "Recovery Mode", 
 			//		DialogPrompt.MessageType.QUESTION_MESSAGE, DialogPrompt.OptionType.YES_NO_OPTION);
@@ -507,10 +508,6 @@ public class MoleculeArchive {
 		archiveProperties.setComments(comments);
 	}
 	
-	public String getLog() {
-		return archiveProperties.getLog();
-	}
-	
 	public boolean isVirtual() {
 		return virtual;
 	}
@@ -557,9 +554,13 @@ public class MoleculeArchive {
 	}
 	
 	public void remove(String UID) {
-		molecules.remove(UID);
 		synchronized(moleculeIndex) {
 			moleculeIndex.remove(UID);
+		}
+		if (virtual) {
+			archive.remove(UID);
+		} else {
+			molecules.remove(UID);
 		}
 	}
 	
@@ -589,7 +590,7 @@ public class MoleculeArchive {
 		moleculeIndex = newMoleculeIndex;
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());	
 	}
-	
+
 	//Retrieve molecule based on UUID58 key
 	public Molecule get(String UID) {
 		if (virtual) {
@@ -610,7 +611,7 @@ public class MoleculeArchive {
 	public void destroy() {
 		if (virtual) {
 			archive.close();
-			persistedFile.delete();
+			//persistedFile.delete();
 		}
 	}
 	
@@ -662,12 +663,18 @@ public class MoleculeArchive {
 		return smileEncoding;
 	}
 	
+	public void naturalOrderSortMoleculeIndex() {
+		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
+	}
+	
 	public MoleculeArchiveProperties getArchiveProperties() {
 		return archiveProperties;
 	}
 	
 	public void addLogMessage(String message) {
-		archiveProperties.addLogMessage(message);
+		for (String metaUID : imageMetaDataIndex) {
+			imageMetaData.get(metaUID).addLogMessage(message);
+		}
 	}
 	
 	public LogService getLogService() {
@@ -696,8 +703,8 @@ public class MoleculeArchive {
 	//Since this is only important for the construction of the chronicle map.
 	private double getByteSize(Molecule mol) {
 		ByteArrayOutputStream sizeStream = new ByteArrayOutputStream();
-		//SmileGenerator jGenerator;
-		JsonGenerator jGenerator;
+		SmileGenerator jGenerator;
+		//JsonGenerator jGenerator;
 		
 		double moleculeSize = -1;
 		try {
