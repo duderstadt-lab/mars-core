@@ -10,7 +10,11 @@ import net.openhft.chronicle.bytes.BytesOut;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -23,9 +27,12 @@ import java.util.Set;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 public class Molecule {
 	//Unique ID used for Chronicle map storage and universal identification.
@@ -239,6 +246,23 @@ public class Molecule {
 		    	}
 		    }
 		}
+	}
+	
+	public String toJSONString() {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+		JsonFactory jfactory = new JsonFactory();
+		JsonGenerator jGenerator;
+		try {
+			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+			toJSON(jGenerator);
+			jGenerator.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return stream.toString();
 	}
 	
 	//Getters and Setters

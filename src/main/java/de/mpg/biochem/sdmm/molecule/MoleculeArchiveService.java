@@ -1,19 +1,11 @@
 package de.mpg.biochem.sdmm.molecule;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import com.chrylis.codec.base58.Base58Codec;
-import com.chrylis.codec.base58.Base58UUID;
 
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import io.scif.services.FormatService;
-
-//import org.scijava.object.ObjectService;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
@@ -23,8 +15,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
-
-import java.math.BigInteger;
 
 import net.imagej.ImageJService;
 
@@ -57,6 +47,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		archives = new LinkedHashMap<>();
 		
 		scriptService.addAlias(MoleculeArchive.class);
+		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 	
 	public void addArchive(MoleculeArchive archive) {
@@ -103,7 +94,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 		for (MoleculeArchive archive: archives.values()) {
 			//We assume all the molecules have the same columns
-			//I think this should be strickly enforced
+			//I think this should be strictly enforced
 			SDMMResultsTable datatable = archive.get(0).getDataTable();
 			
 			for (int i=0;i<datatable.getColumnCount();i++) {
@@ -120,7 +111,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 		for (MoleculeArchive archive: archives.values()) {
 			//We assume all the molecules have the same segment tables
-			//I think this should be strickly enforced
+			//I think this should be strictly enforced
 			for (String segTableName : archive.get(0).getSegmentTableNames()) {
 				if(!segTableNames.contains(segTableName))
 					segTableNames.add(segTableName);
@@ -132,7 +123,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	
 	public ArrayList<String> getArchiveNames() {
-		return new ArrayList(archives.keySet());
+		return new ArrayList<String>(archives.keySet());
 	}
 	
 	public boolean contains(String key) {
@@ -146,40 +137,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	public MoleculeArchiveWindow getArchiveWindow(String name) {
 		return archives.get(name).getWindow();
 	}
-	
-	//Utility methods for creation of base58 encoded UUIDs used for ChronicleMap indexing of molecules.
-	public static String getUUID58() {
-		Base58UUID bu = new Base58UUID();
-		String uuid58 = bu.encode(UUID.randomUUID());
-		return uuid58;
-	}
-	
-	//method to retrieve the UUID from a base64 encoded UID
-	public static UUID getUUID(String uuid58) {
-		Base58UUID bu = new Base58UUID();
-		UUID uuid = bu.decode(uuid58);
-		return uuid;
-	}
-	
-	private static final BigInteger INIT64  = new BigInteger("cbf29ce484222325", 16);
-	private static final BigInteger PRIME64 = new BigInteger("100000001b3",      16);
-	private static final BigInteger MOD64   = new BigInteger("2").pow(64);
-	
-	public String getFNV1aBase58(String str) {
-		Base58Codec codec = new Base58Codec();
-		return codec.encode(fnv1a_64(str.getBytes()).toByteArray());
-	}
-	
-	public BigInteger fnv1a_64(byte[] data) {
-	    BigInteger hash = INIT64;
-
-	    for (byte b : data) {
-	      hash = hash.xor(BigInteger.valueOf((int) b & 0xff));
-	      hash = hash.multiply(PRIME64).mod(MOD64);
-	    }
-
-	    return hash;
-	  }
 	
 	public UIService getUIService() {
 		return uiService; 

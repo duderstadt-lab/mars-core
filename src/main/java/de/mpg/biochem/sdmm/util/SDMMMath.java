@@ -1,6 +1,12 @@
 package de.mpg.biochem.sdmm.util;
 
+import java.math.BigInteger;
+import java.util.UUID;
+
 import org.decimal4j.util.DoubleRounder;
+
+import com.chrylis.codec.base58.Base58Codec;
+import com.chrylis.codec.base58.Base58UUID;
 
 //A collection of useful utility math functions used multiple times throughout the SDMM Plugins.
 public class SDMMMath {
@@ -56,4 +62,38 @@ public class SDMMMath {
 		
 		return output;
 	}
+	
+	//Utility methods for creation of base58 encoded UUIDs used for ChronicleMap indexing of molecules.
+	public static String getUUID58() {
+		Base58UUID bu = new Base58UUID();
+		String uuid58 = bu.encode(UUID.randomUUID());
+		return uuid58;
+	}
+	
+	//method to retrieve the UUID from a base64 encoded UID
+	public static UUID getUUID(String uuid58) {
+		Base58UUID bu = new Base58UUID();
+		UUID uuid = bu.decode(uuid58);
+		return uuid;
+	}
+	
+	private static final BigInteger INIT64  = new BigInteger("cbf29ce484222325", 16);
+	private static final BigInteger PRIME64 = new BigInteger("100000001b3",      16);
+	private static final BigInteger MOD64   = new BigInteger("2").pow(64);
+	
+	public static String getFNV1aBase58(String str) {
+		Base58Codec codec = new Base58Codec();
+		return codec.encode(fnv1a_64(str.getBytes()).toByteArray());
+	}
+	
+	public static BigInteger fnv1a_64(byte[] data) {
+	    BigInteger hash = INIT64;
+
+	    for (byte b : data) {
+	      hash = hash.xor(BigInteger.valueOf((int) b & 0xff));
+	      hash = hash.multiply(PRIME64).mod(MOD64);
+	    }
+
+	    return hash;
+	  }
 }

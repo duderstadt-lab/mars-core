@@ -397,9 +397,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    	num++;
 		    }
 		    
-		    archive = new MoleculeArchive(newName + ".yama", moleculeArchiveService);
+		    archive = new MoleculeArchive(newName + ".yama");
 			
-		    ImageMetaData metaData = new ImageMetaData(image, moleculeArchiveService, microscope, imageFormat, metaDataStack);
+		    ImageMetaData metaData = new ImageMetaData(image, microscope, imageFormat, metaDataStack);
 			archive.addImageMetaData(metaData);
 		    
 		    tracker.track(PeakStack, archive);

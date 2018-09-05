@@ -60,6 +60,8 @@ import net.openhft.chronicle.hash.serialization.BytesWriter;
 import net.openhft.chronicle.hash.serialization.impl.EnumMarshallable;
 import net.openhft.chronicle.map.*;
 
+import de.mpg.biochem.sdmm.util.*;
+
 import org.scijava.ui.*;
 import static java.util.stream.Collectors.toList;
 
@@ -114,12 +116,9 @@ public class MoleculeArchive {
 	private boolean smileEncoding = true;
 	
 	//Constructor for creating an empty molecule archive...	
-	public MoleculeArchive(String name, MoleculeArchiveService moleculeArchiveService) {
+	public MoleculeArchive(String name) {
 		this.name = name;
 		this.virtual = false;
-		this.moleculeArchiveService = moleculeArchiveService;
-		this.uiService = moleculeArchiveService.getUIService();
-		this.logService = moleculeArchiveService.getLogService();
 		
 		initializeVariables();
 		
@@ -128,12 +127,9 @@ public class MoleculeArchive {
 	}
 	
 	//Constructor for creating an empty virtual molecule archive...
-	public MoleculeArchive(String name, MoleculeArchiveService moleculeArchiveService, int numMolecules, double averageSize) {
+	public MoleculeArchive(String name, int numMolecules, double averageSize) {
 		this.name = name;
 		this.virtual = true;
-		this.moleculeArchiveService = moleculeArchiveService;
-		this.uiService = moleculeArchiveService.getUIService();
-		this.logService = moleculeArchiveService.getLogService();
 		
 		initializeVariables();
 		
@@ -271,7 +267,7 @@ public class MoleculeArchive {
 	private void buildFromTable(SDMMResultsTable results) {
 		//First we have to index the groups in the table to determine the number of Molecules and their average size...
 		//Here we assume their is a molecule column that defines which data is related to which molecule.
-		LinkedHashMap<Integer, GroupIndices> groups = resultsTableService.find_group_indices(results, "molecule");
+		LinkedHashMap<Integer, GroupIndices> groups = ResultsTableService.find_group_indices(results, "molecule");
 		int numMolecules = groups.size();
 		
 		//For averageSize let's just find the number of doubles in the table in total bytes...
@@ -322,7 +318,7 @@ public class MoleculeArchive {
 				row++;
 			}
 			
-			add(new Molecule(moleculeArchiveService.getUUID58(), molTable));
+			add(new Molecule(SDMMMath.getUUID58(), molTable));
 		}
 	}
 	
@@ -404,7 +400,8 @@ public class MoleculeArchive {
 		
 		boolean exists = persistedFile.exists();
 		int recover = JOptionPane.NO_OPTION;
-		if (exists && !uiService.isHeadless()) {
+		//if (exists && !uiService.isHeadless()) {
+		if (exists) {
 			recover = JOptionPane.showConfirmDialog(null,
 					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
 			
@@ -421,9 +418,11 @@ public class MoleculeArchive {
 				    .entries(numMolecules)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
-				    .recoverPersistedTo(persistedFile, true);
+				    .recoverPersistedTo(persistedFile, false);
 			return true;
 		} else {
+			if (exists)
+				persistedFile.delete();
 			archive = ChronicleMap
 				    .of(CharSequence.class, Molecule.class)
 				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
@@ -444,7 +443,7 @@ public class MoleculeArchive {
 		//We should increment the numberOfMolecules and set the correct index for molecule
 		if (moleculeIndex.contains(molecule.getUID())) {
 			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".");
-			logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
+			//logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
 		} else {
 			//Need to make sure all write operations to moleculeIndex 
 			//are synchronized to avoid two thread working at the same time
@@ -677,9 +676,9 @@ public class MoleculeArchive {
 		}
 	}
 	
-	public LogService getLogService() {
-		return logService;
-	}
+	//public LogService getLogService() {
+	//	return logService;
+	//}
 	
 	//Utility functions
 	public void updateArchiveProperties() {
@@ -687,12 +686,16 @@ public class MoleculeArchive {
 		
 		//Lets just sample a random 20 molecules and use that as the size...
 		double averageSize = 0;
-		for (int i=0;i<20;i++) {
-			int randomIndex = ThreadLocalRandom.current().nextInt(0, moleculeIndex.size() - 1);
-			averageSize += getByteSize(get(moleculeIndex.get(randomIndex)));
+		if (moleculeIndex.size() == 1) {
+			averageSize = getByteSize(get(moleculeIndex.get(0)));
+		} else {
+			for (int i=0;i<20;i++) {
+				int randomIndex = ThreadLocalRandom.current().nextInt(0, moleculeIndex.size() - 1);
+				averageSize += getByteSize(get(moleculeIndex.get(randomIndex)));
+			}
+			
+			averageSize = averageSize/20;
 		}
-		
-		averageSize = averageSize/20;
 		
 		archiveProperties.setAverageMoleculeSize(averageSize);
 		archiveProperties.setNumImageMetaData(imageMetaData.size());

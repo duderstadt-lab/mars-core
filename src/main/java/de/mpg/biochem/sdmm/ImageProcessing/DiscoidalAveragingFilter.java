@@ -79,7 +79,7 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 		for (int i = 0; i < outerOffsets.length; i++)
 			outerOffsets[i] = outerOffsetList.get(i);
 		
-		//New we copy the image and apply the DS operation...
+		//Now we copy the image and apply the DS operation...
 		ImageProcessor duplicate = ip.duplicate();
 		
 		double innerMean;
@@ -88,9 +88,9 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 		int outerPixels;
 		
 		int offset;
-		int count = ip.getPixelCount();
+		int count = duplicate.getPixelCount();
 		
-		Rectangle roi = ip.getRoi();
+		Rectangle roi = duplicate.getRoi();
 		
 		for (int y = roi.y; y < roi.y + roi.height; y++) {
 			
@@ -126,9 +126,9 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 				innerMean -= outerMean;
 				
 				if (innerMean > 0)
-					ip.setf(offset, (float)innerMean);
+					duplicate.setf(offset, (float)innerMean);
 				else
-					ip.setf(offset, 0);
+					duplicate.setf(offset, 0);
 				
 				offset++;
 			}

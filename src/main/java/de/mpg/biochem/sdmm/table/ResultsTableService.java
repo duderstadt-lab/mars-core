@@ -23,6 +23,7 @@ import org.scijava.service.*;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
+import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import net.imagej.table.DoubleColumn;
 import net.imglib2.type.numeric.RealType;
 import net.imagej.ImageJService;
@@ -58,6 +59,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		//This allow for just the class name as an input 
 		//in scripts. Otherwise the whole path would have to be given..
 		scriptService.addAlias(SDMMResultsTable.class);
+		scriptService.addAlias(ResultsTableService.class);
 	}
 	
 	public void addTable(SDMMResultsTable table) {

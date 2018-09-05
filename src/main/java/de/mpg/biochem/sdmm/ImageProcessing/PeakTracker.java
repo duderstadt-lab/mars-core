@@ -20,6 +20,7 @@ import de.mpg.biochem.sdmm.molecule.Molecule;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
+import de.mpg.biochem.sdmm.util.SDMMMath;
 import ij.IJ;
 import net.imagej.table.DoubleColumn;
 import net.imglib2.KDTree;
@@ -154,7 +155,7 @@ public class PeakTracker {
 						
 					} else {
 						//Generate a new UID
-						String UID = MoleculeArchiveService.getUUID58();
+						String UID = SDMMMath.getUUID58();
 						if (UID == null) {
 							logService.info("Found a NULL");
 						}

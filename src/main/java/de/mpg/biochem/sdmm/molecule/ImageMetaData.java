@@ -1,5 +1,6 @@
 package de.mpg.biochem.sdmm.molecule;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.plugin.Parameter;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -28,6 +30,7 @@ import net.imagej.Dataset;
 import net.imagej.table.DoubleColumn;
 import net.imagej.table.GenericColumn;
 import de.mpg.biochem.sdmm.table.*;
+import de.mpg.biochem.sdmm.util.SDMMMath;
 import io.scif.services.FormatService;
 
 public class ImageMetaData {
@@ -48,17 +51,26 @@ public class ImageMetaData {
 	
 	//Table that maps slices to times
 	private SDMMResultsTable DataTable;
-	
-	// Required Services
-    private MoleculeArchiveService moleculeArchiveService;
-    
     
     //Used for making JsonParser isntances..
     //We make it static becasue we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
+    
+    public ImageMetaData(String UID) {
+    	this.UID = UID;
+    	this.Microscope = "unkown";
+    	this.SourceDirectory = "unknown";
+    	log = "";
+    	
+    	DoubleColumn sliceCol = new DoubleColumn("slice");
+		sliceCol.add((double)1);
+		
+		//Create the table and add all the columns...
+		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
+		DataTable.add(sliceCol);
+    }
 	
-	public ImageMetaData(ImagePlus img, MoleculeArchiveService moleculeArchiveService, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
-		this.moleculeArchiveService = moleculeArchiveService;
+	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.Microscope = Microscope;
 		this.SourceDirectory = img.getOriginalFileInfo().directory;
 		log = "";
@@ -72,7 +84,7 @@ public class ImageMetaData {
 		} else {
 			//For GenericData we just generate a random UID but truncate to 11 characters to match
 			//output of FNV1a algorithm...
-			UID = moleculeArchiveService.getUUID58().substring(0, 10);
+			UID = SDMMMath.getUUID58().substring(0, 10);
 			buildMetaDataGeneric(img);
 		}
 	}
@@ -87,7 +99,7 @@ public class ImageMetaData {
 		for (int i=1;i<=headerLabels.size();i++)
 			allLabels += headerLabels.get(i);
 		
-		return moleculeArchiveService.getFNV1aBase58(allLabels);
+		return SDMMMath.getFNV1aBase58(allLabels);
 	}
 	
 	private void buildMetaDataGeneric(ImagePlus img) {
@@ -120,7 +132,7 @@ public class ImageMetaData {
 				timeCol.add((double)(getNorPixMillisecondTime(headerLabels.get(i).substring(10)) - t0)/1000);
 			}
 		} catch (ParseException e) {
-			moleculeArchiveService.getLogService().error("There seems to be a problem with the Image header Labels. Are you sure they are the correction Norpix format?");
+			//moleculeArchiveService.getLogService().error("There seems to be a problem with the Image header Labels. Are you sure they are the correction Norpix format?");
 			//e.printStackTrace();
 		}
 		
@@ -236,6 +248,23 @@ public class ImageMetaData {
 		jGenerator.writeEndObject();
 	}
 	
+	public String toJSONString() {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+		JsonFactory jfactory = new JsonFactory();
+		JsonGenerator jGenerator;
+		try {
+			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+			toJSON(jGenerator);
+			jGenerator.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return stream.toString();
+	}
+	
 	//jackson custom JSON deserialization
 	public void fromJSON(JsonParser jParser) throws IOException {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
@@ -317,6 +346,10 @@ public class ImageMetaData {
 	
 	public String getMicroscopeName() {
 		return Microscope;
+	}
+	
+	public void setCollectionDate(String str) {
+		CollectionDate = str;
 	}
 	
 	public String getCollectionDate() {
