@@ -34,10 +34,13 @@ import io.scif.img.SCIFIOImgPlus;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
+import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
 
 import java.util.ArrayList;
-
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -59,6 +62,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -145,7 +149,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	//PEAK FITTER
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String header =
+	private final String PeakFitterMessage =
 		"Peak fitter settings:";
 	
 	@Parameter(label="Fit peaks")
@@ -192,7 +196,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private double PeakFitter_maxErrorSigma = 1;
 	
 	//Which columns to write in peak table
-	//TODO
 	@Parameter(label="Verbose table fit output")
 	private boolean PeakFitter_writeEverything = true;
 	
@@ -222,6 +225,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	//array for max error margins.
 	private double[] maxError;
 	private boolean[] vary;
+			
+	//public static final String[] TABLE_HEADERS = {"baseline", "height", "x", "y", "sigma"};
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
 	
 	@Override
 	public void initialize() {
@@ -345,32 +351,35 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			//build a table with all peaks
 			peakTable = new SDMMResultsTable("Peaks - " + image.getTitle());
 			
-			DoubleColumn[] columns;
+			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 			
-			if (allSlices) {
-				columns = new DoubleColumn[3];
-				columns[0] = new DoubleColumn("x");
-				columns[1] = new DoubleColumn("y");
-				columns[2] = new DoubleColumn("slice");
-				for (int i=1;i<=PeakStack.size() ; i++) {
-					ArrayList<Peak> slicePeaks = PeakStack.get(i);
-					for (int j=0;j<slicePeaks.size();j++) {
-						columns[0].addValue(slicePeaks.get(j).getX());
-						columns[1].addValue(slicePeaks.get(j).getY());
-						columns[2].addValue(i);
-					}
-				}
+			if (PeakFitter_writeEverything) {
+				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
+					columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
 			} else {
-				columns = new DoubleColumn[2];
-				columns[0] = new DoubleColumn("x");
-				columns[1] = new DoubleColumn("y");
-				for (int i=0;i < peaks.size();i++) {
-					columns[0].addValue(peaks.get(i).getX());
-					columns[1].addValue(peaks.get(i).getY());
+				columns.add(new DoubleColumn("x"));
+				columns.add(new DoubleColumn("y"));
+			}
+			
+			if (allSlices)
+				columns.add(new DoubleColumn("slice"));
+			
+			for (int i=1;i<=PeakStack.size() ; i++) {
+				ArrayList<Peak> slicePeaks = PeakStack.get(i);
+				for (int j=0;j<slicePeaks.size();j++) {
+					if (PeakFitter_writeEverything)
+						slicePeaks.get(j).addToColumnsVerbose(columns);
+					else 
+						slicePeaks.get(j).addToColumnsXY(columns);
+					
+					if (allSlices)
+						columns.get(columns.size() - 1).add((double)i);
 				}
 			}
-			for(int i=0;i<columns.length;i++)
-				peakTable.add(columns[i]);	
+
+			
+			for(DoubleColumn column : columns)
+				peakTable.add(column);	
 			
 			//Make sure the output table has the correct name
 			getInfo().getMutableOutput("peakTable", SDMMResultsTable.class).setLabel(peakTable.getName());
@@ -395,8 +404,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	private ArrayList<Peak> findPeaksInSlice(int slice) {
 		ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, image.getImageStack().getProcessor(slice)));
-		if (fitPeaks)
+		if (fitPeaks) {
 			fitPeaks(image.getImageStack().getProcessor(slice), peaks);
+			peaks = removeNearestNeighbors(peaks);
+		}
 		return peaks;
 	}
 	
@@ -445,7 +456,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return peaks;
 	}
 	
-	public void fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
+	public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
+		
+		ArrayList<Peak> newList = new ArrayList<Peak>();
 		
 		int fitWidth = fitRadius * 2 + 1;
 		
@@ -475,9 +488,67 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 					peak.setNotValid();
 			}
 			
-			peak.setValues(p);
-			peak.setErrorValues(e);
+			//If the x, y, sigma values are negative reject the peak
+			//but we can have negative height p[0] or baseline p[1]
+			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
+				peak.setNotValid();
+			}
+			
+			if (peak.isValid()) {
+				peak.setValues(p);
+				peak.setErrorValues(e);
+				newList.add(peak);
+			}
 		}
+		return newList;
+	}
+	
+	public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
+		//Sort the list from lowest to highest XYErrors
+		Collections.sort(peakList, new Comparator<Peak>(){
+			@Override
+			public int compare(Peak o1, Peak o2) {
+				return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
+			}
+		});
+		
+		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
+		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
+		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
+		
+		//Allows for fast search of nearest peaks...
+		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
+		
+		RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( possiblePeakTree );
+		
+		//As we loop through all possible peaks and remove those that are too close
+		//we will add all the selected peaks to a new array 
+		//that will serve as the finalList of actual peaks
+		//This whole process is to remove pixels near the center peak pixel that are also above the detection threshold but all part of the same peak...
+		ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
+			
+		//Reset all to valid for new search
+		for (int i=peakList.size()-1;i>=0;i--) {
+			peakList.get(i).setValid();
+		}
+		
+		//It is really important to remember here that possiblePeaks and KDTreePossiblePeaks are different lists but point to the same elements
+		//That means if we setNotValid in one it is changing the same object in another that is required for the stuff below to work.
+		for (int i=0;i<peakList.size();i++) {
+			Peak peak = peakList.get(i);
+			if (peak.isValid()) {
+				finalPeaks.add(peak);
+				
+				//Then we remove all possible peaks within the minimumDistance...
+				//This will include the peak we just added to the peaks list...
+				radiusSearch.search(peak, minimumDistance, false);
+				
+				for (int j = 0 ; j < radiusSearch.numNeighbors() ; j++ ) {
+					radiusSearch.getSampler(j).get().setNotValid();
+				}
+			}
+		}
+		return finalPeaks;
 	}
 	
 	@Override

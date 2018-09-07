@@ -30,8 +30,10 @@ public class PeakTracker {
 	double[] maxDifference;
 	boolean[] ckMaxDifference;
 	int minTrajectoryLength;
-	String[] headers;
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
 	double searchRadius;
+	boolean PeakFitter_writeEverything = false;
+	int minimumDistance;
 	
 	String metaDataUID;
 	
@@ -44,22 +46,18 @@ public class PeakTracker {
 	
 	LogService logService;
 	
-	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minTrajectoryLength, LogService logService) {
+	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean PeakFitter_writeEverything, LogService logService) {
 		this.logService = logService;
-		
+		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.maxDifference = maxDifference;
 		this.ckMaxDifference = ckMaxDifference;
+		this.minimumDistance = minimumDistance;
 		this.minTrajectoryLength = minTrajectoryLength;
 
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
 		else
 			searchRadius = maxDifference[3];
-		
-		headers = new String[3];
-		headers[0] = "x";
-		headers[1] = "y";
-		headers[2] = "slice";
 	}
 	
 	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, MoleculeArchive archive) {
@@ -131,6 +129,11 @@ public class PeakTracker {
 		//I think since the loop below goes from slice 1 forward we should always get the first slice with the peak.
 		ArrayList<Peak> trajectoryFirstSlice = new ArrayList<Peak>();
 		
+		
+		//We also need to check if a link has already been made within the local region
+		//So I think the best idea is to add the Peaks we have linked to to a KDTree
+		//Then always reject further links into the same region....
+		
 		logService.info("Connecting most likely links...");
 		
 		starttime = System.currentTimeMillis();
@@ -145,7 +148,24 @@ public class PeakTracker {
 					if (from.getForwardLink() != null || to.getBackwardLink() != null) {
 						//already linked
 						continue;
-					} else if (from.getUID() != null) {
+					} 
+					
+					//We need to check if the to peak has any nearest neighbors that have already been linked...
+					boolean regionAlreadyLinked = false;
+					for (int q=slice+1;q<=slice + maxDifference[5];q++) {
+						if (!KDTreeStack.containsKey(q))
+							continue;
+						
+						RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( KDTreeStack.get(q) );
+							radiusSearch.search(to, minimumDistance, false);
+							
+							for (int w = 0 ; w < radiusSearch.numNeighbors() ; w++ ) {
+								if (radiusSearch.getSampler(w).get().getUID() != null)
+									regionAlreadyLinked = true;
+							}	
+					}
+					
+					if (from.getUID() != null && !regionAlreadyLinked) {
 						to.setUID(from.getUID());
 						trajectoryLengths.put(from.getUID(), trajectoryLengths.get(from.getUID()) + 1);
 						
@@ -153,12 +173,9 @@ public class PeakTracker {
 						from.setForwardLink(to);
 						to.setBackwardLink(from);
 						
-					} else {
+					} else if (!regionAlreadyLinked) { 
 						//Generate a new UID
 						String UID = SDMMMath.getUUID58();
-						if (UID == null) {
-							logService.info("Found a NULL");
-						}
 						from.setUID(UID);
 						to.setUID(UID);
 						trajectoryLengths.put(UID, 2);
@@ -258,9 +275,9 @@ public class PeakTracker {
 			}
 			
 		});
-		
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
+	
 	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, MoleculeArchive archive) {
 		//don't add the molecule if the trajectory length is below minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
@@ -276,10 +293,6 @@ public class PeakTracker {
 			peak = peak.getForwardLink();
 			addPeakToTable(table, peak, peak.getSlice());
 		}
-		
-		if (startingPeak.getUID() == null) {
-			logService.info("Starting peaks has Null UID");
-		}
 
 		Molecule mol = new Molecule(startingPeak.getUID(), table);
 		mol.setImageMetaDataUID(metaDataUID);
@@ -288,16 +301,42 @@ public class PeakTracker {
 	
 	private SDMMResultsTable buildResultsTable() {
 		SDMMResultsTable molTable = new SDMMResultsTable();
-		for (String header: headers) {
-			molTable.add(new DoubleColumn(header));
+		
+		ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
+		
+		if (PeakFitter_writeEverything) {
+			for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
+				columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
+		} else {
+			columns.add(new DoubleColumn("x"));
+			columns.add(new DoubleColumn("y"));
 		}
+		columns.add(new DoubleColumn("slice"));
+		
+		for(DoubleColumn column : columns)
+			molTable.add(column);	
+		
 		return molTable;
 	}
 	private void addPeakToTable(SDMMResultsTable table, Peak peak, int slice) {
 		table.appendRow();
 		int row = table.getRowCount() - 1;
-		table.set(0, row, peak.getX());
-		table.set(1, row, peak.getY());
-		table.set(2, row, (double)slice);
+		if (PeakFitter_writeEverything) {
+			table.set(0, row, peak.getBaseline());
+			table.set(1, row, peak.getBaselineError());
+			table.set(2, row, peak.getHeight());
+			table.set(3, row, peak.getHeightError());
+			table.set(4, row, peak.getX());
+			table.set(5, row, peak.getXError());
+			table.set(6, row, peak.getY());
+			table.set(7, row, peak.getYError());
+			table.set(8, row, peak.getSigma());
+			table.set(9, row, peak.getSigmaError());
+			table.set(10, row, (double)slice);
+		} else {
+			table.set(0, row, peak.getX());
+			table.set(1, row, peak.getY());
+			table.set(2, row, (double)slice);
+		}
 	}
 }

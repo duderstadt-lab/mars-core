@@ -38,10 +38,12 @@ import io.scif.img.SCIFIOImgPlus;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
+import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
 
 import java.util.ArrayList;
-
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -63,6 +65,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -167,19 +170,22 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		
 		//Maximum allow error for the fitting process
 		@Parameter(label="Max Error Baseline")
-		private double PeakFitter_maxErrorBaseline = 5000;
+		private double PeakFitter_maxErrorBaseline = 50;
 		
 		@Parameter(label="Max Error Height")
-		private double PeakFitter_maxErrorHeight = 5000;
+		private double PeakFitter_maxErrorHeight = 50;
 		
 		@Parameter(label="Max Error X")
-		private double PeakFitter_maxErrorX = 1;
+		private double PeakFitter_maxErrorX = 0.2;
 		
 		@Parameter(label="Max Error Y")
-		private double PeakFitter_maxErrorY = 1;
+		private double PeakFitter_maxErrorY = 0.2;
 		
 		@Parameter(label="Max Error Sigma")
-		private double PeakFitter_maxErrorSigma = 1;
+		private double PeakFitter_maxErrorSigma = 0.2;
+		
+		@Parameter(label="Verbose fit output")
+		private boolean PeakFitter_writeEverything = true;
 		
 		//PEAK TRACKER
 		@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -368,11 +374,6 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    
-		    //for (int i=1;i<=PeakStack.size();i++) {
-		    //	logService.info("found " + PeakStack.get(i).size() + "peaks in slice " + i);
-		    //	logService.info("peak 0 x " + PeakStack.get(i).get(0).getX() + " y " + PeakStack.get(i).get(0).getY());
-		    //}
-		    
 		    //Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
 		    maxDifference[0] = PeakTracker_maxDifferenceBaseline;
@@ -387,7 +388,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, PeakTracker_minTrajectoryLength, logService);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, PeakFitter_writeEverything, logService);
 		    
 		    //Let's make sure we create a unique archive name...
 		    String newName = "archive";
@@ -436,8 +437,12 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, processor), slice);
-			fitPeaks(processor, peaks);
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor), slice));
+			
+			//After fitting some peaks may have moved within the mininmum distance
+			//So we remove these always favoring the ones having lower fit error in x and y
+			peaks = removeNearestNeighbors(peaks);
+			
 			return peaks;
 		}
 		
@@ -456,7 +461,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			return peaks;
 		}
 		
-		public void fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
+		public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
+			
+			ArrayList<Peak> newList = new ArrayList<Peak>();
 			
 			int fitWidth = fitRadius * 2 + 1;
 			
@@ -486,9 +493,67 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 						peak.setNotValid();
 				}
 				
-				peak.setValues(p);
-				peak.setErrorValues(e);
+				//If the x, y, sigma values are negative reject the peak
+				//but we can have negative height p[0] or baseline p[1]
+				if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
+					peak.setNotValid();
+				}
+				
+				if (peak.isValid()) {
+					peak.setValues(p);
+					peak.setErrorValues(e);
+					newList.add(peak);
+				}
 			}
+			return newList;
+		}
+		
+		public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
+			//Sort the list from lowest to highest XYErrors
+			Collections.sort(peakList, new Comparator<Peak>(){
+				@Override
+				public int compare(Peak o1, Peak o2) {
+					return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
+				}
+			});
+			
+			//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
+			//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
+			ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
+			
+			//Allows for fast search of nearest peaks...
+			KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
+			
+			RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( possiblePeakTree );
+			
+			//As we loop through all possible peaks and remove those that are too close
+			//we will add all the selected peaks to a new array 
+			//that will serve as the finalList of actual peaks
+			//This whole process is to remove pixels near the center peak pixel that are also above the detection threshold but all part of the same peak...
+			ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
+				
+			//Reset all to valid for new search
+			for (int i=peakList.size()-1;i>=0;i--) {
+				peakList.get(i).setValid();
+			}
+			
+			//It is really important to remember here that possiblePeaks and KDTreePossiblePeaks are different lists but point to the same elements
+			//That means if we setNotValid in one it is changing the same object in another that is required for the stuff below to work.
+			for (int i=0;i<peakList.size();i++) {
+				Peak peak = peakList.get(i);
+				if (peak.isValid()) {
+					finalPeaks.add(peak);
+					
+					//Then we remove all possible peaks within the minimumDistance...
+					//This will include the peak we just added to the peaks list...
+					radiusSearch.search(peak, minimumDistance, false);
+					
+					for (int j = 0 ; j < radiusSearch.numNeighbors() ; j++ ) {
+						radiusSearch.getSampler(j).get().setNotValid();
+					}
+				}
+			}
+			return finalPeaks;
 		}
 		
 		private void addInputParameterLog(LogBuilder builder) {

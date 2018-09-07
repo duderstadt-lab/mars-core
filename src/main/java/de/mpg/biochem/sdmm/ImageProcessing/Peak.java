@@ -1,5 +1,8 @@
 package de.mpg.biochem.sdmm.ImageProcessing;
 
+import java.util.ArrayList;
+
+import net.imagej.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
 
 //This is a class that contains all the information about peaks
@@ -72,17 +75,32 @@ public class Peak implements RealLocalizable {
 	double getX() {
 		return x;
 	}
+	double getXError() {
+		return xError;
+	}
 	double getY() {
 		return y;
+	}
+	double getYError() {
+		return yError;
 	}
 	double getHeight() {
 		return height;
 	}
+	double getHeightError() {
+		return heightError;
+	}
 	double getBaseline() {
 		return baseline;
 	}
+	double getBaselineError() {
+		return baselineError;
+	}
 	double getSigma() {
 		return sigma;
+	}
+	double getSigmaError() {
+		return sigmaError;
 	}
 	double getPixelValue() {
 		return pixelValue;
@@ -115,6 +133,24 @@ public class Peak implements RealLocalizable {
 		this.xError = errors[2];
 		this.yError = errors[3];
 		this.sigmaError = errors[4];
+	}
+	
+	public void addToColumnsXY(ArrayList<DoubleColumn> columns) {
+		columns.get(0).add(x);
+		columns.get(1).add(y);
+	}
+	
+	public void addToColumnsVerbose(ArrayList<DoubleColumn> columns) {
+		columns.get(0).add(baseline);
+		columns.get(1).add(baselineError);
+		columns.get(2).add(height);
+		columns.get(3).add(heightError);
+		columns.get(4).add(x);
+		columns.get(5).add(xError);
+		columns.get(6).add(y);
+		columns.get(7).add(yError);
+		columns.get(8).add(sigma);
+		columns.get(9).add(sigmaError);
 	}
 	
 	//used for pixel sort in the peak finder
