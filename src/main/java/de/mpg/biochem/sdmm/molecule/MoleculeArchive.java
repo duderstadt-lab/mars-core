@@ -563,6 +563,10 @@ public class MoleculeArchive {
 		}
 	}
 	
+	public void remove(Molecule molecule) {
+		remove(molecule.getUID());
+	}
+	
 	public void deleteMoleculesWithTag(String tag) {
 		//We should do this with streams but for the moment this is faster
 		ArrayList<String> newMoleculeIndex = new ArrayList<String>();

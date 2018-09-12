@@ -165,7 +165,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 		ImageProcessor duplicate; 
 		
 		if (useDiscoidalAveragingFilter) {
-			duplicate = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(ip.duplicate(), imp.getTitle(), DS_innerRadius, DS_outerRadius).getProcessor();
+			duplicate = DiscoidalAveragingFilter.calcDiscoidalAveragedImageInfiniteMirror(ip.duplicate(), DS_innerRadius, DS_outerRadius);
 		} else {
 			duplicate = ip.duplicate();
 		}

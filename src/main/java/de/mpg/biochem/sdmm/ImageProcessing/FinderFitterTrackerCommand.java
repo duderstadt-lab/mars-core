@@ -1,10 +1,13 @@
 package de.mpg.biochem.sdmm.ImageProcessing;
 
+import ij.VirtualStack;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.Roi;
+import ij.io.Opener;
 import ij.plugin.frame.RoiManager;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import ij.gui.PointRoi;
 
@@ -53,6 +56,9 @@ import net.imagej.table.DoubleColumn;
 import io.scif.img.IO;
 import io.scif.img.ImgIOException;
 
+import java.awt.image.ColorModel;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Polygon;
@@ -251,6 +257,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		//box region for analysis added to the image.
 		private Rectangle rect;
 		private Roi startingRoi;
+		//private String[] filenames;
 		
 		//For the progress thread
 		private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
@@ -359,18 +366,19 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		        	if (peaks.size() > 0)
 		        		PeakStack.put(i, peaks);
 		        })).get();
-
+		        
 		        progressUpdating.set(false);
 		        
 		        statusService.showProgress(100, 100);
 		        statusService.showStatus("Peak search for " + image.getTitle() + " - Done!");
 		        
-		    } catch (InterruptedException | ExecutionException e) {
+		   } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
-				logService.info(builder.endBlock(true));
-		    } finally {
-		        forkJoinPool.shutdown();
-		    }
+		    	e.printStackTrace();
+				logService.info(builder.endBlock(false));
+		   } finally {
+		      forkJoinPool.shutdown();
+		   }
 		    
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    
@@ -399,7 +407,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    }
 		    
 		    archive = new MoleculeArchive(newName + ".yama");
-			
+		    
 		    ImageMetaData metaData = new ImageMetaData(image, microscope, imageFormat, metaDataStack);
 			archive.addImageMetaData(metaData);
 		    
@@ -418,15 +426,19 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");
 				archive = null;
+				logService.info(builder.endBlock(false));
+			} else {
+				logService.info(builder.endBlock(true));
+	
+				log += builder.endBlock(true);
+				archive.addLogMessage(log);
+				archive.addLogMessage("   ");			
 			}
-			logService.info(builder.endBlock(true));
-
-			log += builder.endBlock(true);
-			archive.addLogMessage(log);
-			archive.addLogMessage("   ");			
+			statusService.clearStatus();
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
+			//ImageProcessor processor = getProcessor(slice, filenames[slice-1]);
 			ImageStack stack = image.getImageStack();
 			ImageProcessor processor = stack.getProcessor(slice);
 			
@@ -445,7 +457,61 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			return peaks;
 		}
+		/*
+		 * 
+		 * 		    
+		    
+		    int slices = image.getImageStackSize();
+		    
+		    logService.info("before metadata " + metaDataStack.size());
+		    if (metaDataStack.size() < slices) {
+		    	//Somehow the metadata parsing did not work
+		    	//we have to do it again...
+		    	ImageStack stack = image.getImageStack();
+		    	for (int i=1;i<=slices;i++) {
+					String label = stack.getSliceLabel(i);
+					metaDataStack.put(i, label);
+		    	}
+		    }
+		    logService.info("metadata " + metaDataStack.size());
+		    
+		    
+		 * 		  //Let's get a list of the filenames in the VirtualStack...
+			//int slices = image.getImageStackSize();
+			//filenames = new String[slices];
+			//for (int i=0;i<slices;i++) {
+			//	filenames[i] = ((VirtualStack)image.getImageStack()).getFileName(i+1);
+			//}
+		 * 
+		public ImageProcessor getProcessor(int slice, String filename) {
+			String path = image.getOriginalFileInfo().directory;
+			if (path==null) {
+	            ImageProcessor ip = new ByteProcessor(image.getWidth(), image.getHeight());
+	            label(ip, ""+slice, Color.white);
+	            return ip;
+	        }
+	        Opener opener = new Opener();
+	        opener.setSilentMode(true);
+	        ImagePlus imp = opener.openImage(path, filename);
+	        ImageProcessor ip = null;
+	        if (imp!=null) {
+	            String info = (String)imp.getProperty("Info");
+	            metaDataStack.put(slice, info);
+	            ip = imp.getProcessor();
+	        } 
+	        return ip;
+		}
 		
+		private void label(ImageProcessor ip, String msg, Color color) {
+	        int size = image.getHeight()/20;
+	        if (size<9) size=9;
+	        Font font = new Font("Helvetica", Font.PLAIN, size);
+	        ip.setFont(font);
+	        ip.setAntialiasedText(true);
+	        ip.setColor(color);
+	        ip.drawString(msg, size, size*2);
+	    }
+		*/
 		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
 			ArrayList<Peak> peaks;
 			
@@ -509,6 +575,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		}
 		
 		public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
+			if (peakList.size() < 2)
+				return peakList;
+			
 			//Sort the list from lowest to highest XYErrors
 			Collections.sort(peakList, new Comparator<Peak>(){
 				@Override
@@ -582,6 +651,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
 			builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
 			builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
+			builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
 			builder.addParameter("Check Max Difference Baseline", String.valueOf(PeakTracker_ckMaxDifferenceBaseline));
 			builder.addParameter("Max Difference Baseline", String.valueOf(PeakTracker_maxDifferenceBaseline));
 			builder.addParameter("Check Max Difference Height", String.valueOf(PeakTracker_ckMaxDifferenceHeight));

@@ -17,8 +17,13 @@ import ij.text.TextWindow;
 import net.imglib2.img.Img;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.ImagePlusAdapter;
 
 @Plugin(type = Op.class, name = "DiscoidalAveragingFilter")
 public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractOp {
@@ -107,7 +112,7 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 					circleOffset += offset;
 					
 					if (circleOffset >= 0 && circleOffset < count) {
-						innerMean += duplicate.getf(circleOffset);
+						innerMean += ip.getf(circleOffset);
 						innerPixels++;
 					}
 				}
@@ -116,7 +121,7 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 					circleOffset += offset;
 					
 					if (circleOffset >= 0 && circleOffset < count) {
-						outerMean += duplicate.getf(circleOffset);
+						outerMean += ip.getf(circleOffset);
 						outerPixels++;
 					}
 				}
@@ -138,6 +143,104 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 		return ImgOut;
 	}
 	
+	public static ImageProcessor calcDiscoidalAveragedImageInfiniteMirror(ImageProcessor ip, int innerRadius, int outerRadius) {
+		return calcDiscoidalAveragedImageInfiniteMirror(ip, innerRadius, outerRadius, new Rectangle(0, 0, ip.getWidth(), ip.getHeight()));
+	}
+	
+	public static ImageProcessor calcDiscoidalAveragedImageInfiniteMirror(ImageProcessor ip, int innerRadius, int outerRadius, Rectangle roi) {
+		//First we generate x y offset lists for the inner and outer regions
+		ArrayList<int[]> innerOffsets = new ArrayList<int[]>();
+		ArrayList<int[]> outerOffsets = new ArrayList<int[]>();
+		
+		for (int y = -outerRadius; y <= outerRadius; y++) {
+			for (int x = -outerRadius; x <= outerRadius; x++) {
+				double d = Math.round(Math.sqrt(x * x + y * y));
+
+				if (d <= innerRadius) {
+					int[] pos = new int[2];
+					pos[0] = x;
+					pos[1] = y;
+					innerOffsets.add(pos);
+				}
+				
+				if (d == outerRadius) {
+					int[] pos = new int[2];
+					pos[0] = x;
+					pos[1] = y;
+					outerOffsets.add(pos);
+				}
+			}
+		}
+		
+		ip.setRoi(roi);
+		ImageProcessor region = ip.crop();
+		ip.resetRoi();
+		
+		double innerMean;
+		double outerMean;
+		int innerPixels;
+		int outerPixels;
+		
+		for (int y = 0; y < region.getHeight(); y++) {
+			for (int x = 0; x < region.getWidth(); x++) {
+				innerMean = 0;
+				outerMean = 0;
+				innerPixels = 0;
+				outerPixels = 0;
+				
+				for (int[] circleOffset: innerOffsets) {
+					innerMean += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1]);
+					innerPixels++;
+				}
+				
+				for (int[] circleOffset: outerOffsets) {
+					outerMean += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1]);
+					outerPixels++;
+				}
+				
+				innerMean /= innerPixels;
+				outerMean /= outerPixels;
+				innerMean -= outerMean;
+				
+				if (innerMean > 0)
+					region.setf(x, y, (float)innerMean);
+				else
+					region.setf(x, y, 0);
+			}
+		}
+		
+		return region;
+	}
+	
+	//This function will perform a mirror operation
+	//At the edges for out of bounds regions...
+	private static float getPixelValue(ImageProcessor proc, int x, int y) {
+		int w = proc.getWidth();
+		int h = proc.getHeight();
+		
+		//First for x if needed
+		if (x < 0) {
+			x *= -1;
+		} else if (x > w - 1) {
+			x = (w - 1) - (x - w); 
+		}
+			
+		//Then for y
+		if (y < 0) {
+			y *= -1;
+		} else if (y > h - 1) {
+			y = (h - 1) - (y - h); 
+		}
+			
+		//If it is really far out of bound we might need to run this method a couple times
+		//Will this get caught in an infinite loop ? I hope not..
+		if (x < 0 || x > w - 1 || y < 0 || y > h - 1)
+			getPixelValue(proc, x, y);
+			
+		return proc.getf(x, y);
+	}
+	
+	
 	/**
      * finds the mean value within the outer radius and subtracts it from the inner radius region. 
      * Placing the result in the output image.
@@ -148,14 +251,39 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
      * @param outerRadius - the outer radius.
      * @return - a Discoidal averaged image.
      */
-    public static < T extends RealType < T > > Img< T >
-        imglib2DSCalc(
-            Img< T > source,
-            int innerRadius, int outerRadius )
-    {
-        RandomAccess< T > ra = source.randomAccess(source);
+	/*
+    public static < T extends RealType < T > > ImagePlus calcDiscoidalAveragedImageInfiniteMirror(ImagePlus ImgIn, int innerRadius, int outerRadius, Rectangle roi, String title ) {
+    	ImagePlus duplicateImage = new ImagePlus(title + " (DS Filtered)", ImgIn.getProcessor());
+    	
+    	Img< T > source = (Img< T >)ImagePlusAdapter.wrap( duplicateImage );
+    	
+    	RandomAccessibleInterval< T > roiView = Views.interval( source, new long[] { (long)roi.getX(), (long)roi.getY() }, new long[]{ (long)(roi.getX() + roi.getWidth()), (long)(roi.getY() + roi.getHeight()) } );
+    	
+    	RandomAccessible< T > mirroredSource = Views.extendMirrorSingle( roiView );
+
+        //long[] min = new long[ source.numDimensions() ];
+        //long[] max = new long[ source.numDimensions() ];
+
+        //for ( int d = 0; d < source.numDimensions(); ++d )
+        //{
+            // we add/subtract another 30 pixels here to illustrate
+            // that it is really infinite and does not only work once
+        //    min[ d ] = -source.dimension( d );
+        //    max[ d ] = source.dimension( d ) * 2 - 1;
+       // }
+
+        // define the Interval on the infinite random accessible
+        //FinalInterval interval = new FinalInterval( min, max );
+
+        // create a Cursor that iterates over the source to calculate the mean of the outer region.
+        //mirroredSource = Views.interval( mirroredSource, interval );
+    	
+    	
+        //RandomAccess< T > ra = source.randomAccess(source);
         
-        log_window = new TextWindow("DS_Log", "", 400, 600);
+    	RandomAccess< T > ra = mirroredSource.randomAccess();
+    	
+        //log_window = new TextWindow("DS_Log", "", 400, 600);
     	
         // Create a new image for the output
         Img< T > result = source.factory().create(source);
@@ -215,7 +343,7 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 		
 		long offset = 0;
 		
-		double time = System.currentTimeMillis();
+		//double time = System.currentTimeMillis();
 		
 		while (resultCursor.hasNext()) {
 			resultCursor.fwd();
@@ -261,10 +389,11 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 		}
 		
 
-		time = System.currentTimeMillis() - time;
-		time /= 1000;
-		log_window.append("Execution Time: " + time + "  seconds");
+		//time = System.currentTimeMillis() - time;
+		//time /= 1000;
+		//log_window.append("Execution Time: " + time + "  seconds");
  
-        return result;
+		return duplicateImage;
     }
+    */
 }

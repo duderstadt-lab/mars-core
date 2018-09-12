@@ -1,5 +1,6 @@
 package de.mpg.biochem.sdmm.ImageProcessing;
 
+import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -7,15 +8,20 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import ij.ImagePlus;
+import ij.gui.Roi;
+import ij.process.ImageProcessor;
 
+import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,84 +38,79 @@ import java.util.stream.Collectors;
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Discoidal Averaging Filter", weight = 40, mnemonic = 'd')})
-public class DiscoidalAveragingFilterCommand<T extends RealType< T >> implements Command {
+public class DiscoidalAveragingFilterCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
+	
+	@Parameter
+	private LogService logService;
+	
+	@Parameter(label = "Image to Filter")
+	private ImagePlus input;
+	
+	//ROI SETTINGS
+	@Parameter(label="use ROI", persist=false)
+	private boolean useROI = true;
+	
+	@Parameter(label="ROI x0", persist=false)
+	private int x0;
+	
+	@Parameter(label="ROI y0", persist=false)
+	private int y0;
+	
+	@Parameter(label="ROI width", persist=false)
+	private int w;
+	
+	@Parameter(label="ROI height", persist=false)
+	private int h;
 	
 	@Parameter
 	private int innerRadius;
 	
 	@Parameter
-	private LogService logService;
-	
-	@Parameter
 	private int outerRadius;
-
-	@Parameter(label = "Image to Filter")
-	private ImagePlus input;
-
-	//@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-	//		callback = "previewChanged")
-	//	private boolean preview;
+	
+	//@Parameter
+	//private boolean mirrorBoundaries = false;
 	
 	@Parameter(label = "Filtered Image", type = ItemIO.OUTPUT)
 	private ImagePlus output;
+	
+	private Rectangle rect;
+	private Roi startingRoi;
 
 	@Override
-	public void run() {
-		/*
-		ArrayList<Integer> lis = new ArrayList<Integer>();
-		Random ran = new Random();
-		
-		
-		for (int i=0;i<100000000;i++) {
-			lis.add(ran.nextInt(1000000000));
+	public void initialize() {
+		if (input.getRoi() == null) {
+			rect = new Rectangle(0,0,input.getWidth()-1,input.getHeight()-1);
+			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
+			useRoifield.setValue(this, false);
+		} else {
+			rect = input.getRoi().getBounds();
+			startingRoi = input.getRoi();
 		}
 		
-		logService.info(""+ lis.get(0));
-		logService.info(""+ lis.get(1));
-		logService.info(""+ lis.get(2));
-		logService.info(""+ lis.get(3));
+		final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
+		imgX0.setValue(this, rect.x);
 		
+		final MutableModuleItem<Integer> imgY0 = getInfo().getMutableInput("y0", Integer.class);
+		imgY0.setValue(this, rect.y);
 		
+		final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput("w", Integer.class);
+		imgWidth.setValue(this, rect.width);
 		
-		ForkJoinPool customThreadPool = new ForkJoinPool(8);
-		List<Integer> output2 = null;
-		
-		double time = System.currentTimeMillis();
-		try {
-			output2 = customThreadPool.submit(
-			  () -> lis.parallelStream().sorted().collect(Collectors.toList())).get();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		logService.info("Time " + (System.currentTimeMillis() - time));
-		logService.info(""+ output2.get(0));
-		logService.info(""+ output2.get(1));
-		logService.info(""+ output2.get(2));
-		logService.info(""+ output2.get(3));
-		*/
-		output = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(input, innerRadius, outerRadius);
+		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("h", Integer.class);
+		imgHeight.setValue(this, rect.height);
 	}
-
-	//@Override
-	//public void cancel() {
-		// TODO Auto-generated method stub
-		
-	//}
 	
-	///** Called when the {@link #preview} parameter value changes. */
-	//protected void previewChanged() {
-		// When preview box reset everything...
-	//	if (!preview) cancel();
-	//}
-
-	//@Override
-	//public void preview() {
-	//	if (preview) run();
-	//}
+	@Override
+	public void run() {
+		
+		//Rectangle roi = new Rectangle(x0, y0, w, h);
+		
+		//if (mirrorBoundaries) {
+			output = new ImagePlus( input.getTitle() + "(Discoidal Averaged)" , DiscoidalAveragingFilter.calcDiscoidalAveragedImageInfiniteMirror(input.getProcessor(), innerRadius, outerRadius, rect));
+		//} else {
+		//	output = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(input, innerRadius, outerRadius);
+		//}
+	}
 
 }

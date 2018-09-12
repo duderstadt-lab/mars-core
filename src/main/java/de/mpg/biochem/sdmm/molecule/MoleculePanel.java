@@ -288,25 +288,29 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	}
 	
 	public JPanel buildPropertiesPanel() {
-		JPanel propPanel = new JPanel();
-		propPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.anchor = GridBagConstraints.NORTH;
 		
-		gbc.weightx = 1;
-		gbc.weighty = 1;
+		JPanel globalPan = new JPanel();
+		globalPan.setLayout(new BorderLayout());
 		
-		gbc.gridx = 0;
-		gbc.gridy = 0;
+		JPanel northPan = new JPanel();
+		northPan.setLayout(new GridBagLayout());
+		GridBagConstraints gbcNorth = new GridBagConstraints();
+		gbcNorth.anchor = GridBagConstraints.NORTH;
 		
-		gbc.insets = new Insets(5, 5, 5, 5);
+		gbcNorth.weightx = 1;
+		gbcNorth.weighty = 1;
+		
+		gbcNorth.gridx = 0;
+		gbcNorth.gridy = 0;
+		
+		gbcNorth.insets = new Insets(5, 0, 5, 0);
 		
 		//UID and image UID for this molecule
 		JLabel uidName = new JLabel("UID");
 		uidName.setFont(new Font("Menlo", Font.BOLD, 12));
-		propPanel.add(uidName, gbc);
+		northPan.add(uidName, gbcNorth);
 		
-        gbc.gridy += 1;
+		gbcNorth.gridy += 1;
 		UIDLabel = new JTextField("" + molecule.getUID());
 		UIDLabel.setFont(new Font("Menlo", Font.PLAIN, 12));
 		UIDLabel.setEditable(false);
@@ -314,14 +318,15 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		int UID_StringWidth = molecule.getUID().length() * 8;
 		Dimension UID_dim = new Dimension(UID_StringWidth, 16);
 		UIDLabel.setMinimumSize(UID_dim);
-		propPanel.add(UIDLabel, gbc);
+		northPan.add(UIDLabel, gbcNorth);
 		
-		gbc.gridy += 1;
+		gbcNorth.gridy += 1;
 		JLabel imageMetaName = new JLabel("ImageMetaDataUID");
 		imageMetaName.setFont(new Font("Menlo", Font.BOLD, 12));
-		propPanel.add(imageMetaName, gbc);
+		northPan.add(imageMetaName, gbcNorth);
 		
-		gbc.gridy += 1;
+		gbcNorth.gridy += 1;
+		gbcNorth.insets = new Insets(5, 0, 10, 0);
 		ImageMetaDataUIDLabel = new JTextField("" + molecule.getImageMetaDataUID());
 		ImageMetaDataUIDLabel.setFont(new Font("Menlo", Font.PLAIN, 12));
 		ImageMetaDataUIDLabel.setEditable(false);
@@ -329,24 +334,34 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		int MetaUID_StringWidth = molecule.getImageMetaDataUID().length() * 8;
 		Dimension MetaUID_dim = new Dimension(MetaUID_StringWidth, 16);
 		ImageMetaDataUIDLabel.setMinimumSize(MetaUID_dim);
-		propPanel.add(ImageMetaDataUIDLabel, gbc);
+		northPan.add(ImageMetaDataUIDLabel, gbcNorth);
 		
-		gbc.gridy += 1;
+		globalPan.add(northPan, BorderLayout.NORTH);
+		
+		//This will be placed in the center...
 		JPanel paramPanel = buildParameterPanel();
-		propPanel.add(paramPanel, gbc);
+		globalPan.add(paramPanel, BorderLayout.CENTER);
 		
-		gbc.gridy += 1;
+		JPanel southPan = new JPanel();
+		southPan.setLayout(new GridBagLayout());
+		GridBagConstraints gbcSouth = new GridBagConstraints();
+		gbcSouth.anchor = GridBagConstraints.NORTH;
+		
+		gbcSouth.weightx = 1;
+		gbcSouth.weighty = 1;
+		
+		gbcSouth.gridx = 0;
+		gbcSouth.gridy = 0;
+		
 		JPanel tagsPanel = buildTagsPanel();
-		propPanel.add(tagsPanel, gbc);
+		southPan.add(tagsPanel, gbcSouth);
 		
-		gbc.gridy += 1;
-		gbc.anchor = GridBagConstraints.CENTER;
-		gbc.insets = new Insets(5, 5, 5, 5);
+		gbcSouth.gridy += 1;
+		gbcSouth.anchor = GridBagConstraints.CENTER;
+		gbcSouth.insets = new Insets(5, 0, 5, 0);
 		JLabel notesName = new JLabel("Notes");
 		notesName.setFont(new Font("Menlo", Font.BOLD, 12));
-		propPanel.add(notesName, gbc);
-		
-		gbc.insets = new Insets(0, 5, 0, 5);
+		southPan.add(notesName, gbcSouth);
 		
 		notes = new JTextArea(molecule.getNotes());
         JScrollPane noteScroll = new JScrollPane(notes);
@@ -364,16 +379,19 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	            }
 	        });
 		
-        Dimension dim = new Dimension(200 + 5, 100);
+        Dimension dim = new Dimension(225, 125);
 		
-        noteScroll.setMinimumSize(dim);
-        noteScroll.setMaximumSize(dim);
+       // noteScroll.setMinimumSize(dim);
+       // noteScroll.setMaximumSize(dim);
         noteScroll.setPreferredSize(dim);
+        gbcSouth.gridy += 1;
         
-		gbc.gridy += 1;
-		propPanel.add(noteScroll, gbc);
+        gbcSouth.insets = new Insets(0, 0, 15, 0);
+        southPan.add(noteScroll, gbcSouth);
+        
+        globalPan.add(southPan, BorderLayout.SOUTH);
 		
-		return propPanel;
+		return globalPan;
 	}
 	
 	public JPanel buildParameterPanel() {
@@ -422,22 +440,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		};
 		
 		JPanel parameterPanel = new JPanel();
-		parameterPanel.setLayout(new GridBagLayout());
-		
-		GridBagConstraints parameterPanelGBC = new GridBagConstraints();
-		parameterPanelGBC.anchor = GridBagConstraints.NORTH;
-		parameterPanelGBC.insets = new Insets(5, 5, 5, 5);
-		
-		parameterPanelGBC.weightx = 1;
-		parameterPanelGBC.weighty = 1;
-		
-		parameterPanelGBC.gridx = 0;
-		parameterPanelGBC.gridy = 0;
-		
-		parameterPanelGBC.insets = new Insets(5, 5, 5, 5);
-		JLabel parameterName = new JLabel("Parameters");
-		parameterName.setFont(new Font("Menlo", Font.BOLD, 12));
-		parameterPanel.add(parameterName, parameterPanelGBC);
+		parameterPanel.setLayout(new BorderLayout());
 		
 		ParameterTable = new JTable(ParameterTableModel);
 		ParameterTable.setAutoCreateColumnsFromModel(true);
@@ -453,20 +456,32 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		JScrollPane ParameterScrollPane = new JScrollPane(ParameterTable);
 		
-		Dimension dim2 = new Dimension(ParameterTable.getColumnCount()*100 + 5, 100);
+		Dimension dim2 = new Dimension(225, 10000);
 		
-		ParameterScrollPane.setMinimumSize(dim2);
+		//ParameterScrollPane.setMinimumSize(dim2);
 		ParameterScrollPane.setMaximumSize(dim2);
 		ParameterScrollPane.setPreferredSize(dim2);
 		
-		parameterPanelGBC.gridy += 1;
-		parameterPanelGBC.insets = new Insets(0, 5, 0, 5);
-		parameterPanel.add(ParameterScrollPane, parameterPanelGBC);
+		parameterPanel.add(ParameterScrollPane, BorderLayout.CENTER);
+		
+		JPanel southPanel = new JPanel();
+		southPanel.setLayout(new GridBagLayout());
+		GridBagConstraints parameterPanelGBC = new GridBagConstraints();
+		parameterPanelGBC.anchor = GridBagConstraints.NORTH;
+		
+		//Top, left, bottom, right
+		parameterPanelGBC.insets = new Insets(5, 0, 5, 0);
+		
+		parameterPanelGBC.weightx = 1;
+		parameterPanelGBC.weighty = 1;
+		
+		parameterPanelGBC.gridx = 0;
+		parameterPanelGBC.gridy = 0;
 		
 		JPanel AddPanel = new JPanel();
 		AddPanel.setLayout(new BorderLayout());
-		JTextField newParameter = new JTextField(10);
-		Dimension dimParm = new Dimension(130, 20);
+		JTextField newParameter = new JTextField(12);
+		Dimension dimParm = new Dimension(200, 20);
 		newParameter.setMinimumSize(dimParm);
 		AddPanel.add(newParameter, BorderLayout.CENTER);
 		JButton Add = new JButton("Add");
@@ -481,13 +496,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		});
 		AddPanel.add(Add, BorderLayout.EAST);
 		
-		parameterPanelGBC.gridy += 1;
-		parameterPanelGBC.insets = new Insets(0, 5, 0, 5);
-		ParameterScrollPane.setMinimumSize(dim2);
-		ParameterScrollPane.setMaximumSize(dim2);
-		ParameterScrollPane.setPreferredSize(dim2);
-		
-		parameterPanel.add(AddPanel, parameterPanelGBC);
+		southPanel.add(AddPanel, parameterPanelGBC);
 		
 		JButton Remove = new JButton("Remove");
 		Remove.addActionListener(new ActionListener() {
@@ -502,8 +511,10 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		});
 		
 		parameterPanelGBC.gridy += 1;
-		parameterPanelGBC.anchor = GridBagConstraints.EAST;
-		parameterPanel.add(Remove, parameterPanelGBC);
+		parameterPanelGBC.anchor = GridBagConstraints.NORTHEAST;
+		southPanel.add(Remove, parameterPanelGBC);
+		
+		parameterPanel.add(southPanel, BorderLayout.SOUTH);
 		
 		return parameterPanel;
 	}
@@ -538,7 +549,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		GridBagConstraints tagPanelGBC = new GridBagConstraints();
 		tagPanelGBC.anchor = GridBagConstraints.NORTH;
-		tagPanelGBC.insets = new Insets(5, 5, 5, 5);
+		//tagPanelGBC.insets = new Insets(5, 5, 5, 5);
 		
 		tagPanelGBC.weightx = 1;
 		tagPanelGBC.weighty = 1;
@@ -546,9 +557,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		tagPanelGBC.gridx = 0;
 		tagPanelGBC.gridy = 0;
 		
-		JLabel tagsName = new JLabel("Tags");
-		tagsName.setFont(new Font("Menlo", Font.BOLD, 12));
-		tagPanel.add(tagsName, tagPanelGBC);
+		//JLabel tagsName = new JLabel("Tags");
+		//tagsName.setFont(new Font("Menlo", Font.BOLD, 12));
+		//tagPanel.add(tagsName, tagPanelGBC);
 		
 		TagTable = new JTable(TagTableModel);
 		TagTable.setAutoCreateColumnsFromModel(true);
@@ -561,21 +572,21 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		JScrollPane TagScrollPane = new JScrollPane(TagTable);
 		
-		Dimension dim3 = new Dimension(200 + 5, 100);
+		Dimension dim3 = new Dimension(225, 125);
 		
 		TagScrollPane.setMinimumSize(dim3);
 		TagScrollPane.setMaximumSize(dim3);
 		TagScrollPane.setPreferredSize(dim3);
 		
 		tagPanelGBC.gridx = 0;
-		tagPanelGBC.gridy = 1;
-		tagPanelGBC.insets = new Insets(0, 5, 0, 5);
+		tagPanelGBC.gridy = 0;
+		tagPanelGBC.insets = new Insets(0, 0, 0, 0);
 		tagPanel.add(TagScrollPane, tagPanelGBC);
 		
 		JPanel AddPanel = new JPanel();
 		AddPanel.setLayout(new BorderLayout());
-		JTextField newTag = new JTextField(10);
-		Dimension dimTag = new Dimension(130, 20);
+		JTextField newTag = new JTextField(12);
+		Dimension dimTag = new Dimension(200, 20);
 		newTag.setMinimumSize(dimTag);
 		AddPanel.add(newTag, BorderLayout.CENTER);
 		JButton Add = new JButton("Add");
@@ -592,7 +603,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		tagPanelGBC.gridx = 0;
 		tagPanelGBC.gridy = 2;
-		tagPanelGBC.insets = new Insets(0, 5, 0, 5);
+		tagPanelGBC.insets = new Insets(5, 0, 5, 0);
 		
 		tagPanel.add(AddPanel, tagPanelGBC);
 		
@@ -609,7 +620,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		});
 		tagPanelGBC.gridx = 0;
 		tagPanelGBC.gridy = 3;
-		tagPanelGBC.anchor = GridBagConstraints.EAST;
+		tagPanelGBC.anchor = GridBagConstraints.NORTHEAST;
 		tagPanel.add(Remove, tagPanelGBC);
 		
 		return tagPanel;

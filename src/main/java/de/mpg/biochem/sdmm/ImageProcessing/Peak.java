@@ -17,7 +17,7 @@ public class Peak implements RealLocalizable {
 	
 	int slice;
 	
-	//Used for multithreded Peak linking..
+	//Used for multithreaded Peak linking..
 	Peak forwardLink, backwardLink;
 	
 	double x,y, height, baseline, sigma;

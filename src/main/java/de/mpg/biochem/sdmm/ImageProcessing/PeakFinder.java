@@ -15,6 +15,7 @@ import ij.ImagePlus;
 
 import ij.Prefs;
 import ij.gui.Roi;
+import ij.process.ImageProcessor;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -107,8 +108,9 @@ public class PeakFinder<T extends RealType<T>> {
 		
 		Img< T > image;
 		if (useDiscoidalAveraging) {
-			ImagePlus filtered_ip = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(imp.duplicate(), DSinnerRadius, DSouterRadius);
-			image = ImageJFunctions.wrapReal(filtered_ip);
+			//ImagePlus filtered_ip = DiscoidalAveragingFilter.calcDiscoidalAveragedImage(imp.duplicate(), DSinnerRadius, DSouterRadius);
+			ImageProcessor filtered_ip = DiscoidalAveragingFilter.calcDiscoidalAveragedImageInfiniteMirror(imp.getProcessor(), DSinnerRadius, DSouterRadius, new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+			image = ImageJFunctions.wrapReal(new ImagePlus("temp filtered image", filtered_ip));
 		} else { 
 			image = ImageJFunctions.wrapReal(imp);
 		}

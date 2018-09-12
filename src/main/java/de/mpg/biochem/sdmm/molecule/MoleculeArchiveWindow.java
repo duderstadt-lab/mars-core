@@ -477,9 +477,6 @@ public class MoleculeArchiveWindow {
 		northGBC.weightx = 1;
 		northGBC.weighty = 1;
 		
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		
 		northPanel.add(panel, northGBC);
 		
 		return northPanel;
