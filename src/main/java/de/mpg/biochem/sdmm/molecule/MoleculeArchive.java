@@ -412,7 +412,7 @@ public class MoleculeArchive {
 			//recover = uiService.showDialog("Recover from virtual store?", "Recovery Mode", 
 			//		DialogPrompt.MessageType.QUESTION_MESSAGE, DialogPrompt.OptionType.YES_NO_OPTION);
 		}
-
+		
 		if (exists && recover == JOptionPane.YES_OPTION) {
 			archive = ChronicleMap
 				    .of(CharSequence.class, Molecule.class)
@@ -422,7 +422,7 @@ public class MoleculeArchive {
 				    .entries(numMolecules + 10)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
-				    .recoverPersistedTo(persistedFile, false);
+				    .createPersistedTo(persistedFile);
 			return true;
 		} else {
 			if (exists)
@@ -438,6 +438,33 @@ public class MoleculeArchive {
 				    .createPersistedTo(persistedFile);
 			return false;
 		}
+		/*
+		if (exists && recover == JOptionPane.YES_OPTION) {
+			archive = ChronicleMap
+				    .of(CharSequence.class, Molecule.class)
+				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
+				    .name(name)
+				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
+				    .entries(numMolecules + 10)
+				    .maxBloatFactor(2.0)
+				    .averageValueSize(averageSize)
+				    .recoverPersistedTo(persistedFile, true);
+			return true;
+		} else {
+			if (exists)
+				persistedFile.delete();
+			archive = ChronicleMap
+				    .of(CharSequence.class, Molecule.class)
+				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
+				    .name(name)
+				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
+				    .entries(numMolecules + 10)
+				    .maxBloatFactor(2.0)
+				    .averageValueSize(averageSize)
+				    .createPersistedTo(persistedFile);
+			return false;
+		}
+		*/
 	}
 	
 	//Method for adding molecules to the archive
