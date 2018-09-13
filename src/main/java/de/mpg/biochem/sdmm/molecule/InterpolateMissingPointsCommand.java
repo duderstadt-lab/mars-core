@@ -70,18 +70,16 @@ public class InterpolateMissingPointsCommand extends DynamicCommand implements C
 			Molecule molecule = archive.get(UID);
 			SDMMResultsTable datatable = molecule.getDataTable();
 			
-			int previous_slice = (int)datatable.getValue("slice", 0);
-			
 			int rows = datatable.getRowCount();
 			
 			for (int i=1;i<rows;i++) {
 				//Check whether there is a gap in the slice number...
+				int previous_slice = (int)datatable.getValue("slice", i-1);
 				int current_slice = (int)datatable.getValue("slice", i);
 				if (previous_slice != current_slice - 1) {
 					if (current_slice - previous_slice < Maxgap) {
 						for (int w=1; w < current_slice - previous_slice ; w++) {
 							datatable.appendRow();
-							
 							datatable.setValue("slice", datatable.getRowCount() - 1, previous_slice + w);
 							datatable.setValue("x", datatable.getRowCount() - 1, datatable.getValue("x", i-1) + w*(datatable.getValue("x", i) - datatable.getValue("x", i-1))/(current_slice - previous_slice));
 							datatable.setValue("y", datatable.getRowCount() - 1, datatable.getValue("y", i-1) + w*(datatable.getValue("y", i) - datatable.getValue("y", i-1))/(current_slice - previous_slice));

@@ -66,11 +66,12 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
-		for (ImageMetaData meta : archive.getImageMetaData()) {
+		for (String metaUID : archive.getImageMetaDataUIDs()) {
+			ImageMetaData meta = archive.getImageMetaData(metaUID);
 			//Let's find the last slice
 			SDMMResultsTable metaDataTable = meta.getDataTable();
 			
-			int slices = (int)metaDataTable.get("slice",metaDataTable.getRowCount()-1);
+			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
 			
 			//First calculator global background
 			double[] x_avg_background = new double[slices];
@@ -101,8 +102,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					double y_mean = datatable.mean("y");
 					
 					for (int row = 0; row < datatable.getRowCount(); row++) {
-						x_avg_background[row] += datatable.getValue("x", row - 1) - x_mean;
-						y_avg_background[row] += datatable.getValue("y", row - 1) - y_mean;
+						x_avg_background[row] += datatable.getValue("x", row) - x_mean;
+						y_avg_background[row] += datatable.getValue("y", row) - y_mean;
 					}
 			});
 			
@@ -116,6 +117,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			
 			metaDataTable.add(x_background);
 			metaDataTable.add(y_background);
+			
+			archive.setImageMetaData(meta);
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

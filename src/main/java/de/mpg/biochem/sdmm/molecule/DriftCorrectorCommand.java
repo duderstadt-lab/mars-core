@@ -77,7 +77,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMapX = new HashMap<String, HashMap<Double, Double>>();
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
-		for (ImageMetaData meta : archive.getImageMetaData()) {
+		for (String metaUID : archive.getImageMetaDataUIDs()) {
+			ImageMetaData meta = archive.getImageMetaData(metaUID);
 			if (meta.getDataTable().get("x_drift") != null && meta.getDataTable().get("y_drift") != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta,"x_drift"));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta,"y_drift"));
@@ -88,10 +89,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				archive.addLogMessage(builder.endBlock(false));
 				
 				//Unlock the window so it can be changed
-			    if (!uiService.isHeadless()) {
-			    	archive.getWindow().updateAll();
-					archive.getWindow().unlockArchive();
-				}
+			    if (!uiService.isHeadless())
+			    	archive.unlock();
 				return;
 			}
 		}
@@ -134,7 +133,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				double backgroundY = sliceToYMap.get(slice);
 				
 				double y_drift_corr_value = molY - backgroundY;
-				datatable.set("x_drift_corr", i, y_drift_corr_value);
+				datatable.set("y_drift_corr", i, y_drift_corr_value);
 			}
 			
 			archive.set(molecule);
@@ -157,7 +156,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		
 		double meanBG = metaTable.mean(columnName,"slice",from, to);
 		
-		for (int i=0;i<meta.getDataTable().getRowCount();i++) {
+		for (int i=0;i<metaTable.getRowCount();i++) {
 			sliceToColumn.put(metaTable.getValue("slice", i), metaTable.getValue(columnName, i) - meanBG);
 		}
 		return sliceToColumn;

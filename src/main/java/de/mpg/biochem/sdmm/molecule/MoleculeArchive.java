@@ -516,7 +516,9 @@ public class MoleculeArchive {
 		}
 	}
 	
-	//Getters and Setters.
+	public ArrayList<String> getImageMetaDataUIDs() {
+		return imageMetaDataIndex;
+	}
 	
 	public int getNumberOfMolecules() {
 		return moleculeIndex.size();

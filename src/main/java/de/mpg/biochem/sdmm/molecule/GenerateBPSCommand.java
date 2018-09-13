@@ -25,8 +25,10 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
+import net.imagej.table.DoubleColumn;
 
 import javax.swing.JLabel;
 
@@ -115,9 +117,6 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	
 	@Override
 	public void initialize() {
-    	final MutableModuleItem<String> tableItems = getInfo().getMutableInput("archiveName", String.class);
-		tableItems.setChoices(moleculeArchiveService.getArchiveNames());
-		
 		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
 		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
 		
@@ -173,10 +172,12 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					mol_bps_per_um = global_bps_per_um;
 				
 				//Add corrected distance to the table in a column with name distance_column_name
-				molecule.getDataTable().appendColumn(distance_column_name);
+				DoubleColumn bpsCol = new DoubleColumn(distance_column_name);
 				
-				for (int j=0; j< molecule.getDataTable().getRowCount(); j++) {
-					double output = (molecule.getDataTable().getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
+				SDMMResultsTable table = molecule.getDataTable();
+				
+				for (int j=0; j< table.getRowCount(); j++) {
+					double output = (table.getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
 					if (output > 0)
 						output = (output - bead_radius)*mol_bps_per_um;
 					else if (output < 0)
@@ -187,8 +188,9 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					if (!cameraFlipped)
 						output *= -1;
 					
-					molecule.getDataTable().setValue(distance_column_name, j, output);
+					bpsCol.add(output);
 				}
+				table.add(bpsCol);
 				
 				archive.set(molecule);
 			});
@@ -208,12 +210,17 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					tab_bg_end = (int)molecule.getParameter("bg_end");
 				}
 				
-				double mean_background = molecule.getDataTable().mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
+				SDMMResultsTable table = molecule.getDataTable();
 				
-				for (int j = 0; j <= molecule.getDataTable().getRowCount(); j++) {
-					double bps = (molecule.getDataTable().getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
-					molecule.getDataTable().setValue(distance_column_name, j, bps);
+				double mean_background = table.mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
+				
+				DoubleColumn bpsCol = new DoubleColumn(distance_column_name);
+				
+				for (int j = 0; j < table.getRowCount(); j++) {
+					double bps = (table.getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
+					bpsCol.add(bps);
 				}
+				table.add(bpsCol);
 				
 				archive.set(molecule);
 			});

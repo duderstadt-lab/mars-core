@@ -69,7 +69,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//First let's generate lookup maps for slice to time for all metadata items in the archive
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
-		for (ImageMetaData meta : archive.getImageMetaData()) {
+		for (String metaUID : archive.getImageMetaDataUIDs()) {
+			ImageMetaData meta = archive.getImageMetaData(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
 			} else {

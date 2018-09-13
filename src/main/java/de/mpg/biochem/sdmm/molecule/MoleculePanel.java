@@ -792,6 +792,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			}
 		}
 		
+		//Attempt to fix bug where filtering stops working
+		//with no entries in textbox and the index is still gone...
+		moleculeSearchField.setText("");
 	}
 	
 	private void filterMoleculeIndex() {

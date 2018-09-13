@@ -444,8 +444,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			//First we add the header information to the metadata map 
 			//to generate the metadata table later in the molecule archive.
-			String label = stack.getSliceLabel(slice);
-			metaDataStack.put(slice, label);
+			if (!imageFormat.equals("None")) {
+				String label = stack.getSliceLabel(slice);
+				metaDataStack.put(slice, label);
+			}
 			
 			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
