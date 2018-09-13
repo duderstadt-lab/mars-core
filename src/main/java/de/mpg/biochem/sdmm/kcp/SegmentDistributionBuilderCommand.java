@@ -126,7 +126,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	public void run() {
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.lockArchive();
+			archive.lock();
 		
 		//Build Collection of UIDs based on tags if they exist...
         ArrayList<String> UIDs;
@@ -189,6 +189,6 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
-			archive.unlockArchive();
+			archive.unlock();
 	}
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -12,6 +13,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.sdmm.molecule.*;
 import de.mpg.biochem.sdmm.table.*;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -39,14 +42,12 @@ import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import net.imagej.ops.Initializable;
+import net.imagej.table.DoubleColumn;
 
 /**
- * Command for integrating the fluorescence signal from peaks. Two types of inputs are possible. 
- * A list of peaks for integration can be provided as PointRois in the RoiManger with the format UID_TOP or UID_BOT. 
- * In this case, the positions given will be integrated for all slices with different colors divided into different columns based on the
- * Meta data information. Alternatively, a {@link MoleculeArchive} can be provided in which case the x, y positions for all molecules 
- * will be integrated and added to each molecule record with color information gathered in a frame by frame manner based on the meta data with 
- * different colors placed in different columns.
+ * Command for integrating the fluorescence signal from peaks. Input - A list of peaks for integration can be provided as PointRois 
+ * in the RoiManger with the format UID_TOP or UID_BOT. The positions given will be integrated for all slices with different colors 
+ * divided into different columns based on the Meta data information. 
  * 
  * @author Karl Duderstadt
  * 
@@ -73,15 +74,19 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	@Parameter
     private ResultsTableService resultsTableService;
 	
+	@Parameter
+    private MoleculeArchiveService moleculeArchiveService;
+	
 	//INPUT IMAGE
 	@Parameter(label = "Image for Integration")
 	private ImagePlus image; 
 	
-    @Parameter(label="Get peaks from:", choices = {"RoiMananger", "MoleculeArchive"})
-	private String peaklistInput = "RoiManager";
+	//For the moment we just get RoiMode working..
+    //@Parameter(label="Get peaks from:", choices = {"RoiMananger", "MoleculeArchive"})
+	//private String peaklistInput = "RoiManager";
 	
-	@Parameter(label="Molecule Archive", type = ItemIO.BOTH, required=false)
-	private MoleculeArchive archive;
+	//@Parameter(label="Molecule Archive", type = ItemIO.BOTH, required=false)
+	//private MoleculeArchive archive;
 	
 	@Parameter(label="Inner Radius")
 	private int innerRadius = 1;
@@ -116,22 +121,26 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	private int TOPheight = 500;
 	
 	@Parameter(label="BOTTOM x0")
-	private int BOTTOMx0 = 0;
+	private int BOTx0 = 0;
 	
 	@Parameter(label="BOTTOM y0")
-	private int BOTTOMy0 = 524;
+	private int BOTy0 = 524;
 	
 	@Parameter(label="BOTTOM width")
-	private int BOTTOMwidth = 1024;
+	private int BOTwidth = 1024;
 	
 	@Parameter(label="BOTTOM height")
-	private int BOTTOMheight = 500;
+	private int BOTheight = 500;
 	
 	@Parameter(label="Microscope")
 	private String microscope = "Dobby";
 	
-	@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
-	private String imageFormat = "MicroManager";
+	//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
+	//private String imageFormat = "MicroManager";
+	
+	//OUTPUT PARAMETERS
+	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
+	private MoleculeArchive archive;
 	
 	//For each slice there will be a Map of UID to peak.. This slice maps are stored in a 
 	//larger map with keys corresponding to the slice numbers.
@@ -142,102 +151,99 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	private ConcurrentMap<Integer, String> metaDataStack;
 	
 	//For the progress thread
-	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+	//private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	
-	//Used for making JsonParser isntances..
-    //We make it static becasue we just need to it make parsers so we don't need multiple copies..
+	//Used for making JsonParser instances..
+    //We make it static because we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
 	
 	@Override
 	public void run() {	
 		Rectangle topBoundingRegion = new Rectangle(TOPx0, TOPy0, TOPwidth, TOPheight);
-		Rectangle bottomBoundingRegion = new Rectangle(BOTTOMx0, BOTTOMy0, BOTTOMwidth, BOTTOMheight);
+		Rectangle bottomBoundingRegion = new Rectangle(BOTx0, BOTy0, BOTwidth, BOTheight);
 		
 		//Initialize the maps
 		IntensitiesStack = new ConcurrentHashMap<>(image.getStackSize());
 		metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 		
-		if (peaklistInput.equals("RoiManager")) {
-			//These are assumed to be PointRois with Names of the format
-			//UID_TOP or UID_BOT...
-			//We assume the same positions are integrated in all frames...
-			Roi[] rois = roiManager.getRoisAsArray();
-			
-			ConcurrentMap<String, FPeak> integrationList = new ConcurrentHashMap<String, FPeak>();
-			
-	        for (int i=0;i<rois.length;i++) {
-	        	//split UID from TOP or BOT
-	        	String[] subStrings = rois[i].getName().split("_");
-	        	String UID = subStrings[0];
-	        	
-	        	FPeak peak;
-	        	
-	        	if (integrationList.containsKey(UID)) {
-	        		//point to existing entry...
-	        		peak = integrationList.get(UID);
-	        	} else {
-	        		//create a new entry...
-	        		peak = new FPeak(UID);
-	        	}
-	        	
-	        	if (subStrings[1].equals("TOP")) {
-	        		peak.setTOPXY(rois[i].getFloatBounds().x - 0.5, rois[i].getFloatBounds().y - 0.5);
-	        	} else if (subStrings[1].equals("BOT")) {
-	        		peak.setBOTXY(rois[i].getFloatBounds().x - 0.5, rois[i].getFloatBounds().y - 0.5);
-	        	} else {
-	        		//This is the wrong type of Rois...
-	        		//Should throw an error.
-	        		return;
-	        	}
-	        	
-	        	integrationList.put(UID, peak);
-			}
-	        
-	        
-	        IntensitiesStack.put(1, integrationList);
-	        
-	        //Now we just copy this integration list for the rest of the frames
-	        for (int slice=2;slice<=image.getStackSize();slice++) {
-	        	//have to make a new copy for each slice, so there is a unique FPeak for putting the integration information...
-	        	ConcurrentMap<String, FPeak> integrationListCopy = new ConcurrentHashMap<String, FPeak>();
-	        	for (String UID: integrationList.keySet()) {
-	        		FPeak peakCopy = new FPeak(integrationList.get(UID));
-	        		integrationListCopy.put(UID, peakCopy);
-	        	}
-	        	
-	        	IntensitiesStack.put(slice, integrationListCopy);
-	        }
-		} else {
-			//Means we are using the molecule archive to build a peak list for integration...
-			//TO DO build the integration maps from the molecule archive...
+		ConcurrentHashMap<String, Boolean> colorsTempMap = new ConcurrentHashMap<String, Boolean>(); 
+		Set<String> colorsSet = colorsTempMap.newKeySet(); 
+		
+		//Build log
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Peak Integrator");
+		
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		
+		//These are assumed to be PointRois with Names of the format
+		//UID_TOP or UID_BOT...
+		//We assume the same positions are integrated in all frames...
+		Roi[] rois = roiManager.getRoisAsArray();
+		
+		ConcurrentMap<String, FPeak> integrationList = new ConcurrentHashMap<String, FPeak>();
+		
+        for (int i=0;i<rois.length;i++) {
+        	//split UID from TOP or BOT
+        	String[] subStrings = rois[i].getName().split("_");
+        	String UID = subStrings[0];
+        	
+        	FPeak peak;
+        	
+        	if (integrationList.containsKey(UID)) {
+        		//point to existing entry...
+        		peak = integrationList.get(UID);
+        	} else {
+        		//create a new entry...
+        		peak = new FPeak(UID);
+        	}
+        	
+        	double x = rois[i].getFloatBounds().x;
+    		double y = rois[i].getFloatBounds().y;
+        	
+        	if (subStrings[1].equals("TOP") && topBoundingRegion.contains(x, y)) {
+        		peak.setTOPXY(x - 0.5, y - 0.5);
+        	} else if (subStrings[1].equals("BOT") && bottomBoundingRegion.contains(x, y)) {
+        		peak.setBOTXY(x - 0.5, y - 0.5);
+        	} else {
+        		//Not inside the regions or not with the correct format.
+        		//continue to next peak without adding it.
+        		continue;
+        	}
+        	
+        	integrationList.put(UID, peak);
 		}
+        
+        
+        IntensitiesStack.put(1, integrationList);
+        
+        //Now we just copy this integration list for the rest of the frames
+        for (int slice=2;slice<=image.getStackSize();slice++) {
+        	//have to make a new copy for each slice, so there is a unique FPeak for putting the integration information...
+        	ConcurrentMap<String, FPeak> integrationListCopy = new ConcurrentHashMap<String, FPeak>();
+        	for (String UID: integrationList.keySet()) {
+        		FPeak peakCopy = new FPeak(integrationList.get(UID));
+        		integrationListCopy.put(UID, peakCopy);
+        	}
+        	
+        	IntensitiesStack.put(slice, integrationListCopy);
+        }
 		
 		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius, topBoundingRegion, bottomBoundingRegion);
 			
+		double starttime = System.currentTimeMillis();
+		logService.info("Integrating Peaks...");
+		
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 	    try {
-	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-	    	//Waiting call back to update the progress bar!!
-	    	Thread progressThread = new Thread() {
-	            public synchronized void run() {
-                    try {
-        		        while(progressUpdating.get()) {
-        		        	Thread.sleep(100);
-        		        	statusService.showStatus(IntensitiesStack.size(), image.getStackSize(), "Integrating Molecules for " + image.getTitle());
-        		        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-	            }
-	        };
-
-	        progressThread.start();
 	        
-	        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-	        //peaks with the slice number as a key in the map for each list...
+	    	
+	        //This will spawn a bunch of threads that will analyze frames individually in parallel integrating all peaks
+	    	//in the lists in the IntensitiesStack map...
 	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(slice -> {
 	        	//First we add the header information to the metadata map 
 				//to generate the metadata table later in the molecule archive.
@@ -246,22 +252,110 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	
 				String[] colors = getColors(label);
 				
+				if (colors[0] != null)
+					colorsSet.add(colors[0]);
+					
+				if (colors[1] != null)
+					colorsSet.add(colors[1]);
+				
 	        	//We also pass the color names.. For a give frame there can only be two colors..
+				//If the color value is null then that color is not integrated..
 	        	integrator.integratePeaks(image.getStack().getProcessor(slice), IntensitiesStack.get(slice), colors[0], colors[1]);
 	        })).get();
 	        
-	        progressUpdating.set(false);
+	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+	        logService.info("Building Archive...");
+	        
+	        //Let's make sure we create a unique archive name...
+		    String newName = "archive";
+		    int num = 1;
+		    while (moleculeArchiveService.getArchive(newName + ".yama") != null) {
+		    	newName = "archive" + num;
+		    	num++;
+		    }
+	        archive = new MoleculeArchive(newName + ".yama");
+		    
+		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack);
+			archive.addImageMetaData(metaData);
+	        
+	        //Now we need to use the IntensitiesStack to build the molecule archive...
+	        forkJoinPool.submit(() -> IntensitiesStack.get(1).keySet().parallelStream().forEach(UID -> {
+	        	SDMMResultsTable table = new SDMMResultsTable();
+	        	ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
+	    		
+	    		columns.add(new DoubleColumn("x_TOP"));
+	    		columns.add(new DoubleColumn("y_TOP"));
+	    		columns.add(new DoubleColumn("x_BOT"));
+	    		columns.add(new DoubleColumn("y_BOT"));
+	    		columns.add(new DoubleColumn("slice"));
+	    		
+	    		for (String colorName : colorsSet) {
+	    			columns.add(new DoubleColumn(colorName));
+	    			columns.add(new DoubleColumn(colorName + "_background"));
+	    		}
+	    		
+	    		for (DoubleColumn column : columns)
+	    			table.add(column);
+	        	
+	        	for (int slice=1; slice<=IntensitiesStack.size(); slice++) {
+	        		FPeak peak = IntensitiesStack.get(slice).get(UID);
+	        		
+	        		table.appendRow();
+	        		int row = table.getRowCount() - 1;
+	        		table.set("x_TOP", row, peak.getXTOP());
+	        		table.set("y_TOP", row, peak.getYTOP());
+	        		table.set("x_BOT", row, peak.getXBOT());
+	        		table.set("y_BOT", row, peak.getXTOP());
+	        		table.set("slice", row, (double)slice);
+	        		
+	        		for (String colorName : colorsSet) {
+	        			if (peak.getIntensityList().containsKey(colorName)) {
+	        				table.set(colorName, row, peak.getIntensity(colorName)[0]);
+	        				table.set(colorName + "_background", row, peak.getIntensity(colorName)[1]);
+	        			} else {
+	        				table.set(colorName, row, Double.NaN);
+	        				table.set(colorName + "_background", row, Double.NaN);
+	        			}
+	        		}
+	        	}
+	        	
+	        	Molecule molecule = new Molecule(UID, table);
+	        	molecule.setImageMetaDataUID(metaData.getUID());
+	        	
+	        	archive.add(molecule);
+	        })).get();
 	        
 	        statusService.showProgress(100, 100);
-	        statusService.showStatus("Peak search for " + image.getTitle() + " - Done!");
+	        statusService.showStatus("Peak integration for " + image.getTitle() + " - Done!");
 	        
 	    } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
+	    	// handle exceptions
+	    	e.printStackTrace();
+			logService.info(builder.endBlock(false));
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
 	    
-	    //Now we need to use the IntensitiesStack to build the molecule archive...
+	    //Reorder Molecules to Natural Order, so there is a common order
+	    //if we have to recover..
+	    archive.naturalOrderSortMoleculeIndex();
+	    
+	    //Make sure the output archive has the correct name
+		getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
+		
+		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+		if (archive.getNumberOfMolecules() == 0) {
+			logService.info("No molecules found. Maybe there is a problem with your settings");
+			archive = null;
+			logService.info(builder.endBlock(false));
+		} else {
+			logService.info(builder.endBlock(true));
+
+			log += builder.endBlock(true);
+			archive.addLogMessage(log);
+			archive.addLogMessage("   ");			
+		}
+		statusService.clearStatus();
 	}
 	
 	//Get color names based on image meta data
@@ -367,5 +461,25 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		}
 		
 		return parameters;
+	}
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("Image Title", image.getTitle());
+		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		builder.addParameter("Inner Radius", String.valueOf(innerRadius));
+		builder.addParameter("Outer Radius", String.valueOf(outerRadius));
+		builder.addParameter("Use DualView Regions", String.valueOf(dualView));
+		builder.addParameter("Dichroic", dichroic);
+		builder.addParameter("FRET", String.valueOf(FRET));
+		
+		builder.addParameter("TOP x0", String.valueOf(TOPx0));
+		builder.addParameter("TOP y0", String.valueOf(TOPy0));
+		builder.addParameter("TOP width", String.valueOf(TOPwidth));
+		builder.addParameter("TOP height", String.valueOf(TOPheight));
+		
+		builder.addParameter("BOT x0", String.valueOf(BOTx0));
+		builder.addParameter("BOT y0", String.valueOf(BOTy0));
+		builder.addParameter("BOT width", String.valueOf(BOTwidth));
+		builder.addParameter("BOT height", String.valueOf(BOTheight));
+		builder.addParameter("Microscope", microscope);
 	}
 }

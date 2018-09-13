@@ -28,6 +28,7 @@ import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LevenbergMarquardt;
 import de.mpg.biochem.sdmm.util.LogBuilder;
+import de.mpg.biochem.sdmm.util.SDMMMath;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -80,11 +81,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	@Parameter(label = "Transformation Parameters")
 	private SDMMResultsTable data_table;
 	
-	@Parameter(label = "Append to current Roi names:")
-	private String curRoiColor = "red";
-	
-	@Parameter(label = "Append to transformed Roi names:")
-	private String transRoiColor = "green";
+	@Parameter(label = "Transformation from", choices = {"Top to Bottom", "Bottom to Top"})
+	private String transformationDirection = "Top to Bottom";
 	
 	@Parameter(label = "Colocalize")
 	private boolean colocalize = false;
@@ -280,16 +278,29 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 			double x = roi.getFloatBounds().x - 0.5;
 			double y = roi.getFloatBounds().y - 0.5;
 	        
-	        String baseRoiName = roi.getName();
+			
+			//Here we generate a new UID... This is in preparation for the Molecule Integrator
+	        String baseRoiName = SDMMMath.getUUID58();
+	        
+	        String currentPosition = "TOP";
+	        String newPosition = "BOT";
+	        
+	        if (transformationDirection.equals("Top to Bottom")) {
+	        	currentPosition = "TOP";
+	        	newPosition = "BOT";
+	        } else if (transformationDirection.equals("Bottom to Top")) {
+	        	currentPosition = "BOT";
+	        	newPosition = "TOP";
+	        }
 	        
 	        Roi oldRoi = (Roi)roi.clone();
-	        oldRoi.setName(baseRoiName + "_" + curRoiColor);
+	        oldRoi.setName(baseRoiName + "_" + currentPosition);
 	        OriginalROIs.add(oldRoi);
 	     
 	        Roi newRoi = (Roi)roi.clone();
 	        newRoi.setLocation(trans[2]*Math.cos(trans[4])*x - trans[3]*Math.sin(trans[4])*y + trans[0] + 0.5, 
 					trans[2]*Math.sin(trans[4])*x + trans[3]*Math.cos(trans[4])*y + trans[1] + 0.5);
-	        newRoi.setName(baseRoiName + "_" + transRoiColor);
+	        newRoi.setName(baseRoiName + "_" + newPosition);
 	        TransformedROIs.add(newRoi);
 		}
 		
@@ -320,8 +331,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Current Roi Name", curRoiColor);
-		builder.addParameter("Transformed Roi Name", transRoiColor);
+		builder.addParameter("Transformation from", transformationDirection);
 		builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
 		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
 		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));

@@ -79,7 +79,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
         
         //Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.lockArchive();
+			archive.lock();
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
@@ -105,7 +105,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 
-			archive.unlockArchive();	
+			archive.unlock();	
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {

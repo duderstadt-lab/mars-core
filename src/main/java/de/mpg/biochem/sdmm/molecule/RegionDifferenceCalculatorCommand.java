@@ -94,7 +94,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.lockArchive();
+			archive.lock();
 		
 		archive.addLogMessage(log);
 		
@@ -118,7 +118,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 
-			archive.unlockArchive();
+			archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {

@@ -446,7 +446,7 @@ public class MoleculeArchive {
 			//logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
 		} else {
 			//Need to make sure all write operations to moleculeIndex 
-			//are synchronized to avoid two thread working at the same time
+			//are synchronized to avoid two threads working at the same time
 			//during a write operation
 			synchronized(moleculeIndex) {
 				moleculeIndex.add(molecule.getUID());
@@ -642,13 +642,13 @@ public class MoleculeArchive {
 		this.win = win;
 	}
 	
-	public void lockArchive() {
+	public void lock() {
 		if (win != null) {
 			win.lockArchive();
 		}
 	}
 	
-	public void unlockArchive() {
+	public void unlock() {
 		if (win != null) {
 			win.unlockArchive();
 		}
@@ -679,10 +679,6 @@ public class MoleculeArchive {
 			imageMetaData.get(metaUID).addLogMessage(message);
 		}
 	}
-	
-	//public LogService getLogService() {
-	//	return logService;
-	//}
 	
 	//Utility functions
 	public void updateArchiveProperties() {

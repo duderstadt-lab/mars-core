@@ -143,7 +143,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.lockArchive();
+			archive.lock();
 		
 		archive.addLogMessage(log);
 		
@@ -224,7 +224,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	    
 	    //Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
-			archive.unlockArchive();	
+			archive.unlock();	
 	}	
 	
 	private void addInputParameterLog(LogBuilder builder) {

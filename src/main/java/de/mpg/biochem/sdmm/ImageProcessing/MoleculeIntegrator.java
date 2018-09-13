@@ -56,26 +56,31 @@ public class MoleculeIntegrator {
 	}
 	
 	public void integratePeaks(ImageProcessor ip, ConcurrentMap<String, FPeak> integrationList, String colorTOP, String colorBOT) {
-		
-		
+		for (String UID : integrationList.keySet()) {
+			FPeak peak = integrationList.get(UID);
+			if (colorTOP != null) {
+				peak.setIntensity(colorTOP, integratePeak(ip, (int)peak.getXTOP(), (int)peak.getYTOP(), topBoundingRegion));
+			}
+			
+			if (colorBOT != null) {
+				peak.setIntensity(colorBOT, integratePeak(ip, (int)peak.getXBOT(), (int)peak.getYBOT(), bottomBoundingRegion));
+			}
+		}
 	}
 	
-	private void integratePeak(ImageProcessor ip, FPeak peak) {
-		int x = (int)peak.getXTOP();
-		int y = (int)peak.getYBOT();
-		
+	private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
 		double Intensity = 0;
 		int innerPixels = 0;
 		
 		ArrayList<Float> outerPixelValues = new ArrayList<Float>();
 		
 		for (int[] circleOffset: innerOffsets) {
-		//	Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
+			Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
 			innerPixels++;
 		}
 		
 		for (int[] circleOffset: outerOffsets) {
-		//	outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
+			outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
 		}
 		
 		//Find the Median background value...
@@ -92,7 +97,7 @@ public class MoleculeIntegrator {
 		inten[0] = Intensity;
 		inten[1] = outerMedian;
 
-		//peak.setIntensity(color, inten);
+		return inten;
 	}
 	
 	//Infinite Mirror images to prevent out of bounds issues
