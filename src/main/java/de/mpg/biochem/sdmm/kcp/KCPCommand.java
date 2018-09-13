@@ -94,6 +94,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
+		archive.addLogMessage(log);
 		
 		//Let's build a thread pool and in a multithreaded manner perform changepoint analysis on all molecules
 		//Need to determine the number of threads
@@ -153,12 +154,12 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(builder.endBlock(true));
+	    archive.addLogMessage(builder.endBlock(true));
 	    
 		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) {
-	    	archive.getWindow().updateAll();
-			archive.getWindow().unlockArchive();
-		}
+	    if (!uiService.isHeadless())
+	    	archive.unlock();
+
 	}
 	
 	private void findChangePoints(Molecule molecule) {
