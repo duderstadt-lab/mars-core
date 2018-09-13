@@ -85,6 +85,7 @@ public class MoleculeArchive {
 	//To avoid thread issues.
 	//All read operations can be done in parallel no problem.
 	private ArrayList<String> imageMetaDataIndex;
+	
 	//This will store all the ImageMetaData sets associated with the molecules
 	//molecules have a metadataUID that maps to these keys so it is clear which dataset they were from.
 	private ConcurrentMap<String, ImageMetaData> imageMetaData;
@@ -100,6 +101,7 @@ public class MoleculeArchive {
 	//To avoid thread issues.
 	//All read operations can be done in parallel no problem.
 	private ArrayList<String> moleculeIndex;
+	
 	//This is a map index of tags for searching in molecule tables etc..
 	private ConcurrentMap<String, String> tagIndex;
 	
@@ -227,32 +229,40 @@ public class MoleculeArchive {
 			molecules = new ConcurrentHashMap<>();
 		}
 		
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldName = jParser.getCurrentName();
-			if ("ImageMetaData".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					ImageMetaData imgMeta = new ImageMetaData(jParser);
-					addImageMetaData(imgMeta);
-				}
-				if (recover) {
-					ArrayList<String> tempMoleculeIndex = new ArrayList<String>();
-					for (CharSequence key : archive.keySet()) {
-						tempMoleculeIndex.add(key.toString());
-						updateTagIndex(archive.get(key));
-					}
-					//Here we sort to natural order
-					moleculeIndex = (ArrayList<String>)tempMoleculeIndex.stream().sorted().collect(toList());
-					archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-					return;
+		if (recover) {
+			ArrayList<String> tempMoleculeIndex = new ArrayList<String>();
+			for (CharSequence key : archive.keySet()) {
+				if (key.toString().equals("MoleculeArchive Properties")) {
+					//This is the special entry MoleculeArchive Properties...
+					this.archiveProperties = archive.get(key).UnwrapMoleculeArchiveProperties();
+				} else if (key.length() < 15) {
+					//Must be an ImageMetaData item
+					imageMetaDataIndex.add(key.toString());
+				} else {
+					tempMoleculeIndex.add(key.toString());
+					updateTagIndex(archive.get(key));
 				}
 			}
-			
-			if ("Molecules".equals(fieldName)) {
-				int molNum = 0;
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					add(new Molecule(jParser));
-					molNum++;
-					moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
+			//Here we sort to natural order
+			moleculeIndex = (ArrayList<String>)tempMoleculeIndex.stream().sorted().collect(toList());
+			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
+		} else {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String fieldName = jParser.getCurrentName();
+				if ("ImageMetaData".equals(fieldName)) {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						ImageMetaData imgMeta = new ImageMetaData(jParser);
+						addImageMetaData(imgMeta);
+					}
+				}
+				
+				if ("Molecules".equals(fieldName)) {
+					int molNum = 0;
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						add(new Molecule(jParser));
+						molNum++;
+						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
+					}
 				}
 			}
 		}
@@ -355,7 +365,7 @@ public class MoleculeArchive {
 				jGenerator.writeArrayFieldStart("ImageMetaData");
 				Iterator<String> iter = imageMetaDataIndex.iterator();
 				while (iter.hasNext()) {
-					imageMetaData.get(iter.next()).toJSON(jGenerator);
+					getImageMetaData(iter.next()).toJSON(jGenerator);
 				}
 				jGenerator.writeEndArray();
 			}
@@ -364,15 +374,9 @@ public class MoleculeArchive {
 			
 			//loop through all molecules in ChronicleMap and save the data...
 			Iterator<String> iterator = moleculeIndex.iterator();
-			if (virtual) {
-				while (iterator.hasNext()) {
-					archive.get(iterator.next()).toJSON(jGenerator);
-				}
-	    	} else {
-				while (iterator.hasNext()) {
-					molecules.get(iterator.next()).toJSON(jGenerator);
-				}
-	    	}
+			while (iterator.hasNext()) {
+				get(iterator.next()).toJSON(jGenerator);
+			}
 			
 			jGenerator.writeEndArray();
 			
@@ -415,7 +419,7 @@ public class MoleculeArchive {
 				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
 				    .name(name)
 				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules)
+				    .entries(numMolecules + 10)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
 				    .recoverPersistedTo(persistedFile, false);
@@ -428,7 +432,7 @@ public class MoleculeArchive {
 				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
 				    .name(name)
 				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules)
+				    .entries(numMolecules + 10)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
 				    .createPersistedTo(persistedFile);
@@ -465,20 +469,51 @@ public class MoleculeArchive {
 		synchronized(imageMetaDataIndex) {
 			imageMetaDataIndex.add(metaData.getUID());
 		}
-		
-		imageMetaData.put(metaData.getUID(), metaData);
+		if (virtual) {
+			archive.put(metaData.getUID(), metaData.getMoleculeWrapper());
+		} else {
+			imageMetaData.put(metaData.getUID(), metaData);
+		}
+	}
+	
+	public void setImageMetaData(ImageMetaData metaData) {
+		synchronized(imageMetaDataIndex) {
+			if (!imageMetaDataIndex.contains(metaData.getUID()))
+				imageMetaDataIndex.add(metaData.getUID());
+		}
+		if (virtual) {
+			archive.put(metaData.getUID(), metaData.getMoleculeWrapper());
+		} else {
+			imageMetaData.put(metaData.getUID(), metaData);
+		}
+	}
+	
+	public void removeImageMetaData(String metaUID) {
+		synchronized(imageMetaDataIndex) {
+			if (!imageMetaDataIndex.contains(metaUID))
+				imageMetaDataIndex.remove(metaUID);
+		}
+		if (virtual) {
+			archive.remove(metaUID);
+		} else {
+			imageMetaData.remove(metaUID);
+		}
+	}
+
+	public void removeImageMetaData(ImageMetaData meta) {
+		removeImageMetaData(meta.getUID());
 	}
 	
 	public ImageMetaData getImageMetaData(int index) {
-		return imageMetaData.get(imageMetaDataIndex.get(index));
+		return getImageMetaData(imageMetaDataIndex.get(index));
 	}
 	
-	public ImageMetaData getImageMetaData(String idstr) {
-		return imageMetaData.get(idstr);
-	}
-	
-	public Collection<ImageMetaData> getImageMetaData() {
-		return imageMetaData.values();
+	public ImageMetaData getImageMetaData(String metaUID) {
+		if (virtual) {
+			return archive.get(metaUID).UnwrapImageMetaData();
+		} else {
+			return imageMetaData.get(metaUID);
+		}
 	}
 	
 	//Getters and Setters.
@@ -505,6 +540,9 @@ public class MoleculeArchive {
 	
 	public void setComments(String comments) {
 		archiveProperties.setComments(comments);
+		if (virtual) {
+			archive.put("MoleculeArchive Properties", archiveProperties.getMoleculeWrapper());
+		}
 	}
 	
 	public boolean isVirtual() {
@@ -676,7 +714,13 @@ public class MoleculeArchive {
 	
 	public void addLogMessage(String message) {
 		for (String metaUID : imageMetaDataIndex) {
-			imageMetaData.get(metaUID).addLogMessage(message);
+			if (virtual) {
+				ImageMetaData meta = getImageMetaData(metaUID);
+				meta.addLogMessage(message);
+				setImageMetaData(meta);
+			} else {
+				imageMetaData.get(metaUID).addLogMessage(message);
+			}
 		}
 	}
 	
@@ -699,6 +743,12 @@ public class MoleculeArchive {
 		
 		archiveProperties.setAverageMoleculeSize(averageSize);
 		archiveProperties.setNumImageMetaData(imageMetaData.size());
+		
+		//At the moment this is only saved the store and never retrieved unless
+		//Recovery mode is triggered..
+		if (virtual) {
+			archive.put("MoleculeArchive Properties", archiveProperties.getMoleculeWrapper());
+		}
 	}
 	
 	//average size of molecules in the archive based on 20 samples..

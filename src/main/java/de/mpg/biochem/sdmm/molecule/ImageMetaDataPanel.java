@@ -36,6 +36,7 @@ import net.imagej.table.GenericColumn;
 
 public class ImageMetaDataPanel extends JPanel {
 	private ImageMetaData imageMetaData;
+	private MoleculeArchive archive;
 	
 	private JTextField UIDLabel, DateLabel, SourcePath;
 	private JTextField Microscope;
@@ -59,6 +60,7 @@ public class ImageMetaDataPanel extends JPanel {
 	
 	public ImageMetaDataPanel(MoleculeArchive archive) {
 		this.imageMetaData = archive.getImageMetaData(0);
+		this.archive = archive;
 		
 		//METADATA INDEX LIST
 		//Need to build the datamodel backed by the ImageMetaData...
@@ -186,19 +188,23 @@ public class ImageMetaDataPanel extends JPanel {
 		metaDataTabs.addTab("DataTable", tablePane);
 		
 		//Notes
-		Notes = new JTextArea(imageMetaData.getComments());
+		Notes = new JTextArea(imageMetaData.getNotes());
         JScrollPane commentScroll = new JScrollPane(Notes);
 		        
         Notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Notes.getText());
+	            	imageMetaData.setNotes(Notes.getText());
+	            	archive.setImageMetaData(imageMetaData);
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Notes.getText());
+	            	imageMetaData.setNotes(Notes.getText());
+	            	archive.setImageMetaData(imageMetaData);
+	            	
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	imageMetaData.setComments(Notes.getText());
+	            	imageMetaData.setNotes(Notes.getText());
+	            	archive.setImageMetaData(imageMetaData);
 	            }
 	        });
 		metaDataTabs.addTab("Notes", commentScroll);
@@ -369,6 +375,18 @@ public class ImageMetaDataPanel extends JPanel {
 	}
 	
 	public void updateAll() {
+		if (archive.get(imageMetaData.getUID()) == null) {
+			imageMetaData = archive.getImageMetaData(0);
+		} else {
+			//Need to reload the current molecule if
+			//working in virtual storage
+			//This ensures if a command changed the values
+			//The new values are loaded 
+			//this prevents overwritting when switching records
+			//in the window..
+			imageMetaData = archive.get(imageMetaData.getUID()).UnwrapImageMetaData();
+		}
+		
 		//Update Labels
 		UIDLabel.setText(imageMetaData.getUID());
 		Microscope.setText(imageMetaData.getMicroscopeName());
@@ -376,7 +394,7 @@ public class ImageMetaDataPanel extends JPanel {
 		SourcePath.setText(imageMetaData.getSourceDirectory());
 		
 		//Update Comments
-		Notes.setText(imageMetaData.getComments());
+		Notes.setText(imageMetaData.getNotes());
 				
 		//Update Log
 		log.setText(imageMetaData.getLog());

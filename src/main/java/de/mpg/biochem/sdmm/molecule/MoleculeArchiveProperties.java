@@ -181,4 +181,8 @@ public class MoleculeArchiveProperties {
 	public void setComments(String comments) {
 		this.comments = comments;
 	}
+	
+	public Molecule getMoleculeWrapper() {
+		return new Molecule(this);
+	}
 }

@@ -14,7 +14,7 @@ import net.imglib2.RealLocalizable;
 public class Peak implements RealLocalizable {
 	//Used during peak linking to assign UID molecule numbers
 	String UID;
-	
+
 	int slice;
 	
 	//Used for multithreaded Peak linking..

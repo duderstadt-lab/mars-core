@@ -328,7 +328,7 @@ public class ImageMetaData {
 	}
 	
 	//Getters and Setters
-	public void setComments(String Notes) {
+	public void setNotes(String Notes) {
 		this.Notes = Notes;
 	}
 	
@@ -360,7 +360,7 @@ public class ImageMetaData {
 		return SourceDirectory;
 	}
 	
-	public String getComments() {
+	public String getNotes() {
 		return Notes;
 	}
 	
@@ -370,6 +370,10 @@ public class ImageMetaData {
 	
 	public String getLog() {
 		return log;
+	}
+	
+	public Molecule getMoleculeWrapper() {
+		return new Molecule(this);
 	}
 	
 	//DataTable column exclusion list
