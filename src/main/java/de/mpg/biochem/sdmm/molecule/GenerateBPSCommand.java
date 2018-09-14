@@ -213,13 +213,13 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 				
 				double mean_background = table.mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
 				
-				DoubleColumn bpsCol = new DoubleColumn(distance_column_name);
+				if (!table.hasColumn(distance_column_name))
+					table.appendColumn(distance_column_name);
 				
 				for (int j = 0; j < table.getRowCount(); j++) {
 					double bps = (table.getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
-					bpsCol.add(bps);
+					table.setValue(distance_column_name, j, bps);
 				}
-				table.add(bpsCol);
 				
 				archive.set(molecule);
 			});
