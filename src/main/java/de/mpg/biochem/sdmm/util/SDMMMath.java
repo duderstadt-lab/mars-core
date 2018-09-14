@@ -3,6 +3,10 @@ package de.mpg.biochem.sdmm.util;
 import java.math.BigInteger;
 import java.util.UUID;
 
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.solvers.AllowedSolution;
+import org.apache.commons.math3.analysis.solvers.BracketingNthOrderBrentSolver;
+import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.decimal4j.util.DoubleRounder;
 
 import com.chrylis.codec.base58.Base58Codec;
@@ -96,4 +100,18 @@ public class SDMMMath {
 
 	    return hash;
 	  }
+	
+	//output[0] is force and output[1] is length
+	public static double[] calculateForceAndLength(double msd) {
+		ForceCalculator calculator = new ForceCalculator(50*Math.pow(10, -9), 6.8*Math.pow(10, -6), msd);
+		double[] output = calculator.calculate();
+		return output;
+	}
+	
+	//output[0] is force and output[1] is length
+	public static double[] calculateForceAndLength(double persistenceLength, double L0, double msd) {
+		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, msd);
+		double[] output = calculator.calculate();
+		return output;
+	}
 }

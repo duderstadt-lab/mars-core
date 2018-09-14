@@ -50,7 +50,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	private String column;
     
     @Parameter(label="Parameter Name")
-    private String paramName = "column_MSD";
+    private String ParameterName = "column_MSD";
     
 	@Override
 	public void initialize() {
@@ -84,7 +84,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			
-			molecule.setParameter(paramName, molecule.getDataTable().msd(column));
+			molecule.setParameter(ParameterName, molecule.getDataTable().msd(column));
 			
 			archive.set(molecule);
 		});
@@ -98,10 +98,35 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	    if (!uiService.isHeadless()) 
 			archive.unlock();
 	}
+	
+	//Getters and Setters
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setColumn(String column) {
+		this.column = column;
+	}
+	
+	public String getColumn() {
+		return column;
+	}
+	
+	public void setParameterName(String ParameterName) {
+		this.ParameterName = ParameterName;
+	}
+	
+	public String getParameterName() {
+		return ParameterName;
+	}
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Column", column);
-		builder.addParameter("Parameter Name", paramName);
+		builder.addParameter("Parameter Name", ParameterName);
 	}
 }

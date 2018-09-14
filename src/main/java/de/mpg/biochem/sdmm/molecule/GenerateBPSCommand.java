@@ -171,10 +171,10 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 				else 
 					mol_bps_per_um = global_bps_per_um;
 				
-				//Add corrected distance to the table in a column with name distance_column_name
-				DoubleColumn bpsCol = new DoubleColumn(distance_column_name);
-				
 				SDMMResultsTable table = molecule.getDataTable();
+				
+				if (!table.hasColumn(distance_column_name))
+					table.appendColumn(distance_column_name);
 				
 				for (int j=0; j< table.getRowCount(); j++) {
 					double output = (table.getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
@@ -188,10 +188,9 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					if (!cameraFlipped)
 						output *= -1;
 					
-					bpsCol.add(output);
+					table.setValue(distance_column_name, j, output);
 				}
-				table.add(bpsCol);
-				
+
 				archive.set(molecule);
 			});
 		} else if (conversionType.equals("Region")) {
