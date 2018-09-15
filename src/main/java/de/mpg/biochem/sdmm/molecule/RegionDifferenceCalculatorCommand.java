@@ -65,7 +65,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	private int r2_end = 250;
     
     @Parameter(label="Parameter Name")
-    private String paramName;
+    private String ParameterName;
     
 	@Override
 	public void initialize() {
@@ -106,7 +106,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 			double region1_mean = datatable.mean(Ycolumn, Xcolumn, r1_start, r1_end);
 			double region2_mean = datatable.mean(Ycolumn, Xcolumn, r2_start, r2_end);
 			
-			molecule.setParameter(paramName, region1_mean - region2_mean);
+			molecule.setParameter(ParameterName, region1_mean - region2_mean);
 			
 			archive.set(molecule);
 		});
@@ -120,6 +120,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	    if (!uiService.isHeadless()) 
 			archive.unlock();
 	}
+	
+	//Getters and Setters
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
@@ -129,7 +131,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("Region 1 end", String.valueOf(r1_end));
 		builder.addParameter("Region 2 start", String.valueOf(r2_start));
 		builder.addParameter("Region 2 end", String.valueOf(r2_end));
-		builder.addParameter("Parameter Name", paramName);
+		builder.addParameter("Parameter Name", ParameterName);
 	}
 }
 

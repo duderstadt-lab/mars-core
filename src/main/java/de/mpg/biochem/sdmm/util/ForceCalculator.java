@@ -24,8 +24,14 @@ public class ForceCalculator implements UnivariateFunction {
 	  }
 	  
 	  public double[] calculate() {
-		    double length = solver.solve(100, this, 0.0, 1.0, AllowedSolution.RIGHT_SIDE);
-		    
+			double length = Double.NaN;
+			try {
+				//the length must be longer than 1 nm and shorter than 100 um - seems reasonable
+			    length = solver.solve(100, this, Math.pow(10, -9), Math.pow(10, -4), AllowedSolution.ANY_SIDE);
+			} catch (LocalException le) {
+				length = Double.NaN;
+			}
+		  
 			double[] output = new double[2];
 			output[0] = getWLCForce(length);
 			output[1] = length;
@@ -45,4 +51,19 @@ public class ForceCalculator implements UnivariateFunction {
 	   public double getEquipartitionForce(double length) {
 		   return (kB*Temperature*length)/msd;
 	   }
+	   
+	   private static class LocalException extends RuntimeException {
+
+		   // the x value that caused the problem
+		   private final double x;
+
+		   public LocalException(double x) {
+		     this.x = x;
+		   }
+
+		   public double getX() {
+		     return x;
+		   }
+
+		 }
 }

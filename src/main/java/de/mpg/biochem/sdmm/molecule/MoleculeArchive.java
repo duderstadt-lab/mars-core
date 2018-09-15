@@ -27,7 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 import javax.swing.JOptionPane;
 
@@ -50,6 +53,7 @@ import com.fasterxml.jackson.dataformat.smile.*;
 import com.fasterxml.jackson.databind.*;
 
 import de.mpg.biochem.sdmm.*;
+import de.mpg.biochem.sdmm.ImageProcessing.Peak;
 import de.mpg.biochem.sdmm.table.GroupIndices;
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
@@ -240,12 +244,12 @@ public class MoleculeArchive {
 					imageMetaDataIndex.add(key.toString());
 				} else {
 					tempMoleculeIndex.add(key.toString());
-					updateTagIndex(archive.get(key));
 				}
 			}
 			//Here we sort to natural order
 			moleculeIndex = (ArrayList<String>)tempMoleculeIndex.stream().sorted().collect(toList());
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
+			generateTagIndex();
 		} else {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 				String fieldName = jParser.getCurrentName();
@@ -422,7 +426,8 @@ public class MoleculeArchive {
 				    .entries(numMolecules + 10)
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
-				    .createPersistedTo(persistedFile);
+				    .recoverPersistedTo(persistedFile, true);
+				    //.createPersistedTo(persistedFile);
 			return true;
 		} else {
 			if (exists)
@@ -607,8 +612,31 @@ public class MoleculeArchive {
 		updateTagIndex(molecule);
 	}
 	
+	private void generateTagIndex() {
+		//Need to determine the number of threads
+		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		
+		try {
+	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
+	        	if (virtual)
+	        		updateTagIndex(archive.get(UID));
+	        	else 
+	        		updateTagIndex(molecules.get(UID));
+	        })).get();
+	   } catch (InterruptedException | ExecutionException e) {
+	        // handle exceptions
+	    	e.printStackTrace();
+	   } finally {
+	      forkJoinPool.shutdown();
+	   }
+	}
+	
 	private void updateTagIndex(Molecule molecule) {
-		if (molecule.getTags().size() > 0) {
+		if (molecule.getTags() == null) {
+			//Shouldn't happen..do nothing...
+		} else if (molecule.getTags().size() > 0) {
 			String tagList = "";
 			for (String tag:molecule.getTags())
 				tagList += tag + ", ";
