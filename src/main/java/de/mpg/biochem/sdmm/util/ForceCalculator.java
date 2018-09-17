@@ -7,27 +7,36 @@ import org.apache.commons.math3.analysis.solvers.BracketingNthOrderBrentSolver;
 //From http://commons.apache.org/proper/commons-math/userguide/analysis.html
 public class ForceCalculator implements UnivariateFunction {
 	  final double relativeAccuracy = 1.0e-12;
-	  final double absoluteAccuracy = 1.0e-8;
+	  final double absoluteAccuracy = 1.0e-9;
 	  final int    maxOrder         = 5;
 	  final double kB = 1.380648528*Math.pow(10,-23);
-	  final double Temperature = 296.15;
+	  double temperature = 296.15;
 	  
 	  BracketingNthOrderBrentSolver solver;
 	  
 	  double persistenceLength, L0, msd;
 	
-	  public ForceCalculator(double persistenceLength, double L0, double msd) {
+	  public ForceCalculator(double persistenceLength, double L0) {
 		  this.persistenceLength = persistenceLength;
 		  this.L0 = L0;
-		  this.msd = msd;
+		  
 		  solver = new BracketingNthOrderBrentSolver(relativeAccuracy, absoluteAccuracy, maxOrder);
 	  }
 	  
-	  public double[] calculate() {
+	  public ForceCalculator(double persistenceLength, double L0, double temperature) {
+		  this.temperature = temperature;
+		  this.persistenceLength = persistenceLength;
+		  this.L0 = L0;
+		  
+		  solver = new BracketingNthOrderBrentSolver(relativeAccuracy, absoluteAccuracy, maxOrder);
+	  }
+	  
+	  public double[] calculate(double msd) {
+		    this.msd = msd;
 			double length = Double.NaN;
 			try {
-				//the length must be longer than 1 nm and shorter than 100 um - seems reasonable
-			    length = solver.solve(100, this, Math.pow(10, -9), Math.pow(10, -4), AllowedSolution.ANY_SIDE);
+				//the length must be longer than 0.1 nm and shorter than 1/10000 th of full length
+			    length = solver.solve(100, this, Math.pow(10, -10), L0 - L0/10000, AllowedSolution.ANY_SIDE);
 			} catch (LocalException le) {
 				length = Double.NaN;
 			}
@@ -44,12 +53,12 @@ public class ForceCalculator implements UnivariateFunction {
 	   }
 	   
 	   public double getWLCForce(double length) {
-		   double a = kB*Temperature/persistenceLength;
+		   double a = kB*temperature/persistenceLength;
 		   return a*(0.25*(Math.pow(1-length/L0,-2)) - 0.25 + length/L0);
 	   }
 	   
 	   public double getEquipartitionForce(double length) {
-		   return (kB*Temperature*length)/msd;
+		   return (kB*temperature*length)/msd;
 	   }
 	   
 	   private static class LocalException extends RuntimeException {

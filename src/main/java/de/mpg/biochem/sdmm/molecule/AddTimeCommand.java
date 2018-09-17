@@ -133,4 +133,12 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
 	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
 }

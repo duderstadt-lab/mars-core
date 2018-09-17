@@ -239,4 +239,52 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		builder.addParameter("Global sigma", String.valueOf(global_sigma));
 		builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
 	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setXcolumn(String Xcolumn) {
+		this.Xcolumn = Xcolumn;
+	}
+	
+	public String getXcolumn() {
+		return Xcolumn;
+	}
+    
+	public void setYcolumn(String Ycolumn) {
+		this.Ycolumn = Ycolumn;
+	}
+	
+	public String getYcolumn() {
+		return Ycolumn;
+	}
+	
+	public void setConfidenceLevel(double confidenceLevel) {
+		this.confidenceLevel = confidenceLevel;
+	}
+	
+	public double getConfidenceLevel() {
+		return confidenceLevel;
+	}
+	    
+	public void setGlobalSigma(double global_sigma) {
+		this.global_sigma = global_sigma;
+	}
+	
+	public double getGlobalSigma() {
+		return global_sigma;
+	}
+	
+	public void setFitSteps(boolean step_analysis) {
+		this.step_analysis = step_analysis;
+	}
+	    
+	public boolean getFitSteps() {
+		return step_analysis;
+	}
 }

@@ -120,8 +120,6 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	    if (!uiService.isHeadless()) 
 			archive.unlock();
 	}
-	
-	//Getters and Setters
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
@@ -133,5 +131,70 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("Region 2 end", String.valueOf(r2_end));
 		builder.addParameter("Parameter Name", ParameterName);
 	}
+	
+	//Getters and Setters
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+    
+    public void setXcolumn(String Xcolumn) {
+    	this.Xcolumn = Xcolumn;
+    }
+    
+    public String getXcolumn() {
+    	return Xcolumn;
+    }
+    
+	public void setYcolumn(String Ycolumn) {
+		this.Ycolumn = Ycolumn;
+	}
+	
+	public String getYcolumn() {
+		return Ycolumn;
+	}
+	
+    public void setRegion1Start(int r1_start) {
+    	this.r1_start = r1_start;
+    }
+    
+    public int getRegion1Start() {
+    	return r1_start;
+    }
+    
+    public void setRegion1End(int r1_end) {
+    	this.r1_end = r1_end;
+    }
+    
+    public int getRegion1End() {
+    	return r1_end;
+    }
+    
+    public void setRegion2Start(int r2_start) {
+    	this.r2_start = r2_start;
+    }
+    
+    public int getRegion2Start() {
+    	return r2_start;
+    }
+    
+    public void setRegion2End(int r2_end) {
+    	this.r2_end = r2_end;
+    }
+    
+    public int getRegion2End() {
+    	return r2_end;
+    }
+    
+    public void setParameterName(String ParameterName) {
+    	this.ParameterName = ParameterName;
+    }
+    
+    public String getParameterName() {
+    	return ParameterName;
+    }
 }
 

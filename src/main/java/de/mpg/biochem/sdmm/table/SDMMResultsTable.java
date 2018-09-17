@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -185,54 +186,6 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	    }
 	    return new String(sb);
 	}
-	
-	//TO FROM JSON MULTIPLE FORMATS
-	//jackson custom JSON serialization in column array format
-	//This was the old JSON format that makes smaller file sizes
-	//but this was replaced with a more common JSON table format 
-	//for compatibility with other software - Python, Vega etc..
-	/*
-	public void toJSONArrays(JsonGenerator jGenerator) throws IOException {
-		jGenerator.writeStartObject();
-		for (int i=0;i<getColumnCount();i++) {
-			jGenerator.writeFieldName(getColumnHeader(i));
-	 		jGenerator.writeArray(SDMMMath.roundArray(get(i).getArray()), 0, getRowCount());
-		}
-		jGenerator.writeEndObject();
-	}
-	
-	//jackson custom JSON deserialization in column arrays format
-	public void fromJSONArrays(JsonParser jParser) throws IOException {
-		//First we move past object start
-    	jParser.nextToken();
-    	
-    	//Then we move through fields
-    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-    		String ColumnName = jParser.getCurrentName();
-    		
-    		DoubleColumn column = new DoubleColumn(ColumnName);
-    		
-    		//Have to move past array start
-    		jParser.nextToken();
-			
-    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
-    				String str = jParser.getValueAsString();
-    				if (Objects.equals(str, new String("Infinity"))) {
-    					column.add(Double.POSITIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("-Infinity"))) {
-    					column.add(Double.NEGATIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("NaN"))) {
-    					column.add(Double.NaN);
-    				}
-    			} else {
-    				column.add(jParser.getDoubleValue());
-    			}
-    		}
-    		add(column);
-    	}
-	}
-	*/
 	
 	//jackson custom JSON serialization in table format with schema and data objects
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
@@ -498,6 +451,44 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return sum/count;
 	}
 	
+	public double median(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		ArrayList<Double> values = new ArrayList<Double>();
+		for (int i = 0; i < getRowCount();i++) {
+			values.add(getValue(column, i));
+		}
+		Collections.sort(values);
+		
+		double median;
+		if (values.size() % 2 == 0)
+		    median = (values.get(values.size()/2) + values.get(values.size()/2 - 1))/2;
+		else
+		    median = values.get(values.size()/2);
+		
+		return median;
+	}
+	
+	public double median(String column, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(column) == null || get(rowSelectionColumn) == null)
+			return Double.NaN;
+		ArrayList<Double> values = new ArrayList<Double>();
+		for (int i = 0; i < getRowCount();i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				values.add(getValue(column, i));
+			}
+		}
+		Collections.sort(values);
+		
+		double median;
+		if (values.size() % 2 == 0)
+		    median = (values.get(values.size()/2) + values.get(values.size()/2 - 1))/2;
+		else
+		    median = values.get(values.size()/2);
+		
+		return median;
+	}
+	
 	public double std(String column) {
 		if (get(column) == null)
 			return Double.NaN;
@@ -508,17 +499,6 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 		
 		return Math.sqrt(diffSquares/(getRowCount()-1));
-	}
-	
-	public double msd(String column) {
-		if (get(column) == null)
-			return Double.NaN;
-		double mean = mean(column);
-		double diffSquares = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
-		}
-		return diffSquares/getRowCount();
 	}
 	
 	public double std(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
@@ -535,6 +515,17 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 		
 		return Math.sqrt(diffSquares/(count-1));
+	}
+	
+	public double msd(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double mean = mean(column);
+		double diffSquares = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
+		}
+		return diffSquares/getRowCount();
 	}
 	
 	public double msd(String msdColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {

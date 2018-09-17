@@ -38,7 +38,7 @@ import javax.swing.filechooser.FileSystemView;
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
-public class BuildArchiveFromTable extends DynamicCommand implements Initializable {
+public class BuildArchiveFromTable extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
 	
@@ -54,24 +54,16 @@ public class BuildArchiveFromTable extends DynamicCommand implements Initializab
     @Parameter
     private LogService logService;
     
-    @Parameter(label="Table with molecule column", choices = {"a", "b", "c"})
-	private String tableName;
+    @Parameter(label="Table with molecule column")
+	private SDMMResultsTable table;
     
     @Parameter(label="build in virtual memory")
     private boolean virtual = true;
     
     @Override
-	public void initialize() {
-        final MutableModuleItem<String> tableItems = getInfo().getMutableInput("tableName", String.class);
-		tableItems.setChoices(resultsTableService.getTableNames());
-	}
-    
-    @Override
 	public void run() {				
-		if (tableName == null)
-			return;
 		
-		String name = tableName + ".yama";
+		String name = table.getName() + ".yama";
 		
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " has already been created and is open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
@@ -82,10 +74,10 @@ public class BuildArchiveFromTable extends DynamicCommand implements Initializab
 		
 		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
 
-		builder.addParameter("From Table", tableName);
+		builder.addParameter("From Table", table.getName());
 		builder.addParameter("New Archive Name", name);
 		
-		MoleculeArchive archive = new MoleculeArchive(name, resultsTableService.getResultsTable(tableName), resultsTableService, moleculeArchiveService, virtual);
+		MoleculeArchive archive = new MoleculeArchive(name, table, resultsTableService, moleculeArchiveService, virtual);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
@@ -101,4 +93,20 @@ public class BuildArchiveFromTable extends DynamicCommand implements Initializab
         
         moleculeArchiveService.show(name, archive);
 	}
+    
+    public void setTable(SDMMResultsTable table) {
+    	this.table = table;
+    }
+    
+    public SDMMResultsTable getTable() {
+    	return table;
+    }
+    
+    public void setVirtual(boolean virtual) {
+    	this.virtual = virtual;
+    }
+    
+    public boolean getVirtual() {
+    	return virtual;
+    }
 }

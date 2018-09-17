@@ -253,4 +253,148 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		builder.addParameter("End", String.valueOf(bg_end));
 		builder.addParameter("Output Column", distance_column_name);
 	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setXcolumn(String Xcolumn) {
+		this.Xcolumn = Xcolumn;
+	}
+	
+	public String getXcolumn() {
+		return Xcolumn;
+	}
+    
+	public void setYcolumn(String Ycolumn) {
+		this.Ycolumn = Ycolumn;
+	}
+	
+	public String getYcolumn() {
+		return Ycolumn;
+	}
+	
+	public void setUmPerPixel(double um_per_pixel) {
+		this.um_per_pixel = um_per_pixel;
+	}
+	
+	public double getUmPerPixel() {
+		return um_per_pixel;
+	}
+	
+	public void setGlobalBpsPerUm(double global_bps_per_um) {
+		this.global_bps_per_um = global_bps_per_um;
+	}
+	
+	public double getGlobalBpsPerUm() {
+		return global_bps_per_um;
+	}
+	
+	public void setUse(String conversionType) {
+		this.conversionType = conversionType;
+	}
+	
+	public String getUse() {
+		return conversionType;
+	}
+	
+	public void setReverseFlowStart(int rf_start) {
+		this.rf_start = rf_start;
+	}
+	
+	public int getReverseFlowStart() {
+		return rf_start;
+	}
+	
+	public void setReverseFlowEnd(int rf_end) {
+		this.rf_end = rf_end;
+	}
+	
+	public int getReverseFlowEnd() {
+		return rf_end;
+	}
+	
+	public void setForwardFlowStart(int ff_start) {
+		this.ff_start = ff_start;
+	}
+	
+	public int getForwardFlowStart() {
+		return ff_start;
+	}
+	
+	public void setForwardFlowEnd(int ff_end) {
+		this.ff_end = ff_end;
+	}
+	
+	public int getForwardFlowEnd() {
+		return ff_end;
+	}
+	
+	public void setFlowStart(int f_start) {
+		this.f_start = f_start;
+	}
+	
+	public int getFlowStart() {
+		return f_start;
+	}
+
+	public void setFlowEnd(int f_end) {
+		this.f_start = f_end;
+	}
+	
+	public int getFlowEnd() {
+		return f_end;
+	}
+	
+	public void setBeadRadius(double bead_radius) {
+		this.bead_radius = bead_radius;
+	}
+	
+	public double getBeadRadius() {
+		return bead_radius;
+	}
+	
+	public void setConversionType(String globalorMol) {
+		this.globalorMol = globalorMol;
+	}
+	
+	public String getConversionType() {
+		return globalorMol;
+	}
+	
+	public void setDNALengthBps(double DNA_length_bps) {
+		this.DNA_length_bps = DNA_length_bps;
+	}
+	
+	public double getDNALengthBps() {
+		return DNA_length_bps;
+	}
+	
+	public void setStart(int bg_start) {
+		this.bg_start = bg_start;
+	}
+	
+	public int getStart() {
+		return bg_start;
+	}
+
+	public void setEnd(int bg_end) {
+		this.bg_end = bg_end;
+	}
+	
+	public int getEnd() {
+		return bg_end;
+	}
+	
+	public void setOutputColumn(String distance_column_name) {
+		this.distance_column_name = distance_column_name;
+	}
+	
+	public String getOutputColumn() {
+		return distance_column_name;
+	}
 }

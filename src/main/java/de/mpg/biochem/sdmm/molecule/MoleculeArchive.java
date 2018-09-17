@@ -427,7 +427,6 @@ public class MoleculeArchive {
 				    .maxBloatFactor(2.0)
 				    .averageValueSize(averageSize)
 				    .recoverPersistedTo(persistedFile, true);
-				    //.createPersistedTo(persistedFile);
 			return true;
 		} else {
 			if (exists)

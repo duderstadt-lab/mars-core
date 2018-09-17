@@ -98,6 +98,12 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	    if (!uiService.isHeadless()) 
 			archive.unlock();
 	}
+
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Column", column);
+		builder.addParameter("Parameter Name", ParameterName);
+	}
 	
 	//Getters and Setters
 	public void setArchive(MoleculeArchive archive) {
@@ -122,11 +128,5 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	
 	public String getParameterName() {
 		return ParameterName;
-	}
-
-	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("Column", column);
-		builder.addParameter("Parameter Name", ParameterName);
 	}
 }

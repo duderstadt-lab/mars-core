@@ -167,5 +167,29 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("from slice", String.valueOf(from));
 		builder.addParameter("to slice", String.valueOf(to));
 	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setFromSlice(int from) {
+		this.from = from;
+	}
+	
+	public int getFromSlice() {
+		return from;
+	}
+	
+	public void setToSlice(int to) {
+		this.to = to;
+	}
+	
+	public int getToSlice() {
+		return to;
+	}
 }
 

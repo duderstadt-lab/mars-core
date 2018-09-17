@@ -108,6 +108,22 @@ public class InterpolateMissingPointsCommand extends DynamicCommand implements C
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Max gap size (in slices)", String.valueOf(Maxgap));
 	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setMaxGap(int Maxgap) {
+		this.Maxgap = Maxgap;
+	}
+	
+	public int getMaxGap() {
+		return Maxgap;
+	}
 }
 
 

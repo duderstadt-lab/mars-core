@@ -103,15 +103,15 @@ public class SDMMMath {
 	
 	//output[0] is force and output[1] is length
 	public static double[] calculateForceAndLength(double msd) {
-		ForceCalculator calculator = new ForceCalculator(50*Math.pow(10, -9), 6.8*Math.pow(10, -6), msd);
-		double[] output = calculator.calculate();
+		ForceCalculator calculator = new ForceCalculator(50*Math.pow(10, -9), 6.8*Math.pow(10, -6));
+		double[] output = calculator.calculate(msd);
 		return output;
 	}
 	
 	//output[0] is force and output[1] is length
-	public static double[] calculateForceAndLength(double persistenceLength, double L0, double msd) {
-		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, msd);
-		double[] output = calculator.calculate();
+	public static double[] calculateForceAndLength(double persistenceLength, double L0, double temperature, double msd) {
+		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, temperature);
+		double[] output = calculator.calculate(msd);
 		return output;
 	}
 }

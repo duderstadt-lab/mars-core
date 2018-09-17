@@ -133,5 +133,22 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Background Tag", backgroundTag);
+	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setBackgroundTag(String backgroundTag) {
+		this.backgroundTag = backgroundTag;
+	}
+    
+	public String getBackgroundTag() {
+		return backgroundTag;
 	}
 }

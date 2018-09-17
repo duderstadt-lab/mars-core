@@ -121,10 +121,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		private int y0;
 		
 		@Parameter(label="ROI width", persist=false)
-		private int w;
+		private int width;
 		
 		@Parameter(label="ROI height", persist=false)
-		private int h;
+		private int height;
 		
 		//PEAK FINDER SETTINGS
 		@Parameter(label="Use Discoidal Averaging Filter")
@@ -285,10 +285,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			final MutableModuleItem<Integer> imgY0 = getInfo().getMutableInput("y0", Integer.class);
 			imgY0.setValue(this, rect.y);
 			
-			final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput("w", Integer.class);
+			final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput("width", Integer.class);
 			imgWidth.setValue(this, rect.width);
 			
-			final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("h", Integer.class);
+			final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 			imgHeight.setValue(this, rect.height);
 
 		}
@@ -518,7 +518,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			ArrayList<Peak> peaks;
 			
 			if (useROI) {
-		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, w, h), slice);
+		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, width, height), slice);
 			} else {
 				peaks = finder.findPeaks(imp, slice);
 			}
@@ -633,8 +633,8 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("useROI", String.valueOf(useROI));
 			builder.addParameter("ROI x0", String.valueOf(x0));
 			builder.addParameter("ROI y0", String.valueOf(y0));
-			builder.addParameter("ROI w", String.valueOf(w));
-			builder.addParameter("ROI h", String.valueOf(h));
+			builder.addParameter("ROI w", String.valueOf(width));
+			builder.addParameter("ROI h", String.valueOf(height));
 			builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
 			builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
 			builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
@@ -666,5 +666,302 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("Min trajectory length", String.valueOf(PeakTracker_minTrajectoryLength));
 			builder.addParameter("Microscope", microscope);
 			builder.addParameter("Format", imageFormat);
+		}
+		
+		//Getters and Setters
+		public void setImage(ImagePlus image) {
+			this.image = image;
+		}
+		
+		public ImagePlus getImage() {
+			return image;
+		}
+		
+		public void setUseROI(boolean useROI) {
+			this.useROI = useROI;
+		}
+		
+		public boolean getUseROI() {
+			return useROI;
+		}
+		
+		public void setX0(int x0) {
+			this.x0 = x0;
+		}
+		
+		public int getX0() {
+			return x0;
+		}
+		
+		public void setY0(int y0) {
+			this.y0 = y0;
+		}
+		
+		public int getY0() {
+			return y0;
+		}
+		
+		public void setWidth(int width) {
+			this.width = width;
+		}
+		
+		public int getWidth() {
+			return width;
+		}
+		
+		public void setHeight(int height) {
+			this.height = height;
+		}
+		
+		public int getHeight() {
+			return height;
+		}
+		
+		public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
+			this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+		}
+		
+		public boolean getUseDiscoidalAveragingFilter() {
+			return useDiscoidalAveragingFilter;
+		}
+		
+		public void setInnerRadius(int DS_innerRadius) {
+			this.DS_innerRadius = DS_innerRadius;
+		}
+		
+		public int getInnerRadius() {
+			return DS_innerRadius;
+		}
+		
+		public void setOuterRadius(int DS_outerRadius) {
+			this.DS_outerRadius = DS_outerRadius;
+		}
+		
+		public int getOuterRadius() {
+			return DS_outerRadius;
+		}
+		
+		public void setThreshold(int threshold) {
+			this.threshold = threshold;
+		}
+		
+		public int getThreshold() {
+			return threshold;
+		}
+		
+		public void setMinimumDistance(int minimumDistance) {
+			this.minimumDistance = minimumDistance;
+		}
+		
+		public int getMinimumDistance() {
+			return minimumDistance;
+		}
+		
+		public void setFindNegativePeaks(boolean findNegativePeaks) {
+			this.findNegativePeaks = findNegativePeaks;
+		}
+		
+		public boolean getFindNegativePeaks() {
+			return findNegativePeaks;
+		}
+		
+		public void setFitRadius(int fitRadius) {
+			this.fitRadius = fitRadius;
+		}
+		
+		public int getFitRadius() {
+			return fitRadius;
+		}
+		
+		public void setInitialBaseline(double PeakFitter_initialBaseline) {
+			this.PeakFitter_initialBaseline = PeakFitter_initialBaseline;
+		}
+		
+		public double getInitialBaseline() {
+			return PeakFitter_initialBaseline;
+		}
+		
+		public void setInitialHeight(double PeakFitter_initialHeight) {
+			this.PeakFitter_initialHeight = PeakFitter_initialHeight;
+		}
+		
+		public double getInitialHeight() {
+			return PeakFitter_initialHeight;
+		}
+		
+		public void setInitialSigma(double PeakFitter_initialSigma) {
+			this.PeakFitter_initialSigma = PeakFitter_initialSigma;
+		}
+		
+		public double getInitialSigma() {
+			return PeakFitter_initialSigma;
+		}
+		
+		public void setVaryBaseline(boolean PeakFitter_varyBaseline) {
+			this.PeakFitter_varyBaseline = PeakFitter_varyBaseline;
+		}
+		
+		public boolean getVaryBaseline() {
+			return PeakFitter_varyBaseline;
+		}
+		
+		public void setVaryHeight(boolean PeakFitter_varyHeight) {
+			this.PeakFitter_varyHeight = PeakFitter_varyHeight;
+		}
+		
+		public boolean getVaryHeight() {
+			return PeakFitter_varyHeight;
+		}
+		
+		public void setVarySigma(boolean PeakFitter_varySigma) {
+			this.PeakFitter_varySigma = PeakFitter_varySigma;
+		}
+		
+		public boolean getVarySigma() {
+			return PeakFitter_varySigma;
+		}
+		
+		public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {
+			this.PeakFitter_maxErrorBaseline = PeakFitter_maxErrorBaseline;
+		}
+		
+		public double getMaxErrorBaseline() {
+			return PeakFitter_maxErrorBaseline;
+		}
+		
+		public void setMaxErrorHeight(double PeakFitter_maxErrorHeight) {
+			this.PeakFitter_maxErrorHeight = PeakFitter_maxErrorHeight;
+		}
+		
+		public double getMaxErrorHeight() {
+			return PeakFitter_maxErrorHeight;
+		}
+		
+		public void setMaxErrorX(double PeakFitter_maxErrorX) {
+			this.PeakFitter_maxErrorX = PeakFitter_maxErrorX;
+		}
+		
+		public double getMaxErrorX() {
+			return PeakFitter_maxErrorX;
+		}
+
+		public void setMaxErrorY(double PeakFitter_maxErrorY) {
+			this.PeakFitter_maxErrorY = PeakFitter_maxErrorY;
+		}
+		
+		public double getMaxErrorY() {
+			return PeakFitter_maxErrorY;
+		}
+		
+		public void setMaxErrorSigma(double PeakFitter_maxErrorSigma) {
+			this.PeakFitter_maxErrorSigma = PeakFitter_maxErrorSigma;
+		}
+		
+		public double getMaxErrorSigma() {
+			return PeakFitter_maxErrorSigma;
+		}
+		
+		public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
+			this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+		}
+		
+		public boolean getVerboseFitOutput() {
+			return PeakFitter_writeEverything;
+		}
+		
+		public void setCheckMaxDifferenceBaseline(boolean PeakTracker_ckMaxDifferenceBaseline) {
+			this.PeakTracker_ckMaxDifferenceBaseline = PeakTracker_ckMaxDifferenceBaseline; 
+		}
+		
+		public boolean getCheckMaxDifferenceBaseline() {
+			return PeakTracker_ckMaxDifferenceBaseline; 
+		}
+		
+		public void setMaxDifferenceBaseline(double PeakTracker_maxDifferenceBaseline) {
+			this.PeakTracker_maxDifferenceBaseline = PeakTracker_maxDifferenceBaseline; 
+		}
+		
+		public double getMaxDifferenceBaseline() {
+			return PeakTracker_maxDifferenceBaseline; 
+		}
+		
+		public void setCheckMaxDifferenceHeight(boolean PeakTracker_ckMaxDifferenceHeight) {
+			this.PeakTracker_ckMaxDifferenceHeight = PeakTracker_ckMaxDifferenceHeight; 
+		}
+		
+		public boolean getCheckMaxDifferenceHeight() {
+			return PeakTracker_ckMaxDifferenceHeight; 
+		}
+		
+		public void setMaxDifferenceHeight(double PeakTracker_maxDifferenceHeight) {
+			this.PeakTracker_maxDifferenceHeight = PeakTracker_maxDifferenceHeight; 
+		}
+		
+		public double getMaxDifferenceHeight() {
+			return PeakTracker_maxDifferenceHeight; 
+		}
+		
+		public void setMaxDifferenceX(double PeakTracker_maxDifferenceX) {
+			this.PeakTracker_maxDifferenceX = PeakTracker_maxDifferenceX;
+		}
+		
+		public double getMaxDifferenceX() {
+			return PeakTracker_maxDifferenceX;
+		}
+		
+		public void setMaxDifferenceY(double PeakTracker_maxDifferenceY) {
+			this.PeakTracker_maxDifferenceY = PeakTracker_maxDifferenceY;
+		}
+		
+		public double getMaxDifferenceY() {
+			return PeakTracker_maxDifferenceY;
+		}
+		
+		public void setCheckMaxDifferenceSigma(boolean PeakTracker_ckMaxDifferenceSigma) {
+			this.PeakTracker_ckMaxDifferenceSigma = PeakTracker_ckMaxDifferenceSigma;
+		}
+
+		public boolean getCheckMaxDifferenceSigma() {
+			return PeakTracker_ckMaxDifferenceSigma;
+		}
+		
+		public void setMaxDifferenceSigma(double PeakTracker_maxDifferenceSigma) {
+			this.PeakTracker_maxDifferenceSigma = PeakTracker_maxDifferenceSigma;
+		}
+		
+		public double getMaxDifferenceSigma() {
+			return PeakTracker_maxDifferenceSigma;
+		}
+		
+		public void setMaxDifferenceSlice(int PeakTracker_maxDifferenceSlice) {
+			this.PeakTracker_maxDifferenceSlice = PeakTracker_maxDifferenceSlice;
+		}
+		
+		public int getMaxDifferenceSlice() {
+			return PeakTracker_maxDifferenceSlice;
+		}
+		
+		public void setMinTrajectoryLength(int PeakTracker_minTrajectoryLength) {
+			this.PeakTracker_minTrajectoryLength = PeakTracker_minTrajectoryLength;
+		}
+
+		public int getMinTrajectoryLength() {
+			return PeakTracker_minTrajectoryLength;
+		}
+		
+		public void setMicroscope(String microscope) {
+			this.microscope = microscope;
+		}
+		
+		public String getMicroscope() {
+			return microscope;
+		}
+		
+		public void setImageFormat(String imageFormat) {
+			this.imageFormat = imageFormat;
+		}
+		
+		public String getImageFormat() {
+			return imageFormat;
 		}
 }
