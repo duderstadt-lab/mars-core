@@ -7,6 +7,7 @@ import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -38,7 +39,7 @@ import javax.swing.filechooser.FileSystemView;
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
-public class BuildArchiveFromTable extends DynamicCommand {
+public class BuildArchiveFromTableCommand extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
 	
@@ -60,6 +61,10 @@ public class BuildArchiveFromTable extends DynamicCommand {
     @Parameter(label="build in virtual memory")
     private boolean virtual = true;
     
+    //OUTPUT PARAMETERS
+	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
+	private MoleculeArchive archive;
+    
     @Override
 	public void run() {				
 		
@@ -70,29 +75,36 @@ public class BuildArchiveFromTable extends DynamicCommand {
 			return;
 		}
 		
+		if (table.get("molecule") == null) {
+			uiService.showDialog("The table given doesn't have a molecule column. It must have a molecule column in order to generate the Molecule Archive.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			return;
+		}
+		
 		LogBuilder builder = new LogBuilder();
 		
 		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
 
 		builder.addParameter("From Table", table.getName());
-		builder.addParameter("New Archive Name", name);
+		builder.addParameter("Virtual", String.valueOf(virtual));
+		builder.addParameter("Ouput Archive Name", name);
 		
-		MoleculeArchive archive = new MoleculeArchive(name, table, resultsTableService, moleculeArchiveService, virtual);
+		archive = new MoleculeArchive(name, table, resultsTableService, moleculeArchiveService, virtual);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
-        
-		moleculeArchiveService.addArchive(archive);
-		
-		log += "Added to MoleculeArchiveService\n";
 		log += builder.endBlock(true);
+		
+		//Make sure the output archive has the correct name
+		getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
         
         archive.addLogMessage(log);
         
         logService.info(log);
-        
-        moleculeArchiveService.show(name, archive);
 	}
+    
+    public MoleculeArchive getArchive() {
+    	return archive;
+    }
     
     public void setTable(SDMMResultsTable table) {
     	this.table = table;

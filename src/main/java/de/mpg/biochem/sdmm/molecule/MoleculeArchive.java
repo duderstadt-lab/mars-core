@@ -294,7 +294,7 @@ public class MoleculeArchive {
 		if (virtual) {
 			//We will load the archive into virtual memory to allow for very large archive sizes...
 			try {
-				buildChronicleMap(numMolecules, averageSize);
+				buildChronicleMap(numMolecules, averageSize, new File(System.getProperty("java.io.tmpdir") + "/" + name + ".store"));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -303,6 +303,13 @@ public class MoleculeArchive {
 			//We will load the archive into normal memory for faster processing...
 			molecules = new ConcurrentHashMap<>();
 		}
+		
+		//We need to generate and add an ImageMetaData entry for the molecules from the the table
+		//This will basically be empty, but as further processing steps occurs the log will be filled in
+		//Also, the DataTable can be updated manually.
+		String metaUID = SDMMMath.getUUID58().substring(0, 10);
+		ImageMetaData meta = new ImageMetaData(metaUID);
+		addImageMetaData(meta);
 
 		String[] headers = new String[results.getColumnCount() - 1];
 		int col = 0;
@@ -331,8 +338,9 @@ public class MoleculeArchive {
 				}
 				row++;
 			}
-			
-			add(new Molecule(SDMMMath.getUUID58(), molTable));
+			Molecule molecule = new Molecule(SDMMMath.getUUID58(), molTable);
+			molecule.setImageMetaDataUID(metaUID);
+			add(molecule);
 		}
 	}
 	
@@ -402,9 +410,14 @@ public class MoleculeArchive {
 		}
 	}
 	
-	//Returns true if using recover mode.
-	private boolean buildChronicleMap(int numMolecules, double averageSize) throws IOException {		
+	private boolean buildChronicleMap(int numMolecules, double averageSize) throws IOException {
 		persistedFile = new File(file.getParentFile() + "/" + name + ".store");
+		return buildChronicleMap(numMolecules, averageSize, persistedFile);
+	}
+	
+	//Returns true if using recover mode.
+	private boolean buildChronicleMap(int numMolecules, double averageSize, File persistedFile) throws IOException {		
+		this.persistedFile = persistedFile;
 		
 		boolean exists = persistedFile.exists();
 		int recover = JOptionPane.NO_OPTION;

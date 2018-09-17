@@ -669,6 +669,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		}
 		
 		//Getters and Setters
+	    public MoleculeArchive getArchive() {
+	    	return archive;
+	    }
+		
 		public void setImage(ImagePlus image) {
 			this.image = image;
 		}

@@ -87,8 +87,11 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.get(UID).getDataTable().getRowCount() == slices).count();
 			
 			if (num_full_traj == 0) {
-				uiService.showDialog("No complete molecules with all slices found for dataset " + meta.getUID() + "!");
-				return;
+			    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+			    //archive.addLogMessage(builder.endBlock(false));
+			    //archive.addLogMessage("  ");
+				//uiService.showDialog("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+				continue;
 			}
 			
 			//For all molecules in this dataset that are marked with the background tag and have all slices
@@ -107,16 +110,16 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					}
 			});
 			
-			DoubleColumn x_background = new DoubleColumn("x_drift");
-			DoubleColumn y_background = new DoubleColumn("y_drift");
+			if (!metaDataTable.hasColumn("x_drift"))
+				metaDataTable.appendColumn("x_drift");
+			
+			if (!metaDataTable.hasColumn("y_drift"))
+				metaDataTable.appendColumn("y_drift");
 			
 			for (int row = 0; row < slices ; row++) {
-				x_background.add(x_avg_background[row]/num_full_traj);
-				y_background.add(y_avg_background[row]/num_full_traj);
+				metaDataTable.setValue("x_drift", row, x_avg_background[row]/num_full_traj);
+				metaDataTable.setValue("y_drift", row, y_avg_background[row]/num_full_traj);
 			}
-			
-			metaDataTable.add(x_background);
-			metaDataTable.add(y_background);
 			
 			archive.setImageMetaData(meta);
 		}

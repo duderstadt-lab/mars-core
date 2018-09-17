@@ -40,7 +40,7 @@ import javax.swing.filechooser.FileSystemView;
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Open MoleculeArchive", weight = 1, mnemonic = 'o')})
-public class MoleculeArchiveOpener extends DynamicCommand {
+public class OpenMoleculeArchiveCommand extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
 	
@@ -102,4 +102,25 @@ public class MoleculeArchiveOpener extends DynamicCommand {
 		}
 		logService.info(builder.endBlock(true));
 	}
+    
+    //Getters and Setters
+    public MoleculeArchive getArchive() {
+    	return archive;
+    }
+    
+    public void setFile(File file) {
+    	this.file = file;
+    }
+    
+    public File getFile() {
+    	return file;
+    }
+    
+    public void setVirtual(boolean virtual) {
+    	this.virtual = virtual;
+    }
+    
+    public boolean getVirtual() {
+    	return virtual;
+    }
 }

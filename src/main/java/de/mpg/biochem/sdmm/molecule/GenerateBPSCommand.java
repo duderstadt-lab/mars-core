@@ -88,10 +88,10 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	@Parameter(label="Forward flow end")
 	private int ff_end = 100;
 
-	@Parameter(label="FlowStart")
+	@Parameter(label="Flow Start")
 	private int f_start = 300;
 	
-	@Parameter(label="FlowEnd")
+	@Parameter(label="Flow End")
 	private int f_end = 400;
 	
 	@Parameter(label="Bead radius (um)")
