@@ -296,4 +296,25 @@ public class MergeCommand extends DynamicCommand {
 		jParser.close();
 		inputStream.close();
 	}
+	
+	//Getters and Setters
+	public void setDirectory(String dir) {
+		directory = new File(dir);
+	}
+	
+	public void setDirectory(File directory) {
+		this.directory = directory;
+	}
+	
+	public File getDirectory() {
+		return directory;
+	}
+	
+	public void setSmileEncoding(boolean smileEncoding) {
+		this.smileEncoding = smileEncoding;
+	}
+	
+	public boolean getSmileEncoding() {
+		return smileEncoding;
+	}
 }
