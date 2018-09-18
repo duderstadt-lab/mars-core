@@ -20,10 +20,21 @@ public class MoleculeArchiveProperties {
 	private double averageMoleculeSize;
 	private int numImageMetaData;
 	private String comments;
+	
+	//Not really used for anything at the moment...
 	private LinkedHashSet<String> tags;
 	private LinkedHashSet<String> parameters;
 	
 	private MoleculeArchive parent;
+	
+	public MoleculeArchiveProperties() {
+		numberOfMolecules = 0;
+		averageMoleculeSize = 0;
+		numImageMetaData = 0;
+		comments = "";
+		tags = new LinkedHashSet<String>();
+		parameters = new LinkedHashSet<String>();
+	}
 	
 	public MoleculeArchiveProperties(MoleculeArchive parent) {
 		numberOfMolecules = 0;

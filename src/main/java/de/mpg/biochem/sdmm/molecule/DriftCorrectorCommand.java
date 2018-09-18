@@ -99,6 +99,12 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			
+			if (molecule == null) {
+				logService.error("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
+				archive.addLogMessage("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
+				return;
+			}
+			
 			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetaDataUID());
 			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetaDataUID());
 			
