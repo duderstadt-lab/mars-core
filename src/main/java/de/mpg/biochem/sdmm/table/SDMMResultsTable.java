@@ -543,6 +543,29 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return diffSquares/count;
 	}
 	
+	public double slope(String slopeColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(slopeColumn) == null || get(rowSelectionColumn) == null)
+			return Double.NaN;
+		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
+		//offset and length...
+		double[] yData = this.getColumnAsDoubles(slopeColumn);
+		double[] xData = this.getColumnAsDoubles(rowSelectionColumn);
+		int offset = 0;
+		int endIndex = 0;
+		for (int i = 0; i < xData.length; i++) {
+			if (xData[i] <= rangeStart) {
+				offset = i;
+			}
+			
+			if (xData[i] <= rangeEnd) {
+				endIndex = i;
+			}
+		}
+		int length = endIndex - offset;
+		double[] output = SDMMMath.linearRegression(xData, yData, offset, length);
+		return output[2];
+	}
+	
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
