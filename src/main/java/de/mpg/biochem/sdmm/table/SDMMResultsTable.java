@@ -562,6 +562,9 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			}
 		}
 		int length = endIndex - offset;
+		if (length < 2) {
+			return Double.NaN;
+		}
 		double[] output = SDMMMath.linearRegression(xData, yData, offset, length);
 		return output[2];
 	}
