@@ -187,6 +187,17 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 			}
 		}
 		
+		if (length == 0) {
+			//This means the region probably doesn't exist...
+			//So we just add a single dummy row with All NaN values...
+			//Then we return...
+			ArrayList<Segment> segs = new ArrayList<Segment>();
+			Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+			segs.add(segment);
+			molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(segs));
+			return;
+		}
+		
 		//Use global sigma or use local sigma or calculate sigma (in this order of priority)
 		double sigma = global_sigma;
 		if (molecule.hasParameter(Ycolumn + "_sigma")) {
@@ -198,7 +209,17 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
 		double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
 		KCP change = new KCP(sigma, confidenceLevel, xRegion, yRegion, step_analysis);
-		molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(change.generate_segments()));
+		try {
+			molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(change.generate_segments()));
+		} catch (ArrayIndexOutOfBoundsException e) {
+			logService.error("Out of Bounds Exception");
+			logService.error("UID " + molecule.getUID() + " gave an error ");
+			logService.error("sigma " + sigma);
+			logService.error("confidenceLevel " + confidenceLevel);
+			logService.error("offset " + offset);
+			logService.error("length " + length);
+			e.printStackTrace();
+		}
 		numFinished.incrementAndGet();
 	}
 	
