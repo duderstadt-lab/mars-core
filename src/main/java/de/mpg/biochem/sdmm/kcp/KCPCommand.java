@@ -195,6 +195,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 			Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 			segs.add(segment);
 			molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(segs));
+			numFinished.incrementAndGet();
 			return;
 		}
 		
