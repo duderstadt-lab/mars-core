@@ -287,7 +287,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    }
 	        archive = new MoleculeArchive(newName + ".yama");
 		    
-		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack, logService);
+		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack);
 			archive.addImageMetaData(metaData);
 	        
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
