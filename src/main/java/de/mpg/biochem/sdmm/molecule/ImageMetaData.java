@@ -144,6 +144,7 @@ public class ImageMetaData {
 		DataTable.add(labelCol);
 	}
 	
+	/*
 	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {        
         //Now we will build the DataTable using the headerLabel
 		//First we just build the list of columns
@@ -241,6 +242,95 @@ public class ImageMetaData {
 	    		}
 	    		if (!ExcludedColumn)
 					DataTable.add(columns.get(str));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (DataTable.get("Time") != null)
+			CollectionDate = (String)DataTable.get("Time").get(0);
+		
+	}
+	*/
+	
+	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {       
+		HashMap<Integer, HashMap<String, String>> propertiesStack = new HashMap<>();
+		try {
+			JsonParser jParser;
+			
+			//Now we loop through all frame headerLabels and build the table
+			for (int slice=1;slice<=headerLabels.size();slice++) {
+				HashMap<String, String> properties = new HashMap<>();
+				
+				jParser = jfactory.createParser(headerLabels.get(slice).substring(headerLabels.get(slice).indexOf("{")));
+				
+				//Just to skip to the first field
+				jParser.nextToken();
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+					String fieldname = jParser.getCurrentName();
+					
+					//Summary is an object, so that will break the loop
+					//Therefore, we need to skip over it...
+					if ("Summary".equals(fieldname)) {
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+							// We just want to skip over the summary
+						}
+						//once we have skipped over we just want to continue
+						continue;
+					}
+					
+					jParser.nextToken();
+
+					properties.put(fieldname, jParser.getValueAsString());
+				}
+				propertiesStack.put(slice, properties);
+			}
+			
+			//Let's generate the Time column using the micromanager ElapsedTime-ms
+			//For Dobby and the Andor camera this is alwasy in the frame hearders
+			//but it might be the case that for Winky this is not in the header
+			//or not an output...
+			
+			//Get t0 in seconds...
+			double t0 = Double.valueOf(propertiesStack.get(1).get("ElapsedTime-ms"))/1000;
+			
+			DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
+			DataTable.add(new DoubleColumn("slice"));
+			DataTable.add(new DoubleColumn("Time (s)"));
+			
+			int row = 0;
+			for(int slice=1;slice<=headerLabels.size();slice++) {
+				DataTable.appendRow();
+				
+				DataTable.setValue("slice", row, slice);
+				if (propertiesStack.get(slice).containsKey("ElapsedTime-ms")) {
+					//Get tn in seconds...
+					double tn = Double.valueOf(propertiesStack.get(slice).get("ElapsedTime-ms"))/1000;
+					DataTable.setValue("Time (s)", row, DoubleRounder.round(tn - t0, 3));
+				} else {
+					DataTable.setValue("Time (s)", row, Double.NaN);
+				}
+				
+				HashMap<String, String> properties = propertiesStack.get(slice);
+				for (String field: properties.keySet()) {
+					boolean ExcludedColumn = false;
+		    		
+		    		for (int i=0;i<column_exclude_list.length;i++) {
+		    			if (field.equals(column_exclude_list[i]))
+		    				ExcludedColumn = true;
+		    		}
+		    		if (!ExcludedColumn) {
+						if (!DataTable.hasColumn(field)) {
+							GenericColumn newCol = new GenericColumn(field);
+							for (int i=0;i<slice;i++)
+								newCol.add("");
+							DataTable.add(newCol);
+						}
+						
+						DataTable.setValue(field, row, properties.get(field));
+		    		}
+ 				}
+				row++;
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

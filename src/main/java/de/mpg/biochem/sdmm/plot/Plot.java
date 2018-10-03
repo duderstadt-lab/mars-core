@@ -640,14 +640,24 @@ public class Plot extends JComponent implements ActionListener {
 				
 				switch (plotTypes.get(i)) {
 				case LINE:
-					if (j + 2 < coordinates.length)
+					if (j + 2 < coordinates.length 
+							&& !Double.isNaN(coordinates[j]) 
+							&& !Double.isNaN(coordinates[j+1])
+							&& !Double.isNaN(coordinates[j+2])
+							&& !Double.isNaN(coordinates[j+3]))
 						g2d.drawLine((int)coordinates[j], (int)coordinates[j + 1], (int)coordinates[j + 2], (int)coordinates[j + 3]);
 					break;
 				case FIT:
-					if (j + 2 < coordinates.length)
+					if (j + 2 < coordinates.length
+							&& !Double.isNaN(coordinates[j]) 
+							&& !Double.isNaN(coordinates[j+1])
+							&& !Double.isNaN(coordinates[j+2])
+							&& !Double.isNaN(coordinates[j+3]))
 						g2d.drawLine((int)coordinates[j], (int)coordinates[j + 1], (int)coordinates[j + 2], (int)coordinates[j + 3]);
 					break;
 				case SCATTER:
+					if (!Double.isNaN(coordinates[j]) 
+							&& !Double.isNaN(coordinates[j+1]))
 						g2d.drawOval((int)coordinates[j] - 1, (int)coordinates[j + 1] - 1, 2, 2);
 					break;
 				case BAR:
@@ -673,15 +683,22 @@ public class Plot extends JComponent implements ActionListener {
 					break;
 				case SEGMENTS:
 					//Should only connect every other set of consecutive points
-					if (j + 2 < coordinates.length && (j % 4 == 0))
-						g2d.drawLine((int)coordinates[j], (int)coordinates[j + 1], (int)coordinates[j + 2], (int)coordinates[j + 3]);
+					if (j + 2 < coordinates.length && (j % 4 == 0)) {
+						if (!Double.isNaN(coordinates[j]) 
+							&& !Double.isNaN(coordinates[j+1])
+							&& !Double.isNaN(coordinates[j+2])
+							&& !Double.isNaN(coordinates[j+3]))
+							g2d.drawLine((int)coordinates[j], (int)coordinates[j + 1], (int)coordinates[j + 2], (int)coordinates[j + 3]);
+					}
 					break;
 				}
 				
-				if (mousePosition.distance((int)coordinates[j], (int)coordinates[j + 1]) < mousePosition.distance(selectedPoint)) {
-					selectedPoint = new Point((int)coordinates[j], (int)coordinates[j + 1]);
-					selectedCoordinate = new Point2D.Double(plotCoordinates.get(i)[j], plotCoordinates.get(i)[j + 1]);
-				}	
+				if (!Double.isNaN(coordinates[j]) && !Double.isNaN(coordinates[j+1])) {
+					if (mousePosition.distance((int)coordinates[j], (int)coordinates[j + 1]) < mousePosition.distance(selectedPoint)) {
+						selectedPoint = new Point((int)coordinates[j], (int)coordinates[j + 1]);
+						selectedCoordinate = new Point2D.Double(plotCoordinates.get(i)[j], plotCoordinates.get(i)[j + 1]);
+					}	
+				}
 			}
 			
 		}
@@ -856,11 +873,6 @@ public class Plot extends JComponent implements ActionListener {
 			setProperties();
 			updatePlotBoundaries = true;
 		}
-		//else if (e.getSource() == addDataSet) {
-		//	addDataSet();
-		//	updatePlotBoundaries = true;
-		//	repaint();
-		//}
 		else if (e.getSource() == fitData) {
 			//We assume there is only one plot and select the first plot in the set...
 			LMCurveFitter fitter = new LMCurveFitter();

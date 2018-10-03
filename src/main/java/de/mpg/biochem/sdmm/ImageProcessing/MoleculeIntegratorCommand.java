@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.decimal4j.util.DoubleRounder;
@@ -135,6 +136,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	@Parameter(label="Microscope")
 	private String microscope = "Dobby";
 	
+	//Should we also have an option to give a metadata.txt file... ?
 	//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
 	//private String imageFormat = "MicroManager";
 	
@@ -156,6 +158,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	//Used for making JsonParser instances..
     //We make it static because we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
+    
+	//For the progress thread
+	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+	private final AtomicInteger progressInteger = new AtomicInteger(0);
+	
+	private String statusMessage = "Integrating Molecules...";
 	
 	@Override
 	public void run() {	
@@ -242,7 +250,22 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 	    try {
-	        
+	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
+	    	//Waiting call back to update the progress bar!!
+	    	Thread progressThread = new Thread() {
+	            public synchronized void run() {
+                    try {
+        		        while(progressUpdating.get()) {
+        		        	Thread.sleep(100);
+        		        	statusService.showStatus(progressInteger.get(), image.getStackSize(), statusMessage);
+        		        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+	            }
+	        };
+
+	        progressThread.start();
 	    	
 	        //This will spawn a bunch of threads that will analyze frames individually in parallel integrating all peaks
 	    	//in the lists in the IntensitiesStack map...
@@ -273,7 +296,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	//We also pass the color names.. For a give frame there can only be two colors..
 				//If the color value is null then that color is not integrated..
 	        	integrator.integratePeaks(processor, IntensitiesStack.get(slice), colors[0], colors[1]);
+	        	
+	        	progressInteger.incrementAndGet();
 	        })).get();
+	        
+	        //progressUpdating.set(false);
+	        progressInteger.set(0);
+	        
+	        //statusService.showProgress(100, 100);
+	        statusMessage = "Building Archive...";
 	        
 	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	        logService.info("Building Archive...");
@@ -335,11 +366,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	molecule.setImageMetaDataUID(metaData.getUID());
 	        	
 	        	archive.add(molecule);
+	        	
+		        progressInteger.incrementAndGet();
 	        })).get();
+	        
+	        progressUpdating.set(false);
 	        
 	        statusService.showProgress(100, 100);
 	        statusService.showStatus("Peak integration for " + image.getTitle() + " - Done!");
-	        
 	    } catch (InterruptedException | ExecutionException e) {
 	    	// handle exceptions
 	    	e.printStackTrace();
