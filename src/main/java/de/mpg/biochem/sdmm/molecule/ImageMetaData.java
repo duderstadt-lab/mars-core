@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.decimal4j.util.DoubleRounder;
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -51,6 +52,9 @@ public class ImageMetaData {
 	
 	//Table that maps slices to times
 	private SDMMResultsTable DataTable;
+	
+	//For Debugging
+	LogService logService;
     
     //Used for making JsonParser isntances..
     //We make it static becasue we just need to it make parsers so we don't need multiple copies..
@@ -68,6 +72,26 @@ public class ImageMetaData {
 		//Create the table and add all the columns...
 		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
+    }
+    
+    public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels, LogService logService) {
+    	this.logService = logService;
+    	this.Microscope = Microscope;
+		this.SourceDirectory = img.getOriginalFileInfo().directory;
+		log = "";
+		
+		if (imageFormat.equals("NorPix")) {
+			UID = generateUID(headerLabels);
+			buildMetaDataNorPix(headerLabels);
+		} else if (imageFormat.equals("MicroManager")) {
+			UID = generateUID(headerLabels);
+			buildMetaDataMicroManager(headerLabels);
+		} else {
+			//For GenericData we just generate a random UID but truncate to 11 characters to match
+			//output of FNV1a algorithm...
+			UID = SDMMMath.getUUID58().substring(0, 10);
+			buildMetaDataGeneric(img);
+		}
     }
 	
 	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
@@ -145,6 +169,8 @@ public class ImageMetaData {
 	
 	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {        
         //Now we will build the DataTable using the headerLabel
+		//First we just build the list of columns
+		//then we loop through all headerLabels and add the metaData to the columns...
 		try {
 			JsonParser jParser = jfactory.createParser(headerLabels.get(1).substring(headerLabels.get(1).indexOf("{")));
 			
@@ -154,8 +180,19 @@ public class ImageMetaData {
 			HashMap<String, GenericColumn> columns = new HashMap<>();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 				String fieldname = jParser.getCurrentName();
+				
+				//Summary is an object, so that will break the loop
+				//Therefore, we need to skip over it...
+				if ("Summary".equals(fieldname)) {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+						// We just want to skip over the summary
+					}
+					//once we have skipped over we just want to continue
+					continue;
+				}
+				
 				jParser.nextToken();
-		
+				logService.info("Adding Column: " + fieldname);
 				GenericColumn col = new GenericColumn(fieldname);
 				columns.put(fieldname, col);
 			}
@@ -172,9 +209,28 @@ public class ImageMetaData {
 				jParser.nextToken();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					String fieldname = jParser.getCurrentName();
+					
+					//Summary is an object, so that will break the loop
+					//Therefore, we need to skip over it...
+					if ("Summary".equals(fieldname)) {
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+							// We just want to skip over the summary
+						}
+						//once we have skipped over we just want to continue
+						continue;
+					}
+					
 					jParser.nextToken();
 
-					columns.get(fieldname).add(jParser.getValueAsString());
+					//Sometimes images have different metadata fields
+					//In that case the columns created from the first frame
+					//might not include a field
+					//For the moment if this happens we just skip it.
+					//However, there could be another problem where in later frames don't have a field from the first frame
+					//This could lead to gaps and index issues given the current implementation
+					//I should rewrite this completely to address this possibility...
+					if (columns.containsKey(fieldname))
+						columns.get(fieldname).add(jParser.getValueAsString());
 				}
 			}
 			

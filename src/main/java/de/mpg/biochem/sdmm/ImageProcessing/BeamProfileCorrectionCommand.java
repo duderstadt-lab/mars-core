@@ -1,5 +1,6 @@
 package de.mpg.biochem.sdmm.ImageProcessing;
 
+import java.io.File;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +20,7 @@ import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.plugin.filter.PlugInFilter;
@@ -28,16 +30,17 @@ import net.imagej.DatasetService;
 import net.imagej.ImgPlus;
 import net.imagej.ops.Initializable;
 import net.imglib2.type.numeric.RealType;
+import ij.io.FileSaver;
 
 /**
- * This plugin corrects images that have a beam profile. The plugin requires
+ * This command corrects images that have a beam profile. The command requires
  * two images: an image with beam profile and the image that needs to be corrected.
  * For each pixel at position x, y the following is calculated:
  * 
  * (Image(x,y) - electronic_offset) / ((Background(x,y)  - electronic_offset) / (maximum_pixel_background - electronic_offset))
  *
  * @author Karl Duderstadt
- * @author C.M. Punter (c.m.punter@rug.nl)
+ * @author C.M. Punter
  *
  */
 @Plugin(type = Command.class, label = "Beam Profile Correction", menu = {
@@ -53,21 +56,6 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	@Parameter
 	private LogService logService;
 	
-    //@Parameter
-    //private StatusService statusService;
-    
-    //@Parameter
-    //private ConvertService convertService;
-    
-    //@Parameter
-    //private DatasetService datasetService;
-    
-    //@Parameter(label = "Image to correct")
-    //private Dataset dataset;
-   
-    //@Parameter(label = "Background image")
-    //private Dataset background_dataset;
-	
     @Parameter
     private StatusService statusService;
 	
@@ -78,7 +66,13 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	private ImagePlus backgroundImage;
 	
 	@Parameter(label="Electronic_offset")
-	private double electronicOffset = 1400;
+	private double electronicOffset = 0;
+	
+	@Parameter(label="Save sequence to directory")
+	private boolean saveToDisk = true;
+	
+	@Parameter(label="Output Directory", style="directory")
+    private File directory;
 	
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
@@ -145,13 +139,21 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
-		
-		
+
+	    //Need to add if statement to check if headless or not
+	    //This might crash a headless run...
+	    if (!saveToDisk)
+	    	image.updateAndDraw();
 	}
 	
 	public void correctFrame(int slice) {
+		ImageProcessor currentImage = image.getStack().getProcessor(slice);
 		
-		ImageProcessor currentSliceImage = image.getStack().getProcessor(slice);
+		ImageProcessor newImage; 
+		if (saveToDisk) 
+			newImage = currentImage.createProcessor(currentImage.getWidth(), currentImage.getHeight());
+		else 
+			newImage = currentImage;
 		
 		// subtract electronic offset and
 		// divide by background
@@ -159,10 +161,17 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 			for (int x = 0; x < image.getWidth(); x++) {
 				
 				double backgroundValue = (backgroundIp.getf(x, y) - electronicOffset) / (maximumPixelValue - electronicOffset);
-				double value = image.getProcessor().getf(x, y) - electronicOffset;
+				double value = currentImage.getf(x, y) - electronicOffset;
 				
-				currentSliceImage.setf(x, y, (float)Math.abs(value / backgroundValue));
+				newImage.setf(x, y, (float)Math.abs(value / backgroundValue));
 			}
+		}
+		
+		if (saveToDisk) {
+			ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice), newImage);
+			img.setProperty("Info", (String)image.getStack().getSliceLabel(slice));
+			FileSaver saver = new FileSaver(img);
+			saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack().getShortSliceLabel(slice) + ".tif");
 		}
 		
 		framesDone.incrementAndGet();

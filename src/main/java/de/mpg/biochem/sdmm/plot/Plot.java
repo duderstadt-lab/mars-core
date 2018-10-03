@@ -462,9 +462,11 @@ public class Plot extends JComponent implements ActionListener {
 			plot[i * 2 + 1] = y[i];
 			if (type == Type.BAR) {
 				double binWidth = x[1]-x[0];
-				originalBounds.add(new Rectangle2D.Double(x[i] - binWidth/2, 0, binWidth, y[i]));
+				if (!Double.isNaN(x[i]) && !Double.isNaN(y[i]))
+					originalBounds.add(new Rectangle2D.Double(x[i] - binWidth/2, 0, binWidth, y[i]));
 			} else {
-				originalBounds.add(x[i], y[i]);
+				if (!Double.isNaN(x[i]) && !Double.isNaN(y[i]))
+					originalBounds.add(x[i], y[i]);
 			}
 				
 		}
@@ -503,9 +505,11 @@ public class Plot extends JComponent implements ActionListener {
 			for (int i = 0; i < plotCoordinates.get(j).length/2; i++) {
 				if (plotTypes.get(j) == Type.BAR) {
 					double binWidth = plotCoordinates.get(j)[2] - plotCoordinates.get(j)[0];
-					originalBounds.add(new Rectangle2D.Double(plotCoordinates.get(j)[i * 2] - binWidth/2, 0, binWidth, plotCoordinates.get(j)[i * 2 + 1]));
+					if (!Double.isNaN(plotCoordinates.get(j)[i * 2]) && !Double.isNaN(plotCoordinates.get(j)[i * 2 + 1]))
+						originalBounds.add(new Rectangle2D.Double(plotCoordinates.get(j)[i * 2] - binWidth/2, 0, binWidth, plotCoordinates.get(j)[i * 2 + 1]));
 				} else {
-					originalBounds.add(plotCoordinates.get(j)[i * 2], plotCoordinates.get(j)[i * 2 + 1]);
+					if (!Double.isNaN(plotCoordinates.get(j)[i * 2]) && !Double.isNaN(plotCoordinates.get(j)[i * 2 + 1]))
+						originalBounds.add(plotCoordinates.get(j)[i * 2], plotCoordinates.get(j)[i * 2 + 1]);
 				}
 					
 			}
@@ -680,16 +684,6 @@ public class Plot extends JComponent implements ActionListener {
 				}	
 			}
 			
-			// draw diagonal lines for rectangle
-			if (plotStyles.get(i).equals(Style.STRIPES)) {
-				g2d.clip(p2D);
-				int spacing = 10;
-				for (double d = 0; d < plot_area.getWidth() + plot_area.getHeight() + leftMargin + bottomMargin + topMargin; d += spacing) {
-		            Line2D line = new Line2D.Double(0, d, d, 0);
-		            g2d.draw(line);
-		        }
-				g2d.setClip(plot_area);
-			}
 		}
 		g2d.setStroke(new BasicStroke(2.0f));
 		

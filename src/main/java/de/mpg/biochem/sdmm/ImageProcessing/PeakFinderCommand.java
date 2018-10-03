@@ -26,6 +26,7 @@ import org.scijava.util.RealRect;
 import de.mpg.biochem.sdmm.molecule.ImageMetaData;
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
+import de.mpg.biochem.sdmm.util.SDMMMath;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
@@ -423,9 +424,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			for (Peak peak : peaks) {
 				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0) + 0.5, peak.getDoublePosition(1) + 0.5);
 				if (slice == 0) {
-					peakRoi.setName("Peak_"+pCount);
+					peakRoi.setName(SDMMMath.getUUID58());
 				} else {
-					peakRoi.setName("Peak_"+slice+"_"+pCount);
+					peakRoi.setName(SDMMMath.getUUID58());
+					//peakRoi.setName("Peak_"+slice+"_"+pCount);
 				}
 				peakRoi.setPosition(slice);
 				roiManager.addRoi(peakRoi);

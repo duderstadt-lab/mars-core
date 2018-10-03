@@ -552,11 +552,16 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		double[] xData = this.getColumnAsDoubles(rowSelectionColumn);
 		int offset = 0;
 		int endIndex = 0;
-		for (int i = 0; i < xData.length; i++) {
-			if (xData[i] <= rangeStart) {
+		//Let's make sure the end points are always inside the range even if the points given don't exist...
+		//First for offset
+		for (int i = xData.length - 1; i >= 0; i--) {
+			if (xData[i] >= rangeStart) {
 				offset = i;
 			}
-			
+		}
+		
+		//For the end of the range we search in the other direction.. 
+		for (int i = 0; i < xData.length; i++) {
 			if (xData[i] <= rangeEnd) {
 				endIndex = i;
 			}

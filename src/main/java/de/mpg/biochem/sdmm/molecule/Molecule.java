@@ -354,11 +354,17 @@ public class Molecule {
 	}
 	
 	public void removeParameter(String parameter) {
-		Parameters.remove(parameter);
+		if (Parameters.containsKey(parameter)) {
+			Parameters.remove(parameter);
+		}
 	}
 	
 	public double getParameter(String parameter) {
-		return Parameters.get(parameter);
+		if (Parameters.containsKey(parameter)) {
+			return Parameters.get(parameter);
+		} else {
+			return Double.NaN;
+		}
 	}
 	
 	public boolean hasParameter(String parameter) {
@@ -427,10 +433,6 @@ public class Molecule {
 		columnNames[1] = xColumnName;
 		return getSegmentsTable(columnNames);
 	}
-	
-	//public LinkedHashMap<String, SDMMResultsTable> getSegmentTables() {
-	//	return segments;
-	//}
 	
 	public ArrayList<String> getSegmentTableNames() {
 		return new ArrayList<String>(segments.keySet());

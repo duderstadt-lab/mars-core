@@ -4,6 +4,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
 import org.scijava.display.Display;
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -35,6 +36,9 @@ public class SDMMResultsTableView extends AbstractDisplayViewer<SDMMResultsTable
 			//We also create a new window since we assume it is a new table...
 			new SDMMResultsTableWindow(results.getName(), results, resultsTableService);
 		} else {
+			//This never seems to be called... I think if the name is the same
+			//This view method is never called...
+			
 			//We update the table if it is already open
 			//This is really ugly at the moment and in the future should be implemented through display
 			resultsTableService.getResultsTable(results.getName()).getWindow().update();

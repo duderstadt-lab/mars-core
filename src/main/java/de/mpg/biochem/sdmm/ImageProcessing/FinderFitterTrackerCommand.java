@@ -442,6 +442,13 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			ImageStack stack = image.getImageStack();
 			ImageProcessor processor = stack.getProcessor(slice);
 			
+			//IT IS REALLY IMPORTANT THAT THE LABEL IS RETRIEVED 
+			//RIGHT AFTER RUNNING GET PROCESSOR ON THE SAME SLICE
+			//The get processor method will load in all the info
+			//Then the getSliceLabel will retreive it
+			//If you are working in virtual memtory the slice label won't be set properly until
+			//the get Processor method has been run...
+			
 			//First we add the header information to the metadata map 
 			//to generate the metadata table later in the molecule archive.
 			if (!imageFormat.equals("None")) {

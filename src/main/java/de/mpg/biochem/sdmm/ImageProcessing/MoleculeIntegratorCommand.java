@@ -177,6 +177,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		
+		logService.info(log);
+		
 		//These are assumed to be PointRois with Names of the format
 		//UID_TOP or UID_BOT...
 		//We assume the same positions are integrated in all frames...
@@ -245,7 +247,17 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        //This will spawn a bunch of threads that will analyze frames individually in parallel integrating all peaks
 	    	//in the lists in the IntensitiesStack map...
 	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(slice -> {
-	        	//First we add the header information to the metadata map 
+	        	//First we get the ImageProcessor for this slice
+	        	ImageProcessor processor = image.getStack().getProcessor(slice);
+	        	
+	        	//IT IS REALLY IMPORTANT THE PROCESSOR IS RETRIEVED BEFORE
+	        	//THE LABEL IS RETRIEVED
+	        	//In the case of a virtual stack, 
+	        	//when the processor is retrieved the label is updated
+	        	//SO the processor has to be loaded at lease once for the label information to be correct
+	        	//After that it will be stored in the stack object...
+	        	
+	        	//We add the header information to the metadata map 
 				//to generate the metadata table later in the molecule archive.
 				String label = image.getStack().getSliceLabel(slice);
 				metaDataStack.put(slice, label);
@@ -260,7 +272,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 				
 	        	//We also pass the color names.. For a give frame there can only be two colors..
 				//If the color value is null then that color is not integrated..
-	        	integrator.integratePeaks(image.getStack().getProcessor(slice), IntensitiesStack.get(slice), colors[0], colors[1]);
+	        	integrator.integratePeaks(processor, IntensitiesStack.get(slice), colors[0], colors[1]);
 	        })).get();
 	        
 	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
@@ -275,7 +287,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    }
 	        archive = new MoleculeArchive(newName + ".yama");
 		    
-		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack);
+		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack, logService);
 			archive.addImageMetaData(metaData);
 	        
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
@@ -451,6 +463,17 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 			jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 				String fieldname = jParser.getCurrentName();
+				
+				//Summary is an object, so that will break the loop
+				//Therefore, we need to skip over it...
+				if ("Summary".equals(fieldname)) {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+						// We just want to skip over the summary
+					}
+					//once we have skipped over we just want to continue
+					continue;
+				}
+				
 				jParser.nextToken();
 
 				parameters.put(fieldname, jParser.getValueAsString());

@@ -64,20 +64,16 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	
 	public void addTable(SDMMResultsTable table) {
 		tables.put(table.getName(), table);
-		//objectService.addObject(table);
-		
 	}
 	
 	public void removeResultsTable(String name) {
 		if (tables.containsKey(name)) {
-			//objectService.removeObject(tables.get(name));
 			tables.remove(name);		
 		}
 	}
 	
 	public void removeResultsTable(SDMMResultsTable table) {
 		if (tables.containsKey(table.getName())) {
-			//objectService.removeObject(table);
 			tables.remove(table.getName());
 		}
 	}
