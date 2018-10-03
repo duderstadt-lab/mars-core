@@ -52,9 +52,6 @@ public class ImageMetaData {
 	
 	//Table that maps slices to times
 	private SDMMResultsTable DataTable;
-	
-	//For Debugging
-	LogService logService;
     
     //Used for making JsonParser isntances..
     //We make it static becasue we just need to it make parsers so we don't need multiple copies..
@@ -72,26 +69,6 @@ public class ImageMetaData {
 		//Create the table and add all the columns...
 		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
-    }
-    
-    public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels, LogService logService) {
-    	this.logService = logService;
-    	this.Microscope = Microscope;
-		this.SourceDirectory = img.getOriginalFileInfo().directory;
-		log = "";
-		
-		if (imageFormat.equals("NorPix")) {
-			UID = generateUID(headerLabels);
-			buildMetaDataNorPix(headerLabels);
-		} else if (imageFormat.equals("MicroManager")) {
-			UID = generateUID(headerLabels);
-			buildMetaDataMicroManager(headerLabels);
-		} else {
-			//For GenericData we just generate a random UID but truncate to 11 characters to match
-			//output of FNV1a algorithm...
-			UID = SDMMMath.getUUID58().substring(0, 10);
-			buildMetaDataGeneric(img);
-		}
     }
 	
 	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
@@ -192,7 +169,7 @@ public class ImageMetaData {
 				}
 				
 				jParser.nextToken();
-				logService.info("Adding Column: " + fieldname);
+
 				GenericColumn col = new GenericColumn(fieldname);
 				columns.put(fieldname, col);
 			}
