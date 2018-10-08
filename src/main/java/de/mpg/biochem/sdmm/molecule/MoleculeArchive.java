@@ -700,6 +700,14 @@ public class MoleculeArchive {
 		moleculeIndex = newMoleculeIndex;
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());	
 	}
+	
+	public boolean contains(String UID) {
+		if (virtual) {
+			return archive.containsKey(UID);
+		} else {
+			return molecules.containsKey(UID);
+		}
+	}
 
 	//Retrieve molecule based on UUID58 key
 	public Molecule get(String UID) {
