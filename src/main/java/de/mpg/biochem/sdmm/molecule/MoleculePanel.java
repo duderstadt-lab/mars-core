@@ -379,7 +379,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	            }
 	        });
 		
-        Dimension dim = new Dimension(225, 125);
+        Dimension dim = new Dimension(225, 70);
 		
        // noteScroll.setMinimumSize(dim);
        // noteScroll.setMaximumSize(dim);
@@ -488,7 +488,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newParameter.getText().equals("")) {
-					molecule.setParameter(newParameter.getText(), 0);
+					molecule.setParameter(newParameter.getText().trim(), 0);
 					updateParameterList();
 					ParameterTableModel.fireTableDataChanged();
 				}
@@ -572,7 +572,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		JScrollPane TagScrollPane = new JScrollPane(TagTable);
 		
-		Dimension dim3 = new Dimension(225, 125);
+		Dimension dim3 = new Dimension(225, 100);
 		
 		TagScrollPane.setMinimumSize(dim3);
 		TagScrollPane.setMaximumSize(dim3);
@@ -593,7 +593,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newTag.getText().equals("")) {
-					molecule.addTag(newTag.getText());
+					molecule.addTag(newTag.getText().trim());
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
 				}
@@ -797,11 +797,26 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
         RowFilter<AbstractTableModel, Object> rf = null;
         //If current expression doesn't parse, don't update.
         try {
-            rf = RowFilter.regexFilter(moleculeSearchField.getText(), 0, 1, 2);
+        	String searchString = moleculeSearchField.getText();
+        	
+        	if (searchString.contains(",")) {
+	        	String[] searchlist = searchString.split(",");
+	            for (int i=0; i<searchlist.length; i++) {
+	            	searchlist[i] = searchlist[i].trim();
+	            }
+	        
+	            searchString = "";
+	            for (int i=0; i<searchlist.length; i++) {
+	            	searchString += "(?=.*?(" + searchlist[i] + "))";
+	            }
+        	}
+        	
+            rf = RowFilter.regexFilter(searchString, 0, 1, 2);
         } catch (java.util.regex.PatternSyntaxException e) {
             return;
         }
         moleculeSorter.setRowFilter(rf);
+        moleculeIndex.updateUI();
     }
 	
 	public void updateParameterList() {

@@ -2,9 +2,14 @@ package de.mpg.biochem.sdmm.plot;
 
 import java.awt.*;
 import java.util.*;
-import ij.IJ;
 
-public class FieldOptionPanel extends Panel {
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import org.decimal4j.util.DoubleRounder;
+
+public class FieldOptionPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	@SuppressWarnings("rawtypes")
@@ -37,7 +42,7 @@ public class FieldOptionPanel extends Panel {
         String label2 = label;
         if (label2.indexOf('_')!=-1)
             label2 = label2.replace('_', ' ');
-        Label theLabel = makeLabel(label2);
+        JLabel theLabel = makeLabel(label2);
         c.gridx = x; 
         c.gridy = y;
         c.anchor = GridBagConstraints.EAST;
@@ -49,7 +54,7 @@ public class FieldOptionPanel extends Panel {
         	stringField = new Vector(4);
         }
         
-        TextField tf = new TextField(defaultText, columns);
+        JTextField tf = new JTextField(defaultText, columns);
         c.gridx = x+1; 
         c.gridy = y;
         c.anchor = GridBagConstraints.WEST;
@@ -74,7 +79,7 @@ public class FieldOptionPanel extends Panel {
         String label2 = label;
         if (label2.indexOf('_')!=-1)
             label2 = label2.replace('_', ' ');
-        Label theLabel = makeLabel(label2);
+        JLabel theLabel = makeLabel(label2);
         c.gridx = x; 
         c.gridy = y;
         c.anchor = GridBagConstraints.EAST;
@@ -87,8 +92,8 @@ public class FieldOptionPanel extends Panel {
             defaultValues = new Vector(5);
             defaultText = new Vector(5);
         }
-    
-        TextField tf = new TextField(IJ.d2s(defaultValue, digits), columns);
+        
+        JTextField tf = new JTextField(String.valueOf(DoubleRounder.round(defaultValue, digits)), columns);
         numberField.addElement(tf);
         defaultValues.addElement(new Double(defaultValue));
         defaultText.addElement(tf.getText());
@@ -105,16 +110,16 @@ public class FieldOptionPanel extends Panel {
         }
     }
 	
-	private Label makeLabel(String label) {
-        if (IJ.isMacintosh())
-            label += " ";
-        return new Label(label);
+	private JLabel makeLabel(String label) {
+        //if (IJ.isMacintosh())
+         //   label += " ";
+        return new JLabel(label);
     }
 	
 	public double getNextNumber() {
         if (numberField==null)
             return -1.0;
-        TextField tf = (TextField)numberField.elementAt(nfIndex);
+        JTextField tf = (JTextField)numberField.elementAt(nfIndex);
         String theText = tf.getText();
   
         String originalText = (String)defaultText.elementAt(nfIndex);
@@ -144,7 +149,7 @@ public class FieldOptionPanel extends Panel {
         String theText;
         if (stringField==null)
             return "";
-        TextField tf = (TextField)(stringField.elementAt(sfIndex));
+        JTextField tf = (JTextField)(stringField.elementAt(sfIndex));
         theText = tf.getText();
         sfIndex++;
         if (sfIndex == stringField.size())

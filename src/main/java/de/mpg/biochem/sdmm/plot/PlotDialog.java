@@ -31,12 +31,12 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 	
 	private int type = 0;
 	
-	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
+	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "magenta", "orange", "pink", "red", "yellow"};
 	
-	protected String[] SegColors = {"none", "black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "yellow"};
+	protected String[] SegColors = {"none", "black", "blue", "cyan", "gray", "green", "magenta", "orange", "pink", "red", "yellow"};
 	
 	//More Colors
-	Color darkGreen = new Color(25, 123, 48);
+	Color darkGreen = new Color(44, 160, 44);
 	
 	private int curveNumber = 1;
 	
@@ -138,7 +138,7 @@ public class PlotDialog extends GenericDialog implements DialogListener {
 		if (color_name.equals("none"))
 			return null;
 		try {
-			if (color_name.equals("dark green"))
+			if (color_name.equals("green"))
 				return darkGreen;
 			Field field = Class.forName("java.awt.Color").getField(color_name);
 			return (Color)field.get(null);

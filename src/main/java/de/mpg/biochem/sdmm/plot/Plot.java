@@ -39,6 +39,7 @@ import java.awt.Choice;
 import java.awt.TextField;
 import java.awt.Checkbox;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,16 +48,23 @@ import java.util.Arrays;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.Box;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-//import javax.swing.JLabel;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
-//import javax.swing.JTextField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import de.mpg.biochem.sdmm.molecule.Molecule;
@@ -89,8 +97,9 @@ public class Plot extends JComponent implements ActionListener {
 	private AffineTransform transform;
 	
 	//will allow for entry of starting and stopping times in the points table.
-	private static int pointsStart = 0;
+	private static int pointsPosition = 0;
 	private Molecule molecule;
+	private static ArrayList<String> pKeyParameters; 
 	
 	//Added KED for getting points with p button:
 	Point2D.Double selectedCoordinate;
@@ -118,8 +127,8 @@ public class Plot extends JComponent implements ActionListener {
 	public int rightMargin = 50;
 	public int bottomMargin = 50;
 	public int topMargin = 0;
-	protected double gap = Prefs.get("plot.bar_gap_size", 0.2);
-	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "dark green", "magenta", "orange", "pink", "red", "white", "yellow"};
+	protected double gap = 0.2;
+	protected String[] colors = {"black", "blue", "cyan", "gray", "green", "magenta", "orange", "pink", "red", "white", "yellow"};
 	
 	protected ArrayList<double[]> plotCoordinates = new ArrayList<double[]>();
 	protected ArrayList<double[]> pixelCoordinates = new ArrayList<double[]>();
@@ -129,11 +138,17 @@ public class Plot extends JComponent implements ActionListener {
 	protected Rectangle legendBounds = new Rectangle(0, 0, 0, 0);
 	protected Point mousePosition = new Point();
 	
-	private boolean gridlines = false;
-	private boolean sigmaStartStop = Prefs.get("plot.sigma_start_stop", false);
+	private boolean gridlines = Prefs.get("plot.gridlines", false);
 	private boolean show_legend = Prefs.get("plot.show_legend", true);
 	private boolean legend_box = Prefs.get("plot.legend_box", true);
 	private boolean show_tracker = Prefs.get("plot.show_tracker", true);
+	
+	private boolean fixYBounds = false;
+	private boolean fixXBounds = false;
+	private double xfrom = Prefs.get("plot.xfrom", 0);
+	private double xto = Prefs.get("plot.xto", 1);
+	private double yfrom = Prefs.get("plot.yfrom", 0);
+	private double yto = Prefs.get("plot.yto", 0);
 	
 	private JPopupMenu menu = new JPopupMenu();
 	private JRadioButtonMenuItem zoomInMenuItem = new JRadioButtonMenuItem("Zoom In", true);
@@ -146,8 +161,6 @@ public class Plot extends JComponent implements ActionListener {
 	private JMenuItem fitData = new JMenuItem("fit");
 	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	
-	private String group_name;
-	
 	private double zoomFactor = 1.5;
 	private File currentDirectory;
 	private boolean isRegionSelection = false;
@@ -155,10 +168,21 @@ public class Plot extends JComponent implements ActionListener {
 	private boolean updatePlotBoundaries = true;
 	private Rectangle regionSelection = new Rectangle();
 	
+	private String group_name;
+	
 	//More Colors
-	Color darkGreen = new Color(25, 123, 48);
+	Color darkGreen = new Color(44, 160, 44);
 	
 	public Plot() {
+		
+		if (pKeyParameters == null) {
+			pKeyParameters = new ArrayList<String>();
+			pKeyParameters.add("bg_start");
+			pKeyParameters.add("bg_end");
+			pKeyParameters.add("start");
+			pKeyParameters.add("end");
+		}
+		
 		saveMenuItem.addActionListener(this);
 		copyMenuItem.addActionListener(this);
 		selectRegionMenuItem.addActionListener(this);
@@ -199,45 +223,13 @@ public class Plot extends JComponent implements ActionListener {
 
 	           @Override
 	           public void keyPressed(KeyEvent e) {
-	               // add selected peak to results table
-	        	   if (e.getKeyChar() == 'p') {
-	        		   if (sigmaStartStop) {
-		        		   switch (pointsStart) {
-			        		   case 0:
-			        			   molecule.setParameter("bg_start", selectedCoordinate.getX());
-			        			   pointsStart = 1;
-			        			   break;
-			        		   case 1:
-			        			   molecule.setParameter("bg_end", selectedCoordinate.getX());
-			        			   pointsStart = 2;
-			        			   break;
-			        		   case 2:
-			        			   molecule.setParameter("start", selectedCoordinate.getX());
-			        			   pointsStart = 3;
-			        			   break;
-			        		   case 3:
-			        			   molecule.setParameter("end", selectedCoordinate.getX());
-			        			   pointsStart = 0;
-			        			   break;
-		        		   }
-	        		   } else {
-	        			   switch (pointsStart) {
-		        		   case 0:
-		        			   molecule.setParameter("start", selectedCoordinate.getX());
-		        			   pointsStart = 1;
-		        			   break;
-		        		   case 1:
-		        			   molecule.setParameter("end", selectedCoordinate.getX());
-		        			   pointsStart = 0;
-		        			   break;
-		        		   case 2:
-		        			   pointsStart = 0;
-		        			   break;
-		        		   case 3:
-		        			   pointsStart = 0;
-		        			   break;
-	        			   }
-	        		   }
+	               // add selected point to the parameters
+	        	   if (molecule != null && e.getKeyChar() == 'p') {
+	        		   molecule.setParameter(pKeyParameters.get(pointsPosition), selectedCoordinate.getX());
+	        		   pointsPosition++;
+	        		   if (pointsPosition >= pKeyParameters.size())
+	        			   pointsPosition = 0;
+	        		   
 	        		   notifyMoleculeChangedListeners();
 	        	   }
 	           }
@@ -370,6 +362,43 @@ public class Plot extends JComponent implements ActionListener {
 		repaint();
 	}
 	
+	public void resetOriginalBounds() {
+		originalBounds = new Rectangle2D.Double(plotCoordinates.get(0)[0], plotCoordinates.get(0)[1], 0, 0);
+		
+		for (int i=0;i<plotCoordinates.size();i++) {
+			double[] coor = plotCoordinates.get(i);
+			Type type = plotTypes.get(i);
+			
+			for (int j = 0; j < coor.length/2; j++) {
+				if (type == Type.BAR) {
+					double binWidth = coor[2]-coor[0];
+					if (!Double.isNaN(coor[j * 2]) && !Double.isNaN(coor[j * 2 + 1]))
+						originalBounds.add(new Rectangle2D.Double(coor[j * 2] - binWidth/2, 0, binWidth, coor[j * 2 + 1]));
+				} else {
+					if (!Double.isNaN(coor[j * 2]) && !Double.isNaN(coor[j * 2 + 1]))
+						originalBounds.add(coor[j * 2], coor[j * 2 + 1]);
+				}
+			}
+		}
+		
+		if (fixYBounds) {
+			originalBounds.setRect(originalBounds.getX(), yfrom, originalBounds.getWidth(), yto - yfrom);
+			setBounds(originalBounds.getX(), yfrom, originalBounds.getWidth(), yto - yfrom);
+		}
+		
+		if (fixXBounds) {
+			originalBounds.setRect(xfrom, originalBounds.getY(), xto - xfrom, originalBounds.getHeight());
+			setBounds(xfrom, originalBounds.getY(), xto - xfrom, originalBounds.getHeight());
+		}
+		
+		if (bounds == null)
+			bounds = (Rectangle2D.Double)originalBounds.clone();
+		else
+			bounds.add(originalBounds);
+		
+		repaint();
+	}
+	
 	public Rectangle2D.Double getPlotBounds() {
 		return (Rectangle2D.Double)bounds.clone();
 	}
@@ -469,6 +498,16 @@ public class Plot extends JComponent implements ActionListener {
 					originalBounds.add(x[i], y[i]);
 			}
 				
+		}
+		
+		if (fixYBounds) {
+			Rectangle2D.Double newBounds = new Rectangle2D.Double(originalBounds.getX(), yfrom, originalBounds.getWidth(), yto - yfrom);
+			originalBounds = newBounds;
+		}
+		
+		if (fixXBounds) {
+			Rectangle2D.Double newBounds = new Rectangle2D.Double(xfrom, originalBounds.getY(), xto - xfrom, originalBounds.getHeight());
+			originalBounds = newBounds;
 		}
 		
 		if (bounds == null)
@@ -891,121 +930,321 @@ public class Plot extends JComponent implements ActionListener {
 	}
 	
 	public void setProperties() {
-		GenericDialog dia = new GenericDialog("Plot Properties");
+		 JPanel gPanel = new JPanel();
 		
-		dia.addMessage("Bounds:");
-		FieldOptionPanel bounds_options = new FieldOptionPanel(2);
-		bounds_options.addNumericField("X from", bounds.x, 6, 15);
-		bounds_options.addNumericField(" to", bounds.x + bounds.width, 6, 15);
-		bounds_options.addNumericField("Y from", bounds.y, 6, 15);
-		bounds_options.addNumericField(" to", bounds.y + bounds.height, 6, 15);		
-		dia.addPanel(bounds_options, GridBagConstraints.WEST, new Insets(15,15,0,0));
-		
-		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		 gPanel.setLayout(new GridBagLayout());
+		 
+		 GridBagConstraints gbc = new GridBagConstraints();
+			
+		 gbc.anchor = GridBagConstraints.NORTHWEST;
+			
+		 gbc.insets = new Insets(15, 15, 0, 0);
+			
+		 gbc.weightx = 1;
+		 gbc.weighty = 0;
+			
+		 gbc.gridx = 0;
+		 gbc.gridy = 0;	
 
-		dia.addMessage("Plot label settings:");
-		dia.addChoice("Font", fonts, font.getName());
-		dia.addNumericField("Axis size", font.getSize(), 0);
-		FieldOptionPanel axis_label_options = new FieldOptionPanel(3);
-		axis_label_options.addStringField("    Y-axis ", yAxisLabel, 15);
-		axis_label_options.addNumericField(" precision ", yaxis_precision, 0);
-		axis_label_options.addNumericField("size", label_font.getSize(), 0);
-		axis_label_options.addStringField("    X-axis ", xAxisLabel, 15);
-		axis_label_options.addNumericField(" precision ", xaxis_precision, 0);
-		axis_label_options.advanceRows();
-		axis_label_options.addStringField("    Title  ", plotTitle, 15);
-		axis_label_options.addNumericField(" size ", title_font.getSize(), 0);
-		dia.addPanel(axis_label_options, GridBagConstraints.WEST, new Insets(15,15,0,0));
+		 gPanel.add(new JLabel("Bounds:"), gbc);
+		 
+		 double setXFrom = bounds.x;
+		 double setXTo = bounds.x + bounds.width;
+		 double setYFrom = bounds.y;
+		 double setYTo = bounds.y + bounds.height;
+		 
+		 if (fixXBounds) {
+			 setXFrom = xfrom;
+			 setXTo = xto;
+		 }
+		 
+		 if (fixYBounds) {
+			 setYFrom = yfrom;
+			 setYTo = yto;
+		 }
+		 
+		 FieldOptionPanel bounds_options = new FieldOptionPanel(2);
+		 bounds_options.addNumericField("X from ", setXFrom, 6, 12);
+		 bounds_options.addNumericField(" to ", setXTo, 6, 12);
+		 bounds_options.addNumericField("Y from ", setYFrom, 6, 12);
+		 bounds_options.addNumericField(" to ", setYTo, 6, 12);	
+
+		 gbc.gridy += 1;
+		 gPanel.add(bounds_options, gbc);
+			
+		JCheckBox fixXBoundsCheckBox = new JCheckBox("fix X bounds", fixXBounds);
+
+		gbc.gridy += 1;
+		gPanel.add(fixXBoundsCheckBox, gbc);
+		 	
+		JCheckBox fixYBoundsCheckBox = new JCheckBox("fix Y bounds", fixYBounds);
 		
-		dia.addMessage("Legend:");
-		
-		String all_text = new String("");
-		if (legend_text!=null) {
-			for (String line:legend_text) {
-				all_text += line + "\n";
+		gbc.gridy += 1;
+		gPanel.add(fixYBoundsCheckBox, gbc);
+		 
+		 String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		 
+		 gbc.gridy += 1;
+		 gPanel.add(new JLabel("Labels:"), gbc);
+
+		 JLabel fontLabel = new JLabel("Font");
+		 JComboBox fontSelection = new JComboBox(fonts);
+		 fontSelection.setSelectedItem(font.getName());
+		 
+		 JPanel fontPanel = new JPanel();
+		 fontPanel.add(fontLabel);
+		 fontPanel.add(fontSelection);
+		 
+		 gbc.gridy += 1;
+		 gPanel.add(fontPanel, gbc);
+		 
+		 JLabel axisLabel = new JLabel("Axis size");
+		 JTextField axisSize = new JTextField(5);
+		 axisSize.setText("" + font.getSize());
+		 
+		 JPanel axisPanel = new JPanel();
+		 axisPanel.add(axisLabel);
+		 axisPanel.add(axisSize);
+		 
+		 gbc.gridy += 1;
+		 gPanel.add(axisPanel, gbc);
+		 
+		 FieldOptionPanel axis_label_options = new FieldOptionPanel(3);
+		 axis_label_options.addStringField("Y-axis ", yAxisLabel, 10);
+		 axis_label_options.addNumericField("precision ", yaxis_precision, 0);
+		 axis_label_options.addNumericField("size", label_font.getSize(), 0);
+		 axis_label_options.addStringField("X-axis ", xAxisLabel, 10);
+		 axis_label_options.addNumericField("precision ", xaxis_precision, 0);
+		 axis_label_options.advanceRows();
+		 axis_label_options.addStringField("Title  ", plotTitle, 10);
+		 axis_label_options.addNumericField(" size ", title_font.getSize(), 0);
+		 
+		 gbc.gridy += 1;
+		 gPanel.add(axis_label_options, gbc);
+		 
+		 JLabel legendLabel = new JLabel("Legend:");
+		 gbc.gridy += 1;
+		 gPanel.add(legendLabel, gbc);
+		 
+		 String all_text = new String("");
+			if (legend_text!=null) {
+				for (String line:legend_text) {
+					all_text += line + "\n";
+				}
 			}
-		}
-		dia.addTextAreas(all_text,null,6,35);
-		dia.addNumericField("size", legend_font.getSize(), 0);
-		dia.addCheckbox("box", legend_box);
-		dia.addCheckbox("show legend", show_legend);
+			
+		JTextArea legendTextArea = new JTextArea(all_text,6,35);
 		
-		dia.addMessage("Plots:");
+		gbc.gridy += 1;
+		gPanel.add(legendTextArea, gbc);
 		
-		ArrayList<Panel> plotPanels = new ArrayList<Panel>();
+		JLabel legendSizeLabel = new JLabel("size");
+		JTextField legendSize = new JTextField(8);
+		legendSize.setText("" + legend_font.getSize());
+		 
+		JPanel legendSizePanel = new JPanel();
+		legendSizePanel.add(legendSizeLabel);
+		legendSizePanel.add(legendSize);
+		 
+		gbc.gridy += 1;
+		gPanel.add(legendSizePanel, gbc);
+
+		JCheckBox OutlineLegendCheckBox = new JCheckBox("outline", legend_box);
+		
+		gbc.gridy += 1;
+		gPanel.add(OutlineLegendCheckBox, gbc);
+		
+		JCheckBox showLegendCheckBox = new JCheckBox("show legend", show_legend);
+		
+		gbc.gridy += 1;
+		gPanel.add(showLegendCheckBox, gbc);
+		
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("Curves:"), gbc);
+		
+		ArrayList<JPanel> plotPanels = new ArrayList<JPanel>();
 		for (int i=0; i<plotCoordinates.size() ; i++) {
-			Panel plotpref = plotPrefPpanel(i);
-			dia.addPanel(plotpref, GridBagConstraints.WEST, new Insets(0,0,0,0));
+			JPanel plotpref = plotPrefPpanel(i);
+			gbc.gridy += 1;
+			gPanel.add(plotpref, gbc);
 			plotPanels.add(plotpref);
 		}
 		
-		dia.addMessage("Misc:");
-		dia.addNumericField("bar gap size", gap, 2);
-		dia.addCheckbox("track curve", show_tracker);
-		dia.addCheckbox("gridlines",gridlines);
-		dia.addCheckbox("include bg start/stop in points table", sigmaStartStop);
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("Misc:"), gbc);
 		
-		dia.enableYesNoCancel("OK", "Save & Run");
-		dia.showDialog();
+		JCheckBox trackCurveCheckBox = new JCheckBox("track curve", show_tracker);
 		
-		if (!dia.wasCanceled()) {
-			double xfrom = bounds_options.getNextNumber();
-			double xto = bounds_options.getNextNumber();
-			double yfrom = bounds_options.getNextNumber();
-			double yto = bounds_options.getNextNumber();
+		gbc.gridy += 1;
+		gPanel.add(trackCurveCheckBox, gbc);
+		
+		JCheckBox gridlinesCheckBox = new JCheckBox("gridlines", gridlines);
+		
+		gbc.gridy += 1;
+		gPanel.add(gridlinesCheckBox, gbc);
+		
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("Add parameters with 'p' key (comma separated list):"), gbc);
+		
+		String paramList = "";
+		for (int i=0; i<pKeyParameters.size();i++) {
+			paramList += pKeyParameters.get(i) + ", ";
+		}
+		paramList = paramList.substring(0, paramList.length() - 2);
+		
+		JTextField addParametersTextField = new JTextField(30);
+		addParametersTextField.setText(paramList);
+		
+		gbc.gridy += 1;
+		gPanel.add(addParametersTextField, gbc);
+		
+		gbc.insets = new Insets(15, 15, 0, 0);
+		
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("Note: only available in MoleculeArchives"), gbc);
+		
+		gbc.insets = new Insets(0, 15, 0, 0);
+		
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("Defaults: start, end, bg_start, bg_end"), gbc);
+		
+		gbc.gridy += 1;
+		gPanel.add(new JLabel("                                      "), gbc);
+		
+		JScrollPane dialogScrollPane = new JScrollPane(gPanel);		
 			
-			setBounds(xfrom, yfrom, xto - xfrom, yto - yfrom);
-			
-			String font_choice = dia.getNextChoice();
-			int font_size = (int)dia.getNextNumber();
-			
-			yAxisLabel = axis_label_options.getNextString();
-			yaxis_precision = (int)axis_label_options.getNextNumber();
-			int label_font_size = (int)axis_label_options.getNextNumber();
-			xAxisLabel = axis_label_options.getNextString();
-			xaxis_precision = (int)axis_label_options.getNextNumber();
-			plotTitle = axis_label_options.getNextString();
-			int title_font_size = (int)axis_label_options.getNextNumber();
-			
-			int legend_font_size = (int)dia.getNextNumber();
-			String text_Legend_Area = dia.getNextText();
-			
-			for (int w = plotPanels.size() - 1; w >= 0; w--) {
-				Panel pan = plotPanels.get(w);
-				plotColors.set(w, getColorFromName(((Choice)pan.getComponent(1)).getSelectedItem()));
-				plotLineWidths.set(w, Float.parseFloat(((TextField)pan.getComponent(2)).getText()));
-				plotStyles.set(w, getStyleFromName(((Choice)pan.getComponent(3)).getSelectedItem()));
-				if(((Checkbox)pan.getComponent(4)).getState())
-					deletePlot(w);
-			}
-			
-			if (!text_Legend_Area.equals("")) {
-				if (legend_text == null) {
-					legendBounds.x = leftMargin + 20;
-					legendBounds.y = topMargin + 20;
+	     JOptionPane pane = new JOptionPane(dialogScrollPane, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+	     JDialog dialog = pane.createDialog(this, "Plot Properties");
+	     dialog.setResizable(true);
+	     dialog.setVisible(true);
+	     
+	     if (pane.getValue() != null) {
+	    	 if (pane.getValue().equals(JOptionPane.OK_OPTION)) {
+		    	 xfrom = bounds_options.getNextNumber();
+				 xto = bounds_options.getNextNumber();
+				 yfrom = bounds_options.getNextNumber();
+				 yto = bounds_options.getNextNumber();
+				 
+				 if (fixYBoundsCheckBox.isSelected()) {
+				 	fixYBounds = true;
+				 } else {
+					fixYBounds = false;
+				 }
+				 
+				 if (fixXBoundsCheckBox.isSelected()) {
+				 	fixXBounds = true;
+				 } else { 
+					fixXBounds = false;
+				 }
+				 
+				 resetOriginalBounds();
+				 
+				 setBounds(xfrom, yfrom, xto - xfrom, yto - yfrom);
+				 
+				 String font_choice = (String)fontSelection.getSelectedItem();
+				 int font_size; 
+				 try {
+					 font_size = new Integer(axisSize.getText());
+				 } catch (NumberFormatException e) {
+					 font_size = 14;
+			     }
+				
+				 yAxisLabel = axis_label_options.getNextString();
+				 yaxis_precision = (int)axis_label_options.getNextNumber();
+				 int label_font_size = (int)axis_label_options.getNextNumber();
+				 xAxisLabel = axis_label_options.getNextString();
+				 xaxis_precision = (int)axis_label_options.getNextNumber();
+				 plotTitle = axis_label_options.getNextString();
+				 int title_font_size = (int)axis_label_options.getNextNumber();
+				 
+				 String text_Legend_Area = legendTextArea.getText();
+				 
+				 int legend_font_size;
+				 try {
+					 legend_font_size = new Integer(legendSize.getText());
+				 } catch (NumberFormatException e) {
+					 legend_font_size = 14;
+			     }
+				 
+				 for (int w = plotPanels.size() - 1; w >= 0; w--) {
+					JPanel pan = plotPanels.get(w);
+					plotColors.set(w, getColorFromName((String)((JComboBox)pan.getComponent(1)).getSelectedItem()));
+					plotLineWidths.set(w, Float.parseFloat(((JTextField)pan.getComponent(2)).getText()));
 				}
-				legend_text = new ArrayList<String>();
-				String[] legText = text_Legend_Area.split("\n");
-				for (String line:legText) 
-					legend_text.add(line);
-			} else {
-				legend_text=null;
-			}
-			legend_box = dia.getNextBoolean();
-			show_legend = dia.getNextBoolean();
-			
-			gap = dia.getNextNumber();
-			show_tracker = dia.getNextBoolean();
-			gridlines = dia.getNextBoolean();
-			sigmaStartStop = dia.getNextBoolean();
-			
-			font = new Font(font_choice, Font.PLAIN, font_size);
-			label_font = new Font(font_choice, Font.PLAIN, label_font_size);
-			title_font = new Font(font_choice, Font.PLAIN, title_font_size);
-			legend_font = new Font(font_choice, Font.PLAIN, legend_font_size);
-			if (!dia.wasOKed()) {
-				//Means save setting was selected...
-				Prefs.set("plot.sigma_start_stop", sigmaStartStop);
+				 
+				if (!text_Legend_Area.equals("")) {
+					if (legend_text == null) {
+						legendBounds.x = leftMargin + 20;
+						legendBounds.y = topMargin + 20;
+					}
+					legend_text = new ArrayList<String>();
+					String[] legText = text_Legend_Area.split("\n");
+					for (String line:legText) 
+						legend_text.add(line);
+				} else {
+					legend_text = null;
+				}
+				 
+				if (OutlineLegendCheckBox.isSelected())
+					legend_box = true;
+				else
+					legend_box = false;
+				
+				if (OutlineLegendCheckBox.isSelected())
+					legend_box = true;
+				else
+					legend_box = false;
+				
+				if (showLegendCheckBox.isSelected())
+					show_legend = true;
+				else 
+					show_legend = false;
+				
+				if (trackCurveCheckBox.isSelected())
+					show_tracker = true;
+				else
+					show_tracker = false;
+				
+				if (trackCurveCheckBox.isSelected())
+					show_tracker = true;
+				else
+					show_tracker = false;
+				
+				if (gridlinesCheckBox.isSelected())
+					gridlines = true;
+				else 
+					gridlines = false;
+				
+				font = new Font(font_choice, Font.PLAIN, font_size);
+				label_font = new Font(font_choice, Font.PLAIN, label_font_size);
+				title_font = new Font(font_choice, Font.PLAIN, title_font_size);
+				legend_font = new Font(font_choice, Font.PLAIN, legend_font_size);
+				
+				pKeyParameters.clear();
+				
+				String paramListOUT = addParametersTextField.getText();
+				String[] parsedList = paramListOUT.split(",");
+				for (int i=0; i<parsedList.length;i++) {
+					String parameter = parsedList[i].trim();
+					if (!parameter.equals(""))
+						pKeyParameters.add(parameter);			
+				}
+				
+				if (pKeyParameters.size() == 0) {
+					pKeyParameters = new ArrayList<String>();
+					pKeyParameters.add("bg_start");
+					pKeyParameters.add("bg_end");
+					pKeyParameters.add("start");
+					pKeyParameters.add("end");
+				}
+				
+				pointsPosition = 0;
+				
+				//Save Settings
+				Prefs.set("plot.xfrom", xfrom);
+				Prefs.set("plot.xto", xto);
+				Prefs.set("plot.yfrom", yfrom);
+				Prefs.set("plot.yto", yto);
 				Prefs.set("plot.gridlines", gridlines);
 				Prefs.set("plot.font_type", font_choice);
 				Prefs.set("plot.font_size", font_size);
@@ -1013,14 +1252,17 @@ public class Plot extends JComponent implements ActionListener {
 				Prefs.set("plot.yaxis_precision", yaxis_precision);
 				Prefs.set("plot.xaxis_precision", xaxis_precision);
 				Prefs.set("plot.title_font_size", title_font_size);
-				Prefs.set("plot.bar_gap_size",gap);
 				Prefs.set("plot.show_legend", show_legend);
 				Prefs.set("plot.legend_font_size", legend_font_size);
 				Prefs.set("plot.legend_box", legend_box);
 				Prefs.set("plot.show_tracker", show_tracker);
-			}
-			repaint();
-		}
+
+				repaint();
+			
+		     } else if (pane.getValue().equals(JOptionPane.CANCEL_OPTION)) {
+		    	  //Do nothing...
+		     }
+	     }
 	}
 	
 	private String getTypeName(int index) {
@@ -1059,7 +1301,7 @@ public class Plot extends JComponent implements ActionListener {
 	
 	private Color getColorFromName(String color_name) {
 		try {
-			if (color_name.equals("dark green"))
+			if (color_name.equals("green"))
 				return darkGreen;
 			Field field = Class.forName("java.awt.Color").getField(color_name);
 			return (Color)field.get(null);
@@ -1077,30 +1319,16 @@ public class Plot extends JComponent implements ActionListener {
 		return "black";
 	}
 	
-	private Panel plotPrefPpanel(int index) {
-		Panel plotpan = new Panel();
-		plotpan.add(new Label(getTypeName(index) + plotNames.get(index)));
-		Choice color_choice = new Choice();
-		for (int w = 0; w < colors.length; w++) {
-			color_choice.add(colors[w]);
-		}
-		color_choice.select(getNameFromColor(plotColors.get(index)));
+	private JPanel plotPrefPpanel(int index) {
+		JPanel plotpan = new JPanel();
+		plotpan.add(new JLabel(getTypeName(index) + plotNames.get(index)));
+		JComboBox color_choice = new JComboBox(colors);
+		color_choice.setSelectedItem(getNameFromColor(plotColors.get(index)));
 		plotpan.add(color_choice);
-		TextField LineWidth = new TextField();
+		JTextField LineWidth = new JTextField();
 		LineWidth.setColumns(4);
 		LineWidth.setText(plotLineWidths.get(index).toString());
 		plotpan.add(LineWidth);
-		Choice patt = new Choice();
-		if (plotTypes.get(index).equals(Type.BAR)) {
-			patt.add("solid");
-			patt.add("stripes");
-		} else {
-			patt.add("solid");
-		}
-		patt.select(getNameFromStyle(plotStyles.get(index)));
-		plotpan.add(patt);
-		Checkbox check = new Checkbox("delete", false);
-		plotpan.add(check);
 		return plotpan;
 	}
 	

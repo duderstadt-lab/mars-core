@@ -21,8 +21,6 @@ public class PlotData {
 	public Map<Integer, GroupIndices> GroupIndex, SegmentGroupIndex;
 	public ArrayList<Integer> groupNumbers;
 	
-	//TextWindow log_window = new TextWindow("PlotData Log", "", 400, 600);
-	
 	//Add color setting?
 	public Color color = Color.black;
 	public Color segments_color = Color.red;
@@ -63,28 +61,30 @@ public class PlotData {
 	}
 	
 	public void drawCurve(Plot plot, int group) {
+		String curveName = tableTitle + " - " + yColumn + " vs " + xColumn; 
+		
 		if (hasGroups) {
 			switch (type) {
 			case 0:	// line plot
-				plot.addLinePlot(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, tableTitle);
+				plot.addLinePlot(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, curveName);
 				break;
 			case 1:	// scatter plot
-				plot.addScatterPlot(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, tableTitle);
+				plot.addScatterPlot(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, curveName);
 				break;
 			case 2: //Bar graph
-				plot.addBarGraph(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, tableTitle);
+				plot.addBarGraph(xs, ys, GroupIndex.get(groupNumbers.get(group)).getStart(), GroupIndex.get(groupNumbers.get(group)).getEnd() + 1, getColor(), 1.0f, curveName);
 				break;
 			}
 		} else {
 			switch (type) {
 			case 0:	// line plot
-				plot.addLinePlot(xs, ys, 0, xs.length, getColor(), 1.0f, tableTitle);
+				plot.addLinePlot(xs, ys, 0, xs.length, getColor(), 1.0f, curveName);
 				break;
 			case 1:	// scatter plot
-				plot.addScatterPlot(xs, ys, 0, xs.length, getColor(), 1.0f, tableTitle);
+				plot.addScatterPlot(xs, ys, 0, xs.length, getColor(), 1.0f, curveName);
 				break;
 			case 2: //Bar graph
-				plot.addBarGraph(xs, ys, 0, xs.length, getColor(), 1.0f, tableTitle);
+				plot.addBarGraph(xs, ys, 0, xs.length, getColor(), 1.0f, curveName);
 				break;
 			}
 		}

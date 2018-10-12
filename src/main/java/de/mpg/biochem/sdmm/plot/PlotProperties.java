@@ -13,6 +13,15 @@ public class PlotProperties {
 		private Color color = Color.black;
 		private Color segments_color = Color.red;
 		
+		public PlotProperties(String xColumn, String yColumn, Color color, int type, Color segments_color) {
+			this.CurveName = yColumn + " vs " + xColumn;
+			this.xColumn = xColumn;
+			this.yColumn = yColumn;
+			this.color = color;
+			this.type = type;
+			this.segments_color = segments_color;
+		}
+		
 		public PlotProperties(String CurveName, String xColumn, String yColumn, Color color, int type, Color segments_color) {
 			this.CurveName = CurveName;
 			this.xColumn = xColumn;

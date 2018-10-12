@@ -107,10 +107,12 @@ public class MoleculeArchiveWindow {
 	private JMenuItem multiPlotMenuItem = new JMenuItem("Multiple Plots");
 	
 	private JMenuItem deleteMenuItem = new JMenuItem("Delete Molecules");
+	private JMenuItem deleteTagsMenuItem = new JMenuItem("Delete Tags");
+	private JMenuItem deleteParametersMenuItem = new JMenuItem("Delete Parameters");
 	//private JMenuItem generateNewMenuItem = new JMenuItem("Generate new archive");
 	//private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
 	private JMenuItem updateMenuItem = new JMenuItem("Update");
-	private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
+	//private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
 	
 	//static so that window locations are offset...
 	static int pos_x = 100;
@@ -230,7 +232,7 @@ public class MoleculeArchiveWindow {
 		        	
 		        	dialog.update(dialog);
 		        	ArrayList<PlotProperties> props = new ArrayList<PlotProperties>();
-		        	PlotProperties curve1 = new PlotProperties("Curve", dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor());
+		        	PlotProperties curve1 = new PlotProperties(dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor());
 		        	props.add(curve1);
 		        	 
 		        	moleculePanel.addCurvePlot(props);
@@ -260,8 +262,7 @@ public class MoleculeArchiveWindow {
 		        	 //Need to add None options for segments curve and then use inputs below and above
 		        	 
 		        	 for (int i=0;i<curveNum;i++) {
-		        		 String yName = dialog.getNextYColumnName();
-		        		 props.add(new PlotProperties(yName + " " + dialog.getXColumnName(), dialog.getXColumnName(), yName, dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor()));
+		        		 props.add(new PlotProperties(dialog.getXColumnName(), dialog.getNextYColumnName(), dialog.getNextCurveColor(), dialog.getCurveType(), dialog.getNextSegmentCurveColor()));
 		        	 }
 		        	 moleculePanel.addCurvePlot(props);
 	        	 }
@@ -339,17 +340,86 @@ public class MoleculeArchiveWindow {
 	          }
 	       });
 		
+		toolsMenu.add(deleteTagsMenuItem);
+		deleteTagsMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+			        	GenericDialog dialog = new GenericDialog("Delete Tags");
+			     		dialog.addStringField("Tags (comma separated list)", "", 30);
+			     		dialog.addCheckbox("remove all tags", false);
+			     		dialog.showDialog();
+			     		
+			     		if (dialog.wasCanceled())
+			     			return;
+			     		
+			     		String tagsToDelete = dialog.getNextString();
+			     		
+			     		boolean removeAllTags = dialog.getNextBoolean();
+			     		
+			     		String[] tagList = tagsToDelete.split(",");
+			            for (int i=0; i<tagList.length; i++) {
+			            	tagList[i] = tagList[i].trim();
+			            }
+			     		 
+			            archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+			            		Molecule molecule = archive.get(UID);
+			            	 	if (removeAllTags) {
+			            	 		molecule.removeAllTags();
+			            	 	} else {
+			     		        	for (String tag : tagList) {
+			     		        		molecule.removeTag(tag);
+			     		        	}
+			            	 	}
+			            	 	archive.set(molecule);
+			     			});
+			             
+			     		 moleculePanel.updateAll();
+		        	 }
+	          }
+	       });
+		
+		toolsMenu.add(deleteParametersMenuItem);
+		deleteParametersMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+			        	GenericDialog dialog = new GenericDialog("Delete Parameters");
+			     		dialog.addStringField("Parameters (comma separated list)", "", 30);
+			     		dialog.addCheckbox("remove all parameters", false);
+			     		dialog.showDialog();
+			     		
+			     		if (dialog.wasCanceled())
+			     			return;
+			     		
+			     		String parametersToDelete = dialog.getNextString();
+			     		
+			     		boolean removeAllParameters = dialog.getNextBoolean();
+			     		
+			     		String[] parameterList = parametersToDelete.split(",");
+			            for (int i=0; i<parameterList.length; i++) {
+			            	parameterList[i] = parameterList[i].trim();
+			            }
+			     		 
+			            archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+			            		Molecule molecule = archive.get(UID);
+			            	 	if (removeAllParameters) {
+			            	 		molecule.removeAllParameters();
+			            	 	} else {
+			     		        	for (String parameter : parameterList) {
+			     		        		molecule.removeParameter(parameter);
+			     		        	}
+			            	 	}
+			            	 	archive.set(molecule);
+			     			});
+			             
+			     		 moleculePanel.updateAll();
+		        	 }
+	          }
+	       });
+		
 		toolsMenu.add(updateMenuItem);
 		updateMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 updateAll();
-	          }
-	       });
-		
-		toolsMenu.add(unlockMenuItem);
-		deleteMenuItem.addActionListener(new ActionListener() {
-	         public void actionPerformed(ActionEvent e) {
-	        	 unlockArchive();
 	          }
 	       });
 		

@@ -346,11 +346,19 @@ public class Molecule {
 		Tags.remove(tag);
 	}
 	
+	public void removeAllTags() {
+		Tags.clear();
+	}
+	
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
 		if (parent != null) {
 			parent.getArchiveProperties().addParameter(parameter);
 		}
+	}
+	
+	public void removeAllParameters() {
+		Parameters.clear();
 	}
 	
 	public void removeParameter(String parameter) {
