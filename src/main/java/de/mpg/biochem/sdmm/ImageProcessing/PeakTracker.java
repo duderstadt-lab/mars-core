@@ -74,13 +74,13 @@ public class PeakTracker {
 		KDTreeStack = new ConcurrentHashMap<>();
 		
 		//Size required for two possible links between each frame for each peak.
-		int initialCapacity = PeakStack.size();
-		if (PeakStack.containsKey(1)) {
-			initialCapacity = PeakStack.size() * PeakStack.get(1).size() * (int)maxDifference[5] * 2;
-		}
+		//int initialCapacity = PeakStack.size();
+		//if (PeakStack.containsKey(1)) {
+		//	initialCapacity = PeakStack.size();// * PeakStack.get(1).size() * (int)maxDifference[5] * 2;
+		//}
+		//possibleLinks = new ConcurrentHashMap<>(initialCapacity);
 		
-		//possibleLinks = ConcurrentHashMap.newKeySet(initialCapacity);
-		possibleLinks = new ConcurrentHashMap<>(initialCapacity);
+		possibleLinks = new ConcurrentHashMap<>();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		

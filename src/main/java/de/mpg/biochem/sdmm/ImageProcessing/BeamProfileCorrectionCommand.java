@@ -169,7 +169,9 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 		
 		if (saveToDisk) {
 			ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice), newImage);
-			img.setProperty("Info", (String)image.getStack().getSliceLabel(slice));
+			//img.setProperty("Info", (String)image.getStack().getSliceLabel(slice));
+			String infoString = (String)image.getStack().getSliceLabel(slice);
+			img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
 			FileSaver saver = new FileSaver(img);
 			saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack().getShortSliceLabel(slice) + ".tif");
 		}

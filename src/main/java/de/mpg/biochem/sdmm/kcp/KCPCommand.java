@@ -65,6 +65,24 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     @Parameter(label="Global sigma")
 	private double global_sigma = 1;
     
+    @Parameter(label="Calculate from backgorund")
+    private boolean calcBackgroundSigma = true;
+    
+    @Parameter(label="Background start")
+	private String bg_start_name = "bg_start";
+    
+    @Parameter(label="Background end")
+	private String bg_end_name = "bg_end";
+    
+    @Parameter(label="region")
+    private boolean region = true;
+    
+    @Parameter(label="Region start")
+	private String start_name = "start";
+    
+    @Parameter(label="Region end")
+	private String end_name = "end";
+    
     @Parameter(label="Fit steps (zero slope)")
 	private boolean step_analysis = false;
     
@@ -174,16 +192,20 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		double[] yData = datatable.getColumnAsDoubles(Ycolumn);
 		
 		for (int j=0;j<datatable.getRowCount();j++) {
-			if (molecule.hasParameter("start") && xData[j] <= molecule.getParameter("start")) {
-				offset = j;
-			} else if (molecule.hasParameter("end") && xData[j] <= molecule.getParameter("end")) {
-				length = j - offset;
+			if (region) {
+				if (molecule.hasParameter(start_name) && xData[j] <= molecule.getParameter(start_name)) {
+					offset = j;
+				} else if (molecule.hasParameter(end_name) && xData[j] <= molecule.getParameter(end_name)) {
+					length = j - offset;
+				}
 			}
-			
-			if (molecule.hasParameter("bg_start") && xData[j] <= molecule.getParameter("bg_start")) {
-				SigXstart = j;
-			} else if (molecule.hasParameter("bg_end") && xData[j] <= molecule.getParameter("bg_end")) {
-				SigXend = j;
+				
+			if (calcBackgroundSigma) {
+				if (molecule.hasParameter(bg_start_name) && xData[j] <= molecule.getParameter(bg_start_name)) {
+					SigXstart = j;
+				} else if (molecule.hasParameter(bg_end_name) && xData[j] <= molecule.getParameter(bg_end_name)) {
+					SigXend = j;
+				}
 			}
 		}
 		
@@ -203,7 +225,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		double sigma = global_sigma;
 		if (molecule.hasParameter(Ycolumn + "_sigma")) {
 			sigma = molecule.getParameter(Ycolumn + "_sigma");
-		} else if (molecule.hasParameter("bg_start") || molecule.hasParameter("bg_end")) {
+		} else if (molecule.hasParameter(bg_start_name) || molecule.hasParameter(bg_end_name)) {
 			sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
 		}
 		
