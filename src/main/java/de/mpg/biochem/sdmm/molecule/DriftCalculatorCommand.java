@@ -122,6 +122,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				
 				if (num_full_traj == 0) {
 				    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+				    logService.info("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
 				    //archive.addLogMessage(builder.endBlock(false));
 				    //archive.addLogMessage("  ");
 					//uiService.showDialog("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
