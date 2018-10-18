@@ -174,6 +174,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		@Parameter(label="Vary Sigma")
 		private boolean PeakFitter_varySigma = true;
 		
+		//Check the maximal allowed error for the fitting process.
+		@Parameter(label="Filter by Max Error")
+		private boolean PeakFitter_maxErrorFilter = true;
+		
 		//Maximum allow error for the fitting process
 		@Parameter(label="Max Error Baseline")
 		private double PeakFitter_maxErrorBaseline = 50;
@@ -466,61 +470,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			return peaks;
 		}
-		/*
-		 * 
-		 * 		    
-		    
-		    int slices = image.getImageStackSize();
-		    
-		    logService.info("before metadata " + metaDataStack.size());
-		    if (metaDataStack.size() < slices) {
-		    	//Somehow the metadata parsing did not work
-		    	//we have to do it again...
-		    	ImageStack stack = image.getImageStack();
-		    	for (int i=1;i<=slices;i++) {
-					String label = stack.getSliceLabel(i);
-					metaDataStack.put(i, label);
-		    	}
-		    }
-		    logService.info("metadata " + metaDataStack.size());
-		    
-		    
-		 * 		  //Let's get a list of the filenames in the VirtualStack...
-			//int slices = image.getImageStackSize();
-			//filenames = new String[slices];
-			//for (int i=0;i<slices;i++) {
-			//	filenames[i] = ((VirtualStack)image.getImageStack()).getFileName(i+1);
-			//}
-		 * 
-		public ImageProcessor getProcessor(int slice, String filename) {
-			String path = image.getOriginalFileInfo().directory;
-			if (path==null) {
-	            ImageProcessor ip = new ByteProcessor(image.getWidth(), image.getHeight());
-	            label(ip, ""+slice, Color.white);
-	            return ip;
-	        }
-	        Opener opener = new Opener();
-	        opener.setSilentMode(true);
-	        ImagePlus imp = opener.openImage(path, filename);
-	        ImageProcessor ip = null;
-	        if (imp!=null) {
-	            String info = (String)imp.getProperty("Info");
-	            metaDataStack.put(slice, info);
-	            ip = imp.getProcessor();
-	        } 
-	        return ip;
-		}
-		
-		private void label(ImageProcessor ip, String msg, Color color) {
-	        int size = image.getHeight()/20;
-	        if (size<9) size=9;
-	        Font font = new Font("Helvetica", Font.PLAIN, size);
-	        ip.setFont(font);
-	        ip.setAntialiasedText(true);
-	        ip.setColor(color);
-	        ip.drawString(msg, size, size*2);
-	    }
-		*/
+
 		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
 			ArrayList<Peak> peaks;
 			
@@ -573,6 +523,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 				if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 					peak.setNotValid();
 				}
+				
+				//Force all peaks to be valid...
+				if (!PeakFitter_maxErrorFilter)
+					peak.setValid();
 				
 				if (peak.isValid()) {
 					peak.setValues(p);
@@ -655,6 +609,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
 			builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
 			builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
+			builder.addParameter("Filter by Max Error", String.valueOf(this.PeakFitter_maxErrorFilter));
 			builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
 			builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
 			builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
@@ -830,6 +785,14 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		
 		public boolean getVarySigma() {
 			return PeakFitter_varySigma;
+		}
+		
+		public void setMaxErrorFilter(boolean PeakFitter_maxErrorFilter) {
+			this.PeakFitter_maxErrorFilter = PeakFitter_maxErrorFilter;
+		}
+		
+		public boolean getMaxErrorFilter() {
+			return PeakFitter_maxErrorFilter;
 		}
 		
 		public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {

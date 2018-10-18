@@ -8,7 +8,7 @@ import ij.process.ImageProcessor;
 import ij.gui.PointRoi;
 
 import org.scijava.module.MutableModuleItem;
-
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -26,6 +26,7 @@ import org.scijava.util.RealRect;
 import de.mpg.biochem.sdmm.molecule.ImageMetaData;
 import de.mpg.biochem.sdmm.table.ResultsTableService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import de.mpg.biochem.sdmm.util.SDMMMath;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
@@ -109,10 +110,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private int y0;
 	
 	@Parameter(label="ROI width", persist=false)
-	private int w;
+	private int width;
 	
 	@Parameter(label="ROI height", persist=false)
-	private int h;
+	private int height;
 	
 	//PEAK FINDER SETTINGS
 	@Parameter(label="Use Discoidal Averaging Filter")
@@ -136,7 +137,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Generate peak count table")
 	private boolean generatePeakCountTable;
 	
-	@Parameter(label="Generate peaks table")
+	@Parameter(label="Generate peak table")
 	private boolean generatePeakTable;
 	
 	@Parameter(label="Add to RoiManger")
@@ -180,7 +181,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Vary Sigma")
 	private boolean PeakFitter_varySigma = true;
 	
-	//Maximum allow error for the fitting process
+	//Check the maximal allowed error for the fitting process.
+	@Parameter(label="Filter by Max Error")
+	private boolean PeakFitter_maxErrorFilter = true;
+	
 	@Parameter(label="Max Error Baseline")
 	private double PeakFitter_maxErrorBaseline = 5000;
 	
@@ -247,16 +251,27 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		final MutableModuleItem<Integer> imgY0 = getInfo().getMutableInput("y0", Integer.class);
 		imgY0.setValue(this, rect.y);
 		
-		final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput("w", Integer.class);
+		final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput("width", Integer.class);
 		imgWidth.setValue(this, rect.width);
 		
-		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("h", Integer.class);
+		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 		imgHeight.setValue(this, rect.height);
 
 	}
 	@Override
 	public void run() {				
 		image.deleteRoi();
+		
+		//Build log
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Peak Finder");
+		
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		
+		//Output first part of log message...
+		logService.info(log);
 		
 		//Used to store peak list for single frame operations
 		ArrayList<Peak> peaks = new ArrayList<Peak>();
@@ -280,6 +295,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 
 		}
 		
+		double starttime = System.currentTimeMillis();
+		logService.info("Finding Peaks...");
 		if (allSlices) {
 			PeakStack = new ConcurrentHashMap<>();
 			
@@ -316,6 +333,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		        
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
+		    	e.printStackTrace();
+				logService.info(builder.endBlock(false));
 		    } finally {
 		        forkJoinPool.shutdown();
 		    }
@@ -323,11 +342,15 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		} else {
 			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			peaks = findPeaks(selectedImage);
-			if (fitPeaks) 
-				fitPeaks(selectedImage.getProcessor(), peaks);
+			if (fitPeaks) {
+				peaks = fitPeaks(selectedImage.getProcessor(), peaks);
+				peaks = removeNearestNeighbors(peaks);
+			}
 		}
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
 		if (generatePeakCountTable) {
+			logService.info("Generating peak count table..");
 			peakCount = new SDMMResultsTable("Peak Count - " + image.getTitle());
 			DoubleColumn sliceColumn = new DoubleColumn("slice");
 			DoubleColumn countColumn = new DoubleColumn("peaks");
@@ -349,6 +372,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 		
 		if (generatePeakTable) {
+			logService.info("Generating peak table..");
 			//build a table with all peaks
 			peakTable = new SDMMResultsTable("Peaks - " + image.getTitle());
 			
@@ -362,22 +386,30 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				columns.add(new DoubleColumn("y"));
 			}
 			
-			if (allSlices)
-				columns.add(new DoubleColumn("slice"));
+			columns.add(new DoubleColumn("slice"));
 			
-			for (int i=1;i<=PeakStack.size() ; i++) {
-				ArrayList<Peak> slicePeaks = PeakStack.get(i);
-				for (int j=0;j<slicePeaks.size();j++) {
-					if (PeakFitter_writeEverything)
-						slicePeaks.get(j).addToColumnsVerbose(columns);
-					else 
-						slicePeaks.get(j).addToColumnsXY(columns);
-					
-					if (allSlices)
+			if (allSlices) {
+				for (int i=1;i<=PeakStack.size() ; i++) {
+					ArrayList<Peak> slicePeaks = PeakStack.get(i);
+					for (int j=0;j<slicePeaks.size();j++) {
+						if (PeakFitter_writeEverything)
+							slicePeaks.get(j).addToColumnsVerbose(columns);
+						else 
+							slicePeaks.get(j).addToColumnsXY(columns);
+						
 						columns.get(columns.size() - 1).add((double)i);
+					}
+				}
+			} else {
+				for (int j=0;j<peaks.size();j++) {
+					if (PeakFitter_writeEverything)
+						peaks.get(j).addToColumnsVerbose(columns);
+					else 
+						peaks.get(j).addToColumnsXY(columns);
+					
+					columns.get(columns.size() - 1).add((double)image.getCurrentSlice());
 				}
 			}
-
 			
 			for(DoubleColumn column : columns)
 				peakTable.add(column);	
@@ -387,6 +419,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 		
 		if (addToRoiManger) {
+			logService.info("Adding Peaks to the RoiManger. This might take a while...");
 			if (allSlices) {
 				//loop through map and slices and add to Manager
 				//This is slow probably because of the continuous GUI updating, but I am not sure a solution
@@ -401,12 +434,15 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			statusService.showStatus("Done adding ROIs to Manger");
 		}
 		image.setRoi(startingRoi);
+		
+		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+		logService.info(builder.endBlock(true));
 	}
 	
 	private ArrayList<Peak> findPeaksInSlice(int slice) {
 		ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, image.getImageStack().getProcessor(slice)));
 		if (fitPeaks) {
-			fitPeaks(image.getImageStack().getProcessor(slice), peaks);
+			peaks = fitPeaks(image.getImageStack().getProcessor(slice), peaks);
 			peaks = removeNearestNeighbors(peaks);
 		}
 		return peaks;
@@ -447,7 +483,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	    }
 		
 		if (useROI) {
-	    	peaks = finder.findPeaks(imp, new Roi(x0, y0, w, h));
+	    	peaks = finder.findPeaks(imp, new Roi(x0, y0, width, height));
 		} else {
 			peaks = finder.findPeaks(imp);
 		}
@@ -495,6 +531,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 				peak.setNotValid();
 			}
+			
+			//Force all peaks to be valid...
+			if (!PeakFitter_maxErrorFilter)
+				peak.setValid();
 			
 			if (peak.isValid()) {
 				peak.setValues(p);
@@ -584,5 +624,296 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	protected void previewChanged() {
 		// When preview box is unchecked, reset the Roi back to how it was before...
 		if (!preview) cancel();
+	}
+	
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("Image Title", image.getTitle());
+		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		builder.addParameter("useROI", String.valueOf(useROI));
+		builder.addParameter("ROI x0", String.valueOf(x0));
+		builder.addParameter("ROI y0", String.valueOf(y0));
+		builder.addParameter("ROI width", String.valueOf(width));
+		builder.addParameter("ROI height", String.valueOf(height));
+		builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
+		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
+		builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
+		builder.addParameter("Threshold", String.valueOf(threshold));
+		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+		builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
+		builder.addParameter("Generate peak count table", String.valueOf(generatePeakCountTable));
+		builder.addParameter("Generate peak table", String.valueOf(generatePeakTable));
+		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
+		builder.addParameter("Process all slices", String.valueOf(allSlices));
+		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
+		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
+		builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
+		builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));
+		builder.addParameter("Initial Sigma", String.valueOf(PeakFitter_initialSigma));
+		builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
+		builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
+		builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
+		builder.addParameter("Filter by Max Error", String.valueOf(this.PeakFitter_maxErrorFilter));
+		builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
+		builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
+		builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
+		builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
+		builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
+		builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
+	}
+	
+	public SDMMResultsTable getPeakCountTable() {
+		return peakCount;
+	}
+	
+	public SDMMResultsTable getPeakTable() {
+		return peakTable;
+	}
+	
+	public void setImage(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImage() {
+		return image;
+	}
+	
+	public void setUseROI(boolean useROI) {
+		this.useROI = useROI;
+	}
+	
+	public boolean getUseROI() {
+		return useROI;
+	}
+	
+	public void setX0(int x0) {
+		this.x0 = x0;
+	}
+	
+	public int getX0() {
+		return x0;
+	}
+	
+	public void setY0(int y0) {
+		this.y0 = y0;
+	}
+	
+	public int getY0() {
+		return y0;
+	}
+	
+	public void setWidth(int width) {
+		this.width = width;
+	}
+	
+	public int getWidth() {
+		return width;
+	}
+	
+	public void setHeight(int height) {
+		this.height = height;
+	}
+	
+	public int getHeight() {
+		return height;
+	}
+	
+	public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
+		this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+	}
+	
+	public boolean getUseDiscoidalAveragingFilter() {
+		return useDiscoidalAveragingFilter;
+	}
+	
+	public void setInnerRadius(int DS_innerRadius) {
+		this.DS_innerRadius = DS_innerRadius;
+	}
+	
+	public int getInnerRadius() {
+		return DS_innerRadius;
+	}
+	
+	public void setOuterRadius(int DS_outerRadius) {
+		this.DS_outerRadius = DS_outerRadius;
+	}
+	
+	public int getOuterRadius() {
+		return DS_outerRadius;
+	}
+	
+	public void setThreshold(int threshold) {
+		this.threshold = threshold;
+	}
+	
+	public int getThreshold() {
+		return threshold;
+	}
+	
+	public void setMinimumDistance(int minimumDistance) {
+		this.minimumDistance = minimumDistance;
+	}
+	
+	public int getMinimumDistance() {
+		return minimumDistance;
+	}
+	
+	public void setFindNegativePeaks(boolean findNegativePeaks) {
+		this.findNegativePeaks = findNegativePeaks;
+	}
+	
+	public boolean getFindNegativePeaks() {
+		return findNegativePeaks;
+	}
+	
+	public void setGeneratePeakCountTable(boolean generatePeakCountTable) {
+		this.generatePeakCountTable = generatePeakCountTable;
+	}
+	
+	public boolean getGeneratePeakCountTable() {
+		return generatePeakCountTable;
+	}
+	
+	public void setGeneratePeakTable(boolean generatePeakTable) {
+		this.generatePeakTable = generatePeakTable;
+	}
+	
+	public boolean getGeneratePeakTable() {
+		return generatePeakTable;
+	}
+	
+	public void setAddToRoiManager(boolean addToRoiManger) {
+		this.addToRoiManger = addToRoiManger;
+	}
+	
+	public boolean getAddToRoiManager() {
+		return addToRoiManger;
+	}
+
+	public void setProcessAllSlices(boolean allSlices) {
+		this.allSlices = allSlices;
+	}
+	
+	public boolean getProcessAllSlices() {
+		return allSlices;
+	}
+	
+	public void setFitPeaks(boolean fitPeaks) {
+		this.fitPeaks = fitPeaks;
+	}
+	
+	public boolean getFitPeaks() {
+		return fitPeaks;
+	}
+	
+	public void setFitRadius(int fitRadius) {
+		this.fitRadius = fitRadius;
+	}
+	
+	public int getFitRadius() {
+		return fitRadius;
+	}
+	
+	public void setInitialBaseline(double PeakFitter_initialBaseline) {
+		this.PeakFitter_initialBaseline = PeakFitter_initialBaseline;
+	}
+	
+	public double getInitialBaseline() {
+		return PeakFitter_initialBaseline;
+	}
+	
+	public void setInitialHeight(double PeakFitter_initialHeight) {
+		this.PeakFitter_initialHeight = PeakFitter_initialHeight;
+	}
+	
+	public double getInitialHeight() {
+		return PeakFitter_initialHeight;
+	}
+	
+	public void setInitialSigma(double PeakFitter_initialSigma) {
+		this.PeakFitter_initialSigma = PeakFitter_initialSigma;
+	}
+	
+	public double getInitialSigma() {
+		return PeakFitter_initialSigma;
+	}
+	
+	public void setVaryBaseline(boolean PeakFitter_varyBaseline) {
+		this.PeakFitter_varyBaseline = PeakFitter_varyBaseline;
+	}
+	
+	public boolean getVaryBaseline() {
+		return PeakFitter_varyBaseline;
+	}
+	
+	public void setVaryHeight(boolean PeakFitter_varyHeight) {
+		this.PeakFitter_varyHeight = PeakFitter_varyHeight;
+	}
+	
+	public boolean getVaryHeight() {
+		return PeakFitter_varyHeight;
+	}
+	
+	public void setVarySigma(boolean PeakFitter_varySigma) {
+		this.PeakFitter_varySigma = PeakFitter_varySigma;
+	}
+	
+	public boolean getVarySigma() {
+		return PeakFitter_varySigma;
+	}
+	
+	public void setMaxErrorFilter(boolean PeakFitter_maxErrorFilter) {
+		this.PeakFitter_maxErrorFilter = PeakFitter_maxErrorFilter;
+	}
+	
+	public boolean getMaxErrorFilter() {
+		return PeakFitter_maxErrorFilter;
+	}
+	
+	public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {
+		this.PeakFitter_maxErrorBaseline = PeakFitter_maxErrorBaseline;
+	}
+	
+	public double getMaxErrorBaseline() {
+		return PeakFitter_maxErrorBaseline;
+	}
+	
+	public void setMaxErrorHeight(double PeakFitter_maxErrorHeight) {
+		this.PeakFitter_maxErrorHeight = PeakFitter_maxErrorHeight;
+	}
+	
+	public double getMaxErrorHeight() {
+		return PeakFitter_maxErrorHeight;
+	}
+	
+	public void setMaxErrorX(double PeakFitter_maxErrorX) {
+		this.PeakFitter_maxErrorX = PeakFitter_maxErrorX;
+	}
+	
+	public double getMaxErrorX() {
+		return PeakFitter_maxErrorX;
+	}
+
+	public void setMaxErrorY(double PeakFitter_maxErrorY) {
+		this.PeakFitter_maxErrorY = PeakFitter_maxErrorY;
+	}
+	
+	public double getMaxErrorY() {
+		return PeakFitter_maxErrorY;
+	}
+	
+	public void setMaxErrorSigma(double PeakFitter_maxErrorSigma) {
+		this.PeakFitter_maxErrorSigma = PeakFitter_maxErrorSigma;
+	}
+	
+	public double getMaxErrorSigma() {
+		return PeakFitter_maxErrorSigma;
+	}
+	
+	public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
+		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+	}
+	
+	public boolean getVerboseFitOutput() {
+		return PeakFitter_writeEverything;
 	}
 }

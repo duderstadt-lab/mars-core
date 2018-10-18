@@ -128,7 +128,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					//uiService.showDialog("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
 					continue;
 				}
-			
+				
 				//For all molecules in this dataset that are marked with the background tag and have all slices
 				archive.getMoleculeUIDs().stream()
 					.filter(UID -> archive.get(UID).getImageMetaDataUID().equals(meta.getUID()))
@@ -203,7 +203,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		this.output_x = output_x;
 	}
 	
-	public void setOutputYColumnName(String output_y) {
+	public void setOutputY(String output_y) {
 		this.output_y = output_y;
 	}
 	

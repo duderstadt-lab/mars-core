@@ -112,7 +112,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				return;
 			}
 		}
-		
+
 		//Loop through each molecule and calculate drift corrected traces...
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
