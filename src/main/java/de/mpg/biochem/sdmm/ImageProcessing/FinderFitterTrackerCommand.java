@@ -1,15 +1,10 @@
 package de.mpg.biochem.sdmm.ImageProcessing;
 
-import ij.VirtualStack;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.Prefs;
 import ij.gui.Roi;
-import ij.io.Opener;
 import ij.plugin.frame.RoiManager;
-import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
-import ij.gui.PointRoi;
 
 import org.scijava.module.MutableModuleItem;
 import org.decimal4j.util.DoubleRounder;
@@ -18,20 +13,16 @@ import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.util.RealRect;
 
 import de.mpg.biochem.sdmm.molecule.ImageMetaData;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import de.mpg.biochem.sdmm.table.ResultsTableService;
-import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
@@ -78,8 +69,6 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
-
-import de.mpg.biochem.sdmm.ImageProcessing.*;
 
 @Plugin(type = Command.class, label = "Peak Tracker", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

@@ -19,6 +19,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.sdmm.table.ResultsTableService;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
@@ -65,7 +66,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	@Parameter(label = "Background image")
 	private ImagePlus backgroundImage;
 	
-	@Parameter(label="Electronic_offset")
+	@Parameter(label="Electronic offset")
 	private double electronicOffset = 0;
 	
 	@Parameter(label="Save sequence to directory")
@@ -83,8 +84,16 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	
 	@Override
 	public void run() {
-		//ImagePlus image = convertService.convert(dataset, ImagePlus.class);
-		//ImagePlus backgroundImage = convertService.convert(background_dataset, ImagePlus.class);
+		//Build log
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Beam Profile Correction");
+		
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		
+		//Output first part of log message...
+		logService.info(log);
 		
 		//We assume there is just a single frame..
 		backgroundIp = backgroundImage.getProcessor();
@@ -136,6 +145,9 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
+	    	e.getStackTrace();
+	    	logService.info(builder.endBlock(false));
+	    	return;
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
@@ -144,6 +156,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	    //This might crash a headless run...
 	    if (!saveToDisk)
 	    	image.updateAndDraw();
+	    logService.info(builder.endBlock(true));
 	}
 	
 	public void correctFrame(int slice) {
@@ -178,4 +191,55 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 		
 		framesDone.incrementAndGet();
 	}
+	
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("Image Title", image.getTitle());
+		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		builder.addParameter("Background Image Title", backgroundImage.getTitle());
+		builder.addParameter("Background Image Directory", backgroundImage.getOriginalFileInfo().directory);
+		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
+		builder.addParameter("Save to Disk", String.valueOf(saveToDisk));
+		builder.addParameter("Directory", directory.getAbsolutePath());
+	}
+	
+	public void setImage(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImage() {
+		return image;
+	}
+	
+	public void setBackgroundImage(ImagePlus backgroundImage) {
+		this.backgroundImage = backgroundImage;
+	}
+	
+	public ImagePlus getBackgroundImage() {
+		return backgroundImage;
+	}
+	
+	public void setElectronicOffset(double electronicOffset) {
+		this.electronicOffset = electronicOffset;
+	}
+	
+	public double getElectronicOffset() {
+		return electronicOffset;
+	}
+	
+	public void setSaveToDisk(boolean saveToDisk) {
+		this.saveToDisk = saveToDisk;
+	}
+	
+	public boolean getSaveToDisk() {
+		return saveToDisk;
+	}
+	
+	public void setDirectory(File directory) {
+		this.directory = directory;
+	}
+	
+	public File getDirectory() {
+		return directory;
+	}
+
 }
