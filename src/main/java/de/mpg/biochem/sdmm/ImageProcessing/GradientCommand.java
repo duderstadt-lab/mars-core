@@ -16,6 +16,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import de.mpg.biochem.sdmm.util.SDMMMath;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
@@ -33,7 +34,7 @@ import ij.io.FileSaver;
  * @author Karl Duderstadt
  *
  */
-@Plugin(type = Command.class, label = "Beam Profile Correction", menu = {
+@Plugin(type = Command.class, label = "Gradient Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
@@ -66,6 +67,17 @@ public class GradientCommand<T extends RealType< T >> extends DynamicCommand imp
 	
 	@Override
 	public void run() {
+		//Build log
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Calculate Y Gradient");
+		
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		
+		//Output first part of log message...
+		logService.info(log);
+		
 		width = image.getWidth();
 		height = image.getHeight();
 		
@@ -102,9 +114,14 @@ public class GradientCommand<T extends RealType< T >> extends DynamicCommand imp
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
+	    	e.getStackTrace();
+	    	logService.info(builder.endBlock(false));
+	    	return;
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
+	    
+	    logService.info(builder.endBlock(true));
 	}
 	
 	public void frameGradient(int slice) {
@@ -183,5 +200,36 @@ public class GradientCommand<T extends RealType< T >> extends DynamicCommand imp
 			x = (width - 1) - (x - width);
 
 		return (double)currentImage.getf(x, y);
+	}
+	
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("Image Title", image.getTitle());
+		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		builder.addParameter("fitLength", String.valueOf(fitLength));
+		builder.addParameter("Directory", directory.getAbsolutePath());
+	}
+	
+	public void setImage(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImage() {
+		return image;
+	}
+	
+	public void setFitLength(int fitLength) {
+		this.fitLength = fitLength;
+	}
+	
+	public int getFitLength() {
+		return fitLength;
+	}
+	
+	public void setDirectory(File directory) {
+		this.directory = directory;
+	}
+	
+	public File getDirectory() {
+		return directory;
 	}
 }
