@@ -17,17 +17,17 @@ import ij.process.ImageProcessor;
  * 
  */
 public class MoleculeIntegrator {
-	Rectangle topBoundingRegion, bottomBoundingRegion;
+	Rectangle longBoundingRegion, shortBoundingRegion;
 	int innerRadius, outerRadius;
 	
 	private ArrayList<int[]> innerOffsets;
 	private ArrayList<int[]> outerOffsets;
 
-	public MoleculeIntegrator (int innerRadius, int outerRadius, Rectangle topBoundingRegion, Rectangle bottomBoundingRegion) {
+	public MoleculeIntegrator (int innerRadius, int outerRadius, Rectangle longBoundingRegion, Rectangle shortBoundingRegion) {
 		this.innerRadius = innerRadius;
 		this.outerRadius = outerRadius;
-		this.topBoundingRegion = topBoundingRegion;
-		this.bottomBoundingRegion = bottomBoundingRegion;
+		this.longBoundingRegion = longBoundingRegion;
+		this.shortBoundingRegion = shortBoundingRegion;
 		
 		BuildOffsets();
 	}
@@ -55,15 +55,15 @@ public class MoleculeIntegrator {
 		}
 	}
 	
-	public void integratePeaks(ImageProcessor ip, ConcurrentMap<String, FPeak> integrationList, String colorTOP, String colorBOT) {
+	public void integratePeaks(ImageProcessor ip, ConcurrentMap<String, FPeak> integrationList, String colorLONG, String colorSHORT) {
 		for (String UID : integrationList.keySet()) {
 			FPeak peak = integrationList.get(UID);
-			if (colorTOP != null) {
-				peak.setIntensity(colorTOP, integratePeak(ip, (int)peak.getXTOP(), (int)peak.getYTOP(), topBoundingRegion));
+			if (colorLONG != null) {
+				peak.setIntensity(colorLONG, integratePeak(ip, (int)peak.getXLONG(), (int)peak.getYLONG(), longBoundingRegion));
 			}
 			
-			if (colorBOT != null) {
-				peak.setIntensity(colorBOT, integratePeak(ip, (int)peak.getXBOT(), (int)peak.getYBOT(), bottomBoundingRegion));
+			if (colorSHORT != null) {
+				peak.setIntensity(colorSHORT, integratePeak(ip, (int)peak.getXSHORT(), (int)peak.getYSHORT(), shortBoundingRegion));
 			}
 		}
 	}

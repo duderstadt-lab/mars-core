@@ -628,7 +628,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image Title", image.getTitle());
-		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		}
 		builder.addParameter("useROI", String.valueOf(useROI));
 		builder.addParameter("ROI x0", String.valueOf(x0));
 		builder.addParameter("ROI y0", String.valueOf(y0));

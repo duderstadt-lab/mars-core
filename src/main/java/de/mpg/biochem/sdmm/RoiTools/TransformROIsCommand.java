@@ -16,6 +16,7 @@ import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -76,13 +77,13 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 
 	//INPUT IMAGE
 	@Parameter(label = "Image")
-	private ImagePlus imp; 
+	private ImagePlus image; 
 	
 	@Parameter(label = "Transformation Parameters")
 	private SDMMResultsTable data_table;
 	
-	@Parameter(label = "Transformation from", choices = {"Top to Bottom", "Bottom to Top"})
-	private String transformationDirection = "Top to Bottom";
+	@Parameter(label = "Transformation Direction", choices = {"Long Wavelength to Short Wavelength", "Short Wavelength to Long Wavelength"})
+	private String transformationDirection = "Long Wavelength to Short Wavelength";
 	
 	@Parameter(label = "Colocalize")
 	private boolean colocalize = false;
@@ -112,6 +113,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
     private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
     
     private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
+    
+	private Roi startingRoi;
 
 	@Override
 	public void run() {
@@ -237,6 +240,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	@Override
 	public void preview() {
 		if (preview) {
+			image.deleteRoi();
 			transformROIs();
 		}
 	}
@@ -282,15 +286,15 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 			//Here we generate a new UID... This is in preparation for the Molecule Integrator
 	        String baseRoiName = SDMMMath.getUUID58();
 	        
-	        String currentPosition = "TOP";
-	        String newPosition = "BOT";
+	        String currentPosition = "LONG";
+	        String newPosition = "SHORT";
 	        
-	        if (transformationDirection.equals("Top to Bottom")) {
-	        	currentPosition = "TOP";
-	        	newPosition = "BOT";
-	        } else if (transformationDirection.equals("Bottom to Top")) {
-	        	currentPosition = "BOT";
-	        	newPosition = "TOP";
+	        if (transformationDirection.equals("Long Wavelength to Short Wavelength")) {
+	        	currentPosition = "LONG";
+	        	newPosition = "SHORT";
+	        } else if (transformationDirection.equals("Short Wavelength to Long Wavelength")) {
+	        	currentPosition = "SHORT";
+	        	newPosition = "LONG";
 	        }
 	        
 	        Roi oldRoi = (Roi)roi.clone();
@@ -305,7 +309,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 		}
 		
 		if (colocalize) {
-			ArrayList<Point> peaks = findPeaks(imp.getProcessor());
+			ArrayList<Point> peaks = findPeaks(image.getProcessor());
 		
 			if (preview) {
 				Polygon poly = new Polygon();
@@ -314,7 +318,20 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 					poly.addPoint(p.x, p.y);
 				
 				PointRoi peakRoi = new PointRoi(poly);
-				imp.setRoi(peakRoi);
+				image.setRoi(peakRoi);
+			}
+		} else {
+			if (preview) {
+				Polygon poly = new Polygon();
+				
+				for (int i=0;i<TransformedROIs.size();i++) {
+					int x = (int)TransformedROIs.get(i).getFloatBounds().x;
+			        int y = (int)TransformedROIs.get(i).getFloatBounds().y;
+					poly.addPoint(x, y);
+				}
+				
+				PointRoi peakRoi = new PointRoi(poly);
+				image.setRoi(peakRoi);
 			}
 		}
 	}
@@ -322,21 +339,98 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	/** Called when the {@link #preview} parameter value changes. */
 	protected void previewChanged() {
 		// When preview box is unchecked, reset the Roi back to how it was before...
-		//if (!preview) cancel();
+		if (!preview) cancel();
 	}
 	
 	@Override
 	public void cancel() {
-		//image.setRoi(startingRoi);
+		image.deleteRoi();
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Transformation from", transformationDirection);
+		builder.addParameter("Transformation Parameters", data_table.getName());
+		builder.addParameter("Transformation Direction", transformationDirection);
 		builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
 		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
 		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("filterOriginalRois", String.valueOf(filterOriginalRois));
 		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
+	}
+	
+	public void setImage(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImage() {
+		return image;
+	}
+	
+	public void setTransformationParameters(SDMMResultsTable data_table) {
+		this.data_table = data_table;
+	}
+	
+	public SDMMResultsTable getTransformationParameters() {
+		return data_table;
+	}
+	
+	public void setTransformationDirection(String transformationDirection) {
+		this.transformationDirection = transformationDirection;
+	}
+	
+	public String getTransformation() {
+		return transformationDirection;
+	}
+	
+	public void setColocalize(boolean colocalize) {
+		this.colocalize = colocalize;
+	}
+	
+	public boolean getColocalize() {
+		return colocalize;
+	}
+	
+	public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
+		this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+	}
+	
+	public boolean getUseDiscoidalAveragingFilter() {
+		return useDiscoidalAveragingFilter;
+	}
+	
+	public void setInnerRadius(int DS_innerRadius) {
+		this.DS_innerRadius = DS_innerRadius;
+	}
+	
+	public int getInnerRadius() {
+		return DS_innerRadius;
+	}
+	
+	public void setOuterRadius(int DS_outerRadius) {
+		this.DS_outerRadius = DS_outerRadius;
+	}
+	
+	public int getOuterRadius() {
+		return DS_outerRadius;
+	}
+	
+	public void setDetectionThreshold(int threshold) {
+		this.threshold = threshold;
+	}
+	
+	public int getDetectionThreshold() {
+		return threshold;
+	}
+	
+	public void setFilterOriginalRois(boolean filterOriginalRois) {
+		this.filterOriginalRois = filterOriginalRois;
+	}
+	
+	public boolean getFilterOriginalRois() {
+		return filterOriginalRois;
+	}
+	
+	public void setColocalizeSearchRadius(int colocalizeRadius) {
+		this.colocalizeRadius = colocalizeRadius;
 	}
 }

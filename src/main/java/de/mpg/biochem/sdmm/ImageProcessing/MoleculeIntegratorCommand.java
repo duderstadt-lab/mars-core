@@ -47,8 +47,8 @@ import net.imagej.table.DoubleColumn;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of peaks for integration can be provided as PointRois 
- * in the RoiManger with the format UID_TOP or UID_BOT. The positions given will be integrated for all slices with different colors 
- * divided into different columns based on the Meta data information. 
+ * in the RoiManger with the format UID_LONG or UID_SHORT for long and short wavelengths. The positions given will be integrated 
+ * for all slices with different colors divided into different columns based on the Meta data information. 
  * 
  * @author Karl Duderstadt
  * 
@@ -95,8 +95,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	@Parameter(label="Outer Radius")
 	private int outerRadius = 3;
 	
-	@Parameter(label = "Use DualView Regions")
-	private boolean dualView = true;
+	@Parameter(label = "Use DualView Regions", choices = {"Short Wavelength", "Long Wavelength", "Both Wavelengths"})
+	private String dualViewRegion = "Both";
 	
     @Parameter(label="Dichroic", choices = {"635lpxr", "570lpxr"})
 	private String dichroic = "635lpxr";
@@ -109,36 +109,44 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	private final String integrationBoundariesMessage =
 		"These will define integration boundaries for each part of the dual view.";
 	
-	@Parameter(label="TOP x0")
-	private int TOPx0 = 0;
+	@Parameter(label="LONG x0")
+	private int LONGx0 = 0;
 	
-	@Parameter(label="TOP y0")
-	private int TOPy0 = 0;
+	@Parameter(label="LONG y0")
+	private int LONGy0 = 0;
 	
-	@Parameter(label="TOP width")
-	private int TOPwidth = 1024;
+	@Parameter(label="LONG width")
+	private int LONGwidth = 1024;
 	
-	@Parameter(label="TOP height")
-	private int TOPheight = 500;
+	@Parameter(label="LONG height")
+	private int LONGheight = 500;
 	
-	@Parameter(label="BOTTOM x0")
-	private int BOTx0 = 0;
+	@Parameter(label="SHORT x0")
+	private int SHORTx0 = 0;
 	
-	@Parameter(label="BOTTOM y0")
-	private int BOTy0 = 524;
+	@Parameter(label="SHORT y0")
+	private int SHORTy0 = 524;
 	
-	@Parameter(label="BOTTOM width")
-	private int BOTwidth = 1024;
+	@Parameter(label="SHORT width")
+	private int SHORTwidth = 1024;
 	
-	@Parameter(label="BOTTOM height")
-	private int BOTheight = 500;
+	@Parameter(label="SHORT height")
+	private int SHORTheight = 500;
+	
+	@Parameter(label="Manually specify colors")
+	private boolean colorsSpecified = false;
+	
+	@Parameter(label="Long Wavelength Color")
+	private String longWavelengthColor;
+	
+	@Parameter(label="Short Wavelength Color")
+	private String shortWavelengthColor;
 	
 	@Parameter(label="Microscope")
 	private String microscope = "Dobby";
 	
-	//Should we also have an option to give a metadata.txt file... ?
-	//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
-	//private String imageFormat = "MicroManager";
+	@Parameter(label="Format", choices = { "None", "MicroManager"})
+	private String imageFormat;
 	
 	//OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
@@ -167,8 +175,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	@Override
 	public void run() {	
-		Rectangle topBoundingRegion = new Rectangle(TOPx0, TOPy0, TOPwidth, TOPheight);
-		Rectangle bottomBoundingRegion = new Rectangle(BOTx0, BOTy0, BOTwidth, BOTheight);
+		Rectangle longBoundingRegion = new Rectangle(LONGx0, LONGy0, LONGwidth, LONGheight);
+		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth, SHORTheight);
 		
 		//Initialize the maps
 		IntensitiesStack = new ConcurrentHashMap<>(image.getStackSize());
@@ -180,7 +188,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Peak Integrator");
+		String log = builder.buildTitleBlock("Molecule Integrator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -188,14 +196,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		logService.info(log);
 		
 		//These are assumed to be PointRois with Names of the format
-		//UID_TOP or UID_BOT...
+		//UID or UID_LONG or UID_SHORT...
 		//We assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
 		
 		ConcurrentMap<String, FPeak> integrationList = new ConcurrentHashMap<String, FPeak>();
 		
         for (int i=0;i<rois.length;i++) {
-        	//split UID from TOP or BOT
+        	//split UID from LONG or SHORT
         	String[] subStrings = rois[i].getName().split("_");
         	String UID = subStrings[0];
         	
@@ -212,16 +220,36 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
         	double x = rois[i].getFloatBounds().x;
     		double y = rois[i].getFloatBounds().y;
         	
-        	if (subStrings[1].equals("TOP") && topBoundingRegion.contains(x, y)) {
-        		peak.setTOPXY(x - 0.5, y - 0.5);
-        	} else if (subStrings[1].equals("BOT") && bottomBoundingRegion.contains(x, y)) {
-        		peak.setBOTXY(x - 0.5, y - 0.5);
-        	} else {
-        		//Not inside the regions or not with the correct format.
-        		//continue to next peak without adding it.
-        		continue;
-        	}
-        	
+    		//For the moment we assume if the input is Short or Long, There are just UIDs with not _XXX in the RoiManager.
+    		//Then below we just add a single position for the peak...
+    		if (dualViewRegion.equals("Short Wavelength") && shortBoundingRegion.contains(x, y)) {
+    			peak.setSHORTXY(x - 0.5, y - 0.5);
+    		}
+    		
+    		if (dualViewRegion.equals("Long Wavelength") && longBoundingRegion.contains(x, y)) {
+    			peak.setLONGXY(x - 0.5, y - 0.5);
+    		}
+    		
+    		if (dualViewRegion.equals("Both Wavelengths")) {
+    			if (subStrings.length == 2) {
+    				logService.info("The RIO names in the manager appear to have the wrong format");
+    				logService.info("If you are intengrating both regions then must be indicated with names");
+    				logService.info("having the format UID_SHORT or UID_LONG");
+    				logService.info(builder.endBlock(false));
+    				return;
+    			}
+    			
+	        	if (subStrings[1].equals("LONG") && longBoundingRegion.contains(x, y)) {
+	        		peak.setLONGXY(x - 0.5, y - 0.5);
+	        	} else if (subStrings[1].equals("SHORT") && shortBoundingRegion.contains(x, y)) {
+	        		peak.setSHORTXY(x - 0.5, y - 0.5);
+	        	} else {
+	        		//Not inside the regions or not with the correct format.
+	        		//continue to next peak without adding it.
+	        		continue;
+	        	}
+    		}
+    		
         	integrationList.put(UID, peak);
 		}
         
@@ -240,7 +268,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
         	IntensitiesStack.put(slice, integrationListCopy);
         }
 		
-		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius, topBoundingRegion, bottomBoundingRegion);
+		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius, longBoundingRegion, shortBoundingRegion);
 			
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
@@ -282,17 +310,37 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	
 	        	//We add the header information to the metadata map 
 				//to generate the metadata table later in the molecule archive.
-				String label = image.getStack().getSliceLabel(slice);
-				metaDataStack.put(slice, label);
+	        	String label = image.getStack().getSliceLabel(slice);
+	        	if (!imageFormat.equals("None")) {
+					metaDataStack.put(slice, label);
+				}
 	        	
-				String[] colors = getColors(label);
+				String[] colors = new String[2]; 
+				
+				if (colorsSpecified) {
+					String shortWavelengthColorTrim = shortWavelengthColor.trim();
+					
+					if(shortWavelengthColorTrim.equals(""))
+						shortWavelengthColorTrim = null;
+					
+					colors[0] = shortWavelengthColorTrim;
+					
+					String longWavelengthColorTrim = longWavelengthColor.trim();
+					
+					if(longWavelengthColorTrim.equals(""))
+						longWavelengthColorTrim = null;
+					
+					colors[1] = longWavelengthColorTrim;
+				} else {
+					colors = getColors(label);	
+				}
 				
 				if (colors[0] != null)
 					colorsSet.add(colors[0]);
 					
 				if (colors[1] != null)
 					colorsSet.add(colors[1]);
-				
+					
 	        	//We also pass the color names.. For a give frame there can only be two colors..
 				//If the color value is null then that color is not integrated..
 	        	integrator.integratePeaks(processor, IntensitiesStack.get(slice), colors[0], colors[1]);
@@ -318,7 +366,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    }
 	        archive = new MoleculeArchive(newName + ".yama");
 		    
-		    ImageMetaData metaData = new ImageMetaData(image, microscope, "MicroManager", metaDataStack);
+		    ImageMetaData metaData = new ImageMetaData(image, microscope, imageFormat, metaDataStack);
 			archive.addImageMetaData(metaData);
 	        
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
@@ -326,10 +374,18 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	SDMMResultsTable table = new SDMMResultsTable();
 	        	ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 	    		
-	    		columns.add(new DoubleColumn("x_TOP"));
-	    		columns.add(new DoubleColumn("y_TOP"));
-	    		columns.add(new DoubleColumn("x_BOT"));
-	    		columns.add(new DoubleColumn("y_BOT"));
+	        	if (dualViewRegion.equals("Both Wavelengths")) {
+		    		columns.add(new DoubleColumn("x_LONG"));
+		    		columns.add(new DoubleColumn("y_LONG"));
+		    		columns.add(new DoubleColumn("x_SHORT"));
+		    		columns.add(new DoubleColumn("y_SHORT"));
+	        	} else if (dualViewRegion.equals("Long Wavelength")) {
+	        		columns.add(new DoubleColumn("x_LONG"));
+		    		columns.add(new DoubleColumn("y_LONG"));
+	        	} else if (dualViewRegion.equals("Short Wavelength")) {
+	        		columns.add(new DoubleColumn("x_SHORT"));
+		    		columns.add(new DoubleColumn("y_SHORT"));
+	        	}
 	    		columns.add(new DoubleColumn("slice"));
 	    		
 	    		for (String colorName : colorsSet) {
@@ -345,10 +401,18 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        		
 	        		table.appendRow();
 	        		int row = table.getRowCount() - 1;
-	        		table.set("x_TOP", row, peak.getXTOP());
-	        		table.set("y_TOP", row, peak.getYTOP());
-	        		table.set("x_BOT", row, peak.getXBOT());
-	        		table.set("y_BOT", row, peak.getXTOP());
+	        		if (dualViewRegion.equals("Both Wavelengths")) {
+		        		table.set("x_LONG", row, peak.getXLONG());
+		        		table.set("y_LONG", row, peak.getYLONG());
+		        		table.set("x_SHORT", row, peak.getXSHORT());
+		        		table.set("y_SHORT", row, peak.getYSHORT());
+	        		} else if (dualViewRegion.equals("Long Wavelength")) {
+	        			table.set("x_LONG", row, peak.getXLONG());
+		        		table.set("y_LONG", row, peak.getYLONG());
+	        		} else if (dualViewRegion.equals("Short Wavelength")) {
+	        			table.set("x_SHORT", row, peak.getXSHORT());
+		        		table.set("y_SHORT", row, peak.getYSHORT());
+	        		}
 	        		table.set("slice", row, (double)slice);
 	        		
 	        		for (String colorName : colorsSet) {
@@ -372,7 +436,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        
 	        progressUpdating.set(false);
 	        
-	        statusService.showProgress(100, 100);
+	        statusService.showStatus(image.getStackSize(), image.getStackSize(), "Peak integration for " + image.getTitle() + " - Done!");
 	        statusService.showStatus("Peak integration for " + image.getTitle() + " - Done!");
 	    } catch (InterruptedException | ExecutionException e) {
 	    	// handle exceptions
@@ -391,7 +455,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		
 		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		if (archive.getNumberOfMolecules() == 0) {
-			logService.info("No molecules found. Maybe there is a problem with your settings");
+			logService.info("No molecules integrated. There must be a problem with your settings or RIOs");
 			archive = null;
 			logService.info(builder.endBlock(false));
 		} else {
@@ -407,11 +471,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	//Get color names based on image meta data
 	//If only one laser and not a FRET condition
 	//one color will remain null
-	//colors[0] is for the top region
-	//colors[1] is for the bottom region
+	//colors[0] is for the long region
+	//colors[1] is for the short region
 	private String[] getColors(String headerLabel) {
-		String TOPColor = null;
-		String BOTColor = null;
+		String LONGColor = null;
+		String SHORTColor = null;
 		
 		HashMap<String, String> params = getMetaData(headerLabel);
 		
@@ -428,55 +492,55 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		
 		if (dichroic.equals("635lpxr")) {
 			//Only color above 635 cutoff
-			if (red637 == 1) {
-				TOPColor = "Red_637";
+			if (red637 == 1 && (dualViewRegion.equals("Long Wavelength") || dualViewRegion.equals("Both Wavelengths"))) {
+				LONGColor = "Red_637";
 			}
 			
 			//All colors below cutoff
 			if (yellow561 == 1) {
-				BOTColor = "Yellow_561";
+				SHORTColor = "Yellow_561";
 			} else if (green532 == 1) {
-				BOTColor = "Green_532";
+				SHORTColor = "Green_532";
 			} else if (blue488 == 1) {
-				BOTColor = "Blue_488";
+				SHORTColor = "Blue_488";
 			} else if (purple405 == 1) {
-				BOTColor = "Purple_405";
+				SHORTColor = "Purple_405";
 			}
 			
 			//Normal FRET condition for GREEN to RED
 			if (green532 == 1 && FRET) {
-				TOPColor = "Red_637";
-				BOTColor = "Green_532";
+				LONGColor = "Red_637";
+				SHORTColor = "Green_532";
 			}
 		} else if (dichroic.equals("570lpxr")) {
 			//Only colors with emission above 570 cutoff
-			if (red637 == 1) {
-				TOPColor = "Red_637";
-			} else if (yellow561 == 1) {
-				TOPColor = "Yellow_561";
+			if (red637 == 1 && (dualViewRegion.equals("Long Wavelength") || dualViewRegion.equals("Both Wavelengths"))) {
+				LONGColor = "Red_637";
+			} else if (yellow561 == 1 && (dualViewRegion.equals("Long Wavelength") || dualViewRegion.equals("Both Wavelengths"))) {
+				LONGColor = "Yellow_561";
 			} 
 			
 			if (green532 == 1) {
 				//Really should never do this for this dichroic...
-				BOTColor = "Green_532";
+				SHORTColor = "Green_532";
 			} else if (blue488 == 1) {
-				BOTColor = "Blue_488";
+				SHORTColor = "Blue_488";
 			} else if (purple405 == 1) {
-				BOTColor = "Purple_405";
+				SHORTColor = "Purple_405";
 			}
 			
 			//blue to yellow FRET...
 			if (blue488 == 1 && FRET) {
-				TOPColor = "Yellow_561";
-				BOTColor = "Blue_488";
+				LONGColor = "Yellow_561";
+				SHORTColor = "Blue_488";
 			}
 		}
 		
-		//Will hold the TOP and BOT colors
+		//Will hold the LONG and SHORT colors
 		//in that order
 		String[] colors = new String[2];
-		colors[0] = TOPColor;
-		colors[1] = BOTColor;
+		colors[0] = LONGColor;
+		colors[1] = SHORTColor;
 		
 		return colors;
 	}
@@ -521,22 +585,182 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	}
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image Title", image.getTitle());
-		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		}
 		builder.addParameter("Inner Radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer Radius", String.valueOf(outerRadius));
-		builder.addParameter("Use DualView Regions", String.valueOf(dualView));
+		builder.addParameter("Use DualView Regions", dualViewRegion);
 		builder.addParameter("Dichroic", dichroic);
 		builder.addParameter("FRET", String.valueOf(FRET));
-		
-		builder.addParameter("TOP x0", String.valueOf(TOPx0));
-		builder.addParameter("TOP y0", String.valueOf(TOPy0));
-		builder.addParameter("TOP width", String.valueOf(TOPwidth));
-		builder.addParameter("TOP height", String.valueOf(TOPheight));
-		
-		builder.addParameter("BOT x0", String.valueOf(BOTx0));
-		builder.addParameter("BOT y0", String.valueOf(BOTy0));
-		builder.addParameter("BOT width", String.valueOf(BOTwidth));
-		builder.addParameter("BOT height", String.valueOf(BOTheight));
+		builder.addParameter("LONG x0", String.valueOf(LONGx0));
+		builder.addParameter("LONG y0", String.valueOf(LONGy0));
+		builder.addParameter("LONG width", String.valueOf(LONGwidth));
+		builder.addParameter("LONG height", String.valueOf(LONGheight));
+		builder.addParameter("SHORT x0", String.valueOf(SHORTx0));
+		builder.addParameter("SHORT y0", String.valueOf(SHORTy0));
+		builder.addParameter("SHORT width", String.valueOf(SHORTwidth));
+		builder.addParameter("SHORT height", String.valueOf(SHORTheight));
+		builder.addParameter("Manually specify colors", String.valueOf(colorsSpecified));
+		builder.addParameter("Long Wavelength Color", longWavelengthColor);
+		builder.addParameter("Short Wavelength Color", shortWavelengthColor);
 		builder.addParameter("Microscope", microscope);
+		builder.addParameter("Format", imageFormat);
+	}
+	
+	//Getters and Setters
+    public MoleculeArchive getArchive() {
+    	return archive;
+    }
+	
+	public void setImage(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImage() {
+		return image;
+	}
+	
+	public void setInnerRadius(int innerRadius) {
+		this.innerRadius = innerRadius;
+	}
+	
+	public int getInnerRadius() {
+		return innerRadius;
+	}
+	
+	public void setOuterRadius(int outerRadius) {
+		this.outerRadius = outerRadius;
+	}
+	public int getOuterRadius() {
+		return outerRadius;
+	}
+	
+	public void setUseDualViewRegions(String dualViewRegion) {
+		this.dualViewRegion = dualViewRegion;
+	}
+	
+	public String getUseDualViewRegions() {
+		return dualViewRegion;
+	}
+	
+	public void setDichroic(String dichroic) {
+		this.dichroic = dichroic;
+	}
+	
+	public String getDichroic() {
+		return dichroic;
+	}
+	
+	public void setFRET(boolean FRET) {
+		this.FRET = FRET;
+	}
+	
+	public boolean getFRET() {
+		return FRET;
+	}
+	
+	public void setLONGx0(int LONGx0) {
+		this.LONGx0 = LONGx0;
+	}
+	
+	public int getLONGx0() {
+		return LONGx0;
+	}
+	
+	public void setLONGy0(int LONGy0) {
+		this.LONGy0 = LONGy0;
+	}
+	
+	public int getLONGy0() {
+		return LONGy0;
+	}
+	
+	public void setLONGWidth(int LONGwidth) {
+		this.LONGwidth = LONGwidth;
+	}
+	
+	public int getLONGWidth() {
+		return LONGwidth;
+	}
+	
+	public void setLONGHeight(int LONGheight) {
+		this.LONGheight = LONGheight;
+	}
+	
+	public int getLONGHeight() {
+		return LONGheight;
+	}
+
+	public void setSHORTx0(int SHORTx0) {
+		this.SHORTx0 = SHORTx0;
+	}
+	
+	public int getSHORTx0() {
+		return SHORTx0;
+	}
+	
+	public void setSHORTy0(int SHORTy0) {
+		this.SHORTy0 = SHORTy0;
+	}
+	
+	public int getSHORTy0() {
+		return SHORTy0;
+	}
+	
+	public void setSHORTWidth(int SHORTwidth) {
+		this.SHORTwidth = SHORTwidth;
+	}
+	
+	public int getSHORTWidth() {
+		return SHORTwidth;
+	}
+	
+	public void setSHORTHeight(int SHORTheight) {
+		this.SHORTheight = SHORTheight;
+	}
+	
+	public int getSHORTHeight() {
+		return SHORTheight;
+	}
+
+	public void setColorsSpecified(boolean colorsSpecified) {
+		this.colorsSpecified = colorsSpecified;
+	}
+	
+	public boolean getColorsSpecified() {
+		return colorsSpecified;
+	}
+	
+	public void setLongWavelengthColor(String longWavelengthColor) {
+		this.longWavelengthColor = longWavelengthColor;
+	}
+	
+	public String getLongWavelengthColor() {
+		return longWavelengthColor;
+	}
+	
+	public void setShortWavelengthColor(String shortWavelengthColor) {
+		this.shortWavelengthColor = shortWavelengthColor;
+	}
+	
+	public String getShortWavelengthColor() {
+		return shortWavelengthColor;
+	}
+	
+	public void setMicroscope(String microscope) {
+		this.microscope = microscope;
+	}
+	
+	public String getMicroscope() {
+		return microscope;
+	}
+	
+	public void setImageFormat(String imageFormat) {
+		this.imageFormat = imageFormat;
+	}
+	
+	public String getImageFormat() {
+		return imageFormat;
 	}
 }

@@ -384,6 +384,10 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return (String)get(column).get(index);
 	}
 	
+	public String getStringValue(int col, int row) {
+		return getStringValue(getColumnHeader(col), row);
+	}
+	
 	public boolean hasColumn(String colName) {
 		for (String column : getColumnHeadingList()) {
 			if (column.equals(colName))
@@ -577,5 +581,25 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
+	}
+	
+	public SDMMResultsTable clone() {
+		SDMMResultsTable table = new SDMMResultsTable(this.getName());
+		for (int col = 0; col < getColumnCount(); col++) {
+			if (get(col) instanceof DoubleColumn) {
+				DoubleColumn column = new DoubleColumn(get(col).getHeader());
+				for (int row=0;row<getRowCount();row++)
+					column.add(getValue(col, row));
+				
+				table.add(column);
+			} else if (get(col) instanceof GenericColumn) {
+				GenericColumn column = new GenericColumn(get(col).getHeader());
+				for (int row=0;row<getRowCount();row++)
+					column.add(getStringValue(col, row));
+				
+				table.add(column);
+			}
+		}
+		return table;
 	}
 }

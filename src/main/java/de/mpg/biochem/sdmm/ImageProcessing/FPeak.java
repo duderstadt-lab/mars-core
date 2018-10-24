@@ -6,7 +6,8 @@ import java.util.HashMap;
 public class FPeak {
 	private String UID;
 //	int slice;
-	private double xTOP, yTOP, xBOT, yBOT;
+	//Short and long wavelengths
+	private double xLONG, yLONG, xSHORT, ySHORT;
 
 	//List of integrated intensities for each molecule
 	//for each color
@@ -19,10 +20,10 @@ public class FPeak {
 	
 	public FPeak(FPeak peak) {
 		this.UID = peak.getUID();
-		this.xTOP = peak.getXTOP();
-		this.yTOP = peak.getYTOP();
-		this.xBOT = peak.getXBOT();
-		this.yBOT = peak.getYBOT();
+		this.xLONG = peak.getXLONG();
+		this.yLONG = peak.getYLONG();
+		this.xSHORT = peak.getXSHORT();
+		this.ySHORT = peak.getYSHORT();
 		
 		IntensityList = new HashMap<String, double[]>();
 		
@@ -35,14 +36,14 @@ public class FPeak {
 	}
 	
 	//Setters
-	public void setTOPXY(double xTOP, double yTOP) {
-		this.xTOP = xTOP;
-		this.yTOP = yTOP;
+	public void setLONGXY(double xLONG, double yLONG) {
+		this.xLONG = xLONG;
+		this.yLONG = yLONG;
 	}
 	
-	public void setBOTXY(double xBOT, double yBOT) {
-		this.xBOT = xBOT;
-		this.yBOT = yBOT;
+	public void setSHORTXY(double xSHORT, double ySHORT) {
+		this.xSHORT = xSHORT;
+		this.ySHORT = ySHORT;
 	}
 	
 	public void setIntensity(String color, double[] intensity) {
@@ -50,17 +51,17 @@ public class FPeak {
 	}
 	
 	//Getters
-	public double getXTOP() {
-		return xTOP;
+	public double getXLONG() {
+		return xLONG;
 	}
-	public double getYTOP() {
-		return yTOP;
+	public double getYLONG() {
+		return yLONG;
 	}
-	public double getXBOT() {
-		return xBOT;
+	public double getXSHORT() {
+		return xSHORT;
 	}
-	public double getYBOT() {
-		return yBOT;
+	public double getYSHORT() {
+		return ySHORT;
 	}
 	public String getUID() {
 		return UID;
