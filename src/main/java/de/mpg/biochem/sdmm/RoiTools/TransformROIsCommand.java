@@ -129,6 +129,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 		//Output first part of log message...
 		logService.info(log);
 		
+		if (preview) {
+			image.deleteRoi();
+		}
+		
 		transformROIs();
 		
 		roiManager.reset();
@@ -356,6 +360,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("filterOriginalRois", String.valueOf(filterOriginalRois));
 		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
+	}
+	
+	public void setROIManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getROIManager() {
+		return roiManager;
 	}
 	
 	public void setImage(ImagePlus image) {
