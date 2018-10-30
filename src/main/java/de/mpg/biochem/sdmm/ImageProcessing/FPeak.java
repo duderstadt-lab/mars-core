@@ -7,7 +7,10 @@ public class FPeak {
 	private String UID;
 //	int slice;
 	//Short and long wavelengths
-	private double xLONG, yLONG, xSHORT, ySHORT;
+	private double xLONG = Double.NaN;
+	private double yLONG = Double.NaN;
+	private double xSHORT = Double.NaN;
+	private double ySHORT = Double.NaN;
 
 	//List of integrated intensities for each molecule
 	//for each color

@@ -69,6 +69,13 @@ public class MoleculeIntegrator {
 	}
 	
 	private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
+		if (x == Double.NaN || y == Double.NaN) {
+			double[] NULLinten = new double[2];
+			NULLinten[0] = Double.NaN;
+			NULLinten[1] = Double.NaN;
+			return NULLinten;
+		}
+		
 		double Intensity = 0;
 		int innerPixels = 0;
 		

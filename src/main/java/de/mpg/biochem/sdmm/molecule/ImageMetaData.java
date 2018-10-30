@@ -73,14 +73,19 @@ public class ImageMetaData {
 	
 	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.Microscope = Microscope;
-		this.SourceDirectory = img.getOriginalFileInfo().directory;
+		if (img.getOriginalFileInfo() != null) {
+			this.SourceDirectory = img.getOriginalFileInfo().directory;
+		} else {
+			this.SourceDirectory = "unknown";
+		}
+		
 		log = "";
 		
 		if (imageFormat.equals("NorPix")) {
 			UID = generateUID(headerLabels);
 			buildMetaDataNorPix(headerLabels);
 		} else if (imageFormat.equals("MicroManager")) {
-			UID = generateUID(headerLabels);
+			UID = generateMMUID(headerLabels);
 			buildMetaDataMicroManager(headerLabels);
 		} else {
 			//For GenericData we just generate a random UID but truncate to 11 characters to match
@@ -99,6 +104,26 @@ public class ImageMetaData {
 		String allLabels = "";
 		for (int i=1;i<=headerLabels.size();i++)
 			allLabels += headerLabels.get(i);
+		
+		return SDMMMath.getFNV1aBase58(allLabels);
+	}
+	
+	//the one way Hashfunction actually take a while to run so we need to keep the String size low
+	//Therefore, we randomly take some different unique properties here to make the UID...
+	private String generateMMUID(ConcurrentMap<Integer, String> headerLabels) {
+		String allLabels = "";
+		for (int i=1;i<=headerLabels.size();i++) {
+			HashMap<String, String> params = getMetaDataParamMap(headerLabels.get(i));
+			allLabels += headerLabels.get(i).substring(0, headerLabels.get(i).indexOf("{"));
+			allLabels += params.get("Time");
+			allLabels += params.get("ElapsedTime-ms");
+			allLabels += params.get("DigitalIO-State");
+			allLabels += params.get("XPositionUm");
+			allLabels += params.get("YPositionUm");
+			allLabels += params.get("ZPositionUm");
+			allLabels += params.get("MCL TIRF-Lock-Y");
+			allLabels += params.get("MCL TIRF-Lock-X");
+		}
 		
 		return SDMMMath.getFNV1aBase58(allLabels);
 	}
@@ -144,18 +169,15 @@ public class ImageMetaData {
 		DataTable.add(labelCol);
 	}
 	
-	/*
-	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {        
-        //Now we will build the DataTable using the headerLabel
-		//First we just build the list of columns
-		//then we loop through all headerLabels and add the metaData to the columns...
+	private HashMap<String, String> getMetaDataParamMap(String headerLabel) {
+		HashMap<String, String> parameters = new HashMap<String, String>();
+		
+        //Let's get the lasers and filters...
 		try {
-			JsonParser jParser = jfactory.createParser(headerLabels.get(1).substring(headerLabels.get(1).indexOf("{")));
+			JsonParser jParser = jfactory.createParser(headerLabel.substring(headerLabel.indexOf("{")));
 			
 			//Just to skip to the first field
 			jParser.nextToken();
-			
-			HashMap<String, GenericColumn> columns = new HashMap<>();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 				String fieldname = jParser.getCurrentName();
 				
@@ -171,87 +193,15 @@ public class ImageMetaData {
 				
 				jParser.nextToken();
 
-				GenericColumn col = new GenericColumn(fieldname);
-				columns.put(fieldname, col);
-			}
-			
-			DoubleColumn sliceCol = new DoubleColumn("slice");
-			
-			//Now we loop through all frame headerLabels and build the table
-			for (int i=1;i<=headerLabels.size();i++) {
-				sliceCol.add((double)i);
-				
-				jParser = jfactory.createParser(headerLabels.get(i).substring(headerLabels.get(i).indexOf("{")));
-				
-				//Just to skip to the first field
-				jParser.nextToken();
-				while (jParser.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname = jParser.getCurrentName();
-					
-					//Summary is an object, so that will break the loop
-					//Therefore, we need to skip over it...
-					if ("Summary".equals(fieldname)) {
-						while (jParser.nextToken() != JsonToken.END_OBJECT) {
-							// We just want to skip over the summary
-						}
-						//once we have skipped over we just want to continue
-						continue;
-					}
-					
-					jParser.nextToken();
-
-					//Sometimes images have different metadata fields
-					//In that case the columns created from the first frame
-					//might not include a field
-					//For the moment if this happens we just skip it.
-					//However, there could be another problem where in later frames don't have a field from the first frame
-					//This could lead to gaps and index issues given the current implementation
-					//I should rewrite this completely to address this possibility...
-					if (columns.containsKey(fieldname))
-						columns.get(fieldname).add(jParser.getValueAsString());
-				}
-			}
-			
-			//Let's generate the Time column using the micromanager ElapsedTime-ms
-			//For Dobby and the Andor camera this is alwasy in the frame hearders
-			//but it might be the case that for Winky this is not in the header
-			//or not an output...
-			//We could condense all of this into the loop below but then the column order 
-			//would not be ideal
-			DoubleColumn timeCol = new DoubleColumn("Time (s)");
-			GenericColumn elapsedTime = columns.get("ElapsedTime-ms");
-			//Get t0 in seconds...
-			double t0 = Double.valueOf((String)elapsedTime.get(0))/1000;
-			timeCol.add(0.0);
-			
-			for(int i=1;i<elapsedTime.size();i++) {
-				//Get tn in seconds...
-				double tn = Double.valueOf((String)elapsedTime.get(i))/1000;
-				timeCol.add(DoubleRounder.round(tn - t0, 3));
-			}
-			
-			DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
-			DataTable.add(sliceCol);
-			DataTable.add(timeCol);
-			for(String str: columns.keySet()) {
-	    		boolean ExcludedColumn = false;
-	    		
-	    		for (int i=0;i<column_exclude_list.length;i++) {
-	    			if (str.equals(column_exclude_list[i]))
-	    				ExcludedColumn = true;
-	    		}
-	    		if (!ExcludedColumn)
-					DataTable.add(columns.get(str));
+				parameters.put(fieldname, jParser.getValueAsString());
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (DataTable.get("Time") != null)
-			CollectionDate = (String)DataTable.get("Time").get(0);
 		
+		return parameters;
 	}
-	*/
 	
 	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {       
 		HashMap<Integer, HashMap<String, String>> propertiesStack = new HashMap<>();

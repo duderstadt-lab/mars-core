@@ -415,6 +415,11 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 			image.setRoi(startingRoi);
 			
+			progressUpdating.set(false);
+	        
+	        statusService.showProgress(100, 100);
+			statusService.clearStatus();
+			
 			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");
@@ -427,7 +432,6 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 				archive.addLogMessage(log);
 				archive.addLogMessage("   ");			
 			}
-			statusService.clearStatus();
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
