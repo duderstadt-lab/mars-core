@@ -275,6 +275,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
+		//check in ImageMetaData information exists...
+		String testLabel = image.getStack().getSliceLabel(1);
+    	if (!imageFormat.equals("None") && testLabel == null) {
+			logService.info("No ImageMetaData found. Aborting. The image format setting must be changed to None.");
+			logService.info(builder.endBlock(false));
+			return;
+		}
+		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 	    try {
 	    	
@@ -295,6 +303,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 				//to generate the metadata table later in the molecule archive.
 	        	String label = image.getStack().getSliceLabel(slice);
 	        	if (!imageFormat.equals("None")) {
+	        		if (label == null) {
+	        			logService.info("No ImageMetaData found for frame " + slice + ". The image format setting must be changed.");
+	        			return;
+	        		}
+	        		
 					metaDataStack.put(slice, label);
 				}
 	        	

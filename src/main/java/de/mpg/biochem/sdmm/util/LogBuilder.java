@@ -8,7 +8,7 @@ import java.util.Properties;
 import java.util.Properties;
 
 public class LogBuilder {
-	ArrayList<String[]> parameters;
+	private ArrayList<String[]> parameters;
 	
     private Properties properties;
     
@@ -49,6 +49,10 @@ public class LogBuilder {
 	public void newParameterList() {
 		parameters.clear();
 		addRunParameters();
+	}
+	
+	public void clearParameterList() {
+		parameters.clear();
 	}
 	
 	private void addRunParameters() {

@@ -1,8 +1,12 @@
 package de.mpg.biochem.sdmm.molecule;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,12 +20,16 @@ import java.util.concurrent.ConcurrentMap;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
+import org.scijava.ui.DialogPrompt.MessageType;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import ij.ImagePlus;
 import io.scif.Format;
@@ -31,6 +39,7 @@ import net.imagej.Dataset;
 import net.imagej.table.DoubleColumn;
 import net.imagej.table.GenericColumn;
 import de.mpg.biochem.sdmm.table.*;
+import de.mpg.biochem.sdmm.util.LogBuilder;
 import de.mpg.biochem.sdmm.util.SDMMMath;
 import io.scif.services.FormatService;
 
@@ -87,6 +96,9 @@ public class ImageMetaData {
 		} else if (imageFormat.equals("MicroManager")) {
 			UID = generateMMUID(headerLabels);
 			buildMetaDataMicroManager(headerLabels);
+			
+			//Let's get custom Aquisition settings from the metadata.txt file
+			getAquisitionProperties();
 		} else {
 			//For GenericData we just generate a random UID but truncate to 11 characters to match
 			//output of FNV1a algorithm...
@@ -108,21 +120,29 @@ public class ImageMetaData {
 		return SDMMMath.getFNV1aBase58(allLabels);
 	}
 	
-	//the one way Hashfunction actually take a while to run so we need to keep the String size low
+	//the one way Hashfunction actually takes a while to run so we need to keep the String size low
 	//Therefore, we randomly take some different unique properties here to make the UID...
 	private String generateMMUID(ConcurrentMap<Integer, String> headerLabels) {
 		String allLabels = "";
 		for (int i=1;i<=headerLabels.size();i++) {
 			HashMap<String, String> params = getMetaDataParamMap(headerLabels.get(i));
 			allLabels += headerLabels.get(i).substring(0, headerLabels.get(i).indexOf("{"));
-			allLabels += params.get("Time");
-			allLabels += params.get("ElapsedTime-ms");
-			allLabels += params.get("DigitalIO-State");
-			allLabels += params.get("XPositionUm");
-			allLabels += params.get("YPositionUm");
-			allLabels += params.get("ZPositionUm");
-			allLabels += params.get("MCL TIRF-Lock-Y");
-			allLabels += params.get("MCL TIRF-Lock-X");
+			if (params.containsKey("Time"))
+				allLabels += params.get("Time");
+			if (params.containsKey("ElapsedTime-ms"))
+				allLabels += params.get("ElapsedTime-ms");
+			if (params.containsKey("DigitalIO-State"))
+				allLabels += params.get("DigitalIO-State");
+			if (params.containsKey("XPositionUm"))
+				allLabels += params.get("XPositionUm");
+			if (params.containsKey("YPositionUm"))
+				allLabels += params.get("YPositionUm");
+			if (params.containsKey("ZPositionUm"))
+				allLabels += params.get("ZPositionUm");
+			if (params.containsKey("MCL TIRF-Lock-Y"))
+				allLabels += params.get("MCL TIRF-Lock-Y");
+			if (params.containsKey("MCL TIRF-Lock-X"))
+				allLabels += params.get("MCL TIRF-Lock-X");
 		}
 		
 		return SDMMMath.getFNV1aBase58(allLabels);
@@ -201,6 +221,72 @@ public class ImageMetaData {
 		}
 		
 		return parameters;
+	}
+	
+	private void getAquisitionProperties() {
+		if (SourceDirectory.equals("unknown"))
+			return;
+			
+		File metadatafile = new File(SourceDirectory + "/metadata.txt");
+		if (metadatafile.exists()) {
+			LinkedHashMap<String, String> properties = new LinkedHashMap<>();
+			
+			FileInputStream inputStream;
+			try {
+				inputStream = new FileInputStream(metadatafile);
+				JsonFactory jsonF = new JsonFactory();
+
+			    JsonParser jParser = jsonF.createParser(inputStream);
+			    
+			    jParser.nextToken();
+
+			    while (jParser.nextToken() != JsonToken.END_OBJECT) {
+					String fieldname = jParser.getCurrentName();
+					
+					//Summary is an object, so that will break the loop
+					//Therefore, we need to skip over it...
+					if ("Summary".equals(fieldname)) {
+						jParser.nextToken();
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+							String subfieldname = jParser.getCurrentName();
+							jParser.nextToken();
+							String propValue;
+							
+							if (jParser.currentToken() == JsonToken.START_ARRAY) {
+								propValue = "[";
+								while (jParser.nextToken() != JsonToken.END_ARRAY)
+									propValue +=  jParser.getValueAsString() + ", ";
+								if (propValue.length() > 1)
+									propValue = propValue.substring(0, propValue.length() - 2);
+								propValue += "]";
+							} else {
+								propValue = jParser.getValueAsString();
+							}
+
+							properties.put(subfieldname, propValue);
+						}
+						break;
+					}
+				}
+			    
+			    LogBuilder builder = new LogBuilder();
+			    builder.clearParameterList();
+			    
+			    System.out.println("size " + properties.size());
+				
+				String log = builder.buildTitleBlock("Aquisition Settings");
+				for (String key: properties.keySet())
+					builder.addParameter(key, properties.get(key));
+				
+				log += builder.buildParameterList();
+				log += builder.endBlock(true);
+				
+				addLogMessage(log);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private void buildMetaDataMicroManager(ConcurrentMap<Integer, String> headerLabels) {       
