@@ -63,7 +63,7 @@ import net.imagej.table.DoubleColumn;
 		@Menu(label = "Molecule Integrator", weight = 30, mnemonic = 'm')})
 public class MoleculeIntegratorCommand extends DynamicCommand implements Command {
 	//GENERAL SERVICES NEEDED
-	@Parameter(required=false)
+	@Parameter
 	private RoiManager roiManager;
 	
 	@Parameter
@@ -113,14 +113,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	@Parameter(label="Outer Radius")
 	private int outerRadius = 3;
-	
-	//@Parameter(label = "Use DualView Regions", choices = {"Short Wavelength", "Long Wavelength", "Both Wavelengths"})
-	//private String dualViewRegion = "Both Wavelengths";
-    
-	//ROI SETTINGS
-	//@Parameter(visibility = ItemVisibility.MESSAGE)
-	//private final String integrationBoundariesMessage =
-	//	"Integration regions:";
 	
 	@Parameter(label="Integrate long wavelength")
 	private boolean useLongWavelength = true;
@@ -658,19 +650,19 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		return microscope;
 	}
 	
-	public void setImageFormat(String imageFormat) {
+	public void setFormat(String imageFormat) {
 		this.imageFormat = imageFormat;
 	}
 	
-	public String getImageFormat() {
+	public String getFormat() {
 		return imageFormat;
 	}
 	
-	public void setDetectColors(String detectColors) {
+	public void setColors(String detectColors) {
 		this.detectColors = detectColors;
 	}
 	
-	public String getDetectColors() {
+	public String getColors() {
 		return detectColors;
 	}
 	
@@ -799,5 +791,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	public String getSHORTWavelengthColor() {
 		return SHORTWavelengthColor;
+	}
+	
+	public void setRoiManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
 	}
 }
