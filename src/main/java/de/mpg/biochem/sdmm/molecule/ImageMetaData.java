@@ -271,15 +271,15 @@ public class ImageMetaData {
 			    
 			    LogBuilder builder = new LogBuilder();
 			    builder.clearParameterList();
-			    
-			    System.out.println("size " + properties.size());
 				
-				String log = builder.buildTitleBlock("Aquisition Settings");
+				String log = builder.buildTitleBlock("Aquisition Summary");
 				for (String key: properties.keySet())
 					builder.addParameter(key, properties.get(key));
 				
 				log += builder.buildParameterList();
 				log += builder.endBlock(true);
+				
+				log += "\n";
 				
 				addLogMessage(log);
 			} catch (IOException e) {
