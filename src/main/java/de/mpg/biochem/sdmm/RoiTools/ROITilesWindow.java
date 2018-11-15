@@ -42,7 +42,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 	private Label file_label = new Label();
 	
 	private Button input_button;
-	private TextField input_text;
+	//private TextField input_text;
 	
 	private String[] filenames;
 	private int panel_offset = 0;
@@ -152,7 +152,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 			}
 		};
 		
-		input_path = input_text.getText();
+		//input_path = input_text.getText();
 		filenames = (new File(input_path)).list(textFilter);
 		if (filenames.length == 0) {
 			return false;
@@ -271,14 +271,14 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 			}
 			win.requestFocus();
 		}
-		else if (e.getSource() == input_button) {
+		/*else if (e.getSource() == input_button) {
 			DirectoryChooser dirChooser = new DirectoryChooser("Choose directory");
 			String directory = dirChooser.getDirectory();
 			
 			if (directory != null) {
 				input_text.setText(directory);
 			}
-		}
+		}*/
 	}
 	
 	public void mouseClicked(MouseEvent e) {
