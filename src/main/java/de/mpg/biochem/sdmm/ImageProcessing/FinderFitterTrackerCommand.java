@@ -289,6 +289,20 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		public void run() {				
 			image.deleteRoi();
 			
+			//Check that imageFormat setting is correct...
+			String metaDataLogMessage = "";
+			String label = image.getStack().getSliceLabel(1);
+			if (label == null) {
+				metaDataLogMessage = "No ImageMetaData was found in image header so the format was switched to None.";
+    			imageFormat = "None";
+    		} else if (imageFormat.equals("MicroManager") && label.indexOf("{") == -1) {
+    			metaDataLogMessage = "Images did not appear to have a MicroManager image format so the format was switched to None.";
+    			imageFormat = "None";
+			} else if (imageFormat.equals("NorPix") && label.indexOf("DateTime: ") == -1) {
+				metaDataLogMessage = "Images did not appear to have a NorPix image format so the format was switched to None.";
+    			imageFormat = "None";
+			}
+			
 			if (useDiscoidalAveragingFilter) {
 		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
 		    } else {
@@ -318,6 +332,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
+			if (!metaDataLogMessage.equals("")) {
+				log += metaDataLogMessage + "\n";
+			}
 			
 			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
 			
@@ -435,7 +452,6 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
-			//ImageProcessor processor = getProcessor(slice, filenames[slice-1]);
 			ImageStack stack = image.getImageStack();
 			ImageProcessor processor = stack.getProcessor(slice);
 			

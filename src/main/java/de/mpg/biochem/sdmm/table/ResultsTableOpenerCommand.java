@@ -54,7 +54,7 @@ public class ResultsTableOpenerCommand extends DynamicCommand {
 	@Override
 	public void run() {		
 		// ask the user for a file to open
-		final File file = uiService.chooseFile(null, FileWidget.OPEN_STYLE);
+		File file = uiService.chooseFile(null, FileWidget.OPEN_STYLE);
 		
 		if (file.getAbsolutePath() == null)
 			return;

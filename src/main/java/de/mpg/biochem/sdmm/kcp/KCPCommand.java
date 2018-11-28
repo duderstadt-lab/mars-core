@@ -226,7 +226,8 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		if (molecule.hasParameter(Ycolumn + "_sigma")) {
 			sigma = molecule.getParameter(Ycolumn + "_sigma");
 		} else if (molecule.hasParameter(bg_start_name) || molecule.hasParameter(bg_end_name)) {
-			sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
+			if (calcBackgroundSigma)
+				sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
 		}
 		
 		double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);

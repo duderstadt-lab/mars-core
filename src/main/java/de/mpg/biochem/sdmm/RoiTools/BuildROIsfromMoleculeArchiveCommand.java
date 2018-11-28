@@ -1,6 +1,10 @@
 package de.mpg.biochem.sdmm.RoiTools;
 
+import static java.util.stream.Collectors.toList;
+
 import java.awt.Rectangle;
+import java.util.ArrayList;
+
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -32,14 +36,18 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 	@Parameter
 	private UIService uiService;
 	
-	@Parameter
+	@Parameter(required=false)
 	private RoiManager roiManager;
+	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String tableTypeMessage =
 		"Archive molecules must contain x, y columns for particle positions.";
 	
 	@Parameter(label="MoleculeArchive")
 	private MoleculeArchive archive;
+	
+	@Parameter(label="Tags (comma separated list)")
+	private String tags = "";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String roiDimensionsMessage =
@@ -61,6 +69,30 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
         if (roiManager == null)
 			roiManager = new RoiManager();
         
+        ArrayList<String> moleculeUIDs;
+        
+        if (!tags.trim().equals("")) {
+	        //Build tag list
+	        String[] tagList = tags.split(",");
+	        for (int i=0; i<tagList.length; i++) {
+	        	tagList[i] = tagList[i].trim();
+	        }
+	 		 
+	        moleculeUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
+	 				boolean hasTag = false;
+	 				for (int i=0; i<tagList.length; i++) {
+	 		        	for (String tag : archive.get(UID).getTags()) {
+	 		        		if (!tagList[i].equals("") && tagList[i].equals(tag)) {
+	 		        			hasTag = true;
+	 		        		}
+	 		        	}
+	 		        }
+	 				return hasTag;
+	 			}).collect(toList());
+        } else {
+        	moleculeUIDs = archive.getMoleculeUIDs();
+        }
+        
         //Build log message
   		LogBuilder builder = new LogBuilder();
   		
@@ -78,7 +110,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 			archive.lock();
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
-		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+		moleculeUIDs.stream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			SDMMResultsTable datatable = molecule.getDataTable();
 			
@@ -104,6 +136,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("tags", tags);
 		builder.addParameter("x0", String.valueOf(x0));
 		builder.addParameter("y0", String.valueOf(y0));
 		builder.addParameter("width", String.valueOf(width));

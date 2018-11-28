@@ -85,11 +85,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private JTextField moleculeSearchField;
 	
+	private int moleculeCount;
+	
 	public MoleculePanel(MoleculeArchive archive) {
 		this.archive = archive;
 		if (archive.getNumberOfMolecules() > 0)
 			molecule = archive.get(0);
-		
+			
+		moleculeCount = archive.getNumberOfMolecules();
 		buildPanel();
 	}
 	
@@ -137,15 +140,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			public boolean isCellEditable(int rowIndex, int columnIndex)  {
 				return false;
 			}
-			
-			@Override
-	        public void fireTableDataChanged() {
-	            fireTableChanged(new TableModelEvent(this, //tableModel
-	                                                 0, //firstRow
-	                                                 getRowCount() - 1, //lastRow 
-	                                                 TableModelEvent.ALL_COLUMNS, //column 
-	                                                 TableModelEvent.UPDATE)); //changeType
-	        }
 		};
 		
 		moleculeIndex = new JTable(moleculeIndexTableModel);
@@ -739,7 +733,16 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		}
 		
 		//Update index table in case tags were changed
-		moleculeIndexTableModel.fireTableDataChanged();
+		if (moleculeCount < archive.getNumberOfMolecules()) {
+			moleculeIndexTableModel.fireTableRowsInserted(moleculeCount - 1, archive.getNumberOfMolecules() - 1);
+			moleculeCount = archive.getNumberOfMolecules();
+		} else if (moleculeCount > archive.getNumberOfMolecules()) {
+			moleculeIndexTableModel.fireTableRowsDeleted(archive.getNumberOfMolecules() - 1, moleculeCount - 1);
+			moleculeCount = archive.getNumberOfMolecules();
+		}
+			
+		//Update all entries...
+		moleculeIndexTableModel.fireTableRowsUpdated(0, moleculeCount - 1);
 		
 		updateParameterList();
 		updateTagList();

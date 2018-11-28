@@ -114,7 +114,7 @@ public class GradientCommand<T extends RealType< T >> extends DynamicCommand imp
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
-	    	e.getStackTrace();
+	    	e.printStackTrace();
 	    	logService.info(builder.endBlock(false));
 	    	return;
 	    } finally {
@@ -152,7 +152,8 @@ public class GradientCommand<T extends RealType< T >> extends DynamicCommand imp
 		
 		ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice), gradProcessor);
 		String infoString = (String)image.getStack().getSliceLabel(slice);
-		img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
+		if (infoString.contains("{")) 
+			img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
 		FileSaver saver = new FileSaver(img);
 		saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack().getShortSliceLabel(slice) + ".tif");
 		

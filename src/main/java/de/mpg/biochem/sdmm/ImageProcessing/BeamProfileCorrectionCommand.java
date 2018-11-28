@@ -182,9 +182,9 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 		
 		if (saveToDisk) {
 			ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice), newImage);
-			//img.setProperty("Info", (String)image.getStack().getSliceLabel(slice));
 			String infoString = (String)image.getStack().getSliceLabel(slice);
-			img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
+			if (infoString.contains("{")) 
+				img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
 			FileSaver saver = new FileSaver(img);
 			saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack().getShortSliceLabel(slice) + ".tif");
 		}
@@ -194,9 +194,13 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image Title", image.getTitle());
-		builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		}
 		builder.addParameter("Background Image Title", backgroundImage.getTitle());
-		builder.addParameter("Background Image Directory", backgroundImage.getOriginalFileInfo().directory);
+		if (backgroundImage.getOriginalFileInfo() != null && backgroundImage.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Background Image Directory", backgroundImage.getOriginalFileInfo().directory);
+		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
 		builder.addParameter("Save to Disk", String.valueOf(saveToDisk));
 		builder.addParameter("Directory", directory.getAbsolutePath());
