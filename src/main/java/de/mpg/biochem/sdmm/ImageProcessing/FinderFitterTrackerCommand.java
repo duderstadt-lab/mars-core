@@ -379,8 +379,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		        
 		        progressUpdating.set(false);
 		        
-		        statusService.showProgress(100, 100);
-		        statusService.showStatus("Peak search for " + image.getTitle() + " - Done!");
+		        statusService.showStatus(image.getStackSize(), image.getStackSize(), "Peak search for " + image.getTitle() + " - Done!");
 		        
 		   } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
@@ -431,11 +430,8 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
 		    
 			image.setRoi(startingRoi);
-			
-			progressUpdating.set(false);
 	        
-	        statusService.showProgress(100, 100);
-			statusService.clearStatus();
+			statusService.showStatus(image.getStackSize(), image.getStackSize(), "Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 			
 			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 			if (archive.getNumberOfMolecules() == 0) {
@@ -449,6 +445,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 				archive.addLogMessage(log);
 				archive.addLogMessage("   ");			
 			}
+			statusService.clearStatus();
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
