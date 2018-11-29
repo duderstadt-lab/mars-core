@@ -79,6 +79,15 @@ public class ImageMetaData {
 		DataTable = new SDMMResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
     }
+    
+    public ImageMetaData(String UID, SDMMResultsTable DataTable) {
+    	this.UID = UID;
+    	this.Microscope = "unkown";
+    	this.SourceDirectory = "unknown";
+    	log = "";
+		
+		this.DataTable = DataTable;
+    }
 	
 	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.Microscope = Microscope;
