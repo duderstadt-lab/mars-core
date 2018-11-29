@@ -593,6 +593,10 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return output[2];
 	}
 	
+	public void sort(String column, boolean ascending) {
+		ResultsTableSorterCommand.sort(this, ascending, column);
+	}
+	
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);

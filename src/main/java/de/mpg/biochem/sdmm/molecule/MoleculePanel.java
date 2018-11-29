@@ -760,12 +760,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			DataTable.getColumnModel().getColumn(i).sizeWidthToFit();
 		
 		//Update Parameter list
-		ParameterTableModel.fireTableStructureChanged();
+		//ParameterTableModel.fireTableStructureChanged();
+		ParameterTableModel.fireTableDataChanged();
 		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
 			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
 		
 		//Update TagList
-		TagTableModel.fireTableStructureChanged();
+		//TagTableModel.fireTableStructureChanged();
+		TagTableModel.fireTableDataChanged();
 		for (int i = 0; i < TagTable.getColumnCount(); i++)
 			TagTable.getColumnModel().getColumn(i).sizeWidthToFit();
 		

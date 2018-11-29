@@ -21,6 +21,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -111,6 +112,7 @@ public class MoleculeArchiveWindow {
 	private JMenuItem deleteParametersMenuItem = new JMenuItem("Delete Parameters");
 	//private JMenuItem generateNewMenuItem = new JMenuItem("Generate new archive");
 	//private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
+	private JMenuItem mergeMenuItem = new JMenuItem("Merge Molecules");
 	private JMenuItem updateMenuItem = new JMenuItem("Update");
 	//private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
 	
@@ -416,10 +418,65 @@ public class MoleculeArchiveWindow {
 	          }
 	       });
 		
+		toolsMenu.add(mergeMenuItem);
+		mergeMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+	        		GenericDialog dialog = new GenericDialog("Merge molecules");
+		     		dialog.addStringField("Merge Molecules with Tag", "", 20);
+		     		dialog.showDialog();
+		     		
+		     		if (dialog.wasCanceled())
+		     			return;
+		     		
+		     		String tag = dialog.getNextString().trim();
+			     		 
+		     		ArrayList<String> mergeUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasTag(tag)).collect(toList());
+	             
+		     		if (mergeUIDs.size() == 0) 
+		     			return;
+		     		
+		     		SDMMResultsTable mergedDataTable = archive.get(mergeUIDs.get(0)).getDataTable();
+		     		
+		     		HashSet<Double> sliceNumbers = new HashSet<Double>();
+		     		
+		     		//First add all current slices to set
+		     		for (int row=0;row<mergedDataTable.getRowCount();row++) {
+	            		sliceNumbers.add(mergedDataTable.getValue("slice", row));
+	            	}
+		     		
+		            for (int i = 1; i < mergeUIDs.size() ; i++) {
+		            	SDMMResultsTable nextDataTable = archive.get(mergeUIDs.get(i)).getDataTable();
+		            	
+		            	for (int row=0;row<nextDataTable.getRowCount();row++) {
+		            		if (!sliceNumbers.contains(nextDataTable.getValue("slice", row))) {
+		            			mergedDataTable.appendRow();
+		            			int mergeLastRow = mergedDataTable.getRowCount() - 1;
+		            			
+		            			for (int col=0;col<mergedDataTable.getColumnCount();col++) {
+		            				String column = mergedDataTable.getColumnHeader(col);
+		    	            		mergedDataTable.setValue(column, mergeLastRow, nextDataTable.getValue(column, row));
+		    	            	}
+		            			
+		            			sliceNumbers.add(nextDataTable.getValue("slice", row));
+		            		}
+		            	}
+		            	archive.remove(mergeUIDs.get(i));
+		            }
+		            
+		            //sort by slice
+		            mergedDataTable.sort("slice", true);
+		             
+		     		moleculePanel.updateAll();
+	        	 }
+	          }
+	       });
+		
 		toolsMenu.add(updateMenuItem);
 		updateMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 updateAll();
+	        	 lockArchive = false;
 	          }
 	       });
 		
