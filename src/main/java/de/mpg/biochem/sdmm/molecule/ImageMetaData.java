@@ -82,7 +82,7 @@ public class ImageMetaData {
     
     public ImageMetaData(String UID, SDMMResultsTable DataTable) {
     	this.UID = UID;
-    	this.Microscope = "unkown";
+    	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
     	log = "";
 		
