@@ -68,7 +68,7 @@ public class ImageMetaData {
     
     public ImageMetaData(String UID) {
     	this.UID = UID;
-    	this.Microscope = "unkown";
+    	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
     	log = "";
     	
