@@ -87,10 +87,17 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private int moleculeCount;
 	
+	private Molecule DummyMolecule = new Molecule("Dummy");
+	
 	public MoleculePanel(MoleculeArchive archive) {
 		this.archive = archive;
-		if (archive.getNumberOfMolecules() > 0)
+		if (archive.getNumberOfMolecules() > 0) {
 			molecule = archive.get(0);
+		} else {
+			molecule = DummyMolecule;
+		}
+		
+		DummyMolecule.setDataTable(new SDMMResultsTable());
 			
 		moleculeCount = archive.getNumberOfMolecules();
 		buildPanel();
@@ -363,13 +370,16 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
         notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	                molecule.setNotes(notes.getText());
+	                if (archive.getNumberOfMolecules() != 0)
+	            		molecule.setNotes(notes.getText());
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	molecule.setNotes(notes.getText());
+	            	if (archive.getNumberOfMolecules() != 0)
+	            		molecule.setNotes(notes.getText());
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	molecule.setNotes(notes.getText());
+	            	if (archive.getNumberOfMolecules() != 0)
+	            		molecule.setNotes(notes.getText());
 	            }
 	        });
 		
@@ -481,7 +491,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		JButton Add = new JButton("Add");
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (!newParameter.getText().equals("")) {
+				if (!newParameter.getText().equals("") && archive.getNumberOfMolecules() != 0) {
 					molecule.setParameter(newParameter.getText().trim(), 0);
 					updateParameterList();
 					ParameterTableModel.fireTableDataChanged();
@@ -495,7 +505,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		JButton Remove = new JButton("Remove");
 		Remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (ParameterTable.getSelectedRow() != -1) {
+				if (ParameterTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
 					String param = (String)ParameterTable.getValueAt(ParameterTable.getSelectedRow(), 0);
 					molecule.removeParameter(param);
 					updateParameterList();
@@ -586,7 +596,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		JButton Add = new JButton("Add");
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (!newTag.getText().equals("")) {
+				if (!newTag.getText().equals("") && archive.getNumberOfMolecules() != 0) {
 					molecule.addTag(newTag.getText().trim());
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
@@ -604,7 +614,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		JButton Remove = new JButton("Remove");
 		Remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (TagTable.getSelectedRow() != -1) {
+				if (TagTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
 					String tag = (String)TagTable.getValueAt(TagTable.getSelectedRow(), 0);
 					molecule.removeTag(tag);
 					updateTagList();
@@ -720,7 +730,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	}
 
 	public void updateAll() {
-		if (archive.get(molecule.getUID()) == null) {
+		if (archive.getNumberOfMolecules() == 0) {
+			molecule = DummyMolecule;
+		} else if (archive.get(molecule.getUID()) == null) {
 			molecule = archive.get(0);
 		} else {
 			//Need to reload the current molecule if
@@ -742,7 +754,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		}
 			
 		//Update all entries...
-		moleculeIndexTableModel.fireTableRowsUpdated(0, moleculeCount - 1);
+		if (moleculeCount != 0) {
+			moleculeIndexTableModel.fireTableRowsUpdated(0, moleculeCount - 1);
+		}
 		
 		updateParameterList();
 		updateTagList();

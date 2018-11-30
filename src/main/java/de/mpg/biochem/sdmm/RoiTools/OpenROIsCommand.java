@@ -32,7 +32,7 @@ public class OpenROIsCommand extends DynamicCommand implements Command {
 	@Parameter(label="Vertical Tiles")
 	private int vertical_tiles = 2;
 	
-	@Parameter(label="Vertical Tiles")
+	@Parameter(label="Horizontal Tiles")
 	private int horizontal_tiles = 2;
 
 	@Override
