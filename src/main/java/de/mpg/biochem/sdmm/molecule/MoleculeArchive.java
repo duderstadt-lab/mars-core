@@ -807,7 +807,9 @@ public class MoleculeArchive {
 		
 		//Lets just sample a random 20 molecules and use that as the size...
 		double averageSize = 0;
-		if (moleculeIndex.size() == 1) {
+		if (moleculeIndex.size() == 0) {
+			//leave it equal to zero...
+		} else if (moleculeIndex.size() == 1) {
 			averageSize = getByteSize(get(moleculeIndex.get(0)));
 		} else {
 			for (int i=0;i<20;i++) {
