@@ -87,7 +87,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private int moleculeCount;
 	
-	private Molecule DummyMolecule = new Molecule("Dummy");
+	private Molecule DummyMolecule = new Molecule("unknown");
 	
 	public MoleculePanel(MoleculeArchive archive) {
 		this.archive = archive;
@@ -98,6 +98,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		}
 		
 		DummyMolecule.setDataTable(new SDMMResultsTable());
+		DummyMolecule.setImageMetaDataUID("XXXXXXXXXX");
 			
 		moleculeCount = archive.getNumberOfMolecules();
 		buildPanel();
@@ -224,7 +225,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		splitPane.setDividerLocation(300);
 		
-		moleculeIndex.setRowSelectionInterval(0, 0);
+		if (archive.getNumberOfMolecules() > 0)
+			moleculeIndex.setRowSelectionInterval(0, 0);
 		
 		setLayout(new BorderLayout());
 		add(splitPane, BorderLayout.CENTER);
@@ -732,8 +734,10 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	public void updateAll() {
 		if (archive.getNumberOfMolecules() == 0) {
 			molecule = DummyMolecule;
+			notes.setEditable(false);
 		} else if (archive.get(molecule.getUID()) == null) {
 			molecule = archive.get(0);
+			notes.setEditable(true);
 		} else {
 			//Need to reload the current molecule if
 			//working in virtual storage
@@ -742,6 +746,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			//this prevents overwritting when switching records
 			//in the window..
 			molecule = archive.get(molecule.getUID());
+			notes.setEditable(true);
 		}
 		
 		//Update index table in case tags were changed

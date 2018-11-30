@@ -31,6 +31,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import net.imagej.table.DoubleColumn;
 import net.imagej.table.GenericColumn;
 
@@ -58,9 +59,16 @@ public class ImageMetaDataPanel extends JPanel {
 	private JTable DataTable;
 	private AbstractTableModel DataTableModel;
 	
+	private ImageMetaData DummyImageMetaData = new ImageMetaData("unknown", new SDMMResultsTable());
+	
 	public ImageMetaDataPanel(MoleculeArchive archive) {
-		this.imageMetaData = archive.getImageMetaData(0);
 		this.archive = archive;
+		
+		if (archive.getNumberOfImageMetaDataItems() > 0) {
+			this.imageMetaData = archive.getImageMetaData(0);
+		} else {
+			imageMetaData = DummyImageMetaData;
+		}
 		
 		//METADATA INDEX LIST
 		//Need to build the datamodel backed by the ImageMetaData...
@@ -172,7 +180,8 @@ public class ImageMetaDataPanel extends JPanel {
 				
 		splitPane.setDividerLocation(300);
 		
-		imageMetaDataIndex.setRowSelectionInterval(0, 0);
+		if (archive.getNumberOfImageMetaDataItems() != 0)
+			imageMetaDataIndex.setRowSelectionInterval(0, 0);
 		
 		setLayout(new BorderLayout());
 		add(splitPane, BorderLayout.CENTER);
@@ -194,17 +203,22 @@ public class ImageMetaDataPanel extends JPanel {
         Notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	            	imageMetaData.setNotes(Notes.getText());
-	            	archive.setImageMetaData(imageMetaData);
+	            	if (archive.getNumberOfImageMetaDataItems() != 0) {
+		            	imageMetaData.setNotes(Notes.getText());
+		            	archive.setImageMetaData(imageMetaData);
+	            	}
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	imageMetaData.setNotes(Notes.getText());
-	            	archive.setImageMetaData(imageMetaData);
-	            	
+	            	if (archive.getNumberOfImageMetaDataItems() != 0) {
+		            	imageMetaData.setNotes(Notes.getText());
+		            	archive.setImageMetaData(imageMetaData);
+	            	}
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	imageMetaData.setNotes(Notes.getText());
-	            	archive.setImageMetaData(imageMetaData);
+	            	if (archive.getNumberOfImageMetaDataItems() != 0) {
+		            	imageMetaData.setNotes(Notes.getText());
+		            	archive.setImageMetaData(imageMetaData);
+	            	}
 	            }
 	        });
 		metaDataTabs.addTab("Notes", commentScroll);
@@ -375,8 +389,12 @@ public class ImageMetaDataPanel extends JPanel {
 	}
 	
 	public void updateAll() {
-		if (archive.get(imageMetaData.getUID()) == null) {
+		if (archive.getNumberOfImageMetaDataItems() == 0) {
+			imageMetaData = DummyImageMetaData;
+			Notes.setEditable(false);
+		} else if (archive.get(imageMetaData.getUID()) == null) {
 			imageMetaData = archive.getImageMetaData(0);
+			Notes.setEditable(true);
 		} else {
 			//Need to reload the current molecule if
 			//working in virtual storage
@@ -385,6 +403,7 @@ public class ImageMetaDataPanel extends JPanel {
 			//this prevents overwritting when switching records
 			//in the window..
 			imageMetaData = archive.get(imageMetaData.getUID()).UnwrapImageMetaData();
+			Notes.setEditable(true);
 		}
 		
 		//Update Labels
