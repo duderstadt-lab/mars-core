@@ -117,6 +117,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 				} else if (columnIndex == 1) {
 					return archive.getUIDAtIndex(rowIndex);
 				} else if (columnIndex == 2) {
+					//archive.updateTagIndex(archive.getUIDAtIndex(rowIndex));
 					return archive.getTagList(archive.getUIDAtIndex(rowIndex));
 				}
 				return null;

@@ -504,6 +504,7 @@ public class MoleculeArchive {
 				archive.put(molecule.getUID(), molecule);
 			} else {
 				molecules.put(molecule.getUID(), molecule);
+				molecule.setParentArchive(this);
 			}
 			updateTagIndex(molecule);
 		}
@@ -624,7 +625,7 @@ public class MoleculeArchive {
 		updateTagIndex(molecule);
 	}
 	
-	private void generateTagIndex() {
+	public void generateTagIndex() {
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
@@ -646,6 +647,21 @@ public class MoleculeArchive {
 	}
 	
 	private void updateTagIndex(Molecule molecule) {
+		if (molecule.getTags() == null) {
+			//Shouldn't happen..do nothing...
+		} else if (molecule.getTags().size() > 0) {
+			String tagList = "";
+			for (String tag:molecule.getTags())
+				tagList += tag + ", ";
+			tagList = tagList.substring(0, tagList.length() - 2);
+			tagIndex.put(molecule.getUID(), tagList);
+		} else {
+			tagIndex.remove(molecule.getUID());
+		}
+	}
+	
+	public void updateTagIndex(String updateUID) {
+		Molecule molecule = get(updateUID);
 		if (molecule.getTags() == null) {
 			//Shouldn't happen..do nothing...
 		} else if (molecule.getTags().size() > 0) {

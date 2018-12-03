@@ -339,15 +339,23 @@ public class Molecule {
 		Tags.add(tag);
 		if (parent != null) {
 			parent.getArchiveProperties().addTag(tag);
+			parent.updateTagIndex(UID);
 		}
 	}
 	
 	public void removeTag(String tag) {
 		Tags.remove(tag);
+		if (parent != null) {
+			parent.getArchiveProperties().removeTag(tag);
+			parent.updateTagIndex(UID);
+		}
 	}
 	
 	public void removeAllTags() {
 		Tags.clear();
+		if (parent != null) {
+			parent.updateTagIndex(UID);
+		}
 	}
 	
 	public void setParameter(String parameter, double value) {
