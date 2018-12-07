@@ -2,6 +2,7 @@ package de.mpg.biochem.sdmm.RoiTools;
 
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Label;
 import java.awt.Panel;
@@ -18,6 +19,10 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.ImageWindow;
@@ -33,15 +38,15 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 	private FrameSkipAnimator FSanimator;
 	private boolean running = false;
 	
-	private Button previousButton = new Button("previous");
-	private Button nextButton = new Button("next");
-	private Button Process = new Button("Process");
-	private Button play = new Button("Start/Stop");
-	private TextField sliceInterval = new TextField("25",3);
-	private Label pos_label = new Label();
-	private Label file_label = new Label();
+	private JButton previousButton = new JButton("previous");
+	private JButton nextButton = new JButton("next");
+	private JButton Process = new JButton("Process");
+	private JButton play = new JButton("Start/Stop");
+	private JTextField sliceInterval = new JTextField("25",3);
+	private JLabel pos_label = new JLabel();
+	private JLabel file_label = new JLabel();
 	
-	private Button input_button;
+	//private Button input_button;
 	//private TextField input_text;
 	
 	private String[] filenames;
@@ -122,13 +127,18 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 		panel.add(nextButton);
 		panel.add(Process);
 		panel.add(play);
-		panel.add(new Label(" Slice Interval"));
+		panel.add(new JLabel(" Slice Interval"));
 		panel.add(sliceInterval);
 		previousButton.addActionListener(this);
 		nextButton.addActionListener(this);
 		Process.addActionListener(this);
 		play.addActionListener(this);
 		win.add(panel);
+		
+		//pos_label.setMinimumSize(new Dimension(30,150));
+		//pos_label.setMaximumSize(new Dimension(50,400));
+		//file_label.setMinimumSize(new Dimension(30,150));
+		//file_label.setMaximumSize(new Dimension(50,400));
 		
 		Panel labpan = new Panel();
 		labpan.add(pos_label);
@@ -195,7 +205,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 			tile_stack.addSlice(null, cur_image);
 		}
 		
-		pos_label.setText("trajectories " + (panel_offset + 1) + " to " + to_num + " of " + filenames.length);
+		pos_label.setText("ROIs " + (panel_offset + 1) + " to " + to_num + " of " + filenames.length);
 		
 		return tile_stack;
 	}
@@ -301,7 +311,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
     	Point pon = tiled_images.getCanvas().getCursorLoc();
     	for (int i = 0; i < loaded_names.size(); i++) {
     		if (rois.get(i).contains(pon.x, pon.y)) {
-    			file_label.setText("  file :  " + loaded_names.get(i));
+    			file_label.setText(" file: " + loaded_names.get(i));
     		}
     	}
     }

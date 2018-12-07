@@ -24,7 +24,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.*;
 import net.imglib2.type.numeric.RealType;
 import net.imagej.ImageJService;
 

@@ -32,8 +32,8 @@ import javax.swing.table.TableRowSorter;
 import org.apache.commons.lang3.StringUtils;
 
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
-import net.imagej.table.DoubleColumn;
-import net.imagej.table.GenericColumn;
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 
 public class ImageMetaDataPanel extends JPanel {
 	private ImageMetaData imageMetaData;

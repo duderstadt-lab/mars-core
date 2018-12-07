@@ -17,7 +17,7 @@ import de.mpg.biochem.sdmm.ImageProcessing.Peak;
 import de.mpg.biochem.sdmm.molecule.Molecule;
 import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.*;
 
 public class SegmentDistributionBuilder {
 	//Here we use a bunch of global variables for everything

@@ -28,7 +28,7 @@ import org.scijava.widget.ChoiceWidget;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 
 import javax.swing.JLabel;
 

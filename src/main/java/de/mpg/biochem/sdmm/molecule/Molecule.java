@@ -2,7 +2,7 @@ package de.mpg.biochem.sdmm.molecule;
 
 import de.mpg.biochem.sdmm.table.*;
 import de.mpg.biochem.sdmm.util.SDMMMath;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 import net.openhft.chronicle.bytes.BytesIn;
 import net.openhft.chronicle.bytes.BytesMarshallable;
 import net.openhft.chronicle.bytes.BytesOut;

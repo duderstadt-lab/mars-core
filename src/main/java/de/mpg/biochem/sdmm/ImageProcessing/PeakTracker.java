@@ -22,7 +22,7 @@ import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.SDMMMath;
 import ij.IJ;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 

@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 import io.scif.img.IO;
 import io.scif.img.ImgIOException;
 

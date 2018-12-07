@@ -69,7 +69,7 @@ import de.mpg.biochem.sdmm.util.*;
 import org.scijava.ui.*;
 import static java.util.stream.Collectors.toList;
 
-import net.imagej.table.*;
+import org.scijava.table.*;
 
 public class MoleculeArchive {
 	private String name;

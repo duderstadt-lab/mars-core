@@ -2,7 +2,7 @@ package de.mpg.biochem.sdmm.ImageProcessing;
 
 import java.util.ArrayList;
 
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
 
 //This is a class that contains all the information about peaks

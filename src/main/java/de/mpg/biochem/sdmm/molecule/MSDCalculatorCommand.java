@@ -20,7 +20,7 @@ import java.util.HashMap;
 import de.mpg.biochem.sdmm.table.SDMMResultsTable;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 
 @Plugin(type = Command.class, label = "Mean Squared Displacement Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

@@ -43,7 +43,7 @@ import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.DoubleColumn;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of peaks for integration can be provided as PointRois 

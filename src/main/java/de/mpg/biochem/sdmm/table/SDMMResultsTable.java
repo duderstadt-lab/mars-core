@@ -1,6 +1,6 @@
 package de.mpg.biochem.sdmm.table;
 
-import net.imagej.table.*;
+import org.scijava.table.*;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

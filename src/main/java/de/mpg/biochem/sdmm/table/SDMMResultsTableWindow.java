@@ -35,7 +35,7 @@ import de.mpg.biochem.sdmm.plot.*;
 //import org.scijava.widget.FileWidget;
 
 import ij.io.SaveDialog;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.*;
 
 public class SDMMResultsTableWindow implements ActionListener {
 	SDMMResultsTable results;

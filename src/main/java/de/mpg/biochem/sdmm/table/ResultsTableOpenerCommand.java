@@ -23,8 +23,8 @@ import de.mpg.biochem.sdmm.molecule.MoleculeArchive;
 import org.scijava.log.*;
 import org.scijava.menu.MenuConstants;
 
-import net.imagej.table.DoubleColumn;
-import net.imagej.table.GenericColumn;
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 
 @Plugin(type = Command.class, label = "Open ResultsTable", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -48,15 +48,15 @@ public class ResultsTableOpenerCommand extends DynamicCommand {
     @Parameter
     private LogService logService;
     
+    @Parameter(label="SDMMResultsTable (csv or tab) ")
+    private File file;
+    
     @Parameter(label="SDMMResultsTable", type = ItemIO.OUTPUT)
     private SDMMResultsTable results;
 
 	@Override
-	public void run() {		
-		// ask the user for a file to open
-		File file = uiService.chooseFile(null, FileWidget.OPEN_STYLE);
-		
-		if (file.getAbsolutePath() == null)
+	public void run() {				
+		if (file == null)
 			return;
 		
 		results = open(file.getAbsolutePath());
@@ -156,8 +156,10 @@ public class ResultsTableOpenerCommand extends DynamicCommand {
 	}
 	
 	//Utility methods to set Parameters not initialized...
+	public void setFile(File file) {
+		this.file = file;
+	}
 	
-	//TO DO remove these are just run it as a command from the TableDropRunner...
 	public void setTableService(ResultsTableService resultsTableService) {
 		this.resultsTableService = resultsTableService;
 	}

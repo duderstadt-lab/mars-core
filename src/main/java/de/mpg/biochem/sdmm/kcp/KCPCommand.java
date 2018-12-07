@@ -26,7 +26,7 @@ import de.mpg.biochem.sdmm.molecule.MoleculeArchiveService;
 import de.mpg.biochem.sdmm.table.*;
 import de.mpg.biochem.sdmm.util.LogBuilder;
 import net.imagej.ops.Initializable;
-import net.imagej.table.DoubleColumn;
+import org.scijava.table.*;
 
 @Plugin(type = Command.class, headless = true, label = "Change Point Finder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
