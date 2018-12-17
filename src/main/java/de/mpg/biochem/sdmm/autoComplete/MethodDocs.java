@@ -16,10 +16,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package de.mpg.biochem.sdmm.plot;
+package de.mpg.biochem.sdmm.autoComplete;
 
-import java.awt.geom.Rectangle2D;
+import java.lang.annotation.*;
 
-public interface BoundsChangedListener {
-	public void boundsChanged(Rectangle2D.Double bounds, int bleftMargin);
+/**
+ * Based on https://stackoverflow.com/questions/15312238/how-to-get-a-javadoc-of-a-method-at-run-time
+ * 
+ * 
+ * @author Karl Duderstadt
+ *
+ */
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value = ElementType.METHOD)
+public @interface MethodDocs {
+	  /**
+	   * This provides description when generating docs.
+	   */
+	  public String desc() default "";
+	  /**
+	   * This provides params when generating docs.
+	   */
+	  public String[] params();
 }

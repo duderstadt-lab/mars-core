@@ -16,10 +16,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package de.mpg.biochem.sdmm.plot;
+package de.mpg.biochem.sdmm.autoComplete;
 
-import java.awt.geom.Rectangle2D;
+import org.fife.ui.autocomplete.CompletionProvider;
+import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.script.LanguageSupportPlugin;
 
-public interface BoundsChangedListener {
-	public void boundsChanged(Rectangle2D.Double bounds, int bleftMargin);
+/**
+ * PythonLanguageSupportPlugin
+ * <p>
+ * <p>
+ * <p>
+ * @author Robert Haase
+ * October 2018
+ */
+@Plugin(type = LanguageSupportPlugin.class)
+public class GroovyLanguageSupportPlugin extends AbstractLanguageSupportPlugin
+        implements LanguageSupportPlugin
+{
+    @Override
+    public String getLanguageName() {
+        return "groovy";
+    }
+
+
+    @Override
+    CompletionProvider getCompletionProvider() {
+        return ScriptingAutoCompleteProvider.getInstance();
+    }
 }

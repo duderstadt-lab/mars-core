@@ -16,35 +16,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package de.mpg.biochem.sdmm.molecule;
+package de.mpg.biochem.sdmm.autoComplete;
 
-import org.scijava.display.AbstractDisplay;
-import org.scijava.display.Display;
+import org.fife.rsta.ac.AbstractLanguageSupport;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.CompletionProvider;
+import org.fife.ui.autocomplete.LanguageAwareCompletionProvider;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.scijava.module.ModuleService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.script.LanguageSupportPlugin;
+
+import javax.swing.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.ArrayList;
 
 /**
- * Display for {@link MoleculeArchive}. This ensures that uiService.show() for a MoleculeArchive will automatically be detected and 
- * call the view method in MoleculeArchiveView to make our custom window with custom menus.
- * 
- * @author Karl Duderstadt
+ * PythonLanguageSupportPlugin
+ * <p>
+ * <p>
+ * <p>
+ * @author Robert Haase
+ * October 2018
  */
-@Plugin(type = Display.class)
-public class MoleculeArchiveDisplay extends AbstractDisplay<MoleculeArchive> implements Display<MoleculeArchive> {
-	
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public MoleculeArchiveDisplay() {
-		super((Class) MoleculeArchive.class);
-	}
+@Plugin(type = LanguageSupportPlugin.class)
+public class PythonLanguageSupportPlugin extends AbstractLanguageSupportPlugin
+        implements LanguageSupportPlugin
+{
+    @Override
+    public String getLanguageName() {
+        System.out.println("Hello haase");
+        return "python";
+    }
 
-	// -- Display methods --
 
-	@Override
-	public boolean canDisplay(final Class<?> c) {
-		if (c.equals(MoleculeArchive.class)) {
-			return true;
-		} else { 
-			return super.canDisplay(c);
-		}
-	}
+    @Override
+    CompletionProvider getCompletionProvider() {
+        return ScriptingAutoCompleteProvider.getInstance();
+    }
 }

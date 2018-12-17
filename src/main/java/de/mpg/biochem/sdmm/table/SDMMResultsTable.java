@@ -1,3 +1,21 @@
+/*******************************************************************************
+ * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * 
+ * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.mpg.biochem.sdmm.table;
 
 import org.scijava.table.*;
@@ -23,6 +41,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.sdmm.autoComplete.MethodDocs;
 import de.mpg.biochem.sdmm.util.SDMMMath;
 import ij.text.TextWindow;
 import net.imagej.ImgPlus;
@@ -405,6 +424,16 @@ public class SDMMResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	//Here are some utility methods add for common operations..
+	/**
+	 * Returns the maximum value in the column.
+	 * <p>
+	 * Not sure why this p is here.
+	 * 
+	 * @param  column  name of the column.
+	 * @return      maximum value in the column.
+	 */
+	@MethodDocs(desc = "Returns the maximum value in the column. <p> Not sure why this p is here.",
+            params = {"column - name of the column.","return - maximum value in the column."})
 	public double max(String column) {
 		if (get(column) == null)
 			return Double.NaN;
