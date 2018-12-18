@@ -30,11 +30,11 @@
 		<relativePath />
 	</parent>
 
-	<groupId>de.mpg.biochem.sdmm</groupId>
-	<artifactId>SDMM_Plugins</artifactId>
-	<version>2.0.0-SNAPSHOT-beta2</version>
+	<groupId>de.mpg.biochem</groupId>
+	<artifactId>mars</artifactId>
+	<version>1.0.0-SNAPSHOT-beta1</version>
 
-	<name>SDMM_Plugins</name>
+	<name>mars</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
@@ -43,7 +43,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>Simplified BSD License</name>
+			<name>GPL3.0</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -67,22 +67,22 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2</connection>
-		<developerConnection>scm:git:git@laue.biochem.mpg.de/SDMM/SDMM_Plugins_v2.git</developerConnection>
+		<connection>scm:git:git://laue.biochem.mpg.de:81/SDMM/mars</connection>
+		<developerConnection>scm:git:git@laue.biochem.mpg.de/SDMM/mars.git</developerConnection>
 		<tag>HEAD</tag>
-		<url>git@laue.biochem.mpg.de:SDMM/SDMM_Plugins_v2.git</url>
+		<url>git@laue.biochem.mpg.de:SDMM/mars.git</url>
 	</scm>
 	<issueManagement>
 		<system>GitLab Issues</system>
-		<url>http://laue.biochem.mpg.de:81/SDMM/SDMM_Plugins_v2/issues</url>
+		<url>http://laue.biochem.mpg.de:81/SDMM/mars/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
 	</ciManagement>
 
 	<properties>
-		<package-name>de.mpg.biochem.sdmm</package-name>
-		<license.licenseName>bsd_2</license.licenseName>
+		<package-name>de.mpg.biochem.mars</package-name>
+		<license.licenseName>GPL3.0</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 	</properties>
 	
@@ -194,5 +194,5 @@
 				<artifactId>script-editor</artifactId>
 		</dependency>
 	</dependencies>
-	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data for the Structure and Dynamics of Molecular Machines research group. Conforms to the ImageJ2 API.</description>
+	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data in the Structure and Dynamics of Molecular Machines research group. Conforms to the ImageJ2 API.</description>
 </project>
