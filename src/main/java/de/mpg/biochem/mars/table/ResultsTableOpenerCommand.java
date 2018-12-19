@@ -47,7 +47,7 @@ import org.scijava.table.GenericColumn;
 @Plugin(type = Command.class, label = "Open ResultsTable", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Table Utils", weight = 10,
 			mnemonic = 't'),

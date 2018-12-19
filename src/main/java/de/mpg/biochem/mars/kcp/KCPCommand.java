@@ -49,7 +49,7 @@ import org.scijava.table.*;
 @Plugin(type = Command.class, headless = true, label = "Change Point Finder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "KCP", weight = 40,
 			mnemonic = 'k'),

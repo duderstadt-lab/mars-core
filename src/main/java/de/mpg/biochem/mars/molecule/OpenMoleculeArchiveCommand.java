@@ -53,7 +53,7 @@ import javax.swing.filechooser.FileSystemView;
 @Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "SDMM Plugins", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
