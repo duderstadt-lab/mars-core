@@ -1,4 +1,4 @@
-MARS - Molecule Archive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
 
 How to install this project in your local Fiji
 ===========================================
@@ -9,3 +9,19 @@ An imagej update site has been created to help with maintanance and distribution
 4. If the plugins have been installed correctly, the submenu "MoleculeArchive Suite" should show up under Plugins.
 5. From now on all you need to do is run the updater to ensure you have the current version of MARS installed. Please update frequently to ensure you benefit from the most recent bug fixes.
 
+Copyright and license information
+===========================================
+Copyright (C) 2018 - 2019 Karl Duderstadt
+  
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+ 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
