@@ -1,4 +1,4 @@
-**MARS** - **M**olecule**AR**chive **S**uite - A collection of ImageJ2 commands for single-molecule analysis.
+**MARS** - **M**olecule **AR**chive **S**uite - A collection of ImageJ2 commands for single-molecule analysis.
 
 How to install this project in your local Fiji
 ===========================================
