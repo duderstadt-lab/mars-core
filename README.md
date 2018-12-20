@@ -9,6 +9,8 @@ An imagej update site has been created to help with maintanance and distribution
 4. If the plugins have been installed correctly, the submenu "MoleculeArchive Suite" should show up under Plugins.
 5. From now on all you need to do is run the updater to ensure you have the current version of MARS installed. Please update frequently to ensure you benefit from the most recent bug fixes.
 
+Documentation on how to use the commands and build groovy scripts with MARS can be found on the wiki at http://laue.biochem.mpg.de/Knowledge/Computing/Mars.
+
 Copyright and license information
 ===========================================
 Copyright (C) 2018 - 2019 Karl Duderstadt
