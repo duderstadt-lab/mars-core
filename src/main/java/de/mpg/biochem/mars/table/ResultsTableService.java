@@ -176,10 +176,6 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 			}
 		}
 		
-		System.out.println("ascending " + String.valueOf(ascending) + " columns[0] [" + columns[0] + "]");
-		
-		//Debugging
-		
 		ResultsTableList list = new ResultsTableList(table);
 		
 		final int[] columnIndexes = new int[columns.length];
