@@ -70,7 +70,7 @@ public class ResultsGroupFilterCommand extends DynamicCommand implements Initial
 	@Override
 	public void run() {
 		// sort on group column
-		ResultsTableSorterCommand.sort(table, true, group);
+		table.sort(true, group);
 		
 		ResultsTableList rtl = new ResultsTableList(table);
 		

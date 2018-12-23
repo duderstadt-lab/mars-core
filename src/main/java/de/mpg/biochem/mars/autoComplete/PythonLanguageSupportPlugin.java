@@ -47,7 +47,6 @@ public class PythonLanguageSupportPlugin extends AbstractLanguageSupportPlugin
 {
     @Override
     public String getLanguageName() {
-        System.out.println("Hello haase");
         return "python";
     }
 

@@ -30,7 +30,7 @@ import org.decimal4j.util.DoubleRounder;
 import com.chrylis.codec.base58.Base58Codec;
 import com.chrylis.codec.base58.Base58UUID;
 
-//A collection of useful utility math functions used multiple times throughout the SDMM Plugins.
+//A collection of useful utility math functions used multiple times throughout MARS.
 public class MARSMath {
 	//Precision in number of decimal places for output arrays
 	//Primarily used for DataTable output

@@ -27,6 +27,7 @@ import java.nio.charset.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +166,45 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		return map;
 	}
 	
+	public static boolean sort(MARSResultsTable table, final boolean ascending, String... columns) {
+		
+		for (int index=0; index<columns.length; index++) {	
+			if (!table.hasColumn(columns[index])) {
+				System.out.println("MARSResultsTable sort failed because one of the columns given was not found.");
+				System.out.println("Are you sure the column name is a match to a column in the table?");
+				return false;
+			}
+		}
+		
+		System.out.println("ascending " + String.valueOf(ascending) + " columns[0] [" + columns[0] + "]");
+		
+		//Debugging
+		
+		ResultsTableList list = new ResultsTableList(table);
+		
+		final int[] columnIndexes = new int[columns.length];
+		
+		for (int i = 0; i < columns.length; i++)
+			columnIndexes[i] = table.getColumnIndex(columns[i]);
+		
+		Collections.sort(list, new Comparator<double[]>() {
+			
+			@Override
+			public int compare(double[] o1, double[] o2) {				
+				for (int columnIndex: columnIndexes) {
+					int groupDifference = Double.compare(o1[columnIndex], o2[columnIndex]); 
+				
+					if (groupDifference != 0)
+						return ascending ? groupDifference : -groupDifference;
+				}
+				return 0;
+			}
+			
+		});
+		
+		return true;
+	}
+	
 	public MARSResultsTable getResultsTable(String name) {
 		return tables.get(name);
 	}
@@ -185,7 +225,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 			
 			if (pos != i) {
 				//means we need to move row i to position row.
-				for (int j=1;j<table.getColumnCount();j++)
+				for (int j=0;j<table.getColumnCount();j++)
 					table.set(j, pos, table.get(j, i));
 			}
 			pos++;

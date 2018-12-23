@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -426,8 +427,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	//Here are some utility methods add for common operations..
 	/**
 	 * Returns the maximum value in the column.
-	 * <p>
-	 * Not sure why this p is here.
 	 * 
 	 * @param  column  name of the column.
 	 * @return      maximum value in the column.
@@ -622,8 +621,16 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return output[2];
 	}
 	
-	public void sort(String column, boolean ascending) {
-		ResultsTableSorterCommand.sort(this, ascending, column);
+	public void sort(final boolean ascending, String column) {
+		ResultsTableService.sort(this, ascending, column);
+	}
+	
+	public void sort(final boolean ascending, String group, String column) {
+		ResultsTableService.sort(this, ascending, group, column);
+	}
+	
+	public void sort(final boolean ascending, String... column) {
+		ResultsTableService.sort(this, ascending, column);
 	}
 	
 	@Override

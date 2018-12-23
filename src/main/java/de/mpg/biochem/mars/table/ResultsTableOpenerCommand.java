@@ -66,10 +66,10 @@ public class ResultsTableOpenerCommand extends DynamicCommand {
     @Parameter
     private LogService logService;
     
-    @Parameter(label="SDMMResultsTable (csv or tab) ")
+    @Parameter(label="MARSResultsTable (csv or tab) ")
     private File file;
     
-    @Parameter(label="SDMMResultsTable", type = ItemIO.OUTPUT)
+    @Parameter(label="MARSResultsTable", type = ItemIO.OUTPUT)
     private MARSResultsTable results;
 
 	@Override
@@ -176,6 +176,14 @@ public class ResultsTableOpenerCommand extends DynamicCommand {
 	//Utility methods to set Parameters not initialized...
 	public void setFile(File file) {
 		this.file = file;
+	}
+	
+	public File getFile() {
+		return file;
+	}
+	
+	public MARSResultsTable getTable() {
+		return results;
 	}
 	
 	public void setTableService(ResultsTableService resultsTableService) {

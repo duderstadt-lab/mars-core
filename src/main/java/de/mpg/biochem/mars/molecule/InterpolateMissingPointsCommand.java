@@ -107,7 +107,7 @@ public class InterpolateMissingPointsCommand extends DynamicCommand implements C
 			}
 			
 			//now that we have added all the new rows we need to resort the table by slice.
-			ResultsTableSorterCommand.sort(datatable, true, "slice");
+			datatable.sort(true, "slice");
 			
 			archive.set(molecule);
 		});

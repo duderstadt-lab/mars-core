@@ -483,7 +483,7 @@ public class MoleculeArchiveWindow {
 		            }
 		            
 		            //sort by slice
-		            mergedDataTable.sort("slice", true);
+		            mergedDataTable.sort(true, "slice");
 		             
 		     		moleculePanel.updateAll();
 	        	 }

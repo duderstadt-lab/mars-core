@@ -45,7 +45,7 @@ import net.imagej.ops.Initializable;
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
+			mnemonic = 'm'),
 		@Menu(label = "Table Utils", weight = 10,
 			mnemonic = 't'),
 		@Menu(label = "Results Filter", weight = 30, mnemonic = 'f')})
@@ -59,18 +59,18 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
     
     @Parameter
     private LogService logService;
-    
-	@Parameter(label="Table", callback = "updateMinMax", choices = {"a", "b", "c"})
-	private String tableName;
+	
+    @Parameter(label="Table", callback = "updateMinMax", choices = {"a", "b", "c"})
+    private MARSResultsTable table;
 	
 	@Parameter(label="Column", callback = "updateMinMax", choices = {"a", "b", "c"})
 	private String columnName;
 	
-	@Parameter(label="Filter Type", choices = { "Min_Max" , "Standard_Deviation" , "Table" },
+	@Parameter(label="Type", choices = { "Min Max" , "Standard Deviation" , "Filter Table" },
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE)
-	private String FilterType = "Min_Max";
+	private String FilterType = "Min Max";
 	
-	@Parameter(label="Filter Selection", choices = { "include" , "exclude" },
+	@Parameter(label="Selection", choices = { "inside" , "outside" },
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE)
 	private String selectionType = "include";
 	
@@ -84,9 +84,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	private double N_STD = 2;
 	
 	@Parameter(label="Filter Table", choices = {"a", "b", "c"})
-	private String filterTableName;
-	
-	private MARSResultsTable table, filterTable;
+	private MARSResultsTable filterTable;
 	
 	private boolean TableFilter = false;
 	private boolean STDFilter = false;
@@ -95,14 +93,10 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	// -- Callback methods --
 
 	private void updateMinMax() {
-		table = resultsTableService.getResultsTable(tableName);
 		if (table.get(columnName) != null) {
 			min = max = table.getDoubleColumn(columnName).get(0);
 			
-			//int index = 0;
 			for (double value: table.getDoubleColumn(columnName)) {
-				//logService.info("index " + index + " " + value);
-				//index++;
 				
 				if (min > value)
 					min = value;
@@ -116,15 +110,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	// -- Initializable methods --
 
 	@Override
-	public void initialize() {
-        final MutableModuleItem<String> tableItems = getInfo().getMutableInput("tableName", String.class);
-		tableItems.setChoices(resultsTableService.getTableNames());
-		
-		final MutableModuleItem<String> filterTableItems = getInfo().getMutableInput("filterTableName", String.class);
-		//ArrayList<String> tableNames = resultsTableService.getColumnNames();
-		//tableNames.add(0, "None");
-		filterTableItems.setChoices(resultsTableService.getTableNames());
-		
+	public void initialize() {		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("columnName", String.class);
 		columnItems.setChoices(resultsTableService.getColumnNames());
 	}
@@ -133,12 +119,10 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	
 	@Override
 	public void run() {
-		table = resultsTableService.getResultsTable(tableName);
-		
-		if (FilterType.equals("Table")) {
+		if (FilterType.equals("Filter Table")) {
 			TableFilter = true;
 			STDFilter = false;
-		} else if (FilterType.equals("Standard_Deviation")) {
+		} else if (FilterType.equals("Standard Deviation")) {
 			STDFilter = true;
 			TableFilter = false;
 		} else {
@@ -146,7 +130,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 			TableFilter = false;
 		}
 		
-		if (selectionType.equals("include")) {
+		if (selectionType.equals("inside")) {
 			includeSelection = true;
 		} else {
 			includeSelection = false;
@@ -158,34 +142,21 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		}
 		
 		//If STDFilter was selected we have to calculate mean and STD before filtering
-		double STD = 0;
-		double mean = 0;
-		if (STDFilter) {
-			for (int i = 0; i < table.getRowCount() ; i++) {
-				mean += table.getValue(columnName, i);
-			}
-			mean /= table.getRowCount();
-			
-			double diffSquares = 0;
-			for (int i = 0; i < table.getRowCount() ; i++) {
-				diffSquares += (mean - table.getValue(columnName, i))*(mean - table.getValue(columnName, i));
-			}
-			
-			STD = Math.sqrt(diffSquares/(table.getRowCount()-1));		
-		}
+		double STD = table.std(columnName);
+		double mean = table.mean(columnName);
 		
 		//There is many better ways to do this....
 		//Another option is to take care of includeSelection only at the end.
 		ArrayList<Integer> deleteList = new ArrayList<Integer>(); 
-		for (int i = 0; i < table.getRowCount() ; i++) {
-			double value = table.getValue(columnName, i);
+		for (int row = 0; row < table.getRowCount() ; row++) {
+			double value = table.getValue(columnName, row);
 			
 			if (Double.isNaN(value)) {
                 //Lets just remove all of the null values... They can't be filtered correctly
-				deleteList.add(i);
+				deleteList.add(row);
 			} else if (TableFilter) {
 				if (includeSelection) {
-					deleteList.add(i);
+					deleteList.add(row);
 					for (int q=0; q<filterList.length; q++) {
 						if (value == filterList[q]) {
 							deleteList.remove(deleteList.size() - 1);
@@ -195,7 +166,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 				} else {
 					for (int q=0; q<filterList.length; q++) {
 						if (value == filterList[q]) {
-							deleteList.add(i);
+							deleteList.add(row);
 							break;
 						}
 					}
@@ -203,28 +174,83 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 			} else if (STDFilter) {
 				if (value < (mean - N_STD*STD) || value > (mean + N_STD*STD) ) {
 					if (includeSelection)
-						deleteList.add(i);
+						deleteList.add(row);
 				} else {
 					if (!includeSelection)
-						deleteList.add(i);
+						deleteList.add(row);
 				}
 			} else if (value < min || value > max) {
 				if (includeSelection)
-					deleteList.add(i);
+					deleteList.add(row);
 			} else if (value >= min && value <= max) {
 				if (!includeSelection)
-					deleteList.add(i);
+					deleteList.add(row);
 			}
 		
 		}
 		
-		//I guess I put this since the delete method in ResultsTableUtil doesn't work with ArrayLists
 		int[] delList = new int[deleteList.size()];
 		for (int i=0 ; i < deleteList.size(); i++) {
 			delList[i] = deleteList.get(i);
 		}
 
 		resultsTableService.deleteRows(table, delList);
-		uiService.show(tableName, table);
+		uiService.show(table.getName(), table);
+	}
+	
+    public void setTable(MARSResultsTable table) {
+    	this.table = table;
+    }
+    
+    public MARSResultsTable getTable() {
+    	return table;
+    }
+    
+    public void setColumn(String columnName) {
+    	this.columnName = columnName;
+    }
+    
+    public String getColumn() {
+    	return columnName;
+    }
+    
+    public void setType(String FilterType) {
+    	this.FilterType = FilterType;
+    }
+    
+    public String getType() {
+    	return FilterType;
+    }
+    
+    public void setSelection(String selectionType) {
+    	this.selectionType = selectionType;
+    }
+
+	public void setMin(double min) {
+		this.min = min;
+	}
+	
+	public double getMin() {
+		return min;
+	}
+	
+	public void setMax(double max) {
+		this.max = max;
+	}
+	
+	public double getMax() {
+		return max;
+	}
+	
+	public void setNSTD(double N_STD) {
+		this.N_STD = N_STD;
+	}
+	
+	public double getNSTD() {
+		return N_STD;
+	}
+	
+	public void setFilterTable(MARSResultsTable filterTable) {
+		this.filterTable = filterTable;
 	}
 }

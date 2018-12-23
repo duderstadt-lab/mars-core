@@ -81,36 +81,43 @@ public class ResultsTableSorterCommand extends DynamicCommand implements Initial
 	@Override
 	public void run() {
 		if (group.equals("no group")) {
-			sort(table, ascending, column);
+			table.sort(ascending, column);
 		} else {
-			sort(table, ascending, group, column);
+			table.sort(ascending, group, column);
 		}
 		
 		uiService.show(table.getName(), table);
 	}
 	
-	public static void sort(MARSResultsTable table, final boolean ascending, String... columns) {
-		
-		ResultsTableList list = new ResultsTableList(table);
-		
-		final int[] columnIndexes = new int[columns.length];
-		
-		for (int i = 0; i < columns.length; i++)
-			columnIndexes[i] = table.getColumnIndex(columns[i]);
-		
-		Collections.sort(list, new Comparator<double[]>() {
-			
-			@Override
-			public int compare(double[] o1, double[] o2) {				
-				for (int columnIndex: columnIndexes) {
-					int groupDifference = Double.compare(o1[columnIndex], o2[columnIndex]); 
-				
-					if (groupDifference != 0)
-						return ascending ? groupDifference : -groupDifference;
-				}
-				return 0;
-			}
-			
-		});
+	public void setTable(MARSResultsTable table) {
+		this.table = table;
+	}
+	
+	public MARSResultsTable getTable() {
+		return table;
+	}
+	
+	public void setColumn(String column) {
+		this.column = column;
+	}
+	
+	public String getColumn() {
+		return column;
+	}
+	
+	public void setGroupColumn(String group) {
+		this.group = group;
+	}
+	
+	public String getGroupColumn() {
+		return group;
+	}
+	
+	public void setAscending(boolean ascending) {
+		this.ascending = ascending;
+	}
+	
+	public boolean getAscending() {
+		return ascending;
 	}
 }
