@@ -451,8 +451,10 @@ public class MoleculeArchiveWindow {
 			     		 
 		     		ArrayList<String> mergeUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasTag(tag)).collect(toList());
 	             
-		     		if (mergeUIDs.size() == 0) 
+		     		if (mergeUIDs.size() < 2) 
 		     			return;
+		     		
+		     		String mergeNote = "Merged " + mergeUIDs.size() + " molecules \n";
 		     		
 		     		MARSResultsTable mergedDataTable = archive.get(mergeUIDs.get(0)).getDataTable();
 		     		
@@ -462,6 +464,8 @@ public class MoleculeArchiveWindow {
 		     		for (int row=0;row<mergedDataTable.getRowCount();row++) {
 	            		sliceNumbers.add(mergedDataTable.getValue("slice", row));
 	            	}
+		     		
+		     		mergeNote += mergeUIDs.get(0).substring(0, 5) + " : slices " + mergedDataTable.getValue("slice", 0) + " " + mergedDataTable.getValue("slice", mergedDataTable.getRowCount()-1) + "\n";
 		     		
 		            for (int i = 1; i < mergeUIDs.size() ; i++) {
 		            	MARSResultsTable nextDataTable = archive.get(mergeUIDs.get(i)).getDataTable();
@@ -479,12 +483,17 @@ public class MoleculeArchiveWindow {
 		            			sliceNumbers.add(nextDataTable.getValue("slice", row));
 		            		}
 		            	}
+		            	mergeNote += mergeUIDs.get(i).substring(0, 5) + " : slices " + nextDataTable.getValue("slice", 0) + " " + nextDataTable.getValue("slice", nextDataTable.getRowCount()-1) + "\n";
+		            	
 		            	archive.remove(mergeUIDs.get(i));
 		            }
 		            
 		            //sort by slice
 		            mergedDataTable.sort(true, "slice");
-		             
+		            
+		            archive.get(mergeUIDs.get(0)).setNotes(archive.get(mergeUIDs.get(0)).getNotes() + "\n" + mergeNote);
+		            
+		            
 		     		moleculePanel.updateAll();
 	        	 }
 	          }
