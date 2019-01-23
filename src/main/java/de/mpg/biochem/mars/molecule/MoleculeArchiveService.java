@@ -74,10 +74,12 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		String name = archive.getName();
 		int num = 1;	    
 	    while (archives.containsKey(name)) {
+	    	if (name.endsWith(".yama"))
+	    		name = name.substring(0, name.length() - 5);
 	    	if (num == 1) {
-	    		name = name + num;
+	    		name = name + num + ".yama";
 	    	} else  {
-	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num;
+	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num + ".yama";
 	    	}
 	    	num++;
 	    }

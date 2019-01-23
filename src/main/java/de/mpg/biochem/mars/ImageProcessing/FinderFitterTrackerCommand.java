@@ -426,6 +426,8 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, PeakFitter_writeEverything, logService);
 		    
 		    //Let's make sure we create a unique archive name...
+		    //I guess this is already taken care of in the service now...
+		    //but it doesn't hurt to leave it for the moment.
 		    String newName = "archive";
 		    int num = 1;
 		    while (moleculeArchiveService.getArchive(newName + ".yama") != null) {
