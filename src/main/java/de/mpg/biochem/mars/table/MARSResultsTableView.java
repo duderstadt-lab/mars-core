@@ -30,14 +30,13 @@ import org.scijava.ui.UserInterface;
 import org.scijava.ui.viewer.AbstractDisplayViewer;
 import org.scijava.ui.viewer.DisplayViewer;
 
+import net.imagej.display.WindowService;
+
 @Plugin(type = DisplayViewer.class)
 public class MARSResultsTableView extends AbstractDisplayViewer<MARSResultsTable> implements DisplayViewer<MARSResultsTable> {
 	
 	@Parameter
     private ResultsTableService resultsTableService;
-	
-    @Parameter
-    private UIService uiService;
 	
 	//This method is called to create and display a window
 	//here we override it to make sure that calls like uiService.show( .. for SDMMResultsTable 
@@ -47,20 +46,11 @@ public class MARSResultsTableView extends AbstractDisplayViewer<MARSResultsTable
 		MARSResultsTable results = (MARSResultsTable)d.get(0);
 		results.setName(d.getName());
 
-		//We add it to the ResultsTableService if it hasn't been added already
-		if (resultsTableService.getResultsTable(results.getName()) == null) {
-			resultsTableService.addTable(results);
-			
-			//We also create a new window since we assume it is a new table...
-			new MARSResultsTableWindow(results.getName(), results, resultsTableService);
-		} else {
-			//This never seems to be called... I think if the name is the same
-			//This view method is never called...
-			
-			//We update the table if it is already open
-			//This is really ugly at the moment and in the future should be implemented through display
-			resultsTableService.getResultsTable(results.getName()).getWindow().update();
-		}	
+		resultsTableService.addResultsTable(results);
+		d.setName(results.getName());
+		
+		//We also create a new window since we assume it is a new table...
+		new MARSResultsTableWindow(results.getName(), results, resultsTableService);
 	}
 
 	@Override

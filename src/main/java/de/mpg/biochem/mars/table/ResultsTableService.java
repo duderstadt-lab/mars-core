@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.scijava.command.Command;
+import org.scijava.display.DisplayService;
 import org.scijava.event.EventHandler;
 import org.scijava.log.LogService;
 //import org.scijava.object.ObjectService;
@@ -47,6 +48,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import org.scijava.table.*;
 import net.imglib2.type.numeric.RealType;
 import net.imagej.ImageJService;
+import net.imagej.display.WindowService;
 
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Plugin;
@@ -65,9 +67,9 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
     
     @Parameter
     private ScriptService scriptService;
-	
-    //@Parameter
-    //private ObjectService objectService;
+    
+    @Parameter
+    private DisplayService displayService;
     
 	private Map<String, MARSResultsTable> tables;
 	
@@ -82,26 +84,47 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		scriptService.addAlias(ResultsTableService.class);
 	}
 	
-	public void addTable(MARSResultsTable table) {
+	public void addResultsTable(MARSResultsTable table) {
+		String name = table.getName();
+		int num = 1;	    
+	    while (tables.containsKey(name)) {
+	    	if (num == 1) {
+	    		name = name + num;
+	    	} else  {
+	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num;
+	    	}
+	    	num++;
+	    }
+	    
+	    table.setName(name);
 		tables.put(table.getName(), table);
 	}
 	
 	public void removeResultsTable(String name) {
 		if (tables.containsKey(name)) {
-			tables.remove(name);		
+			tables.remove(name);
+			displayService.getDisplay(name).close();
 		}
 	}
 	
 	public void removeResultsTable(MARSResultsTable table) {
 		if (tables.containsKey(table.getName())) {
 			tables.remove(table.getName());
+			displayService.getDisplay(table.getName()).close();
 		}
 	}
 	
-	public void rename(String oldName, String newName) {
-		tables.get(oldName).setName(newName);
-		MARSResultsTable tab = tables.remove(oldName);
-		tables.put(newName, tab);
+	public boolean rename(String oldName, String newName) {
+		if (tables.containsKey(newName)) {
+			logService.error("A Table is already open with that name. Choose another name.");
+			return false;
+		} else {
+			tables.get(oldName).setName(newName);
+			MARSResultsTable tab = tables.remove(oldName);
+			tables.put(newName, tab);
+			displayService.getDisplay(oldName).setName(newName);
+			return true;
+		}
 	}
 	
 	public ArrayList<String> getTableNames() {
@@ -230,6 +253,10 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		// delete last rows
 		for (int row = table.getRowCount() - 1; row > pos-1; row--)
 			table.removeRow(row);
+	}
+	
+	public boolean contains(String key) {
+		return tables.containsKey(key);
 	}
 
 	@Override

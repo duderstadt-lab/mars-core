@@ -25,6 +25,7 @@ import java.util.Map;
 import io.scif.services.FormatService;
 
 import org.scijava.app.StatusService;
+import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
@@ -35,6 +36,7 @@ import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import net.imagej.ImageJService;
+import net.imagej.display.WindowService;
 
 @Plugin(type = Service.class)
 public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
@@ -54,8 +56,8 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private ScriptService scriptService;
     
-    //@Parameter
-    //private ObjectService objectService;
+    @Parameter
+    private DisplayService displayService;
     
 	private Map<String, MoleculeArchive> archives;
 	
@@ -69,26 +71,47 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public void addArchive(MoleculeArchive archive) {
+		String name = archive.getName();
+		int num = 1;	    
+	    while (archives.containsKey(name)) {
+	    	if (num == 1) {
+	    		name = name + num;
+	    	} else  {
+	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num;
+	    	}
+	    	num++;
+	    }
+	    
+	    archive.setName(name);
 		archives.put(archive.getName(), archive);
-		//objectService.addObject(archive);
 	}
 	
 	public void removeArchive(String title) {
 		if (archives.containsKey(title)) {
-			//objectService.removeObject(archives.get(title));
 			archives.get(title).destroy();
 			archives.remove(title);		
+			displayService.getDisplay(title).close();
 		}
 	}
 	
 	public void removeArchive(MoleculeArchive archive) {
 		if (archives.containsKey(archive.getName())) {
 			removeArchive(archive.getName());
+			displayService.getDisplay(archive.getName()).close();
 		}
 	}
 	
-	public void rename(String oldName, String newName) {
-		archives.get(oldName).setName(newName);
+	public boolean rename(String oldName, String newName) {
+		if (archives.containsKey(newName)) {
+			logService.error("A MoleculeArchive is already open with that name. Choose another name.");
+			return false;
+		} else {
+			archives.get(oldName).setName(newName);
+			MoleculeArchive arch = archives.remove(oldName);
+			archives.put(newName, arch);
+			displayService.getDisplay(oldName).setName(newName);
+			return true;
+		}
 	}
 	
 	public void show(String name, MoleculeArchive archive) {

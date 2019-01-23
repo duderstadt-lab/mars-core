@@ -178,6 +178,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		ListSelectionModel rowSM = moleculeIndex.getSelectionModel();
         rowSM.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
+            	if (ParameterTable != null && ParameterTable.isEditing())
+        			ParameterTable.getCellEditor().stopCellEditing();
                 //Ignore extra messages.
                 if (e.getValueIsAdjusting()) return;
 

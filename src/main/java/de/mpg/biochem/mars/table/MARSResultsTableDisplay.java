@@ -40,14 +40,14 @@ public class MARSResultsTableDisplay extends AbstractDisplay<MARSResultsTable> i
 	}
 
 	// -- Display methods --
-/*
+
 	@Override
 	public boolean canDisplay(final Class<?> c) {
-		if (c.equals(SDMMResultsTable.class)) {
+		if (c.equals(MARSResultsTable.class)) {
 			return true;
 		} else { 
 			return super.canDisplay(c);
 		}
 	}
-	*/
+
 }
