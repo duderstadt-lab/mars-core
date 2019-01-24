@@ -45,18 +45,25 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
 import ij.gui.GenericDialog;
-
+import ij.WindowManager;
 //import org.scijava.widget.FileWidget;
 
 import ij.io.SaveDialog;
+
+import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
+import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.plot.*;
 
 public class MARSResultsTableWindow implements ActionListener {
 	MARSResultsTable results;
 	
+	@Parameter
 	ResultsTableService resultsTableService;
+	
+    @Parameter
+    private UIService uiService;
 	
 	private JFrame frame;
 	JTable table;
@@ -83,8 +90,14 @@ public class MARSResultsTableWindow implements ActionListener {
 	public MARSResultsTableWindow(String name, MARSResultsTable results, ResultsTableService resultsTableService) {
 		this.results = results;
 		this.resultsTableService = resultsTableService;
+		this.uiService = resultsTableService.getUIService();
 		results.setWindow(this);
 		createFrame(name);
+		
+		// add window to window manager
+		// IJ1 style IJ2 doesn't seem to work...
+		if (!uiService.isHeadless())
+			WindowManager.addWindow(frame);
 	}
 	
 	public void update() {
@@ -295,8 +308,15 @@ public class MARSResultsTableWindow implements ActionListener {
 	
 	public void rename(String name) {
 		if (name != null) {
-			resultsTableService.rename(frame.getTitle(), name);
-			frame.setTitle(name);
+			if (resultsTableService.rename(frame.getTitle(), name)) {
+				if (!uiService.isHeadless())
+					WindowManager.removeWindow(frame);
+				
+				frame.setTitle(name);
+				
+				if (!uiService.isHeadless())
+					WindowManager.addWindow(frame);
+			}
 		}
 	}
 	
@@ -306,6 +326,8 @@ public class MARSResultsTableWindow implements ActionListener {
 		frame.dispose();
 		
 		results.clear();
+		if (!uiService.isHeadless())
+			WindowManager.removeWindow(frame);
 	}
 	
 	protected void deleteRows() {

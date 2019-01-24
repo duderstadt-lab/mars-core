@@ -85,6 +85,7 @@ import de.mpg.biochem.mars.plot.PlotDialog;
 import de.mpg.biochem.mars.plot.PlotProperties;
 import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.plugin.frame.Recorder;
 
@@ -142,6 +143,11 @@ public class MoleculeArchiveWindow {
 	public MoleculeArchiveWindow(MoleculeArchiveService moleculeArchiveService) {
 		this.moleculeArchiveService = moleculeArchiveService;
 		this.uiService = moleculeArchiveService.getUIService();
+		
+		// add window to window manager
+		// IJ1 style IJ2 doesn't seem to work...
+		if (!uiService.isHeadless())
+			WindowManager.addWindow(frame);
 	}
 	
 	public MoleculeArchiveWindow(MoleculeArchive archive, MoleculeArchiveService moleculeArchiveService) {
@@ -153,6 +159,11 @@ public class MoleculeArchiveWindow {
 	    UIManager.put("Label.font", new Font("Menlo", Font.PLAIN, 12));
 		
 		createFrame(archive.getName());
+		
+		// add window to window manager
+		// IJ1 style IJ2 doesn't seem to work...
+		if (!uiService.isHeadless())
+			WindowManager.addWindow(frame);
 	}
 	
 	public void updateAll() {
@@ -668,9 +679,23 @@ public class MoleculeArchiveWindow {
 	private boolean saveAs(File saveAsFile) {
 		File file = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
 		if (file != null) {
-			archive.saveAs(file);
-			frame.setTitle(archive.getName());
-			return true;
+			if (moleculeArchiveService.rename(archive.getName(), file.getName())) {
+				if (!uiService.isHeadless())
+					WindowManager.removeWindow(frame);
+				
+				archive.setName(file.getName());
+				frame.setTitle(file.getName());
+				
+				archive.saveAs(file);
+				
+				if (!uiService.isHeadless())
+					WindowManager.addWindow(frame);
+				
+				return true;
+			} else {
+				archive.saveAs(file);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -693,9 +718,16 @@ public class MoleculeArchiveWindow {
 	
 	public void rename(String name) {
 		if (name != null) {
-			moleculeArchiveService.rename(archive.getName(), name);
-			archive.setName(name);
-			frame.setTitle(name);
+			if (moleculeArchiveService.rename(archive.getName(), name)) {
+				if (!uiService.isHeadless())
+					WindowManager.removeWindow(frame);
+				
+				archive.setName(name);
+				frame.setTitle(name);
+				
+				if (!uiService.isHeadless())
+					WindowManager.addWindow(frame);
+			}
 		}
 	}
 	
@@ -703,6 +735,9 @@ public class MoleculeArchiveWindow {
 		moleculeArchiveService.removeArchive(archive.getName());
 		frame.setVisible(false);
 		frame.dispose();
+		
+		if (!uiService.isHeadless())
+			WindowManager.removeWindow(frame);
 	}
 	
 	public void setArchiveService(MoleculeArchiveService moleculeArchiveService) {
