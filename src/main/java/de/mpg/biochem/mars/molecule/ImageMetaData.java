@@ -280,7 +280,7 @@ public class ImageMetaData {
 							jParser.nextToken();
 							String propValue;
 							
-							if (jParser.currentToken() == JsonToken.START_ARRAY) {
+							if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
 								propValue = "[";
 								while (jParser.nextToken() != JsonToken.END_ARRAY)
 									propValue +=  jParser.getValueAsString() + ", ";

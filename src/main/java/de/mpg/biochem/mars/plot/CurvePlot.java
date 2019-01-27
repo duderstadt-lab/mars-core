@@ -78,6 +78,8 @@ public class CurvePlot extends JPanel {
 			drawCurve(props);
 		}
 		
+		plot.resetPointPosition();
+		
 		//For the moment we assume the labels from the first curve are fine for all curves.
 		plot.setxAxisLabel(plot_properties.get(0).xColumnName());
 		plot.setyAxisLabel(plot_properties.get(0).yColumnName());

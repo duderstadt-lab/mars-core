@@ -106,7 +106,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		builder.addParameter("Virtual", String.valueOf(virtual));
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new MoleculeArchive(name, table, resultsTableService, moleculeArchiveService, virtual);
+		archive = new MoleculeArchive(name, table, moleculeArchiveService, virtual);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();

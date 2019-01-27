@@ -18,45 +18,27 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
-import net.openhft.chronicle.map.ChronicleMap;
-import net.openhft.chronicle.map.ChronicleMapBuilder;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.Reader;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.IntStream;
 
 import javax.swing.JOptionPane;
 
-import org.apache.commons.io.FilenameUtils;
-
-import org.scijava.log.LogService;
 import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.ui.UIService;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -66,24 +48,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.core.format.MatchStrength;
 import com.fasterxml.jackson.dataformat.smile.*;
-import com.fasterxml.jackson.databind.*;
 
-import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.table.GroupIndices;
 import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.*;
-import de.mpg.biochem.mars.*;
-import io.scif.services.FormatService;
+
+import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.hash.serialization.BytesReader;
 import net.openhft.chronicle.hash.serialization.BytesWriter;
 import net.openhft.chronicle.hash.serialization.impl.EnumMarshallable;
-import net.openhft.chronicle.map.*;
 
-import org.scijava.ui.*;
 import static java.util.stream.Collectors.toList;
 
 import org.scijava.table.*;
@@ -94,9 +71,6 @@ public class MoleculeArchive {
 	//Services that the archive will need access to but that are not initialized..
 	private MoleculeArchiveWindow win;
 	private MoleculeArchiveService moleculeArchiveService;
-	private ResultsTableService resultsTableService;
-	private UIService uiService;
-	private LogService logService;
 	private File file;
 	
 	private MoleculeArchiveProperties archiveProperties;
@@ -165,14 +139,34 @@ public class MoleculeArchive {
 		}
 	}
 	
+	//Constructor for loading a moleculeArchive from file in memory without service initialization...
+	public MoleculeArchive(File file) throws JsonParseException, IOException {
+		this.name = file.getName();
+		this.file = file;
+		this.virtual = false;
+		
+		initializeVariables();
+		
+		load(file);
+	}
+	
+	//Constructor for loading a moleculeArchive from file in memory without service initialization...
+	public MoleculeArchive(File file, boolean virtual) throws JsonParseException, IOException {
+		this.name = file.getName();
+		this.file = file;
+		this.virtual = virtual;
+		
+		initializeVariables();
+		
+		load(file);
+	}
+	
 	//Constructor for loading a moleculeArchive from file...
 	public MoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService, boolean virtual) throws JsonParseException, IOException {
 		this.name = name;
 		this.file = file;
 		this.virtual = virtual;
 		this.moleculeArchiveService = moleculeArchiveService;
-		this.uiService = moleculeArchiveService.getUIService();
-		this.logService = moleculeArchiveService.getLogService();
 		
 		initializeVariables();
 		
@@ -180,13 +174,20 @@ public class MoleculeArchive {
 	}
 	
 	//Constructor for building a molecule archive from table...
-	public MoleculeArchive(String name, MARSResultsTable table, ResultsTableService resultsTableService, MoleculeArchiveService moleculeArchiveService, boolean virtual) {
+	public MoleculeArchive(String name, MARSResultsTable table, MoleculeArchiveService moleculeArchiveService, boolean virtual) {
 		this.name = name;
 		this.virtual = virtual;
 		this.moleculeArchiveService = moleculeArchiveService;
-		this.resultsTableService = resultsTableService;
-		this.uiService = moleculeArchiveService.getUIService();
-		this.logService = moleculeArchiveService.getLogService();
+		
+		initializeVariables();
+		
+		buildFromTable(table);
+	}
+	
+	//Constructor for building a molecule archive from table without status updates...
+	public MoleculeArchive(String name, MARSResultsTable table, boolean virtual) {
+		this.name = name;
+		this.virtual = virtual;
 		
 		initializeVariables();
 		
@@ -233,7 +234,7 @@ public class MoleculeArchive {
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			archiveProperties = new MoleculeArchiveProperties(jParser, this);
 		} else {
-			uiService.showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
+			moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
 			return;
 		}
 		
@@ -282,7 +283,8 @@ public class MoleculeArchive {
 					while (jParser.nextToken() != JsonToken.END_ARRAY) {
 						add(new Molecule(jParser));
 						molNum++;
-						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
+						if (moleculeArchiveService != null)
+							moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 					}
 				}
 			}
@@ -438,13 +440,10 @@ public class MoleculeArchive {
 		
 		boolean exists = persistedFile.exists();
 		int recover = JOptionPane.NO_OPTION;
-		//if (exists && !uiService.isHeadless()) {
+		
 		if (exists) {
 			recover = JOptionPane.showConfirmDialog(null,
 					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
-			
-			//recover = uiService.showDialog("Recover from virtual store?", "Recovery Mode", 
-			//		DialogPrompt.MessageType.QUESTION_MESSAGE, DialogPrompt.OptionType.YES_NO_OPTION);
 		}
 		
 		if (exists && recover == JOptionPane.YES_OPTION) {
@@ -508,7 +507,6 @@ public class MoleculeArchive {
 		//We should increment the numberOfMolecules and set the correct index for molecule
 		if (moleculeIndex.contains(molecule.getUID())) {
 			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".");
-			//logService.info("The archive already contains the molecule " + molecule.getUID() + ".");
 		} else {
 			//Need to make sure all write operations to moleculeIndex 
 			//are synchronized to avoid two threads working at the same time

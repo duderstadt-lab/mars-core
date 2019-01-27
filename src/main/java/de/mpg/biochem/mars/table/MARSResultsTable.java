@@ -303,7 +303,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		    			//move to value token
 		    			jParser.nextToken();
 		    			if (get(colname) instanceof DoubleColumn) {
-			    			if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
+			    			if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 			    				String str = jParser.getValueAsString();
 			    				if (Objects.equals(str, new String("Infinity"))) {
 			    					setValue(colname, rowIndex, Double.POSITIVE_INFINITY);

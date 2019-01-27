@@ -258,7 +258,7 @@ public class Molecule {
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    		String subfieldname = jParser.getCurrentName();
 		    		jParser.nextToken();
-		    		if (jParser.currentToken().equals(JsonToken.VALUE_STRING)) {
+		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 	    				String str = jParser.getValueAsString();
 	    				if (Objects.equals(str, new String("Infinity"))) {
 	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);

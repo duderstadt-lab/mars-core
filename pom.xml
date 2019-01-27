@@ -142,8 +142,18 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.9.4</version>
+			<version>2.6.5</version>
 		</dependency>
+		<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+    		<artifactId>jackson-annotations</artifactId>
+   			<version>2.6.0</version>
+  		</dependency>
+  		<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+    		<artifactId>jackson-core</artifactId>
+   			 <version>2.6.5</version>
+  		</dependency>
 		<dependency>
 			<groupId>org.apache.directory.studio</groupId>
 			<artifactId>org.apache.commons.codec</artifactId>
@@ -157,7 +167,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-smile</artifactId>
-			<version>2.9.4</version>
+			<version>2.6.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.chrylis</groupId>
@@ -190,8 +200,8 @@
 			<artifactId>languagesupport</artifactId>
 		</dependency>
 		<dependency>
-				<groupId>org.scijava</groupId>
-				<artifactId>script-editor</artifactId>
+			<groupId>org.scijava</groupId>
+			<artifactId>script-editor</artifactId>
 		</dependency>
 	</dependencies>
 	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data in the Structure and Dynamics of Molecular Machines research group. Conforms to the ImageJ2 API.</description>

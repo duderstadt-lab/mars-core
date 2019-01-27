@@ -1524,6 +1524,10 @@ public class Plot extends JComponent implements ActionListener {
 		return molecule;
 	}
 	
+	public void resetPointPosition() {
+		pointsPosition = 0;
+	}
+	
 	/**
 	 * @param args
 	 */

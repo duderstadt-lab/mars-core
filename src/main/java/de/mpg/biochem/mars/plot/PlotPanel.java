@@ -122,6 +122,8 @@ public class PlotPanel extends JPanel {
       	PlotProperties curve = new PlotProperties(xColumnName, yColumnName, getColorFromName(curveColor), type, getColorFromName(segmentColor));
 		drawCurve(curve);
 		
+		plot.resetPointPosition();
+		
 		plot.setBackground(Color.WHITE);
 		plot.setPlotTitle(" ");
   		plot.setxAxisLabel(xColumnName);
