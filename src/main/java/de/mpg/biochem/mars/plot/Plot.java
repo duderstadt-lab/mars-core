@@ -186,10 +186,10 @@ public class Plot extends JComponent implements ActionListener {
 	private boolean updatePlotBoundaries = true;
 	private Rectangle regionSelection = new Rectangle();
 	
-	private String group_name;
-	
 	//More Colors
 	Color darkGreen = new Color(44, 160, 44);
+	
+	String group_name;
 	
 	public Plot() {
 		

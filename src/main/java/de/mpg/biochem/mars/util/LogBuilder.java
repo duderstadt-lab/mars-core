@@ -111,7 +111,7 @@ public class LogBuilder {
 		return output;
 	}
 	
-	public String endBlock(boolean success) {
+	public static String endBlock(boolean success) {
 		if (success)
 			return "********************************* Success *********************************";
 		else

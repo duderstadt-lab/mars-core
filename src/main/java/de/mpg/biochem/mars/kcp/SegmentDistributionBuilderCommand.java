@@ -30,6 +30,9 @@ import java.util.Collection;
 import java.util.Map;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import net.imagej.ops.Initializable;
@@ -37,6 +40,7 @@ import net.imagej.ops.Initializable;
 import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -54,6 +58,7 @@ import org.scijava.widget.ChoiceWidget;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
+import de.mpg.biochem.mars.util.LogBuilder;
 
 import javax.swing.JCheckBox;
 
@@ -63,7 +68,7 @@ import ij.gui.GenericDialog;
 
 import static java.util.stream.Collectors.toList;
 
-@Plugin(type = Command.class, headless = true, label = "Change Point Finder", menu = {
+@Plugin(type = Command.class, headless = true, label = "Segment Distribution Builder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
@@ -90,13 +95,13 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
   	private MoleculeArchive archive;
     
     @Parameter(label="Segments", choices = {"a", "b", "c"})
-	private String SegmentsTableName;
+	private String segmentsTableName;
 	
     @Parameter(label="Start")
-	private double Dstart = 0;
+	private double start = 0;
     
     @Parameter(label="End")
-	private double Dend = 0;
+	private double end = 0;
     
     @Parameter(label="Bins")
 	private int bins;
@@ -110,10 +115,10 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	private boolean filter = false;
 	
 	@Parameter(label="from")
-	private double filter_region_start = 0;
+	private double filterRegionStart = 0;
 	
 	@Parameter(label="to")
-	private double filter_region_stop = 100;
+	private double filterRegionEnd = 100;
 	
 	@Parameter(label="Bootstrapping:",
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "None",
@@ -121,7 +126,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	private String bootstrappingType;
 	
 	@Parameter(label="Number of cycles")
-	private int bootstrap_cycles = 100;
+	private int bootstrapCycles = 100;
 	
 	@Parameter(label = "Include:",
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "All",
@@ -136,7 +141,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> SegmentTableNames = getInfo().getMutableInput("SegmentsTableName", String.class);
+		final MutableModuleItem<String> SegmentTableNames = getInfo().getMutableInput("segmentsTableName", String.class);
 		SegmentTableNames.setChoices(moleculeArchiveService.getSegmentTableNames());
 	}
 	
@@ -145,6 +150,21 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
 			archive.lock();
+		
+		//Build log message
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Segment Distribution Builder");
+		
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		//archive.addLogMessage(log);
+		
+		//Output first part of log message...
+		logService.info(log);
+		
+		double starttime = System.currentTimeMillis();
+		logService.info("Building Distribution...");
 		
 		//Build Collection of UIDs based on tags if they exist...
         ArrayList<String> UIDs;
@@ -156,14 +176,14 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	        }
 			
 			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
-				boolean hasTag = false;
+				boolean hasTags = true;
 				for (int i=0; i<tagList.length; i++) {
-		        	for (String tag : archive.get(UID).getTags()) {
-		        		if (tagList[i].equals(tag))
-		        			hasTag = true;
-		        	}
-		        }
-				return hasTag;
+					if (!archive.get(UID).hasTag(tagList[i])) {
+						hasTags = false;
+						break;
+					}
+				}
+				return hasTags;
 			}).collect(toList());
 		} else if (include.equals("Untagged")) {
 			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasNoTags()).collect(toList());
@@ -172,17 +192,17 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 			UIDs = archive.getMoleculeUIDs();
 		}
 		
-		SegmentDistributionBuilder distBuilder = new SegmentDistributionBuilder(archive, UIDs, SegmentsTableName, Dstart, Dend, bins, logService);
+		SegmentDistributionBuilder distBuilder = new SegmentDistributionBuilder(archive, UIDs, segmentsTableName, start, end, bins, logService, statusService);
 		
 		//Configure segment builder
 		if (filter) {
-			distBuilder.setFilter(filter_region_start, filter_region_stop);
+			distBuilder.setFilter(filterRegionStart, filterRegionEnd);
 		}
 		
 		if (bootstrappingType.equals("Segments")) {
-			distBuilder.bootstrapSegments(bootstrap_cycles);
+			distBuilder.bootstrapSegments(bootstrapCycles);
 		} else if (bootstrappingType.equals("Molecules")) {
-			distBuilder.bootstrapMolecules(bootstrap_cycles);
+			distBuilder.bootstrapMolecules(bootstrapCycles);
 		}
 		
 		//Build desired distribution
@@ -205,8 +225,124 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		
 		getInfo().getOutput("results", MARSResultsTable.class).setLabel(results.getName());
 		
+	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+	    logService.info(LogBuilder.endBlock(true));
+	    //archive.addLogMessage(builder.endBlock(true));
+		
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
 			archive.unlock();
+	}
+	
+	
+	private void addInputParameterLog(LogBuilder builder) {
+		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Segments table name", segmentsTableName);
+		builder.addParameter("Start", String.valueOf(start));
+		builder.addParameter("End", String.valueOf(end));
+		builder.addParameter("DistType", distType);
+		builder.addParameter("Filter", String.valueOf(filter));
+		builder.addParameter("Filter region start", String.valueOf(filterRegionStart));
+		builder.addParameter("Filter region end", String.valueOf(filterRegionEnd));
+		builder.addParameter("Bootstrapping type", bootstrappingType);
+		builder.addParameter("Bootstrap cycles", String.valueOf(bootstrapCycles));
+		builder.addParameter("Include", include);
+		builder.addParameter("Tags", tags);
+	}
+	
+	public void setArchive(MoleculeArchive archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive getArchive() {
+		return archive;
+	}
+	
+	public void setSegmentsTableName(String segmentsTableName) {
+		this.segmentsTableName = segmentsTableName;
+	}
+	
+	public String getSegmentTableName() {
+		return segmentsTableName;
+	}
+
+	public void setStart(double start) {
+		this.start = start;
+	}
+	
+	public double getStart() {
+		return start;
+	}
+	
+	public void setEnd(double end) {
+		this.end = end;
+	}
+	
+	public double getEnd() {
+		return end;
+	}
+	
+	public void setDistType(String distType) {
+		this.distType = distType;
+	}
+	
+	public String getDistType() {
+		return distType;
+	}
+	
+	public void setFilter(boolean filter) {
+		this.filter = filter;
+	}
+	
+	public boolean getFilter() {
+		return filter;
+	}
+	
+	public void setFilterRegionStart(double filterRegionStart) {	
+		this.filterRegionStart = filterRegionStart;
+	}	
+
+	public double getFilterRegionStart() {
+		return filterRegionStart;
+	}
+	
+	public void setFilterRegionEnd(double filterRegionEnd) {
+		this.filterRegionEnd = filterRegionEnd;
+	}
+	
+	public double getFilterRegionEnd() {
+		return filterRegionEnd;
+	}
+	
+	public void setBootstrappingType(String bootstrappingType) {
+		this.bootstrappingType = bootstrappingType;
+	}
+	
+	public String getBootstrappingType() {
+		return bootstrappingType;
+	}
+	
+	public void setBootstrapCycles(int bootstrapCycles) {
+		this.bootstrapCycles = bootstrapCycles;
+	}
+	
+	public int getBootstrapCycles() {
+		return bootstrapCycles;
+	}
+	
+	public void setInclude(String include) {
+		this.include = include;
+	}
+	
+	public String getInclude() {
+		return include;
+	}
+	
+	public void setTags(String tags) {
+		this.tags = tags;
+	}
+	
+	public String getTags() {
+		return tags;
 	}
 }

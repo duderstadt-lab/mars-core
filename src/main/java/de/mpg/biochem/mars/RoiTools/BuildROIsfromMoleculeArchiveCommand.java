@@ -121,7 +121,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
   		
   		//Output first part of log message...
   		logService.info(log);
-  		archive.addLogMessage(log);
+  		//archive.addLogMessage(log);
         
         //Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
@@ -144,8 +144,8 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 		});
 		
 	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
-	    archive.addLogMessage("   ");
+	    //archive.addLogMessage(builder.endBlock(true));
+	    //archive.addLogMessage("   ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 

@@ -174,8 +174,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        
 	        progressUpdating.set(false);
 	        
-	        statusService.showProgress(100, 100);
-	        statusService.showStatus("Change point search for archive " + archive.getName() + " - Done!");
+	        statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions

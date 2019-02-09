@@ -39,12 +39,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -75,6 +77,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
+import org.scijava.prefs.PrefService;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 import org.scijava.ui.DialogPrompt.MessageType;
@@ -96,6 +99,9 @@ public class MoleculeArchiveWindow {
 	
     @Parameter
     private UIService uiService;
+    
+    @Parameter
+    private PrefService prefService;
 
     private MoleculeArchive archive;
 	
@@ -109,10 +115,13 @@ public class MoleculeArchiveWindow {
 	
 	private MoleculePanel moleculePanel;
 	
+	private HashMap<String, String> tagHotKeyList;
+	
 	//Comments Tab Components
 	private JScrollPane commentsTab;
 	private JTextArea comments;
 	
+	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
 	private JMenuItem saveAsMenuItem = new JMenuItem("Save As");
 	
@@ -142,6 +151,7 @@ public class MoleculeArchiveWindow {
 
 	public MoleculeArchiveWindow(MoleculeArchiveService moleculeArchiveService) {
 		this.moleculeArchiveService = moleculeArchiveService;
+		this.prefService = 	moleculeArchiveService.getPrefService();
 		this.uiService = moleculeArchiveService.getUIService();
 		
 		// add window to window manager
@@ -154,6 +164,7 @@ public class MoleculeArchiveWindow {
 		this.archive = archive;
 		archive.setWindow(this);
 		this.moleculeArchiveService = moleculeArchiveService;
+		this.prefService = 	moleculeArchiveService.getPrefService();
 		this.uiService = moleculeArchiveService.getUIService();
 
 	    UIManager.put("Label.font", new Font("Menlo", Font.PLAIN, 12));
@@ -164,6 +175,15 @@ public class MoleculeArchiveWindow {
 		// IJ1 style IJ2 doesn't seem to work...
 		if (!uiService.isHeadless())
 			WindowManager.addWindow(frame);
+	}
+	
+	private void importHotKeys() {
+		tagHotKeyList = new HashMap<String, String>();
+		
+		//Somehow import hotkeys
+		if (prefService.getMap(MoleculeArchiveWindow.class, "tagHotKeyList") != null) {
+			tagHotKeyList = (HashMap<String, String>)prefService.getMap(MoleculeArchiveWindow.class, "tagHotKeyList");
+		}
 	}
 	
 	public void updateAll() {
@@ -206,6 +226,37 @@ public class MoleculeArchiveWindow {
 		mb.add(fileMenu);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(saveAsMenuItem);
+		fileMenu.addSeparator();
+		fileMenu.add(propertiesMenuItem);
+		
+		importHotKeys();
+		propertiesMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 MAPropertiesPanel propPanel = new MAPropertiesPanel(tagHotKeyList);
+	        	 
+	        	 JScrollPane dialogScrollPane = new JScrollPane(propPanel);		
+	 			
+	    	     JOptionPane pane = new JOptionPane(dialogScrollPane, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+	    	     JDialog dialog = pane.createDialog(frame, "Properties");
+	    	     dialog.setResizable(true);
+	    	     dialog.setVisible(true);
+	    	     
+	    	     if (pane.getValue() != null) {
+	    	    	 if (pane.getValue().equals(JOptionPane.OK_OPTION)) {
+	    	    		 moleculePanel.updateTagHotKeyList(propPanel.getHotkeyList());
+	    	    		 
+	    	    		 //Remove old settings
+	    	    		 prefService.remove(MoleculeArchiveWindow.class, "tagHotKeyList");
+	    	    		 
+	    	    		 //Save the tagHotKeyList to Preferences...
+	    	    		 prefService.put(MoleculeArchiveWindow.class, "tagHotKeyList", tagHotKeyList);
+	    	    	 } else if (pane.getValue().equals(JOptionPane.CANCEL_OPTION)) {
+	   		    	  //Do nothing...
+	    	    	 }
+	    	     }
+	          }
+	       });
+		
 		saveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {

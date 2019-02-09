@@ -29,13 +29,19 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -46,6 +52,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
@@ -54,10 +61,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
 import de.mpg.biochem.mars.plot.BoundsChangedListener;
@@ -74,6 +83,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private JTable DataTable;
 	private AbstractTableModel DataTableModel;
+	
+	private HashMap<String, String> tagHotKeyList;
 	
 	//For single curve plotting
 	private CurvePlot plotPanel;
@@ -120,6 +131,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			
 		moleculeCount = archive.getNumberOfMolecules();
 		buildPanel();
+		
+		tagHotKeyList = new HashMap<String, String>();
 	}
 	
 	private void buildPanel() {
@@ -476,8 +489,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		resizeColumnWidth(ParameterTable);
 		
-		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
-			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		ParameterTable.getColumnModel().getColumn(0).setMinWidth(125);
+		ParameterTable.getColumnModel().getColumn(1).setCellRenderer( new DecimalFormatRenderer() );
 		
 		//ParameterTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		
@@ -893,6 +906,44 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	    }
 	}
 	
+
+	public void updateTagHotKeyList(HashMap<String, String> newHotKeys) {
+		for (String key : tagHotKeyList.keySet()) {
+			removeTagHotKey(key);
+		}
+		this.tagHotKeyList = newHotKeys;
+		for (String key : tagHotKeyList.keySet()) {
+			addTagHotKey(key, tagHotKeyList.get(key));
+		}
+	}
+	
+	private void addTagHotKey(String keyStrokeAndKey, String tag) {
+		KeyStroke keyStroke = KeyStroke.getKeyStroke(keyStrokeAndKey);
+		getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(keyStroke, keyStrokeAndKey);
+		getActionMap().put(keyStrokeAndKey, new addTag(tag));
+	}
+	
+	private void removeTagHotKey(String keyStrokeAndKey) {
+		KeyStroke remove = KeyStroke.getKeyStroke(keyStrokeAndKey);
+		getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(remove, "none");
+	}
+	
+	class addTag extends AbstractAction {
+	    /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		String name;
+		public addTag(String name) {
+	        this.name = name;
+	    }
+	    public void actionPerformed(ActionEvent e) {
+	        molecule.addTag(name);
+	        updateTagList();
+			TagTableModel.fireTableDataChanged();
+	    }
+	}
+	
 	@Override
 	public void boundsChanged(Rectangle2D.Double bounds, int bleftMargin) {
 		for (int i = 0; i < numberOfPlots; i++) {
@@ -919,4 +970,29 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		for (int i = 0; i < TagTable.getColumnCount(); i++)
 			TagTable.getColumnModel().getColumn(i).sizeWidthToFit();
 	}
+	
+	static class DecimalFormatRenderer extends DefaultTableCellRenderer {
+	      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		private static final DecimalFormat formatterSci = new DecimalFormat( "0.###E0" );
+	      private static final DecimalFormat formatterNum = new DecimalFormat( "####.###" );
+	      
+	      public Component getTableCellRendererComponent(
+	         JTable table, Object value, boolean isSelected,
+	         boolean hasFocus, int row, int column) {
+	 
+	         // First format the cell value as required
+	    	  if ((double)value > 1000 || (double)value < -1000 || (double)value < 0.001 && !((double)value < -0.001)) {
+	    		  value = formatterSci.format((Number)value);
+	    	  } else {
+	    		  value = formatterNum.format((Number)value);
+	    	  }
+	            // And pass it on to parent class
+	 
+	         return super.getTableCellRendererComponent(
+	            table, value, isSelected, hasFocus, row, column );
+	      }
+	   }
 }

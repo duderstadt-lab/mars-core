@@ -27,9 +27,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.molecule.Molecule;
@@ -37,10 +41,12 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 
 import org.scijava.table.*;
+import org.scijava.ui.UIService;
+import de.mpg.biochem.mars.util.LogBuilder;
 
 public class SegmentDistributionBuilder {
 	//Here we use a bunch of global variables for everything
-	//Would be better no to do this and instead make all the 
+	//Would be better not to do this and instead make all the 
 	//methods self contained and static
 	//However, this is kind of how it was previously in the old version
 	//Also the advantage now is that you load the data once
@@ -65,13 +71,19 @@ public class SegmentDistributionBuilder {
 	private ArrayList<String> UIDs;
 	private String SegmentsTableName;
 	
+    //Global variables
+    //For the progress thread
+  	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+  	private final AtomicInteger numFinished = new AtomicInteger(0);
+	
 	private LogService logService;
+    private StatusService statusService;
 	
 	private ForkJoinPool forkJoinPool;
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	public SegmentDistributionBuilder(MoleculeArchive archive, ArrayList<String> UIDs, String SegmentsTableName, double Dstart, double Dend, int bins, LogService logService) {
+	public SegmentDistributionBuilder(MoleculeArchive archive, ArrayList<String> UIDs, String SegmentsTableName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
 		this.archive = archive;
 		this.UIDs = UIDs;
 		this.SegmentsTableName = SegmentsTableName;
@@ -83,6 +95,7 @@ public class SegmentDistributionBuilder {
 		binWidth = (Dend - Dstart)/bins;
 		
 		this.logService = logService;
+		this.statusService = statusService;
 		
 		ran = new Random();
 	}
@@ -120,7 +133,7 @@ public class SegmentDistributionBuilder {
 	public MARSResultsTable buildRateGaussian() {
 		MARSResultsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			 table = new MARSResultsTable(7, bins);
+			table = new MARSResultsTable(7, bins);
 		} else {
 			table = new MARSResultsTable(3, bins);
 		}
@@ -156,6 +169,23 @@ public class SegmentDistributionBuilder {
 			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 			
 			try {
+				//Start a thread to keep track of the progress of the number of frames that have been processed.
+		    	//Waiting call back to update the progress bar!!
+		    	Thread progressThread = new Thread() {
+		            public synchronized void run() {
+	                    try {
+	        		        while(progressUpdating.get()) {
+	        		        	Thread.sleep(100);
+	        		        	statusService.showStatus(numFinished.intValue(), bootstrap_cycles, "Building distribution from " + archive.getName());
+	        		        }
+	                    } catch (Exception e) {
+	                        e.printStackTrace();
+	                    }
+		            }
+		        };
+
+		        progressThread.start();
+				
 		        //This will spawn a bunch of threads that will generate distributions individually in parallel 
 				//and put the results into the boot_distributions map
 		        //keys will just be numbered from 1 to bootstrap_cycles ...
@@ -190,12 +220,20 @@ public class SegmentDistributionBuilder {
 						new_dist[a] = bootDistribution[a]/norm;
 					}
 					boot_distributions.put(q, new_dist);
+					
+					numFinished.incrementAndGet();
 		        })).get();
+		        
+		        progressUpdating.set(false);
+		        
+		        statusService.showStatus(1, 1, "Done building distribution from " + archive.getName());
 
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
-		    	//TODO
-				//logService.info(builder.endBlock(true));
+		    	logService.error(e.getMessage());
+		    	e.printStackTrace();
+				logService.info(LogBuilder.endBlock(false));
+				forkJoinPool.shutdown();
 		    } finally {
 		        forkJoinPool.shutdown();
 		    }
@@ -243,6 +281,23 @@ public class SegmentDistributionBuilder {
 			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 			
 			try {
+				//Start a thread to keep track of the progress of the number of frames that have been processed.
+		    	//Waiting call back to update the progress bar!!
+		    	Thread progressThread = new Thread() {
+		            public synchronized void run() {
+	                    try {
+	        		        while(progressUpdating.get()) {
+	        		        	Thread.sleep(100);
+	        		        	statusService.showStatus(numFinished.intValue(), bootstrap_cycles, "Building histogram from " + archive.getName());
+	        		        }
+	                    } catch (Exception e) {
+	                        e.printStackTrace();
+	                    }
+		            }
+		        };
+
+		        progressThread.start();
+				
 		        //This will spawn a bunch of threads that will generate distributions individually in parallel 
 				//and put the results into the boot_distributions map
 		        //keys will just be numbered from 1 to bootstrap_cycles ...
@@ -277,12 +332,20 @@ public class SegmentDistributionBuilder {
 						new_dist[a] = bootDistribution[a]/norm;
 					}
 					boot_distributions.put(q, new_dist);
+					
+					numFinished.incrementAndGet();
 		        })).get();
+		        
+		        progressUpdating.set(false);
+		        
+		        statusService.showStatus(1, 1, "Done building histogram from " + archive.getName());
 
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
-		    	//TODO
-				//logService.info(builder.endBlock(true));
+		    	logService.error(e.getMessage());
+		    	e.printStackTrace();
+				logService.info(LogBuilder.endBlock(false));
+				forkJoinPool.shutdown();
 		    } finally {
 		        forkJoinPool.shutdown();
 		    }
@@ -332,6 +395,23 @@ public class SegmentDistributionBuilder {
 			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 			
 			try {
+				//Start a thread to keep track of the progress of the number of frames that have been processed.
+		    	//Waiting call back to update the progress bar!!
+		    	Thread progressThread = new Thread() {
+		            public synchronized void run() {
+	                    try {
+	        		        while(progressUpdating.get()) {
+	        		        	Thread.sleep(100);
+	        		        	statusService.showStatus(numFinished.intValue(), bootstrap_cycles, "Building duration histogram from " + archive.getName());
+	        		        }
+	                    } catch (Exception e) {
+	                        e.printStackTrace();
+	                    }
+		            }
+		        };
+
+		        progressThread.start();
+				
 		        //This will spawn a bunch of threads that will generate distributions individually in parallel 
 				//and put the results into the boot_distributions map
 		        //keys will just be numbered from 1 to bootstrap_cycles ...
@@ -368,12 +448,20 @@ public class SegmentDistributionBuilder {
 						logService.info("new_dist" + bootDistribution[a]/norm);
 					}
 					boot_distributions.put(q, new_dist);
+					
+					numFinished.incrementAndGet();
 		        })).get();
+		        
+		        progressUpdating.set(false);
+		        
+		        statusService.showStatus(1, 1, "Done building duration histogram from " + archive.getName());
 
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
-		    	//TODO
-				//logService.info(builder.endBlock(true));
+		    	logService.error(e.getMessage());
+		    	e.printStackTrace();
+				logService.info(LogBuilder.endBlock(false));
+				forkJoinPool.shutdown();
 		    } finally {
 		        forkJoinPool.shutdown();
 		    }
@@ -385,7 +473,7 @@ public class SegmentDistributionBuilder {
 	
 	//INTERNAL METHODS FOR BUILDING DISTRIBUTIONS
 	private double[] generate_Gaussian_Distribution(ArrayList<Gaussian> Gaussians) {
-		double integration_resolution = 1000;
+		double integration_resolution = 100;
 		double[] distribution = new double[bins];
 		for (int a = 0 ; a < bins ; a++) {
 			//Here we should integrate to get the mean value in the bin instead of just taking the value at the center 
@@ -406,7 +494,7 @@ public class SegmentDistributionBuilder {
 		
 		for (int a = 0 ; a < bins ; a++) {
 			for (int i = 0; i < allSegments.size(); i++) {
-				if (Double.isNaN(allSegments.get(i).B))
+				if (Double.isNaN(allSegments.get(i).B) || Double.isNaN(allSegments.get(i).x1) || Double.isNaN(allSegments.get(i).x2))
 					continue;
 				if (!filter || (allSegments.get(i).B > filter_region_start && allSegments.get(i).B < filter_region_stop)) {
 					//We test to see if the current slope is in the current bin, which is centered at the positon on the x-axis.
@@ -509,10 +597,12 @@ public class SegmentDistributionBuilder {
 				MARSResultsTable segments = archive.get(UID).getSegmentsTable(SegmentsTableName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
-					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)))
+					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2", row)) || Double.isNaN(segments.getValue("x1", row)))
 						continue;
-					if (!filter || segments.getValue("B", row) > filter_region_start && segments.getValue("B", row) < filter_region_stop)
-						Gaussians.add(new Gaussian(segments.getValue("B", row), segments.getValue("sigma_B", row), segments.getValue("x2", row)-segments.getValue("x1", row)));
+					if (!filter || segments.getValue("B", row) > filter_region_start && segments.getValue("B", row) < filter_region_stop) {
+						if (segments.getValue("sigma_B", row) != 0 && segments.getValue("x1", row) != 0 && segments.getValue("x2", row) != 0)
+							Gaussians.add(new Gaussian(segments.getValue("B", row), segments.getValue("sigma_B", row), segments.getValue("x2", row)-segments.getValue("x1", row)));
+					}
 				}
 			}
 		});

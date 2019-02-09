@@ -30,6 +30,7 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
@@ -46,6 +47,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     
     @Parameter
     private LogService logService;
+    
+    @Parameter
+    private PrefService prefService;
     
     @Parameter
 	private FormatService formatService;
@@ -191,6 +195,10 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public StatusService getStatusService() {
 		return statusService;
+	}
+	
+	public PrefService getPrefService() {
+		return prefService;
 	}
 	
 	public FormatService getFormatService() {
