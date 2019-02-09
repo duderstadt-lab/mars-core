@@ -89,7 +89,7 @@ public class MAPropertiesPanel extends JPanel {
 		JPanel hotKeyPanel = new JPanel();
 		hotKeyPanel.setLayout(new GridBagLayout());
 		GridBagConstraints hotKeyPanelGBC = new GridBagConstraints();
-		hotKeyPanelGBC.anchor = GridBagConstraints.NORTHEAST;
+		hotKeyPanelGBC.anchor = GridBagConstraints.NORTHWEST;
 		
 		//Top, left, bottom, right
 		hotKeyPanelGBC.insets = new Insets(5, 0, 5, 0);
@@ -100,11 +100,9 @@ public class MAPropertiesPanel extends JPanel {
 		hotKeyPanelGBC.gridx = 0;
 		hotKeyPanelGBC.gridy = 0;
 		
-		hotKeyPanel.add(new JLabel("Map Keys to Tags (e.g. 'control Z'"), hotKeyPanelGBC);
+		hotKeyPanel.add(new JLabel("Map Keys to Tags (e.g. 'control Z', 'alt B', "), hotKeyPanelGBC);
 		hotKeyPanelGBC.gridy += 1;
-		hotKeyPanel.add(new JLabel(", 'alt B', 'alt shift X'). Letter "), hotKeyPanelGBC);
-		hotKeyPanelGBC.gridy += 1;
-		hotKeyPanel.add(new JLabel("keys must be capitalized."), hotKeyPanelGBC);
+		hotKeyPanel.add(new JLabel("'alt shift X'). Letter keys must be capitalized."), hotKeyPanelGBC);
 		
 		hotKeyTable = new JTable(hotKeyTableModel);
 		hotKeyTable.setAutoCreateColumnsFromModel(true);
@@ -117,14 +115,13 @@ public class MAPropertiesPanel extends JPanel {
 		
 		JScrollPane hotKeyScrollPane = new JScrollPane(hotKeyTable);
 		
-		Dimension dim2 = new Dimension(300, 225);
+		Dimension dim2 = new Dimension(300, 250);
 		
 		//hotKeyScrollPane.setMinimumSize(dim2);
 		hotKeyScrollPane.setMaximumSize(dim2);
 		hotKeyScrollPane.setPreferredSize(dim2);
 		
 		hotKeyPanelGBC.gridy += 1;
-		hotKeyPanelGBC.anchor = GridBagConstraints.EAST;
 		hotKeyPanel.add(hotKeyScrollPane, hotKeyPanelGBC);
 		
 		JPanel AddRemovePanel = new JPanel();
