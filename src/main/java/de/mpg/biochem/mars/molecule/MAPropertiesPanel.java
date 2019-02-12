@@ -1,6 +1,5 @@
 package de.mpg.biochem.mars.molecule;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -167,5 +166,9 @@ public class MAPropertiesPanel extends JPanel {
 	
 	public HashMap<String, String> getHotkeyList() {
 		return tagKeyMap;
+	}
+	
+	public JTable getHotKeyTable() {
+		return hotKeyTable;
 	}
 }

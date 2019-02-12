@@ -243,6 +243,9 @@ public class MoleculeArchiveWindow {
 	    	     
 	    	     if (pane.getValue() != null) {
 	    	    	 if (pane.getValue().equals(JOptionPane.OK_OPTION)) {
+	    	    		 if (propPanel.getHotKeyTable().isEditing())
+	    	    			 propPanel.getHotKeyTable().getCellEditor().stopCellEditing();
+	    	    		 
 	    	    		 moleculePanel.updateTagHotKeyList(propPanel.getHotkeyList());
 	    	    		 
 	    	    		 //Remove old settings
