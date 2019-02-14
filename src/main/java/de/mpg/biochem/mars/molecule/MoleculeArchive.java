@@ -85,10 +85,6 @@ public class MoleculeArchive {
 	//molecules have a metadataUID that maps to these keys so it is clear which dataset they were from.
 	private ConcurrentMap<String, ImageMetaData> imageMetaData;
 	
-	//Two different storage options for molecules
-	//The chronicleMap is used if we are in virtual mode..
-	private ChronicleMap<CharSequence, Molecule> archive;
-	
 	//This is a list of molecule keys that will define the index and be used for retrieval from the ChronicleMap in virtual memory
 	//or retrieval from the molecules array in memory
 	//This array defines the absolute set of molecules considered to be in the archive for purposes of saving and reading etc...
@@ -103,8 +99,6 @@ public class MoleculeArchive {
 	//This is a map from keys to molecules if working in memory..
 	//Otherwise if working in virtual memory it is left null..
 	private ConcurrentMap<String, Molecule> molecules;
-	
-	private File persistedFile;
 	
 	//By default we work virtual
 	private boolean virtual = true;
@@ -121,22 +115,6 @@ public class MoleculeArchive {
 		
 		//We will load the archive into normal memory for faster processing...
 		molecules = new ConcurrentHashMap<>();
-	}
-	
-	//Constructor for creating an empty virtual molecule archive...
-	public MoleculeArchive(String name, int numMolecules, double averageSize) {
-		this.name = name;
-		this.virtual = true;
-		
-		initializeVariables();
-		
-		//We will load the archive into virtual memory to allow for very large archive sizes...
-		try {
-			buildChronicleMap(numMolecules, averageSize);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 	//Constructor for loading a moleculeArchive from file in memory without service initialization...
@@ -238,54 +216,24 @@ public class MoleculeArchive {
 			return;
 		}
 		
-		// TODO need to add better defaults or through an error if no properties are found...
-		int numMolecules = archiveProperties.getNumberOfMolecules();
-		double averageSize = archiveProperties.getAverageMoleculeSize();
-		
-		boolean recover = false;
-		if (virtual) {
-			//We will load the archive into virtual memory to allow for very large archive sizes...
-			recover = buildChronicleMap(numMolecules, averageSize);
-		} else {
-			//We will load the archive into normal memory for faster processing...
-			molecules = new ConcurrentHashMap<>();
-		}
-		
-		if (recover) {
-			ArrayList<String> tempMoleculeIndex = new ArrayList<String>();
-			for (CharSequence key : archive.keySet()) {
-				if (key.toString().equals("MoleculeArchive Properties")) {
-					//This is the special entry MoleculeArchive Properties...
-					this.archiveProperties = archive.get(key).UnwrapMoleculeArchiveProperties();
-				} else if (key.length() < 15) {
-					//Must be an ImageMetaData item
-					imageMetaDataIndex.add(key.toString());
-				} else {
-					tempMoleculeIndex.add(key.toString());
+		molecules = new ConcurrentHashMap<>();
+
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			String fieldName = jParser.getCurrentName();
+			if ("ImageMetaData".equals(fieldName)) {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					ImageMetaData imgMeta = new ImageMetaData(jParser);
+					addImageMetaData(imgMeta);
 				}
 			}
-			//Here we sort to natural order
-			moleculeIndex = (ArrayList<String>)tempMoleculeIndex.stream().sorted().collect(toList());
-			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-			generateTagIndex();
-		} else {
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldName = jParser.getCurrentName();
-				if ("ImageMetaData".equals(fieldName)) {
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						ImageMetaData imgMeta = new ImageMetaData(jParser);
-						addImageMetaData(imgMeta);
-					}
-				}
-				
-				if ("Molecules".equals(fieldName)) {
-					int molNum = 0;
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						add(new Molecule(jParser));
-						molNum++;
-						if (moleculeArchiveService != null)
-							moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
-					}
+			
+			if ("Molecules".equals(fieldName)) {
+				int molNum = 0;
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					add(new Molecule(jParser));
+					molNum++;
+					//if (moleculeArchiveService != null)
+					//	moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 				}
 			}
 		}
@@ -310,18 +258,8 @@ public class MoleculeArchive {
 		
 		//Should we add some extra space for other parameters?
 		
-		if (virtual) {
-			//We will load the archive into virtual memory to allow for very large archive sizes...
-			try {
-				buildChronicleMap(numMolecules, averageSize, new File(System.getProperty("java.io.tmpdir") + "/" + name + ".store"));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else {
-			//We will load the archive into normal memory for faster processing...
-			molecules = new ConcurrentHashMap<>();
-		}
+		//We will load the archive into normal memory for faster processing...
+		molecules = new ConcurrentHashMap<>();
 		
 		//We need to generate and add an ImageMetaData entry for the molecules from the the table
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
@@ -429,77 +367,6 @@ public class MoleculeArchive {
 		}
 	}
 	
-	private boolean buildChronicleMap(int numMolecules, double averageSize) throws IOException {
-		persistedFile = new File(file.getParentFile() + "/" + name + ".store");
-		return buildChronicleMap(numMolecules, averageSize, persistedFile);
-	}
-	
-	//Returns true if using recover mode.
-	private boolean buildChronicleMap(int numMolecules, double averageSize, File persistedFile) throws IOException {		
-		this.persistedFile = persistedFile;
-		
-		boolean exists = persistedFile.exists();
-		int recover = JOptionPane.NO_OPTION;
-		
-		if (exists) {
-			recover = JOptionPane.showConfirmDialog(null,
-					"Recover from virtual store?", "Recovery Mode", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
-		}
-		
-		if (exists && recover == JOptionPane.YES_OPTION) {
-			archive = ChronicleMap
-				    .of(CharSequence.class, Molecule.class)
-				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
-				    .name(name)
-				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules + 10)
-				    .maxBloatFactor(2.0)
-				    .averageValueSize(averageSize)
-				    .recoverPersistedTo(persistedFile, true);
-			return true;
-		} else {
-			if (exists)
-				persistedFile.delete();
-			archive = ChronicleMap
-				    .of(CharSequence.class, Molecule.class)
-				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
-				    .name(name)
-				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules + 10)
-				    .maxBloatFactor(2.0)
-				    .averageValueSize(averageSize)
-				    .createPersistedTo(persistedFile);
-			return false;
-		}
-		/*
-		if (exists && recover == JOptionPane.YES_OPTION) {
-			archive = ChronicleMap
-				    .of(CharSequence.class, Molecule.class)
-				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
-				    .name(name)
-				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules + 10)
-				    .maxBloatFactor(2.0)
-				    .averageValueSize(averageSize)
-				    .recoverPersistedTo(persistedFile, true);
-			return true;
-		} else {
-			if (exists)
-				persistedFile.delete();
-			archive = ChronicleMap
-				    .of(CharSequence.class, Molecule.class)
-				    .valueMarshaller(MoleculeMarshaller.INSTANCE)
-				    .name(name)
-				    .averageKey("qwHsTzRnmY5oKwPNvnezZA")
-				    .entries(numMolecules + 10)
-				    .maxBloatFactor(2.0)
-				    .averageValueSize(averageSize)
-				    .createPersistedTo(persistedFile);
-			return false;
-		}
-		*/
-	}
-	
 	//Method for adding molecules to the archive
 	//A key assumption here is that we never try to add two molecules that have the same key
 	//So the idea is that we would only ever call this method once for a molecule with a given UID.
@@ -516,7 +383,7 @@ public class MoleculeArchive {
 			}
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 			if (virtual) {
-				archive.put(molecule.getUID(), molecule);
+				//molecule.getUID(), molecule);
 			} else {
 				molecules.put(molecule.getUID(), molecule);
 				molecule.setParentArchive(this);
@@ -530,7 +397,7 @@ public class MoleculeArchive {
 			imageMetaDataIndex.add(metaData.getUID());
 		}
 		if (virtual) {
-			archive.put(metaData.getUID(), metaData.getMoleculeWrapper());
+			//metaData.getUID();
 		} else {
 			imageMetaData.put(metaData.getUID(), metaData);
 		}
@@ -542,7 +409,7 @@ public class MoleculeArchive {
 				imageMetaDataIndex.add(metaData.getUID());
 		}
 		if (virtual) {
-			archive.put(metaData.getUID(), metaData.getMoleculeWrapper());
+			//metaData.getUID();
 		} else {
 			imageMetaData.put(metaData.getUID(), metaData);
 		}
@@ -760,7 +627,6 @@ public class MoleculeArchive {
 	public void destroy() {
 		if (virtual) {
 			archive.close();
-			//persistedFile.delete();
 		}
 	}
 	
