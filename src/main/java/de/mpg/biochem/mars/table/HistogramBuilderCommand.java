@@ -55,7 +55,7 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
     @Parameter(label="bins")
     private int bins = 100;
     
-    @Parameter(label="Table", type = ItemIO.OUTPUT)
+    @Parameter(label="Histogram Table", type = ItemIO.OUTPUT)
     private MARSResultsTable outputHist;
     
 	// -- Initializable methods --
@@ -96,5 +96,33 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
 			outputHist.setValue(column, q, min + (q + 0.5)*binSize);
 			outputHist.setValue("Events", q, count);
 		}
+	}
+	
+	public void setInputTable(MARSResultsTable table) {
+		this.table = table;
+	}
+	
+	public MARSResultsTable getInputTable() {
+		return table;
+	}
+	
+	public void setColumnName(String column) {
+		this.column = column;
+	}
+	
+	public String getColumnName() {
+		return column;
+	}
+	
+	public void setBins(int bins) {
+		this.bins = bins;
+	}
+	
+	public int getBins() {
+		return bins;
+	}
+	
+	public MARSResultsTable getHistogramTable() {
+		return outputHist;
 	}
 }

@@ -86,7 +86,8 @@ public class ResultsTableSorterCommand extends DynamicCommand implements Initial
 			table.sort(ascending, group, column);
 		}
 		
-		uiService.show(table.getName(), table);
+		if (table.getWindow() != null)
+			table.getWindow().update();
 	}
 	
 	public void setTable(MARSResultsTable table) {
