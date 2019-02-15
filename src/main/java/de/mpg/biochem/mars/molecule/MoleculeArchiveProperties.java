@@ -25,9 +25,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.util.MARSMath;
 
 public class MoleculeArchiveProperties {
 	//Contains general information about the molecule archive
@@ -35,7 +40,6 @@ public class MoleculeArchiveProperties {
 	//Any information we about to know without having to read the entire archive in directly.
 	
 	private int numberOfMolecules;
-	private double averageMoleculeSize;
 	private int numImageMetaData;
 	private String comments;
 	
@@ -47,7 +51,6 @@ public class MoleculeArchiveProperties {
 	
 	public MoleculeArchiveProperties() {
 		numberOfMolecules = 0;
-		averageMoleculeSize = 0;
 		numImageMetaData = 0;
 		comments = "";
 		tags = new LinkedHashSet<String>();
@@ -56,7 +59,6 @@ public class MoleculeArchiveProperties {
 	
 	public MoleculeArchiveProperties(MoleculeArchive parent) {
 		numberOfMolecules = 0;
-		averageMoleculeSize = 0;
 		numImageMetaData = 0;
 		comments = "";
 		tags = new LinkedHashSet<String>();
@@ -67,7 +69,6 @@ public class MoleculeArchiveProperties {
 	
 	public MoleculeArchiveProperties(JsonParser jParser, MoleculeArchive parent) {
 		numberOfMolecules = 0;
-		averageMoleculeSize = 0;
 		numImageMetaData = 0;
 		comments = "";
 		tags = new LinkedHashSet<String>();
@@ -88,7 +89,6 @@ public class MoleculeArchiveProperties {
 
 		//These fields should always exist...
 		jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules);
-		jGenerator.writeNumberField("averageMoleculeSize", averageMoleculeSize);
 		jGenerator.writeNumberField("numImageMetaData", numImageMetaData);
 		
 		//Write out arrays of tags if tags have been added.
@@ -100,6 +100,29 @@ public class MoleculeArchiveProperties {
 				jGenerator.writeString(iterator.next());	
 			jGenerator.writeEndArray();
 		}
+		
+		//Write out arrays of parameters if parameters have been added.
+		if (parameters.size() > 0) {
+			jGenerator.writeFieldName("parameters");
+			jGenerator.writeStartArray();
+			Iterator<String> iterator = parameters.iterator();
+			while(iterator.hasNext())
+				jGenerator.writeString(iterator.next());	
+			jGenerator.writeEndArray();
+		}
+		
+		//Write out moleculeIndex
+		jGenerator.writeArrayFieldStart("moleculeIndex");
+		for (String UID : parent.getMoleculeUIDs()) {
+			jGenerator.writeString(UID);
+		}
+		jGenerator.writeEndArray();
+		
+		jGenerator.writeArrayFieldStart("tagIndex");
+		for (String UID : parent.getMoleculeUIDs()) {
+			jGenerator.writeString(parent.getTagList(UID));
+		}
+		jGenerator.writeEndArray();
 		
 		if (!comments.equals(""))
 			jGenerator.writeStringField("Comments", comments);
@@ -117,12 +140,6 @@ public class MoleculeArchiveProperties {
 		        //parent.getLogService().info("setting number of molecules " + numberOfMolecules);
 		    }
 		 
-		    if ("averageMoleculeSize".equals(fieldname)) {
-		        jParser.nextToken();
-		        averageMoleculeSize = jParser.getDoubleValue();
-		        //parent.getLogService().info("setting size " + averageMoleculeSize);
-		    }
-		 
 		    if ("numImageMetaData".equals(fieldname)) {
 		        jParser.nextToken();
 		        numImageMetaData = jParser.getIntValue();
@@ -132,6 +149,29 @@ public class MoleculeArchiveProperties {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            tags.add(jParser.getText());
+		        }
+		    }
+		    
+		    if("parameters".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		            tags.add(jParser.getText());
+		        }
+		    }
+		    
+		    if("moleculeIndex".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		    		parent.addUIDToIndex(jParser.getText());
+		        }
+		    }
+		    
+		    if("tagIndex".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	int index = 0;
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		    		parent.setTagIndexEntry(parent.getUIDatIndex(index), jParser.getText());
+		    		index++;
 		        }
 		    }
 		    
@@ -175,14 +215,6 @@ public class MoleculeArchiveProperties {
 		return numberOfMolecules;
 	}
 	
-	public void setAverageMoleculeSize(double averageMoleculeSize) {
-		this.averageMoleculeSize = averageMoleculeSize;
-	}
-	
-	public double getAverageMoleculeSize() {
-		return averageMoleculeSize;
-	}
-	
 	public void setNumImageMetaData(int numImageMetaData) {
 		this.numImageMetaData = numImageMetaData;
 	}
@@ -209,9 +241,5 @@ public class MoleculeArchiveProperties {
 	
 	public void setComments(String comments) {
 		this.comments = comments;
-	}
-	
-	public Molecule getMoleculeWrapper() {
-		return new Molecule(this);
 	}
 }

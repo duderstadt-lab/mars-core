@@ -87,10 +87,6 @@ public class Molecule {
 	//this will be the most robust...
 	private LinkedHashMap<String,String[]> segmentsColumns;
 	
-	//Really ugly HACK to also store ImageMetaData and Archive Properties in the virtual store
-	private ImageMetaData WrappedImageMetaData;
-	private MoleculeArchiveProperties WrappedMoleculeArchiveProperties;
-	
 	public Molecule(JsonParser jParser) {
 		datatable = new MARSResultsTable();
 		initializeVariables();
@@ -114,24 +110,6 @@ public class Molecule {
 		initializeVariables();
 	}
 	
-	//If we are just using this as a wrapper for ImageMetaData
-	public Molecule(ImageMetaData meta) {
-		WrappedImageMetaData = meta;
-	}
-	
-	public ImageMetaData UnwrapImageMetaData() {
-		return WrappedImageMetaData;
-	}
-	
-	//If we are just using this as a wrapper for MoleculeArchiveProperties
-	public Molecule(MoleculeArchiveProperties props) {
-		WrappedMoleculeArchiveProperties = props;
-	}
-	
-	public MoleculeArchiveProperties UnwrapMoleculeArchiveProperties() {
-		return WrappedMoleculeArchiveProperties;
-	}
-	
 	private void initializeVariables() {
 		segments = new LinkedHashMap<>();
 		segmentsColumns = new LinkedHashMap<>();
@@ -142,17 +120,6 @@ public class Molecule {
 	//jackson custom JSON serialization 
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
-		
-		//Check if this is a Wrapper molecule...
-		//If so process accordingly..
-		if (WrappedMoleculeArchiveProperties != null) {
-			WrappedMoleculeArchiveProperties.toJSON(jGenerator);
-			return;
-		} else if (WrappedImageMetaData != null) {
-			jGenerator.writeFieldName("ImageMetaDataItem");
-			WrappedImageMetaData.toJSON(jGenerator);
-			return;
-		}
 		
 		//write out UID - all molecules must have this field.
 		jGenerator.writeStringField("UID", UID);
@@ -215,16 +182,6 @@ public class Molecule {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
-		    
-		  //Check if this is a Wrapper molecule...
-			if ("MoleculeArchiveProperties".equals(fieldname)) {
-				//This must be a MoleculeArchive Properties Wrapper record
-				WrappedMoleculeArchiveProperties = new MoleculeArchiveProperties(jParser, this.parent);
-				return;
-			} else if ("ImageMetaDataItem".equals(fieldname)) {
-				WrappedImageMetaData = new ImageMetaData(jParser);
-				return;
-			}
 		    
 		    if ("UID".equals(fieldname)) {
 		    	jParser.nextToken();

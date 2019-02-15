@@ -55,12 +55,6 @@ import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.*;
 
-import net.openhft.chronicle.map.ChronicleMap;
-import net.openhft.chronicle.bytes.Bytes;
-import net.openhft.chronicle.hash.serialization.BytesReader;
-import net.openhft.chronicle.hash.serialization.BytesWriter;
-import net.openhft.chronicle.hash.serialization.impl.EnumMarshallable;
-
 import static java.util.stream.Collectors.toList;
 
 import org.scijava.table.*;
@@ -72,6 +66,9 @@ public class MoleculeArchive {
 	private MoleculeArchiveWindow win;
 	private MoleculeArchiveService moleculeArchiveService;
 	private File file;
+	private File virtualDirectory;
+	
+	public static final SmileFactory jfactory = new SmileFactory();
 	
 	private MoleculeArchiveProperties archiveProperties;
 	
@@ -125,7 +122,12 @@ public class MoleculeArchive {
 		
 		initializeVariables();
 		
-		load(file);
+		if (virtual && file.isDirectory())
+			loadStore(file);
+		else if (virtual && !file.isDirectory())
+			convertToVirtual(file);
+		else
+			load(file);
 	}
 	
 	//Constructor for loading a moleculeArchive from file in memory without service initialization...
@@ -136,7 +138,12 @@ public class MoleculeArchive {
 		
 		initializeVariables();
 		
-		load(file);
+		if (virtual && file.isDirectory())
+			loadStore(file);
+		else if (virtual && !file.isDirectory())
+			convertToVirtual(file);
+		else
+			load(file);
 	}
 	
 	//Constructor for loading a moleculeArchive from file...
@@ -148,7 +155,12 @@ public class MoleculeArchive {
 		
 		initializeVariables();
 		
-		load(file);
+		if (virtual && file.isDirectory())
+			loadStore(file);
+		else if (virtual && !file.isDirectory())
+			convertToVirtual(file);
+		else
+			load(file);
 	}
 	
 	//Constructor for building a molecule archive from table...
@@ -180,6 +192,33 @@ public class MoleculeArchive {
 		imageMetaData = new ConcurrentHashMap<>();
 		
 		archiveProperties = new MoleculeArchiveProperties(this);
+	}
+	
+	private void convertToVirtual(File file) throws JsonParseException, IOException {
+		
+	}
+	
+	private void loadStore(File directory) throws JsonParseException, IOException {
+		this.virtualDirectory = directory;
+		File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
+		InputStream propertiesInputStream = new BufferedInputStream(new FileInputStream(propertiesFile));
+
+		//For the moment we assume smile encoding for virtual archives.
+		smileEncoding = true;
+		
+	    JsonParser jParser = jfactory.createParser(propertiesInputStream);
+		
+		//jParser.nextToken();
+		jParser.nextToken();
+		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+			archiveProperties = new MoleculeArchiveProperties(jParser, this);
+		} else {
+			moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties.json file found. Are you sure you provided a yama directory store?", MessageType.ERROR_MESSAGE);
+			return;
+		}
+		
+		jParser.close();
+		propertiesInputStream.close();
 	}
 	
 	private void load(File file) throws JsonParseException, IOException {
@@ -228,12 +267,8 @@ public class MoleculeArchive {
 			}
 			
 			if ("Molecules".equals(fieldName)) {
-				int molNum = 0;
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					add(new Molecule(jParser));
-					molNum++;
-					//if (moleculeArchiveService != null)
-					//	moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 				}
 			}
 		}
@@ -249,14 +284,6 @@ public class MoleculeArchive {
 		//First we have to index the groups in the table to determine the number of Molecules and their average size...
 		//Here we assume their is a molecule column that defines which data is related to which molecule.
 		LinkedHashMap<Integer, GroupIndices> groups = ResultsTableService.find_group_indices(results, "molecule");
-		int numMolecules = groups.size();
-		
-		//For averageSize let's just find the number of doubles in the table in total bytes...
-		double averageSize = results.getRowCount()/numMolecules; //average number of rows per molecule
-		averageSize *= (results.getColumnCount() - 1); //number of columns excluding the molecule column
-		averageSize *= 8; //8 bytes per double
-		
-		//Should we add some extra space for other parameters?
 		
 		//We will load the archive into normal memory for faster processing...
 		molecules = new ConcurrentHashMap<>();
@@ -302,7 +329,10 @@ public class MoleculeArchive {
 	}
 	
 	public void save() {
-		saveAs(file);
+		if (virtual)
+			updateArchiveProperties();
+		else
+			saveAs(file);
 	}
 	
 	public void saveAs(File file) {
@@ -383,7 +413,7 @@ public class MoleculeArchive {
 			}
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 			if (virtual) {
-				//molecule.getUID(), molecule);
+				set(molecule);
 			} else {
 				molecules.put(molecule.getUID(), molecule);
 				molecule.setParentArchive(this);
@@ -392,15 +422,23 @@ public class MoleculeArchive {
 		}
 	}
 	
-	public void addImageMetaData(ImageMetaData metaData) {
-		synchronized(imageMetaDataIndex) {
-			imageMetaDataIndex.add(metaData.getUID());
-		}
+	public void addUIDToIndex(String UID) {
 		if (virtual) {
-			//metaData.getUID();
-		} else {
-			imageMetaData.put(metaData.getUID(), metaData);
+			//Need to make sure all write operations to moleculeIndex 
+			//are synchronized to avoid two threads working at the same time
+			//during a write operation
+			synchronized(moleculeIndex) {
+				moleculeIndex.add(UID);
+			}
 		}
+	}
+	
+	public String getUIDatIndex(int index) {
+		return moleculeIndex.get(index);
+	}
+	
+	public void addImageMetaData(ImageMetaData metaData) {
+		setImageMetaData(metaData);
 	}
 	
 	public void setImageMetaData(ImageMetaData metaData) {
@@ -409,7 +447,20 @@ public class MoleculeArchive {
 				imageMetaDataIndex.add(metaData.getUID());
 		}
 		if (virtual) {
-			//metaData.getUID();
+			try {
+				File metaDataFile = new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData/" + metaData.getUID() + ".json");
+				OutputStream stream = new BufferedOutputStream(new FileOutputStream(metaDataFile));
+				
+				JsonGenerator jGenerator = jfactory.createGenerator(stream);
+				metaData.toJSON(jGenerator);
+				jGenerator.close();
+				
+				stream.flush();
+				stream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else {
 			imageMetaData.put(metaData.getUID(), metaData);
 		}
@@ -421,7 +472,9 @@ public class MoleculeArchive {
 				imageMetaDataIndex.remove(metaUID);
 		}
 		if (virtual) {
-			archive.remove(metaUID);
+			File metaDataFile = new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
+			if (metaDataFile.exists())
+				metaDataFile.delete();
 		} else {
 			imageMetaData.remove(metaUID);
 		}
@@ -437,7 +490,22 @@ public class MoleculeArchive {
 	
 	public ImageMetaData getImageMetaData(String metaUID) {
 		if (virtual) {
-			return archive.get(metaUID).UnwrapImageMetaData();
+			ImageMetaData metaData = null;
+			try {
+				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
+				InputStream inputStream = new BufferedInputStream(new FileInputStream(metaDataFile));
+		
+				JsonParser jParser = jfactory.createParser(inputStream);
+
+				metaData = new ImageMetaData(jParser);
+				
+				jParser.close();
+				inputStream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return metaData;
 		} else {
 			return imageMetaData.get(metaUID);
 		}
@@ -451,16 +519,12 @@ public class MoleculeArchive {
 		return moleculeIndex.size();
 	}
 	
-	public double getAverageMoleculeSize() {
-		return archiveProperties.getAverageMoleculeSize();
-	}
-	
 	public int getNumberOfImageMetaDataItems() {
 		return imageMetaDataIndex.size();
 	}
 	
 	public String getStoreLocation() {
-		return archive.file().getAbsolutePath();
+		return virtualDirectory.getAbsolutePath();
 	}
 	
 	public String getComments() {
@@ -470,7 +534,7 @@ public class MoleculeArchive {
 	public void setComments(String comments) {
 		archiveProperties.setComments(comments);
 		if (virtual) {
-			archive.put("MoleculeArchive Properties", archiveProperties.getMoleculeWrapper());
+			updateArchiveProperties();
 		}
 	}
 	
@@ -496,7 +560,20 @@ public class MoleculeArchive {
 	
 	public void set(Molecule molecule) {
 		if (virtual) {
-			archive.put(molecule.getUID(), molecule);	
+			try {
+				File moleculeFile = new File(virtualDirectory.getAbsolutePath() + "/Molecules/" + molecule.getUID() + ".json");
+				OutputStream stream = new BufferedOutputStream(new FileOutputStream(moleculeFile));
+				
+				JsonGenerator jGenerator = jfactory.createGenerator(stream);
+				molecule.toJSON(jGenerator);
+				jGenerator.close();
+				
+				stream.flush();
+				stream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else {
 			//We do nothing because we always work with the actual archive copy if working in memory.
 			//We would do the following, but doesn't make sense.
@@ -515,10 +592,7 @@ public class MoleculeArchive {
 		
 		try {
 	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
-	        	if (virtual)
-	        		updateTagIndex(archive.get(UID));
-	        	else 
-	        		updateTagIndex(molecules.get(UID));
+	        	updateTagIndex(get(UID));
 	        })).get();
 	   } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
@@ -526,6 +600,10 @@ public class MoleculeArchive {
 	   } finally {
 	      forkJoinPool.shutdown();
 	   }
+	}
+	
+	public void setTagIndexEntry(String UID, String tagList) {
+		tagIndex.put(UID, tagList);
 	}
 	
 	private void updateTagIndex(Molecule molecule) {
@@ -562,7 +640,9 @@ public class MoleculeArchive {
 			moleculeIndex.remove(UID);
 		}
 		if (virtual) {
-			archive.remove(UID);
+			File moleculeFile = new File(virtualDirectory.getAbsolutePath() + "/Molecules/" + UID + ".json");
+			if (moleculeFile.exists())
+				moleculeFile.delete();
 		} else {
 			molecules.remove(UID);
 		}
@@ -577,21 +657,18 @@ public class MoleculeArchive {
 		ArrayList<String> newMoleculeIndex = new ArrayList<String>();
 		
 		for (String UID : moleculeIndex) {
-			Molecule mol;
-			if (virtual) {
-				mol = archive.get(UID);
-			} else {
-				mol = molecules.get(UID);
-			}
+			Molecule molecule = get(UID);
 			
-			if (mol.hasTag(tag)) {
+			if (molecule.hasTag(tag)) {
 				if (virtual) {
-					archive.remove(UID);
+					File moleculeFile = new File(virtualDirectory.getAbsolutePath() + "/Molecules/" + UID + ".json");
+					if (moleculeFile.exists())
+						moleculeFile.delete();
 				} else {
 					molecules.remove(UID);
 				}
 			} else {
-				newMoleculeIndex.add(mol.getUID());
+				newMoleculeIndex.add(molecule.getUID());
 			}
 		}
 		
@@ -601,7 +678,7 @@ public class MoleculeArchive {
 	
 	public boolean contains(String UID) {
 		if (virtual) {
-			return archive.containsKey(UID);
+			return moleculeIndex.contains(UID);
 		} else {
 			return molecules.containsKey(UID);
 		}
@@ -610,7 +687,22 @@ public class MoleculeArchive {
 	//Retrieve molecule based on UUID58 key
 	public Molecule get(String UID) {
 		if (virtual) {
-			return archive.get(UID);
+			Molecule molecule = null;
+			try {
+				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+				InputStream inputStream = new BufferedInputStream(new FileInputStream(moleculeFile));
+		
+				JsonParser jParser = jfactory.createParser(inputStream);
+	
+				molecule = new Molecule(jParser);
+				
+				jParser.close();
+				inputStream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return molecule;
 		} else {
 			return molecules.get(UID);
 		}
@@ -626,7 +718,7 @@ public class MoleculeArchive {
 	
 	public void destroy() {
 		if (virtual) {
-			archive.close();
+			//archive.close();
 		}
 	}
 	
@@ -701,72 +793,15 @@ public class MoleculeArchive {
 	//Utility functions
 	public void updateArchiveProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-		
-		//Lets just sample a random 20 molecules and use that as the size...
-		double averageSize = 0;
-		if (moleculeIndex.size() == 0) {
-			//leave it equal to zero...
-		} else if (moleculeIndex.size() == 1) {
-			averageSize = getByteSize(get(moleculeIndex.get(0)));
-		} else {
-			for (int i=0;i<20;i++) {
-				int randomIndex = ThreadLocalRandom.current().nextInt(0, moleculeIndex.size() - 1);
-				averageSize += getByteSize(get(moleculeIndex.get(randomIndex)));
-			}
-			
-			averageSize = averageSize/20;
-		}
-		
-		archiveProperties.setAverageMoleculeSize(averageSize);
 		archiveProperties.setNumImageMetaData(imageMetaData.size());
 		
-		//At the moment this is only saved the store and never retrieved unless
-		//Recovery mode is triggered..
 		if (virtual) {
-			archive.put("MoleculeArchive Properties", archiveProperties.getMoleculeWrapper());
-		}
-	}
-	
-	//average size of molecules in the archive based on 20 samples..
-	//Computationally expensive
-	//Since this is only important for the construction of the chronicle map.
-	private double getByteSize(Molecule mol) {
-		ByteArrayOutputStream sizeStream = new ByteArrayOutputStream();
-		SmileGenerator jGenerator;
-		//JsonGenerator jGenerator;
-		
-		double moleculeSize = -1;
-		try {
-			jGenerator = MoleculeMarshaller.jfactory.createGenerator(sizeStream);
-			
-			mol.toJSON(jGenerator);
-			jGenerator.close();
-			moleculeSize = sizeStream.toByteArray().length;
-			sizeStream.close();		
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return moleculeSize;
-	}
-	
-	//Class for serialization of molecules into ChronticleMaps
-	static final class MoleculeMarshaller implements BytesReader<Molecule>, BytesWriter<Molecule>,
-    EnumMarshallable<MoleculeMarshaller> {
-		public static final MoleculeMarshaller INSTANCE = new MoleculeMarshaller();
-		//public static final JsonFactory jfactory = new JsonFactory();
-		public static final SmileFactory jfactory = new SmileFactory();
-		
-		private MoleculeMarshaller() {}
-		
-		@Override
-		public void write(Bytes out, Molecule toWrite) {
 			try {
-				OutputStream stream = out.outputStream();
+				File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
+				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
-				toWrite.toJSON(jGenerator);
-				
+				archiveProperties.toJSON(jGenerator);
 				jGenerator.close();
 				
 				stream.flush();
@@ -775,29 +810,6 @@ public class MoleculeArchive {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-		
-		@Override
-		public Molecule read(Bytes in, Molecule using) {
-			try {
-				InputStream inputStream = in.inputStream();
-		
-				JsonParser jParser = jfactory.createParser(inputStream);
-	
-				using = new Molecule(jParser);
-	
-				jParser.close();
-				inputStream.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return using;
-		}
-		
-		@Override
-		public MoleculeMarshaller readResolve() {
-		    return INSTANCE;
 		}
 	}
 	
