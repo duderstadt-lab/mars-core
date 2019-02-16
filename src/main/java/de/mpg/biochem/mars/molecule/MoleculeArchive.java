@@ -20,7 +20,6 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,13 +29,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadLocalRandom;
-
-import javax.swing.JOptionPane;
 
 import org.scijava.ui.DialogPrompt.MessageType;
 
@@ -68,7 +66,10 @@ public class MoleculeArchive {
 	private File file;
 	private File virtualDirectory;
 	
-	public static final SmileFactory jfactory = new SmileFactory();
+	//This is the global factory used for parsing
+	//will be set for either json or smile
+	//and all uses will follow...
+	private JsonFactory jfactory;
 	
 	private MoleculeArchiveProperties archiveProperties;
 	
@@ -91,7 +92,7 @@ public class MoleculeArchive {
 	private ArrayList<String> moleculeIndex;
 	
 	//This is a map index of tags for searching in molecule tables etc..
-	private ConcurrentMap<String, String> tagIndex;
+	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex;
 	
 	//This is a map from keys to molecules if working in memory..
 	//Otherwise if working in virtual memory it is left null..
@@ -199,26 +200,85 @@ public class MoleculeArchive {
 	}
 	
 	private void loadStore(File directory) throws JsonParseException, IOException {
-		this.virtualDirectory = directory;
+		this.virtualDirectory = directory;		
+		//Load in MoleculeArchive Properties.
 		File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
 		InputStream propertiesInputStream = new BufferedInputStream(new FileInputStream(propertiesFile));
-
-		//For the moment we assume smile encoding for virtual archives.
-		smileEncoding = true;
 		
-	    JsonParser jParser = jfactory.createParser(propertiesInputStream);
+		//Here we automatically detect the format of the MoleculeArchiveProperties 
+		//Can be JSON text or Smile encoded binary file. 
+		//We assume the entire virtual archive has the same format
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(propertiesInputStream);
+	    JsonParser propertiesJParser = match.createParserWithMatch();
+	    
+	    if (match.getMatchedFormatName().equals("Smile")) {
+	    	smileEncoding = true;
+	    	jfactory = smileF;
+	    } else if (match.getMatchedFormatName().equals("JSON")) {
+	    	//This is included just for completeness in case we want to
+	    	//add a third format someday...
+	    	smileEncoding = false;
+	    	jfactory = jsonF;
+	    } else {
+	    	//We default to Smile
+	    	smileEncoding = true;
+	    	jfactory = smileF;
+	    }
 		
-		//jParser.nextToken();
-		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			archiveProperties = new MoleculeArchiveProperties(jParser, this);
+	    propertiesJParser.nextToken();
+		if ("MoleculeArchiveProperties".equals(propertiesJParser.getCurrentName())) {
+			archiveProperties = new MoleculeArchiveProperties(propertiesJParser, this);
 		} else {
 			moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties.json file found. Are you sure you provided a yama directory store?", MessageType.ERROR_MESSAGE);
 			return;
 		}
-		
-		jParser.close();
+		propertiesJParser.close();
 		propertiesInputStream.close();
+		
+		//Now load in moleculeIndex
+		File indexFile = new File(virtualDirectory.getAbsolutePath() + "/moleculeIndex.json");
+		InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
+		
+	    JsonParser indexJParser = jfactory.createParser(indexInputStream);
+		
+	    indexJParser.nextToken();
+	    
+	    if("moleculeIndex".equals(indexJParser.getCurrentName())) {
+	    	indexJParser.nextToken();
+	    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+	    		moleculeIndex.add(indexJParser.getText());
+	        }
+	    }
+	    
+	    if("tagIndex".equals(indexJParser.getCurrentName())) {
+	    	//First we move past array start
+	    	indexJParser.nextToken();
+			
+    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+    			String UID = "NULL";
+	    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+	    			if("UID".equals(indexJParser.getCurrentName())) {
+	    				indexJParser.nextToken();
+	    				UID = indexJParser.getText();
+	    			}
+	    			
+	    			if ("tags".equals(indexJParser.getCurrentName())) {
+	    				indexJParser.nextToken();
+	    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
+	    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+	    		            tags.add(indexJParser.getText());
+	    		        }
+	    		    	tagIndex.put(UID, tags);
+	    			}
+	    		}
+    		}
+	    }
+
+		indexJParser.close();
+		indexInputStream.close();
 	}
 	
 	private void load(File file) throws JsonParseException, IOException {
@@ -237,13 +297,16 @@ public class MoleculeArchive {
 	    
 	    if (match.getMatchedFormatName().equals("Smile")) {
 	    	smileEncoding = true;
+	    	jfactory = smileF;
 	    } else if (match.getMatchedFormatName().equals("JSON")) {
 	    	//This is included just for completeness in case we want to
 	    	//add a third format someday...
 	    	smileEncoding = false;
+	    	jfactory = jsonF;
 	    } else {
-	    	//We default to JSON
-	    	smileEncoding = false;
+	    	//We default to Smile
+	    	smileEncoding = true;
+	    	jfactory = smileF;
 	    }
 		
 		jParser.nextToken();
@@ -325,6 +388,44 @@ public class MoleculeArchive {
 			Molecule molecule = new Molecule(MARSMath.getUUID58(), molTable);
 			molecule.setImageMetaDataUID(metaUID);
 			add(molecule);
+		}
+	}
+	
+	//Saving moleculeIndex
+	private void saveIndex() {
+		//Write out moleculeIndex
+		try {
+			File indexFile = new File(virtualDirectory.getAbsolutePath() + "/moleculeIndex.json");
+			OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
+			
+			JsonGenerator jGenerator = jfactory.createGenerator(stream);
+
+			jGenerator.writeArrayFieldStart("moleculeIndex");
+			for (String UID : moleculeIndex) {
+				jGenerator.writeString(UID);
+			}
+			jGenerator.writeEndArray();
+			
+			jGenerator.writeArrayFieldStart("tagIndex");
+			for (String UID : tagIndex.keySet()) {
+				jGenerator.writeStartObject();
+				jGenerator.writeStringField("UID", UID);
+				jGenerator.writeArrayFieldStart("tagIndex");
+				for (String tag : tagIndex.get(UID)) {
+					jGenerator.writeString(tag);
+				}
+				jGenerator.writeEndArray();
+				jGenerator.writeEndObject();
+			}
+			jGenerator.writeEndArray();
+			
+			jGenerator.close();
+			
+			stream.flush();
+			stream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -420,21 +521,6 @@ public class MoleculeArchive {
 			}
 			updateTagIndex(molecule);
 		}
-	}
-	
-	public void addUIDToIndex(String UID) {
-		if (virtual) {
-			//Need to make sure all write operations to moleculeIndex 
-			//are synchronized to avoid two threads working at the same time
-			//during a write operation
-			synchronized(moleculeIndex) {
-				moleculeIndex.add(UID);
-			}
-		}
-	}
-	
-	public String getUIDatIndex(int index) {
-		return moleculeIndex.get(index);
 	}
 	
 	public void addImageMetaData(ImageMetaData metaData) {
@@ -554,8 +640,13 @@ public class MoleculeArchive {
 	public String getTagList(String UID) {
 		if (UID == null)
 			return null;
-		else
-			return tagIndex.get(UID);
+		else {
+			String tagList = "";
+			for (String tag: tagIndex.get(UID))
+				tagList += tag + ", ";
+			tagList = tagList.substring(0, tagList.length() - 2);
+			return tagList;
+		}
 	}
 	
 	public void set(Molecule molecule) {
@@ -602,34 +693,15 @@ public class MoleculeArchive {
 	   }
 	}
 	
-	public void setTagIndexEntry(String UID, String tagList) {
-		tagIndex.put(UID, tagList);
+	public void updateTagIndex(String updateUID) {
+		updateTagIndex(get(updateUID));
 	}
-	
+
 	private void updateTagIndex(Molecule molecule) {
 		if (molecule.getTags() == null) {
 			//Shouldn't happen..do nothing...
 		} else if (molecule.getTags().size() > 0) {
-			String tagList = "";
-			for (String tag:molecule.getTags())
-				tagList += tag + ", ";
-			tagList = tagList.substring(0, tagList.length() - 2);
-			tagIndex.put(molecule.getUID(), tagList);
-		} else {
-			tagIndex.remove(molecule.getUID());
-		}
-	}
-	
-	public void updateTagIndex(String updateUID) {
-		Molecule molecule = get(updateUID);
-		if (molecule.getTags() == null) {
-			//Shouldn't happen..do nothing...
-		} else if (molecule.getTags().size() > 0) {
-			String tagList = "";
-			for (String tag:molecule.getTags())
-				tagList += tag + ", ";
-			tagList = tagList.substring(0, tagList.length() - 2);
-			tagIndex.put(molecule.getUID(), tagList);
+			tagIndex.put(molecule.getUID(), molecule.getTags());
 		} else {
 			tagIndex.remove(molecule.getUID());
 		}

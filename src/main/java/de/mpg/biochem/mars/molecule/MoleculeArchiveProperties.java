@@ -111,19 +111,6 @@ public class MoleculeArchiveProperties {
 			jGenerator.writeEndArray();
 		}
 		
-		//Write out moleculeIndex
-		jGenerator.writeArrayFieldStart("moleculeIndex");
-		for (String UID : parent.getMoleculeUIDs()) {
-			jGenerator.writeString(UID);
-		}
-		jGenerator.writeEndArray();
-		
-		jGenerator.writeArrayFieldStart("tagIndex");
-		for (String UID : parent.getMoleculeUIDs()) {
-			jGenerator.writeString(parent.getTagList(UID));
-		}
-		jGenerator.writeEndArray();
-		
 		if (!comments.equals(""))
 			jGenerator.writeStringField("Comments", comments);
 		
@@ -156,22 +143,6 @@ public class MoleculeArchiveProperties {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            tags.add(jParser.getText());
-		        }
-		    }
-		    
-		    if("moleculeIndex".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    		parent.addUIDToIndex(jParser.getText());
-		        }
-		    }
-		    
-		    if("tagIndex".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	int index = 0;
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    		parent.setTagIndexEntry(parent.getUIDatIndex(index), jParser.getText());
-		    		index++;
 		        }
 		    }
 		    
