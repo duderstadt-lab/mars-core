@@ -626,9 +626,6 @@ public class MoleculeArchiveWindow {
 		panel.add(new JLabel("Number of Molecules                " + archive.getNumberOfMolecules()), gbc);
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Average Molecule Size (in bytes)   " + archive.getAverageMoleculeSize()), gbc);
-		
-		gbc.gridy += 1;
 		panel.add(new JLabel("Number of Image MetaData Items     " + archive.getNumberOfImageMetaDataItems()), gbc);
 		
 		gbc.gridy += 1;

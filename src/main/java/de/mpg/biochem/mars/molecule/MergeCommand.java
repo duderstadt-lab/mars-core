@@ -150,21 +150,17 @@ public class MergeCommand extends DynamicCommand {
 			//First we need to build the global MoleculeArchiveProperties
 			int numMolecules = 0; 
 			int numImageMetaData = 0;
-			double totalSize = 0;
 			String globalComments = "";
 			int count = 0;
 			for (MoleculeArchiveProperties archiveProperties : allArchiveProps) {
 				numMolecules += archiveProperties.getNumberOfMolecules();
 				numImageMetaData += archiveProperties.getNumImageMetaData();
-				totalSize += archiveProperties.getAverageMoleculeSize()*archiveProperties.getNumberOfMolecules();
 				globalComments += "Comments from Merged Archive " + archiveFileList[count].getName() + ":\n" + archiveProperties.getComments() + "\n";
 				count++;
 			}
-			double averageMoleculeSize = totalSize/numMolecules;
 				
 			MoleculeArchiveProperties newArchiveProperties = new MoleculeArchiveProperties();
 			newArchiveProperties.setNumberOfMolecules(numMolecules);
-			newArchiveProperties.setAverageMoleculeSize(averageMoleculeSize);
 			newArchiveProperties.setNumImageMetaData(numImageMetaData);
 			newArchiveProperties.setComments(globalComments);
 			

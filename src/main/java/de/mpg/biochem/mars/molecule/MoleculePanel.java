@@ -766,6 +766,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 
 	public void updateAll() {
 		if (archive.getNumberOfMolecules() == 0) {
+			System.out.println("No molecules found");
 			molecule = DummyMolecule;
 			notes.setEditable(false);
 		} else if (archive.get(molecule.getUID()) == null) {

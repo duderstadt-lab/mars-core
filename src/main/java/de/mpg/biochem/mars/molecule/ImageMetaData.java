@@ -559,10 +559,6 @@ public class ImageMetaData {
 		return log;
 	}
 	
-	public Molecule getMoleculeWrapper() {
-		return new Molecule(this);
-	}
-	
 	//DataTable column exclusion list
 	private String[] column_exclude_list = new String[]{
 			"MCL NanoDrive XY Stage-Name", 

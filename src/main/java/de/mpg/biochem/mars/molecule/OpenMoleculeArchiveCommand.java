@@ -71,7 +71,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
     @Parameter
     private LogService logService;
     
-    @Parameter(label="MoleculeArchive (.yama) ")
+    @Parameter(label="MoleculeArchive (.yama file or .yama.store directory)", style="both")
     private File file;
     
     @Parameter(label="Use virtual memory")

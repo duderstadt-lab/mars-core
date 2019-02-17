@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -196,7 +195,15 @@ public class MoleculeArchive {
 	}
 	
 	private void convertToVirtual(File file) throws JsonParseException, IOException {
+		//First lets build the directory structure
+		virtualDirectory = new File(file.getParent() + "/" + file.getName() + ".store");
+		virtualDirectory.mkdirs();
+		new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData").mkdirs();
+		new File(virtualDirectory.getAbsolutePath() + "/Molecules").mkdirs();
 		
+		load(file);		
+		
+		saveIndex();
 	}
 	
 	private void loadStore(File directory) throws JsonParseException, IOException {
@@ -231,54 +238,59 @@ public class MoleculeArchive {
 	    propertiesJParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(propertiesJParser.getCurrentName())) {
 			archiveProperties = new MoleculeArchiveProperties(propertiesJParser, this);
-		} else {
-			moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties.json file found. Are you sure you provided a yama directory store?", MessageType.ERROR_MESSAGE);
-			return;
 		}
 		propertiesJParser.close();
 		propertiesInputStream.close();
 		
 		//Now load in moleculeIndex
-		File indexFile = new File(virtualDirectory.getAbsolutePath() + "/moleculeIndex.json");
+		File indexFile = new File(virtualDirectory.getAbsolutePath() + "/indexes.json");
 		InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
 		
 	    JsonParser indexJParser = jfactory.createParser(indexInputStream);
 		
 	    indexJParser.nextToken();
-	    
-	    if("moleculeIndex".equals(indexJParser.getCurrentName())) {
-	    	indexJParser.nextToken();
-	    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-	    		moleculeIndex.add(indexJParser.getText());
-	        }
-	    }
-	    
-	    if("tagIndex".equals(indexJParser.getCurrentName())) {
-	    	//First we move past array start
-	    	indexJParser.nextToken();
-			
-    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-    			String UID = "NULL";
-	    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
-	    			if("UID".equals(indexJParser.getCurrentName())) {
-	    				indexJParser.nextToken();
-	    				UID = indexJParser.getText();
-	    			}
-	    			
-	    			if ("tags".equals(indexJParser.getCurrentName())) {
-	    				indexJParser.nextToken();
-	    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-	    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-	    		            tags.add(indexJParser.getText());
-	    		        }
-	    		    	tagIndex.put(UID, tags);
-	    			}
+	    while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+		    if ("imageMetaDataIndex".equals(indexJParser.getCurrentName())) {
+		    	indexJParser.nextToken();
+		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+		    		imageMetaDataIndex.add(indexJParser.getText());
+		        }
+		    }
+		    
+		    if("moleculeIndex".equals(indexJParser.getCurrentName())) {
+		    	indexJParser.nextToken();
+		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+		    		moleculeIndex.add(indexJParser.getText());
+		        }
+		    }
+		    
+		    if("tagIndex".equals(indexJParser.getCurrentName())) {
+		    	indexJParser.nextToken();
+	    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+	    			String UID = "NULL";
+		    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+		    			if("UID".equals(indexJParser.getCurrentName())) {
+		    				indexJParser.nextToken();
+		    				UID = indexJParser.getText();
+		    			}
+		    			
+		    			if ("tags".equals(indexJParser.getCurrentName())) {
+		    				indexJParser.nextToken();
+		    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
+		    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+		    		            tags.add(indexJParser.getText());
+		    		        }
+		    		    	tagIndex.put(UID, tags);
+		    			}
+		    		}
 	    		}
-    		}
+		    }
 	    }
-
+	    
 		indexJParser.close();
 		indexInputStream.close();
+		
+		updateArchiveProperties();
 	}
 	
 	private void load(File file) throws JsonParseException, IOException {
@@ -318,14 +330,14 @@ public class MoleculeArchive {
 			return;
 		}
 		
-		molecules = new ConcurrentHashMap<>();
+		if (!virtual)
+			molecules = new ConcurrentHashMap<>();
 
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					ImageMetaData imgMeta = new ImageMetaData(jParser);
-					addImageMetaData(imgMeta);
+					addImageMetaData(new ImageMetaData(jParser));
 				}
 			}
 			
@@ -395,22 +407,36 @@ public class MoleculeArchive {
 	private void saveIndex() {
 		//Write out moleculeIndex
 		try {
-			File indexFile = new File(virtualDirectory.getAbsolutePath() + "/moleculeIndex.json");
+			File indexFile = new File(virtualDirectory.getAbsolutePath() + "/indexes.json");
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 			
 			JsonGenerator jGenerator = jfactory.createGenerator(stream);
+			
+			jGenerator.writeStartObject();
 
-			jGenerator.writeArrayFieldStart("moleculeIndex");
+			//Write imageMetaDataIndex
+			jGenerator.writeFieldName("imageMetaDataIndex");
+			jGenerator.writeStartArray();
+			for (String metaUID : imageMetaDataIndex) {
+				jGenerator.writeString(metaUID);
+			}
+			jGenerator.writeEndArray();
+			
+			//Write moleculeIndex
+			jGenerator.writeFieldName("moleculeIndex");
+			jGenerator.writeStartArray();
 			for (String UID : moleculeIndex) {
 				jGenerator.writeString(UID);
 			}
 			jGenerator.writeEndArray();
-			
-			jGenerator.writeArrayFieldStart("tagIndex");
+
+			jGenerator.writeFieldName("tagIndex");
+			jGenerator.writeStartArray();
 			for (String UID : tagIndex.keySet()) {
 				jGenerator.writeStartObject();
 				jGenerator.writeStringField("UID", UID);
-				jGenerator.writeArrayFieldStart("tagIndex");
+				jGenerator.writeFieldName("tags");
+				jGenerator.writeStartArray();
 				for (String tag : tagIndex.get(UID)) {
 					jGenerator.writeString(tag);
 				}
@@ -418,6 +444,8 @@ public class MoleculeArchive {
 				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
+			
+			jGenerator.writeEndObject();
 			
 			jGenerator.close();
 			
@@ -430,9 +458,10 @@ public class MoleculeArchive {
 	}
 	
 	public void save() {
-		if (virtual)
+		if (virtual) {
 			updateArchiveProperties();
-		else
+			saveIndex();
+		} else
 			saveAs(file);
 	}
 	
@@ -578,7 +607,7 @@ public class MoleculeArchive {
 		if (virtual) {
 			ImageMetaData metaData = null;
 			try {
-				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
+				File metaDataFile = new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(metaDataFile));
 		
 				JsonParser jParser = jfactory.createParser(inputStream);
@@ -724,6 +753,8 @@ public class MoleculeArchive {
 		remove(molecule.getUID());
 	}
 	
+	//Should update to use tagIndex in virtual mode
+	//So all records are not opened...
 	public void deleteMoleculesWithTag(String tag) {
 		//We should do this with streams but for the moment this is faster
 		ArrayList<String> newMoleculeIndex = new ArrayList<String>();
@@ -761,7 +792,7 @@ public class MoleculeArchive {
 		if (virtual) {
 			Molecule molecule = null;
 			try {
-				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+				File moleculeFile = new File(virtualDirectory.getAbsolutePath() + "/Molecules/" + UID + ".json");
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(moleculeFile));
 		
 				JsonParser jParser = jfactory.createParser(inputStream);
@@ -873,7 +904,9 @@ public class MoleculeArchive {
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
+				jGenerator.writeStartObject();
 				archiveProperties.toJSON(jGenerator);
+				jGenerator.writeEndObject();
 				jGenerator.close();
 				
 				stream.flush();

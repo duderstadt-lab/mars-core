@@ -410,17 +410,17 @@ public class ImageMetaDataPanel extends JPanel {
 		if (archive.getNumberOfImageMetaDataItems() == 0) {
 			imageMetaData = DummyImageMetaData;
 			Notes.setEditable(false);
-		} else if (archive.get(imageMetaData.getUID()) == null) {
+		} else if (archive.getImageMetaData(imageMetaData.getUID()) == null) {
 			imageMetaData = archive.getImageMetaData(0);
 			Notes.setEditable(true);
 		} else {
-			//Need to reload the current molecule if
+			//Need to reload the current record if
 			//working in virtual storage
 			//This ensures if a command changed the values
 			//The new values are loaded 
 			//this prevents overwritting when switching records
 			//in the window..
-			imageMetaData = archive.get(imageMetaData.getUID()).UnwrapImageMetaData();
+			imageMetaData = archive.getImageMetaData(imageMetaData.getUID());
 			Notes.setEditable(true);
 		}
 		
