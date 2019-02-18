@@ -161,6 +161,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Add to RoiManger")
 	private boolean addToRoiManger;
 	
+	@Parameter(label="Molecule Names in Manager")
+	private boolean moleculeNames;
+	
 	@Parameter(label="Process all slices")
 	private boolean allSlices;
 
@@ -467,7 +470,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	}
 	
 	private void AddToManger(ArrayList<Peak> peaks, int slice) {
-		AddToManger(peaks, slice, 1);
+		AddToManger(peaks, slice, 0);
 	}
 	
 	private int AddToManger(ArrayList<Peak> peaks, int slice, int startingPeakNum) {
@@ -478,10 +481,16 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			for (Peak peak : peaks) {
 				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0) + 0.5, peak.getDoublePosition(1) + 0.5);
 				if (slice == 0) {
-					peakRoi.setName(MARSMath.getUUID58());
+					if (moleculeNames)
+						peakRoi.setName("Molecule"+pCount);
+					else
+						peakRoi.setName(MARSMath.getUUID58());
+					
 				} else {
-					peakRoi.setName(MARSMath.getUUID58());
-					//peakRoi.setName("Peak_"+slice+"_"+pCount);
+					if (moleculeNames)
+						peakRoi.setName("Molecule"+pCount);
+					else
+						peakRoi.setName(MARSMath.getUUID58());
 				}
 				peakRoi.setPosition(slice);
 				roiManager.addRoi(peakRoi);
