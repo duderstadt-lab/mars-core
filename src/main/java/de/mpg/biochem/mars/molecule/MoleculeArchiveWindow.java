@@ -669,13 +669,13 @@ public class MoleculeArchiveWindow {
 		//panel.add(new JLabel("                                   "), gbc);
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Encoding:                                 "), gbc);
+		panel.add(new JLabel("Save with encoding:                                 "), gbc);
 		
 		JSONencodingButton = new JRadioButton("JSON");
 		JSONencodingButton.setMnemonic(KeyEvent.VK_J);
 		JSONencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	archive.unsetSMILEencoding();
+	        	archive.unsetSMILEOutputEncoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -685,7 +685,7 @@ public class MoleculeArchiveWindow {
 	    SMILEencodingButton.setMnemonic(KeyEvent.VK_S);
 		SMILEencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	archive.setSMILEencoding();
+	        	archive.setSMILEOutputEncoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -696,7 +696,7 @@ public class MoleculeArchiveWindow {
 	    group.add(JSONencodingButton);
 	    group.add(SMILEencodingButton);
 	    
-	    if (archive.isSMILEencoding()) {
+	    if (archive.isSMILEOutputEncoding()) {
 	    	JSONencodingButton.setSelected(false);
 		    SMILEencodingButton.setSelected(true);
 	    } else {

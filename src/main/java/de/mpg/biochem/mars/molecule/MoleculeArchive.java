@@ -38,7 +38,6 @@ import java.util.concurrent.ForkJoinPool;
 
 import org.scijava.ui.DialogPrompt.MessageType;
 
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -106,7 +105,12 @@ public class MoleculeArchive {
 	private boolean virtual;
 	
 	//determines whether the file is encoded in binary smile format
-	private boolean smileEncoding = true;
+	private boolean outputSmileEncoding = true;
+	
+	//For virtual archives we must keep track of the 
+	//encoding when it was loaded so we always parse correctly
+	//even if the user changed the format in the properties panel.
+	private boolean inputSmileEncoding = true;
 	
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -212,16 +216,19 @@ public class MoleculeArchive {
 	    JsonParser propertiesJParser = match.createParserWithMatch();
 	    
 	    if (match.getMatchedFormatName().equals("Smile")) {
-	    	smileEncoding = true;
+	    	inputSmileEncoding = true;
+	    	outputSmileEncoding = true;
 	    	jfactory = smileF;
 	    } else if (match.getMatchedFormatName().equals("JSON")) {
 	    	//This is included just for completeness in case we want to
 	    	//add a third format someday...
-	    	smileEncoding = false;
+	    	inputSmileEncoding = false;
+	    	outputSmileEncoding = false;
 	    	jfactory = jsonF;
 	    } else {
 	    	//We default to Smile
-	    	smileEncoding = true;
+	    	inputSmileEncoding = true;
+	    	outputSmileEncoding = true;
 	    	jfactory = smileF;
 	    }
 		
@@ -297,16 +304,19 @@ public class MoleculeArchive {
 	    JsonParser jParser = match.createParserWithMatch();
 	    
 	    if (match.getMatchedFormatName().equals("Smile")) {
-	    	smileEncoding = true;
+	    	inputSmileEncoding = true;
+	    	outputSmileEncoding = true;
 	    	jfactory = smileF;
 	    } else if (match.getMatchedFormatName().equals("JSON")) {
 	    	//This is included just for completeness in case we want to
 	    	//add a third format someday...
-	    	smileEncoding = false;
+	    	inputSmileEncoding = false;
+	    	outputSmileEncoding = false;
 	    	jfactory = jsonF;
 	    } else {
 	    	//We default to Smile
-	    	smileEncoding = true;
+	    	inputSmileEncoding = true;
+	    	outputSmileEncoding = true;
 	    	jfactory = smileF;
 	    }
 		
@@ -386,35 +396,6 @@ public class MoleculeArchive {
 		}
 	}
 	
-	//Rebuild tag index from molecule records
-	/*
-	public void rebuildTagIndex() {
-		//We only do this if we have a virtual archive
-		//otherwise some of the indexes were never initialized.
-		if (virtual) {
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-			
-			ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
-			
-			try {
-		        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
-		        	Molecule molecule = get(UID);
-		        	newTagIndex.put(UID, molecule.getTags());
-		        })).get();        
-		   } catch (InterruptedException | ExecutionException e ) {
-		        // handle exceptions
-		    	e.printStackTrace();
-		   } finally {
-		      forkJoinPool.shutdown();
-		   }
-			
-		   this.tagIndex = newTagIndex;
-			
-		   saveIndexes();
-		}
-	}
-	*/
-	
 	//Rebuild all indexes by inspecting the contents of store directories...
 	public void rebuildIndexes() {
 		//We only do this if we have a virtual archive
@@ -469,10 +450,10 @@ public class MoleculeArchive {
 	}
 	
 	private void saveIndexes() {
-		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex,  tagIndex);
+		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex,  tagIndex, jfactory);
 	}
 	
-	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex) {
+	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) {
 		try {
 			File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
@@ -531,8 +512,9 @@ public class MoleculeArchive {
 			
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 			
-			//update encoding in case it was changed in properties panel
-			if (smileEncoding) {
+			//build a new factory just for this output run...
+			JsonFactory jfactory;
+			if (outputSmileEncoding) {
 				jfactory = new SmileFactory();
 			} else {
 				jfactory = new JsonFactory();
@@ -594,8 +576,9 @@ public class MoleculeArchive {
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
 		ConcurrentMap<String, String> newMoleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
 		
-		//update encoding in case it was changed in properties panel
-		if (smileEncoding) {
+		//build a new factory just for this output run...
+		JsonFactory jfactory;
+		if (outputSmileEncoding) {
 			jfactory = new SmileFactory();
 		} else {
 			jfactory = new JsonFactory();
@@ -607,7 +590,7 @@ public class MoleculeArchive {
 			//Generate all imageMetaData record files...
 			forkJoinPool.submit(() -> imageMetaDataIndex.parallelStream().forEach(metaUID -> { 
 	        	try {
-					saveImageMetaDataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData"), getImageMetaData(metaUID));
+					saveImageMetaDataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData"), getImageMetaData(metaUID), jfactory);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -619,7 +602,7 @@ public class MoleculeArchive {
 	        	newTagIndex.put(UID, molecule.getTags());
 	        	newMoleculeImageMetaDataUIDIndex.put(UID, molecule.getImageMetaDataUID());
 	        	try {
-					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule);
+					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -655,7 +638,7 @@ public class MoleculeArchive {
 		//then we save the resulting indexes from the operation..
 		//this way virtual or in memory archive can both be saved no problem..
 		//In the case of saving virtual archives this method then re-indexes completely.
-		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex,  newTagIndex);
+		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex,  newTagIndex, jfactory);
 	}
 	
 	//Method for adding molecules to the archive
@@ -694,7 +677,7 @@ public class MoleculeArchive {
 		}
 		if (virtual) {
 			try {
-				saveImageMetaDataToFile(new File(file.getAbsolutePath() + "/ImageMetaData"), metaData);
+				saveImageMetaDataToFile(new File(file.getAbsolutePath() + "/ImageMetaData"), metaData, jfactory);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -808,20 +791,18 @@ public class MoleculeArchive {
 	public void set(Molecule molecule) {
 		if (virtual) {
 			try {
-				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule);
+				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			updateTagIndex(molecule);
 		} else {
-			//We do nothing because we always work with the actual archive copy if working in memory.
-			//We would do the following, but doesn't make sense.
-			//molecules.put(molecule.getUID(), molecule);
+			molecules.put(molecule.getUID(), molecule);
 		}
 	}
 	
-	public void saveMoleculeToFile(File directory, Molecule molecule) throws IOException {
+	public void saveMoleculeToFile(File directory, Molecule molecule, JsonFactory jfactory) throws IOException {
 		File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(moleculeFile));
 		
@@ -833,7 +814,7 @@ public class MoleculeArchive {
 		stream.close();
 	}
 	
-	public void saveImageMetaDataToFile(File directory, ImageMetaData imageMetaData) throws IOException {
+	public void saveImageMetaDataToFile(File directory, ImageMetaData imageMetaData, JsonFactory jfactory) throws IOException {
 		File imageMetaDataFile = new File(directory.getAbsolutePath() + "/" + imageMetaData.getUID() + ".json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(imageMetaDataFile));
 		
@@ -844,25 +825,7 @@ public class MoleculeArchive {
 		stream.flush();
 		stream.close();
 	}
-	/*
-	public void generateTagIndex() {
-		//Need to determine the number of threads
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		
-		try {
-	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
-	        	updateTagIndex(get(UID));
-	        })).get();
-	   } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
-	    	e.printStackTrace();
-	   } finally {
-	      forkJoinPool.shutdown();
-	   }
-	}
-	*/
+
 	public void updateTagIndex(String updateUID) {
 		updateTagIndex(get(updateUID));
 	}
@@ -1004,16 +967,16 @@ public class MoleculeArchive {
 		}
 	}
 	
-	public void setSMILEencoding() {
-		smileEncoding = true;
+	public void setSMILEOutputEncoding() {
+		outputSmileEncoding = true;
 	}
 	
-	public void unsetSMILEencoding() {
-		smileEncoding = false;
+	public void unsetSMILEOutputEncoding() {
+		outputSmileEncoding = false;
 	}
 	
-	public boolean isSMILEencoding() {
-		return smileEncoding;
+	public boolean isSMILEOutputEncoding() {
+		return outputSmileEncoding;
 	}
 	
 	public void naturalOrderSortMoleculeIndex() {
