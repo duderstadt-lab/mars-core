@@ -979,6 +979,10 @@ public class MoleculeArchive {
 		return outputSmileEncoding;
 	}
 	
+	public boolean isSMILEInputEncoding() {
+		return inputSmileEncoding;
+	}
+	
 	public void naturalOrderSortMoleculeIndex() {
 		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
 	}

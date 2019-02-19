@@ -665,11 +665,18 @@ public class MoleculeArchiveWindow {
 			panel.add(new JLabel("This archive is stored in normal memory."), gbc);
 		}
 		
-		//gbc.gridy += 1;
-		//panel.add(new JLabel("                                   "), gbc);
+		String encoding;
+		if (archive.isSMILEInputEncoding()) {
+			encoding = "Smile";
+		} else {
+			encoding = "JSON";
+		}
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Save with encoding:                                 "), gbc);
+		panel.add(new JLabel("Input encoding: " + encoding), gbc);
+		
+		gbc.gridy += 1;
+		panel.add(new JLabel("Save with encoding:                       "), gbc);
 		
 		JSONencodingButton = new JRadioButton("JSON");
 		JSONencodingButton.setMnemonic(KeyEvent.VK_J);
