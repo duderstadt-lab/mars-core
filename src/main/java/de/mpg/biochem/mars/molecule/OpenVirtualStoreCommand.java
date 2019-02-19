@@ -1,3 +1,4 @@
+package de.mpg.biochem.mars.molecule;
 /*******************************************************************************
  * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
  * 
@@ -16,7 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
 
 import java.awt.Rectangle;
 import java.io.File;
@@ -57,8 +57,8 @@ import javax.swing.filechooser.FileSystemView;
 			mnemonic = 's'),
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Open MoleculeArchive", weight = 1, mnemonic = 'o')})
-public class OpenMoleculeArchiveCommand extends DynamicCommand {
+		@Menu(label = "Open Virtual Store", weight = 1, mnemonic = 'o')})
+public class OpenVirtualStoreCommand extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
 	
@@ -71,7 +71,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
     @Parameter
     private LogService logService;
     
-    @Parameter(label="MoleculeArchive (.yama file)")
+    @Parameter(label="MoleculeArchive (.yama.store directory)", style="directory")
     private File file;
     
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
@@ -91,8 +91,8 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 		
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Opening MoleculeArchive");
-		builder.addParameter("Loading File", file.getAbsolutePath());
+		String log = builder.buildTitleBlock("Opening Virtual Store");
+		builder.addParameter("Loading from directory", file.getAbsolutePath());
 		builder.addParameter("Archive Name", name);
 		
 		log += builder.buildParameterList();
@@ -100,18 +100,19 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 		logService.info(log);
 		
 		try {
+			//Since we give it a directory for file. It will know its a virtual store
 			archive = new MoleculeArchive(name,file,moleculeArchiveService);
 			
 			getInfo().getOutput("archive", MoleculeArchive.class).setLabel(name);
 			
 		} catch (JsonParseException e) {
 			e.printStackTrace();
-			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");
+			logService.error("JsonParseExcpetion - are you sure this is a proper yama virtual store?");
 			logService.error(builder.endBlock(false));
 			return;
 		} catch (IOException e) {
 			e.printStackTrace();
-			logService.error("IOException - does the yama file exist?");
+			logService.error("IOException - does the store directory exist?");
 			logService.error(builder.endBlock(false));
 			return;
 		}
@@ -131,3 +132,4 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
     	return file;
     }
 }
+

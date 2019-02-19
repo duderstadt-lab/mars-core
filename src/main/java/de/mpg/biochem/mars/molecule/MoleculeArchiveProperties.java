@@ -93,7 +93,7 @@ public class MoleculeArchiveProperties {
 		
 		//Write out arrays of tags if tags have been added.
 		if (tags.size() > 0) {
-			jGenerator.writeFieldName("tags");
+			jGenerator.writeFieldName("Tags");
 			jGenerator.writeStartArray();
 			Iterator<String> iterator = tags.iterator();
 			while(iterator.hasNext())
@@ -103,7 +103,7 @@ public class MoleculeArchiveProperties {
 		
 		//Write out arrays of parameters if parameters have been added.
 		if (parameters.size() > 0) {
-			jGenerator.writeFieldName("parameters");
+			jGenerator.writeFieldName("Parameters");
 			jGenerator.writeStartArray();
 			Iterator<String> iterator = parameters.iterator();
 			while(iterator.hasNext())
@@ -132,14 +132,14 @@ public class MoleculeArchiveProperties {
 		        numImageMetaData = jParser.getIntValue();
 		    }
 		    
-		    if("tags".equals(fieldname)) {
+		    if("Tags".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            tags.add(jParser.getText());
 		        }
 		    }
 		    
-		    if("parameters".equals(fieldname)) {
+		    if("Parameters".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            tags.add(jParser.getText());

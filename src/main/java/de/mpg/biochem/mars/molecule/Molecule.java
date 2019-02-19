@@ -315,7 +315,7 @@ public class Molecule {
 		Tags.add(tag);
 		if (parent != null) {
 			parent.getArchiveProperties().addTag(tag);
-			parent.updateTagIndex(UID);
+			parent.updateTagIndex(this);
 		}
 	}
 	

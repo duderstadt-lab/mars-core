@@ -123,7 +123,8 @@ public class MoleculeArchiveWindow {
 	
 	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
-	private JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+	private JMenuItem saveAsMenuItem = new JMenuItem("Save As...");
+	private JMenuItem saveAsVirtualStoreMenuItem = new JMenuItem("Save As Virtual Store...");
 	
 	private JRadioButton JSONencodingButton, SMILEencodingButton;
 	
@@ -226,6 +227,7 @@ public class MoleculeArchiveWindow {
 		mb.add(fileMenu);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(saveAsMenuItem);
+		fileMenu.add(saveAsVirtualStoreMenuItem);
 		fileMenu.addSeparator();
 		fileMenu.add(propertiesMenuItem);
 		
@@ -294,6 +296,23 @@ public class MoleculeArchiveWindow {
 	          }
 	       });
 		
+		saveAsVirtualStoreMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+	        		 	archive.set(moleculePanel.getMolecule());
+	        		 	
+	        		 	String name = archive.getName();
+	        		 	
+	        		 	if (!name.endsWith(".store")) {
+	        		 		name += ".store";
+	        		 	}
+	        		 
+		 				saveAsVirtualStore(new File(name));
+		 				
+		 				//updateAll();
+	        	 }
+	          }
+	       });
 		
 		JMenu plotMenu = new JMenu("Plot");
 		mb.add(plotMenu);
@@ -747,6 +766,14 @@ public class MoleculeArchiveWindow {
 				archive.saveAs(file);
 				return true;
 			}
+		}
+		return false;
+	}
+	
+	private boolean saveAsVirtualStore(File saveAsFile) {
+		File virtualDirectory = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
+		if (virtualDirectory != null) {	
+			archive.saveAsVirtualStore(virtualDirectory);
 		}
 		return false;
 	}
