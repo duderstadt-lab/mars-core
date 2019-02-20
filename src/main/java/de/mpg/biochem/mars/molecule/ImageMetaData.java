@@ -333,18 +333,17 @@ public class ImageMetaData {
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					String fieldname = jParser.getCurrentName();
 					
-					//Summary is an object, so that will break the loop
-					//Therefore, we need to skip over it...
-					if ("Summary".equals(fieldname)) {
-						while (jParser.nextToken() != JsonToken.END_OBJECT) {
-							// We just want to skip over the summary
-						}
-						//once we have skipped over we just want to continue
+					if (fieldname == null)
 						continue;
-					}
 					
-					jParser.nextToken();
-
+					//At the moment, we skip all object fields
+					//We can add above if statements for specific
+					//known fields we want to parse...
+					if (jParser.nextToken() == JsonToken.START_OBJECT) {
+				    	passThroughUnknownObjects(jParser);
+				    	continue;
+				    }
+					
 					properties.put(fieldname, jParser.getValueAsString());
 				}
 				propertiesStack.put(slice, properties);
@@ -458,41 +457,70 @@ public class ImageMetaData {
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
 		    
+		    if (fieldname == null)
+		    	continue;
+		    
 		    if ("UID".equals(fieldname)) {
 		    	jParser.nextToken();
 		        UID = jParser.getText();
+		        continue;
 		    }
 		    
 		    if("Microscope".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	Microscope = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("SourceDirectory".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	SourceDirectory = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("CollectionDate".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	CollectionDate = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	Notes = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if("Log".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	log = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {		    	
 		    	DataTable = new MARSResultsTable("ImageMetaData - " + UID);
 		    	DataTable.fromJSON(jParser);
+		    	continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensure if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in ImageMetaData record ... skipping");
+		    	passThroughUnknownObjects(jParser);
 		    }
 		}
+	}
+	
+	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
+    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+    		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+    			passThroughUnknownObjects(jParser);
+    	}
 	}
 	
 	//Utility method

@@ -247,14 +247,20 @@ public class MoleculeArchive {
 		
 	    indexJParser.nextToken();
 	    while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
-		    if ("imageMetaDataIndex".equals(indexJParser.getCurrentName())) {
+	    	String fieldname = indexJParser.getCurrentName();
+		    
+		    if (fieldname == null)
+		    	continue;
+	    	
+		    if ("imageMetaDataIndex".equals(fieldname)) {
 		    	indexJParser.nextToken();
 		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
 		    		imageMetaDataIndex.add(indexJParser.getText());
 		        }
+		    	continue;
 		    }
 		    
-		    if("moleculeIndex".equals(indexJParser.getCurrentName())) {
+		    if("moleculeIndex".equals(fieldname)) {
 		    	indexJParser.nextToken();
 	    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
 	    			String UID = "NULL";
@@ -280,6 +286,19 @@ public class MoleculeArchive {
 		    			}
 		    		}
 	    		}
+	    		continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensure if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (indexJParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in indexes ... skipping");
+		    	passThroughUnknownObjects(indexJParser);
 		    }
 	    }
 	    
@@ -287,6 +306,13 @@ public class MoleculeArchive {
 		indexInputStream.close();
 		
 		updateArchiveProperties();
+	}
+	
+	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
+    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+    		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+    			passThroughUnknownObjects(jParser);
+    	}
 	}
 	
 	private void load(File file) throws JsonParseException, IOException {
@@ -775,16 +801,21 @@ public class MoleculeArchive {
 	public String getTagList(String UID) {
 		LinkedHashSet<String> tags;
 		if (UID == null)
-			return null;
+			 return null;
 		else if (virtual) {
 			tags = tagIndex.get(UID);
 		} else {
 			tags = get(UID).getTags();
 		}
+		
+		if (tags == null)
+			return "";
+		
 		String tagList = "";
 		for (String tag: tags)
 			tagList += tag + ", ";
-		tagList = tagList.substring(0, tagList.length() - 2);
+		if (tags.size() > 0)
+			tagList = tagList.substring(0, tagList.length() - 2);
 		return tagList;
 	}
 	

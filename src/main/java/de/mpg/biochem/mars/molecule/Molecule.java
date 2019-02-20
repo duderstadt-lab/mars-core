@@ -183,19 +183,25 @@ public class Molecule {
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
 		    
+		    if (fieldname == null)
+		    	continue;
+		    
 		    if ("UID".equals(fieldname)) {
 		    	jParser.nextToken();
 		        UID = jParser.getText();
+		        continue;
 		    }
 		    
 		    if ("ImageMetaDataUID".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	imageMetaDataUID = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
 		        Notes = jParser.getText();
+		        continue;
 		    }
 		    
 		    if("Tags".equals(fieldname)) {
@@ -205,6 +211,7 @@ public class Molecule {
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            Tags.add(jParser.getText());
 		        }
+		    	continue;
 		    }
 			    
 		    if("Parameters".equals(fieldname)) {
@@ -228,10 +235,12 @@ public class Molecule {
 	    				Parameters.put(subfieldname, jParser.getDoubleValue());
 	    			}
 		    	}
+		    	continue;
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {
 			    datatable.fromJSON(jParser);
+			    continue;
 		    }
 		    
 		    if("SegmentTables".equals(fieldname)) {
@@ -263,8 +272,28 @@ public class Molecule {
 				    	segments.put(tableKey, segmenttable);
 			    	}
 		    	}
+		    	continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensure if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in molecule record ... skipping");
+		    	passThroughUnknownObjects(jParser);
 		    }
 		}
+	}
+	
+	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
+    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+    		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+    			passThroughUnknownObjects(jParser);
+    	}
 	}
 	
 	public String toJSONString() {
