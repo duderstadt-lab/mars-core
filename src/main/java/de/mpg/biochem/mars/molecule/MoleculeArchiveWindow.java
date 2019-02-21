@@ -139,11 +139,10 @@ public class MoleculeArchiveWindow {
 	private JMenuItem deleteMenuItem = new JMenuItem("Delete Molecules");
 	private JMenuItem deleteTagsMenuItem = new JMenuItem("Delete Tags");
 	private JMenuItem deleteParametersMenuItem = new JMenuItem("Delete Parameters");
-	//private JMenuItem generateNewMenuItem = new JMenuItem("Generate new archive");
 	//private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
 	private JMenuItem mergeMenuItem = new JMenuItem("Merge Molecules");
-	private JMenuItem updateMenuItem = new JMenuItem("Update");
-	//private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
+	private JMenuItem updateMenuItem = new JMenuItem("Update Window");
+	private JMenuItem rebuildIndexesMenuItem = new JMenuItem("Rebuild Indexes");
 	
 	//static so that window locations are offset...
 	static int pos_x = 100;
@@ -591,6 +590,17 @@ public class MoleculeArchiveWindow {
 	          }
 	       });
 		
+		toolsMenu.add(rebuildIndexesMenuItem);
+		rebuildIndexesMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 
+	        	 archive.rebuildIndexes();
+	        	 
+	        	 updateAll();
+	        	 lockArchive = false;
+	          }
+	       });
+		
 		frame = new JFrame(title);
 		frame.setLocation(pos_x, pos_y);
 		pos_x += 10;
@@ -818,6 +828,10 @@ public class MoleculeArchiveWindow {
 	
 	public void close() {
 		moleculeArchiveService.removeArchive(archive.getName());
+		
+		if (archive.isVirtual())
+			archive.save();
+		
 		frame.setVisible(false);
 		frame.dispose();
 		

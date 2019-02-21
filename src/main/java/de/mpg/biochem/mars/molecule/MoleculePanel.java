@@ -108,6 +108,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	private Molecule molecule;
 	private MoleculeArchive archive;
 	
+	private boolean moleculeRecordChanged;
+	
 	private JTable moleculeIndex;
 	private AbstractTableModel moleculeIndexTableModel;
 	private TableRowSorter moleculeSorter;
@@ -125,6 +127,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		} else {
 			molecule = DummyMolecule;
 		}
+		moleculeRecordChanged = false;
 		
 		DummyMolecule.setDataTable(new MARSResultsTable());
 		DummyMolecule.setImageMetaDataUID("XXXXXXXXXX");
@@ -198,7 +201,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
                 ListSelectionModel lsm = (ListSelectionModel)e.getSource();
                 if (!lsm.isSelectionEmpty()) {
                     int selectedRow = lsm.getMinSelectionIndex();
-                    archive.set(molecule);
+                    if (moleculeRecordChanged)
+                    	archive.set(molecule);
                     molecule = archive.get((String)moleculeIndex.getValueAt(selectedRow, 1));
                     updateAll();
                 }
@@ -405,16 +409,22 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
         notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	                if (archive.getNumberOfMolecules() != 0)
+	                if (archive.getNumberOfMolecules() != 0) {
+	                	moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	                }
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	if (archive.getNumberOfMolecules() != 0)
+	            	if (archive.getNumberOfMolecules() != 0) {
+	            		moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	            	}
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	if (archive.getNumberOfMolecules() != 0)
+	            	if (archive.getNumberOfMolecules() != 0) {
+	            		moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	            	}
 	            }
 	        });
 		
@@ -468,6 +478,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			
 			@Override
 			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				moleculeRecordChanged = true;
 				double value = Double.parseDouble((String)aValue);
 				molecule.setParameter(ParameterList[rowIndex], value);
 			}
@@ -527,6 +538,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newParameter.getText().equals("") && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					molecule.setParameter(newParameter.getText().trim(), 0);
 					updateParameterList();
 					ParameterTableModel.fireTableDataChanged();
@@ -541,6 +553,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (ParameterTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					String param = (String)ParameterTable.getValueAt(ParameterTable.getSelectedRow(), 0);
 					molecule.removeParameter(param);
 					updateParameterList();
@@ -632,6 +645,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newTag.getText().equals("") && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					molecule.addTag(newTag.getText().trim());
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
@@ -651,6 +665,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			public void actionPerformed(ActionEvent e) {
 				if (TagTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
 					String tag = (String)TagTable.getValueAt(TagTable.getSelectedRow(), 0);
+					moleculeRecordChanged = true;
 					molecule.removeTag(tag);
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
@@ -782,6 +797,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			molecule = archive.get(molecule.getUID());
 			notes.setEditable(true);
 		}
+		moleculeRecordChanged = false;
 		
 		//Update index table in case tags were changed
 		if (moleculeCount < archive.getNumberOfMolecules()) {

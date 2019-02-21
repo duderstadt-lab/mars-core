@@ -44,8 +44,8 @@ public class MoleculeArchiveProperties {
 	private String comments;
 	
 	//Not really used for anything at the moment...
-	private LinkedHashSet<String> tags;
-	private LinkedHashSet<String> parameters;
+	private LinkedHashSet<String> tagList;
+	private LinkedHashSet<String> parameterList;
 	
 	private MoleculeArchive parent;
 	
@@ -53,16 +53,16 @@ public class MoleculeArchiveProperties {
 		numberOfMolecules = 0;
 		numImageMetaData = 0;
 		comments = "";
-		tags = new LinkedHashSet<String>();
-		parameters = new LinkedHashSet<String>();
+		tagList = new LinkedHashSet<String>();
+		parameterList = new LinkedHashSet<String>();
 	}
 	
 	public MoleculeArchiveProperties(MoleculeArchive parent) {
 		numberOfMolecules = 0;
 		numImageMetaData = 0;
 		comments = "";
-		tags = new LinkedHashSet<String>();
-		parameters = new LinkedHashSet<String>();
+		tagList = new LinkedHashSet<String>();
+		parameterList = new LinkedHashSet<String>();
 		
 		this.parent = parent;
 	}
@@ -71,8 +71,8 @@ public class MoleculeArchiveProperties {
 		numberOfMolecules = 0;
 		numImageMetaData = 0;
 		comments = "";
-		tags = new LinkedHashSet<String>();
-		parameters = new LinkedHashSet<String>();
+		tagList = new LinkedHashSet<String>();
+		parameterList = new LinkedHashSet<String>();
 		
 		this.parent = parent;
 		
@@ -91,21 +91,21 @@ public class MoleculeArchiveProperties {
 		jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules);
 		jGenerator.writeNumberField("numImageMetaData", numImageMetaData);
 		
-		//Write out arrays of tags if tags have been added.
-		if (tags.size() > 0) {
+		//Write tagList array if tags have been added.
+		if (tagList.size() > 0) {
 			jGenerator.writeFieldName("Tags");
 			jGenerator.writeStartArray();
-			Iterator<String> iterator = tags.iterator();
+			Iterator<String> iterator = tagList.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());	
 			jGenerator.writeEndArray();
 		}
 		
 		//Write out arrays of parameters if parameters have been added.
-		if (parameters.size() > 0) {
+		if (parameterList.size() > 0) {
 			jGenerator.writeFieldName("Parameters");
 			jGenerator.writeStartArray();
-			Iterator<String> iterator = parameters.iterator();
+			Iterator<String> iterator = parameterList.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());	
 			jGenerator.writeEndArray();
@@ -118,9 +118,10 @@ public class MoleculeArchiveProperties {
 	}
 	
 	public void fromJSON(JsonParser jParser) throws IOException {
+		jParser.nextToken();
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
-		    
+
 		    if (fieldname == null)
 		    	continue;
 		    	
@@ -136,18 +137,18 @@ public class MoleculeArchiveProperties {
 		        continue;
 		    }
 		    
-		    if("Tags".equals(fieldname)) {
+		    if("MoleculeTagList".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tags.add(jParser.getText());
+		            tagList.add(jParser.getText());
 		        }
 		    	continue;
 		    }
 		    
-		    if("Parameters".equals(fieldname)) {
+		    if("MoleculeParameterList".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tags.add(jParser.getText());
+		            tagList.add(jParser.getText());
 		        }
 		    	continue;
 		    }
@@ -179,29 +180,33 @@ public class MoleculeArchiveProperties {
     	}
 	}
 	
-	//Getters and Setters
-	public void removeTag(String tag) {
-		tags.remove(tag);
-	}
-	
+	//Getters and Setters	
 	public void addTag(String tag) {
-		tags.add(tag);
+		tagList.add(tag);
 	}
 	
-	public LinkedHashSet<String> getTags() {
-		return tags;
+	public LinkedHashSet<String> getTagList() {
+		return tagList;
 	}
 	
-	public void addParameter(String parameter) {
-		parameters.add(parameter);
+	public void setTagList(LinkedHashSet<String> tagList) {
+		this.tagList = tagList;
+	}
+	
+	public void addParameter(String parameterName) {
+		parameterList.add(parameterName);
 	}
 	
 	public void removeParameter(String parameter) {
-		tags.remove(parameter);
+		tagList.remove(parameter);
 	}
 	
-	public LinkedHashSet<String> getParameters() {
-		return parameters;
+	public LinkedHashSet<String> getParameterList() {
+		return parameterList;
+	}
+	
+	public void setParameterList(LinkedHashSet<String> parameterList) {
+		this.parameterList = parameterList;
 	}
 	
 	public void setNumberOfMolecules(int numMolecules) {

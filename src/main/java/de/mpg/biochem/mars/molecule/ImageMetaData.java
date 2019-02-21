@@ -33,6 +33,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 
 import org.decimal4j.util.DoubleRounder;
@@ -78,6 +80,12 @@ public class ImageMetaData {
 	//Date and time when the data was collected...
 	private String CollectionDate;
 	
+	//tags added for filtering...
+	private LinkedHashSet<String> Tags;
+		
+	//Hashmap that maps string parameters to doubles
+	private LinkedHashMap<String, Double> Parameters;
+	
 	//Table that maps slices to times
 	private MARSResultsTable DataTable;
     
@@ -94,6 +102,9 @@ public class ImageMetaData {
     	DoubleColumn sliceCol = new DoubleColumn("slice");
 		sliceCol.add((double)1);
 		
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
+		
 		//Create the table and add all the columns...
 		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
 		DataTable.add(sliceCol);
@@ -104,6 +115,9 @@ public class ImageMetaData {
     	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
     	log = "";
+    	
+    	Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
 		
 		this.DataTable = DataTable;
     }
@@ -420,6 +434,24 @@ public class ImageMetaData {
 		if (CollectionDate != null)
 			jGenerator.writeStringField("CollectionDate", CollectionDate);
 		
+		//Write out arrays of tags if tags have been added.
+		if (Tags.size() > 0) {
+			jGenerator.writeFieldName("Tags");
+			jGenerator.writeStartArray();
+			Iterator<String> iterator = Tags.iterator();
+			while(iterator.hasNext())
+				jGenerator.writeString(iterator.next());
+			jGenerator.writeEndArray();
+		}
+		
+		//Write out parameters, which are number fields used to filter and process the molecule..
+		if (Parameters.size() > 0) {
+			jGenerator.writeObjectFieldStart("Parameters");
+			for (String name:Parameters.keySet())
+				jGenerator.writeNumberField(name, Parameters.get(name));
+			jGenerator.writeEndObject();
+		}
+		
 		if (Notes != null)
 			jGenerator.writeStringField("Notes", Notes);
 		
@@ -456,7 +488,7 @@ public class ImageMetaData {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
-		    
+
 		    if (fieldname == null)
 		    	continue;
 		    
@@ -481,6 +513,40 @@ public class ImageMetaData {
 		    if ("CollectionDate".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	CollectionDate = jParser.getText();
+		    	continue;
+		    }
+		    
+		    if("Tags".equals(fieldname)) {
+		    	//First we move past object start ?
+		    	jParser.nextToken();
+		    	
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		            Tags.add(jParser.getText());
+		        }
+		    	continue;
+		    }
+			    
+		    if("Parameters".equals(fieldname)) {
+		    	//First we move past object start ?
+		    	jParser.nextToken();
+		    	
+		    	//Then we move through fields
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String subfieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+	    				String str = jParser.getValueAsString();
+	    				if (Objects.equals(str, new String("Infinity"))) {
+	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("-Infinity"))) {
+	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("NaN"))) {
+	    					Parameters.put(subfieldname, Double.NaN);
+	    				}
+	    			} else {
+	    				Parameters.put(subfieldname, jParser.getDoubleValue());
+	    			}
+		    	}
 		    	continue;
 		    }
 		    
@@ -573,6 +639,60 @@ public class ImageMetaData {
 	
 	public String getSourceDirectory() {
 		return SourceDirectory;
+	}
+	
+	public void addTag(String tag) {
+		Tags.add(tag);
+	}
+	
+	public void removeTag(String tag) {
+		Tags.remove(tag);
+	}
+	
+	public void removeAllTags() {
+		Tags.clear();
+	}
+	
+	public void setParameter(String parameter, double value) {
+		Parameters.put(parameter, value);
+	}
+	
+	public void removeAllParameters() {
+		Parameters.clear();
+	}
+	
+	public void removeParameter(String parameter) {
+		if (Parameters.containsKey(parameter)) {
+			Parameters.remove(parameter);
+		}
+	}
+	
+	public double getParameter(String parameter) {
+		if (Parameters.containsKey(parameter)) {
+			return Parameters.get(parameter);
+		} else {
+			return Double.NaN;
+		}
+	}
+	
+	public boolean hasParameter(String parameter) {
+		return Parameters.containsKey(parameter);
+	}
+	
+	public boolean hasTag(String tag) {
+		return Tags.contains(tag);
+	}
+	
+	public boolean hasNoTags() {
+		return Tags.size() == 0;
+	}
+	
+	public LinkedHashMap<String, Double> getParameters() {
+		return Parameters;
+	}
+	
+	public LinkedHashSet<String> getTags() {
+		return Tags;
 	}
 	
 	public String getNotes() {

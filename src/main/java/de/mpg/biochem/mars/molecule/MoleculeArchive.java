@@ -435,8 +435,9 @@ public class MoleculeArchive {
 				}
 			});
 			ArrayList<String> newMoleculeIndex = new ArrayList<String>();
-			for (int i=0;i<moleculeFileNameIndex.length;i++)
-				newMoleculeIndex.add(moleculeFileNameIndex[i].substring(0, moleculeFileNameIndex.length - 6));
+			for (int i=0;i<moleculeFileNameIndex.length;i++) {
+				newMoleculeIndex.add(moleculeFileNameIndex[i].substring(0, moleculeFileNameIndex[i].length() - 5));
+			}
 			
 			String[] imageMetaDataFileNameIndex = new File(file.getAbsolutePath() + "/ImageMetaData").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
@@ -445,18 +446,21 @@ public class MoleculeArchive {
 			});
 			ArrayList<String> newImageMetaDataIndex = new ArrayList<String>();
 			for (int i=0;i<imageMetaDataFileNameIndex.length;i++)
-				newImageMetaDataIndex.add(imageMetaDataFileNameIndex[i].substring(0, imageMetaDataFileNameIndex.length - 6));
-			
+				newImageMetaDataIndex.add(imageMetaDataFileNameIndex[i].substring(0, imageMetaDataFileNameIndex[i].length() - 5));
 			
 			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 			
 			ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, String> newMoleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
 			
+			//Let's also rebuild the parameter index stored in the archiveProperties
+			LinkedHashSet<String> newParameterSet = new LinkedHashSet<String>();
+			
 			try {
 		        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
 		        	Molecule molecule = get(UID);
 		        	newTagIndex.put(UID, molecule.getTags());
+		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newMoleculeImageMetaDataUIDIndex.put(UID, molecule.getImageMetaDataUID());
 		        })).get();        
 		   } catch (InterruptedException | ExecutionException e ) {
@@ -470,13 +474,16 @@ public class MoleculeArchive {
 		   this.imageMetaDataIndex = (ArrayList<String>)newImageMetaDataIndex.stream().sorted().collect(toList());
 		   this.tagIndex = newTagIndex;
 		   this.moleculeImageMetaDataUIDIndex = newMoleculeImageMetaDataUIDIndex;
+		   
+		   archiveProperties.setParameterList(newParameterSet);
 			
 		   saveIndexes();
+		   updateArchiveProperties();
 		}
 	}
 	
 	private void saveIndexes() {
-		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex,  tagIndex, jfactory);
+		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex, tagIndex, jfactory);
 	}
 	
 	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) {
@@ -502,11 +509,15 @@ public class MoleculeArchive {
 				jGenerator.writeStartObject();
 				jGenerator.writeStringField("UID", UID);
 				jGenerator.writeStringField("ImageMetaDataUID", moleculeImageMetaDataUIDIndex.get(UID));
-				jGenerator.writeArrayFieldStart("Tags");
-				for (String tag : tagIndex.get(UID)) {
-					jGenerator.writeString(tag);
+				
+				if (tagIndex.containsKey(UID)) {
+					jGenerator.writeArrayFieldStart("Tags");
+					for (String tag : tagIndex.get(UID)) {
+						jGenerator.writeString(tag);
+					}
+					jGenerator.writeEndArray();
 				}
-				jGenerator.writeEndArray();
+				
 				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
@@ -780,9 +791,9 @@ public class MoleculeArchive {
 	
 	public void setComments(String comments) {
 		archiveProperties.setComments(comments);
-		if (virtual) {
-			updateArchiveProperties();
-		}
+		//if (virtual) {
+		//	updateArchiveProperties();
+		//}
 	}
 	
 	public boolean isVirtual() {
@@ -871,6 +882,25 @@ public class MoleculeArchive {
 				tagIndex.remove(molecule.getUID());
 			}
 		}
+	}
+	
+	//This will check if a molecule has a tag in the index
+	//by just checking in the index retreiving records
+	//based on tags will be much faster for virtual
+	//storage
+	public boolean moleculeHasTag(String UID, String tag) {
+		if (UID != null && tag != null) {
+			if (virtual) {
+				if (tagIndex.get(UID).contains(tag)) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return get(UID).hasTag(tag);
+			}
+		}
+		return false;
 	}
 	
 	public void remove(String UID) {
@@ -1018,7 +1048,7 @@ public class MoleculeArchive {
 		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
 	}
 	
-	public MoleculeArchiveProperties getArchiveProperties() {
+	public MoleculeArchiveProperties getProperties() {
 		return archiveProperties;
 	}
 	
@@ -1038,6 +1068,17 @@ public class MoleculeArchive {
 	public void updateArchiveProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		archiveProperties.setNumImageMetaData(imageMetaDataIndex.size());
+		
+		LinkedHashSet<String> newTagSet = new LinkedHashSet<String>();
+		if (virtual) {
+			for (String UID : tagIndex.keySet())
+				newTagSet.addAll(tagIndex.get(UID));
+		} else {
+			for (String UID : moleculeIndex)
+				newTagSet.addAll(get(UID).getTags());
+		}
+		
+		archiveProperties.setTagList(newTagSet);
 		
 		if (virtual) {
 			try {

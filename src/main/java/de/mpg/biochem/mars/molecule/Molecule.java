@@ -22,9 +22,6 @@ import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.MARSMath;
 
 import org.scijava.table.DoubleColumn;
-import net.openhft.chronicle.bytes.BytesIn;
-import net.openhft.chronicle.bytes.BytesMarshallable;
-import net.openhft.chronicle.bytes.BytesOut;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -182,7 +179,7 @@ public class Molecule {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
-		    
+
 		    if (fieldname == null)
 		    	continue;
 		    
@@ -343,7 +340,7 @@ public class Molecule {
 	public void addTag(String tag) {
 		Tags.add(tag);
 		if (parent != null) {
-			parent.getArchiveProperties().addTag(tag);
+			parent.getProperties().addTag(tag);
 			parent.updateTagIndex(this);
 		}
 	}
@@ -351,22 +348,21 @@ public class Molecule {
 	public void removeTag(String tag) {
 		Tags.remove(tag);
 		if (parent != null) {
-			parent.getArchiveProperties().removeTag(tag);
-			parent.updateTagIndex(UID);
+			parent.updateTagIndex(this);
 		}
 	}
 	
 	public void removeAllTags() {
 		Tags.clear();
 		if (parent != null) {
-			parent.updateTagIndex(UID);
+			parent.updateTagIndex(this);
 		}
 	}
 	
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
 		if (parent != null) {
-			parent.getArchiveProperties().addParameter(parameter);
+			parent.getProperties().addParameter(parameter);
 		}
 	}
 	

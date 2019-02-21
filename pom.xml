@@ -26,13 +26,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>24.0.0</version>
+		<version>25.0.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars</artifactId>
-	<version>1.0.0-SNAPSHOT-beta2</version>
+	<version>1.0.0-SNAPSHOT-beta4</version>
 
 	<name>mars</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
@@ -65,6 +65,24 @@
 			</roles>
 		</developer>
 	</developers>
+	<contributors>
+		<contributor>
+			<name>Rohit Agarwal</name>
+		</contributor>
+		<contributor>
+			<name>Anita Minnen</name>
+		</contributor>
+		<contributor>
+			<name>Matthias Scherr</name>
+		</contributor>
+	</contributors>
+
+    <mailingLists>
+		<mailingList>
+			<name>Duderstadt Lab</name>
+			<archive>https://wiki-laue.biochem.mpg.de</archive>
+		</mailingList>
+	</mailingLists>
 
 	<scm>
 		<connection>scm:git:git://gitlab-laue.biochem.mpg.de/SDMM/mars</connection>
@@ -92,44 +110,11 @@
 			<url>http://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
-	
-		<build>
-	    <plugins>
-	    <plugin>
-		    <groupId>org.apache.maven.plugins</groupId>
-		    <artifactId>maven-enforcer-plugin</artifactId>
-		    <executions>
-		        <execution>
-		            <id>enforce-versions</id>
-		            <goals>
-		                <goal>enforce</goal>
-		            </goals>
-		        </execution>
-		    </executions>
-		    <configuration>
-		        <rules>
-		            <AlwaysPass />
-		        </rules>
-		        <fail>false</fail>
-		    </configuration>
-		</plugin>
-	    </plugins>
-	    <resources>
-	    <resource>
-	      <directory>src/main/resources</directory>
-	      <includes>
-	        <include>project.properties</include>
-	      </includes>
-	      <filtering>true</filtering>
-	    </resource>
-	  </resources>
-	  </build>
 
 	<dependencies>
-	    <dependency>
+		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
-			<version>2.0.0-beta-42</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imagej</groupId>
@@ -158,11 +143,6 @@
 			<groupId>org.apache.directory.studio</groupId>
 			<artifactId>org.apache.commons.codec</artifactId>
 			<version>1.8</version>
-		</dependency>
-		<dependency>
-			<groupId>net.openhft</groupId>
-			<artifactId>chronicle-map</artifactId>
-			<version>3.15.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -204,5 +184,5 @@
 			<artifactId>script-editor</artifactId>
 		</dependency>
 	</dependencies>
-	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data in the Structure and Dynamics of Molecular Machines research group. Conforms to the ImageJ2 API.</description>
+	<description>Suite of tools for processing single-molecule TIRF and flow-stretching data in the Structure and Dynamics of Molecular Machines research group.</description>
 </project>
