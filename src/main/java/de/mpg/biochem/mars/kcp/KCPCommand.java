@@ -169,7 +169,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        		
 	        		findChangePoints(molecule);
 	        		
-	        		archive.set(molecule);
+	        		archive.put(molecule);
 	        })).get();
 	        
 	        progressUpdating.set(false);

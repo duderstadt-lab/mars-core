@@ -101,7 +101,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
 		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			ImageMetaData meta = archive.getImageMetaData(metaUID);
+			MARSImageMetaData meta = archive.getImageMetaData(metaUID);
 			//Let's find the last slice
 			MARSResultsTable metaDataTable = meta.getDataTable();
 			
@@ -183,7 +183,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				}
 			}
 			
-			archive.setImageMetaData(meta);
+			archive.putImageMetaData(meta);
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

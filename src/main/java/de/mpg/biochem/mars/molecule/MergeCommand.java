@@ -79,7 +79,7 @@ public class MergeCommand extends DynamicCommand {
 	private boolean smileEncoding = true;
 	
 	ArrayList<MoleculeArchiveProperties> allArchiveProps;
-	ArrayList<ArrayList<ImageMetaData>> allMetaDataItems;
+	ArrayList<ArrayList<MARSImageMetaData>> allMetaDataItems;
 	
 	ArrayList<String> metaUIDs;
 	
@@ -119,7 +119,7 @@ public class MergeCommand extends DynamicCommand {
 		File[] archiveFileList = directory.listFiles(fileNameFilter);
 		if (archiveFileList.length > 0) {
 			allArchiveProps = new ArrayList<MoleculeArchiveProperties>();
-			allMetaDataItems = new ArrayList<ArrayList<ImageMetaData>>();
+			allMetaDataItems = new ArrayList<ArrayList<MARSImageMetaData>>();
 			metaUIDs = new ArrayList<String>();
 			
 			for (File file: archiveFileList) {
@@ -131,8 +131,8 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//Check for duplicate ImageMetaData items
-			for (ArrayList<ImageMetaData> archiveMetaList : allMetaDataItems) {
-				for (ImageMetaData metaItem : archiveMetaList) {
+			for (ArrayList<MARSImageMetaData> archiveMetaList : allMetaDataItems) {
+				for (MARSImageMetaData metaItem : archiveMetaList) {
 					String metaUID = metaItem.getUID();
 					if (metaUIDs.contains(metaUID)) {
 						logService.info("Duplicate ImageMetaData record " + metaUID + " found.");
@@ -184,8 +184,8 @@ public class MergeCommand extends DynamicCommand {
 				newArchiveProperties.toJSON(jGenerator);
 				
 				jGenerator.writeArrayFieldStart("ImageMetaData");
-				for (ArrayList<ImageMetaData> archiveMetaList : allMetaDataItems) {
-					for (ImageMetaData metaItem : archiveMetaList) {
+				for (ArrayList<MARSImageMetaData> archiveMetaList : allMetaDataItems) {
+					for (MARSImageMetaData metaItem : archiveMetaList) {
 						metaItem.toJSON(jGenerator);
 					}
 				}	
@@ -244,14 +244,14 @@ public class MergeCommand extends DynamicCommand {
 			return;
 		}
 		
-		ArrayList<ImageMetaData> metaArchiveList = new ArrayList<ImageMetaData>();
+		ArrayList<MARSImageMetaData> metaArchiveList = new ArrayList<MARSImageMetaData>();
 		
 		//Next load ImageMetaData items
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					metaArchiveList.add(new ImageMetaData(jParser));
+					metaArchiveList.add(new MARSImageMetaData(jParser));
 				}
 			}
 			
@@ -293,7 +293,7 @@ public class MergeCommand extends DynamicCommand {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					new ImageMetaData(jParser);
+					new MARSImageMetaData(jParser);
 				}
 			}
 			

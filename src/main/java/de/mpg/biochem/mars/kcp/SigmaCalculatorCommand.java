@@ -127,7 +127,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 				molecule.setParameter(paramName, datatable.std(Ycolumn));
 			}
 			
-			archive.set(molecule);
+			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

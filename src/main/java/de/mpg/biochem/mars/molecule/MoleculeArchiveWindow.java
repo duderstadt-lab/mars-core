@@ -123,8 +123,8 @@ public class MoleculeArchiveWindow {
 	
 	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
-	private JMenuItem saveAsMenuItem = new JMenuItem("Save As...");
-	private JMenuItem saveAsVirtualStoreMenuItem = new JMenuItem("Save As Virtual Store...");
+	private JMenuItem saveAsMenuItem = new JMenuItem("Save a Copy...");
+	private JMenuItem saveAsVirtualStoreMenuItem = new JMenuItem("Save a Virtual Store Copy...");
 	
 	private JRadioButton JSONencodingButton, SMILEencodingButton;
 	
@@ -264,7 +264,7 @@ public class MoleculeArchiveWindow {
 		saveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-		        	 archive.set(moleculePanel.getMolecule());
+		        	 archive.put(moleculePanel.getMolecule());
 		        	 
 		 			 if (archive.getFile() != null) {
 		 				 if(archive.getFile().getName().equals(archive.getName())) {
@@ -283,7 +283,7 @@ public class MoleculeArchiveWindow {
 		saveAsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-	        		 	archive.set(moleculePanel.getMolecule());
+	        		 	archive.put(moleculePanel.getMolecule());
 	        		 
 		 				if (archive.getFile() != null) {
 			 				saveAs(new File(archive.getFile(), archive.getName()));
@@ -298,17 +298,15 @@ public class MoleculeArchiveWindow {
 		saveAsVirtualStoreMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-	        		 	archive.set(moleculePanel.getMolecule());
+	        		 	archive.put(moleculePanel.getMolecule());
 	        		 	
 	        		 	String name = archive.getName();
 	        		 	
 	        		 	if (!name.endsWith(".store")) {
-	        		 		name += ".store";
-	        		 	}
+		        		 	name += ".store";
+		        		 }
 	        		 
 		 				saveAsVirtualStore(new File(name));
-		 				
-		 				//updateAll();
 	        	 }
 	          }
 	       });
@@ -473,7 +471,7 @@ public class MoleculeArchiveWindow {
 			     		        		molecule.removeTag(tag);
 			     		        	}
 			            	 	}
-			            	 	archive.set(molecule);
+			            	 	archive.put(molecule);
 			     			});
 			             
 			     		 moleculePanel.updateAll();
@@ -511,7 +509,7 @@ public class MoleculeArchiveWindow {
 			     		        		molecule.removeParameter(parameter);
 			     		        	}
 			            	 	}
-			            	 	archive.set(molecule);
+			            	 	archive.put(molecule);
 			     			});
 			             
 			     		 moleculePanel.updateAll();
@@ -655,7 +653,7 @@ public class MoleculeArchiveWindow {
 		panel.add(new JLabel("Number of Molecules                " + archive.getNumberOfMolecules()), gbc);
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Number of Image MetaData Items     " + archive.getNumberOfImageMetaDataItems()), gbc);
+		panel.add(new JLabel("Number of Image MetaData Items     " + archive.getNumberOfImageMetaDataRecords()), gbc);
 		
 		gbc.gridy += 1;
 		panel.add(new JLabel("                                   "), gbc);
@@ -766,6 +764,9 @@ public class MoleculeArchiveWindow {
 	private boolean saveAs(File saveAsFile) {
 		File file = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
 		if (file != null) {
+			archive.saveAs(file);
+			return true;
+			/*
 			if (moleculeArchiveService.rename(archive.getName(), file.getName())) {
 				if (!uiService.isHeadless())
 					WindowManager.removeWindow(frame);
@@ -783,6 +784,7 @@ public class MoleculeArchiveWindow {
 				archive.saveAs(file);
 				return true;
 			}
+			*/
 		}
 		return false;
 	}

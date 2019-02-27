@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
@@ -44,44 +45,38 @@ public class MoleculeArchiveProperties {
 	private String comments;
 	
 	//Not really used for anything at the moment...
-	private LinkedHashSet<String> tagList;
-	private LinkedHashSet<String> parameterList;
+	private Set<String> tagSet;
+	private Set<String> parameterSet;
+	private Set<String> moleculeDataTableColumnSet;
 	
 	private MoleculeArchive parent;
 	
 	public MoleculeArchiveProperties() {
-		numberOfMolecules = 0;
-		numImageMetaData = 0;
-		comments = "";
-		tagList = new LinkedHashSet<String>();
-		parameterList = new LinkedHashSet<String>();
+		initializeVariables();
 	}
 	
 	public MoleculeArchiveProperties(MoleculeArchive parent) {
-		numberOfMolecules = 0;
-		numImageMetaData = 0;
-		comments = "";
-		tagList = new LinkedHashSet<String>();
-		parameterList = new LinkedHashSet<String>();
+		initializeVariables();
 		
 		this.parent = parent;
 	}
 	
-	public MoleculeArchiveProperties(JsonParser jParser, MoleculeArchive parent) {
-		numberOfMolecules = 0;
-		numImageMetaData = 0;
-		comments = "";
-		tagList = new LinkedHashSet<String>();
-		parameterList = new LinkedHashSet<String>();
+	public MoleculeArchiveProperties(JsonParser jParser, MoleculeArchive parent) throws IOException {
+		initializeVariables();
 		
 		this.parent = parent;
 		
-		try {
-			fromJSON(jParser);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		fromJSON(jParser);
+	}
+	
+	private void initializeVariables() {
+		numberOfMolecules = 0;
+		numImageMetaData = 0;
+		comments = "";
+		
+		tagSet = ConcurrentHashMap.newKeySet();
+		parameterSet = ConcurrentHashMap.newKeySet();
+		moleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 	}
 	
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
@@ -91,21 +86,31 @@ public class MoleculeArchiveProperties {
 		jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules);
 		jGenerator.writeNumberField("numImageMetaData", numImageMetaData);
 		
-		//Write tagList array if tags have been added.
-		if (tagList.size() > 0) {
-			jGenerator.writeFieldName("Tags");
+		//Write moleculeDataTableColumnSet array if there are column it in.
+		if (moleculeDataTableColumnSet.size() > 0) {
+			jGenerator.writeFieldName("MoleculeDataTableColumnSet");
 			jGenerator.writeStartArray();
-			Iterator<String> iterator = tagList.iterator();
+			Iterator<String> iterator = moleculeDataTableColumnSet.iterator();
+			while(iterator.hasNext())
+				jGenerator.writeString(iterator.next());	
+			jGenerator.writeEndArray();
+		}
+		
+		//Write tagSet array if tags have been added.
+		if (tagSet.size() > 0) {
+			jGenerator.writeFieldName("MoleculeTagSet");
+			jGenerator.writeStartArray();
+			Iterator<String> iterator = tagSet.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());	
 			jGenerator.writeEndArray();
 		}
 		
 		//Write out arrays of parameters if parameters have been added.
-		if (parameterList.size() > 0) {
-			jGenerator.writeFieldName("Parameters");
+		if (parameterSet.size() > 0) {
+			jGenerator.writeFieldName("MoleculeParameterSet");
 			jGenerator.writeStartArray();
-			Iterator<String> iterator = parameterList.iterator();
+			Iterator<String> iterator = parameterSet.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());	
 			jGenerator.writeEndArray();
@@ -137,19 +142,24 @@ public class MoleculeArchiveProperties {
 		        continue;
 		    }
 		    
-		    if("MoleculeTagList".equals(fieldname)) {
+		    if("MoleculeDataTableColumnSet".equals(fieldname)) {
 		    	jParser.nextToken();
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tagList.add(jParser.getText());
-		        }
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		    		moleculeDataTableColumnSet.add(jParser.getText());
 		    	continue;
 		    }
 		    
-		    if("MoleculeParameterList".equals(fieldname)) {
+		    if("MoleculeTagSet".equals(fieldname)) {
 		    	jParser.nextToken();
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tagList.add(jParser.getText());
-		        }
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		            tagSet.add(jParser.getText());
+		    	continue;
+		    }
+		    
+		    if("MoleculeParameterSet".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		            tagSet.add(jParser.getText());
 		    	continue;
 		    }
 		    
@@ -182,31 +192,39 @@ public class MoleculeArchiveProperties {
 	
 	//Getters and Setters	
 	public void addTag(String tag) {
-		tagList.add(tag);
+		tagSet.add(tag);
 	}
 	
-	public LinkedHashSet<String> getTagList() {
-		return tagList;
+	public void addAllTags(Set<String> tags) {
+		tagSet.addAll(tags);
 	}
 	
-	public void setTagList(LinkedHashSet<String> tagList) {
-		this.tagList = tagList;
+	public Set<String> getTagSet() {
+		return tagSet;
+	}
+	
+	public void setTagSet(Set<String> tagSet) {
+		this.tagSet = tagSet;
 	}
 	
 	public void addParameter(String parameterName) {
-		parameterList.add(parameterName);
+		parameterSet.add(parameterName);
+	}
+	
+	public void addAllParameters(Set<String> parameters) {
+		parameterSet.addAll(parameterSet);
 	}
 	
 	public void removeParameter(String parameter) {
-		tagList.remove(parameter);
+		tagSet.remove(parameter);
 	}
 	
-	public LinkedHashSet<String> getParameterList() {
-		return parameterList;
+	public Set<String> getParameterSet() {
+		return parameterSet;
 	}
 	
-	public void setParameterList(LinkedHashSet<String> parameterList) {
-		this.parameterList = parameterList;
+	public void setParameterSet(Set<String> parameterSet) {
+		this.parameterSet = parameterSet;
 	}
 	
 	public void setNumberOfMolecules(int numMolecules) {
@@ -221,16 +239,24 @@ public class MoleculeArchiveProperties {
 		this.numImageMetaData = numImageMetaData;
 	}
 	
-	public void incrementNumImageMetaData() {
-		numImageMetaData++;
-	}
-	
-	public void decrementNumImageMetaData() {
-		numImageMetaData--;
-	}
-	
 	public int getNumImageMetaData() {
 		return numImageMetaData;
+	}
+	
+	public void addColumn(String column) {
+		this.moleculeDataTableColumnSet.add(column);
+	}
+	
+	public void addAllColumns(ArrayList<String> columns) {
+		this.moleculeDataTableColumnSet.addAll(columns);
+	}
+	
+	public void setColumnSet(Set<String> moleculeDataTableColumnSet) {
+		this.moleculeDataTableColumnSet = moleculeDataTableColumnSet;
+	}
+	
+	public Set<String> getColumnSet() {
+		return moleculeDataTableColumnSet;
 	}
 	
 	public String getComments() {

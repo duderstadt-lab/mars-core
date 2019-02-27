@@ -94,7 +94,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public void removeArchive(String title) {
 		if (archives.containsKey(title)) {
-			archives.get(title).destroy();
 			archives.remove(title);		
 			displayService.getDisplay(title).close();
 		}

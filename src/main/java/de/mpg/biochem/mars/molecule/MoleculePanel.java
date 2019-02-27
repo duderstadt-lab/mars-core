@@ -140,7 +140,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private void buildPanel() {
 		//MOLECULE INDEX LIST
-		//Need to build the datamodel backed by the archive index...
+		//Need to build the data model backed by the archive index...
 		moleculeIndexTableModel = new AbstractTableModel() {
 			private static final long serialVersionUID = 1L;
 
@@ -202,14 +202,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
                 if (!lsm.isSelectionEmpty()) {
                     int selectedRow = lsm.getMinSelectionIndex();
                     if (moleculeRecordChanged)
-                    	archive.set(molecule);
+                    	archive.put(molecule);
                     molecule = archive.get((String)moleculeIndex.getValueAt(selectedRow, 1));
                     updateAll();
                 }
             }
         });
 
-		moleculeIndex.getColumnModel().getColumn(0).setMinWidth(70);
+		moleculeIndex.getColumnModel().getColumn(0).setMinWidth(40);
 		moleculeIndex.getColumnModel().getColumn(1).setMinWidth(150);
 		
 		JScrollPane moleculeIndexScrollPane = new JScrollPane(moleculeIndex);

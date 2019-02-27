@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -81,7 +82,7 @@ public class MoleculeArchive {
 	
 	//This will store all the ImageMetaData sets associated with the molecules
 	//molecules have a metadataUID that maps to these keys so it is clear which dataset they were from.
-	private ConcurrentMap<String, ImageMetaData> imageMetaData;
+	private ConcurrentMap<String, MARSImageMetaData> imageMetaData;
 	
 	//This is a list of molecule keys that will define the index and be used for retrieval from the ChronicleMap in virtual memory
 	//or retrieval from the molecules array in memory
@@ -92,7 +93,7 @@ public class MoleculeArchive {
 	private ArrayList<String> moleculeIndex;
 	
 	//This is a map index of tags for searching in molecule tables etc..
-	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex;
+	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex, imageMetaDataTagIndex;
 	
 	//this is a map of molecule UIDs to imageMetaDataUID for virtual storage indexing...
 	private ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex;
@@ -103,6 +104,8 @@ public class MoleculeArchive {
 	
 	//By default we work virtual
 	private boolean virtual;
+	
+	private Set<String> virtualMoleculesSet, virtualImageMetaDataSet;
 	
 	//determines whether the file is encoded in binary smile format
 	private boolean outputSmileEncoding = true;
@@ -191,7 +194,11 @@ public class MoleculeArchive {
 		
 		if (virtual) {
 			tagIndex = new ConcurrentHashMap<>();
+			imageMetaDataTagIndex = new ConcurrentHashMap<>();
 			moleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
+			
+			virtualMoleculesSet = ConcurrentHashMap.newKeySet();
+			virtualImageMetaDataSet = ConcurrentHashMap.newKeySet();
 		} else {
 			molecules = new ConcurrentHashMap<>();
 			imageMetaData = new ConcurrentHashMap<>();
@@ -241,71 +248,76 @@ public class MoleculeArchive {
 		
 		//Now load in moleculeIndex
 		File indexFile = new File(file.getAbsolutePath() + "/indexes.json");
-		InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
-		
-	    JsonParser indexJParser = jfactory.createParser(indexInputStream);
-		
-	    indexJParser.nextToken();
-	    while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
-	    	String fieldname = indexJParser.getCurrentName();
-		    
-		    if (fieldname == null)
-		    	continue;
-	    	
-		    if ("imageMetaDataIndex".equals(fieldname)) {
-		    	indexJParser.nextToken();
-		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-		    		imageMetaDataIndex.add(indexJParser.getText());
-		        }
-		    	continue;
-		    }
-		    
-		    if("moleculeIndex".equals(fieldname)) {
-		    	indexJParser.nextToken();
-	    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-	    			String UID = "NULL";
-		    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
-		    			if("UID".equals(indexJParser.getCurrentName())) {
-		    				indexJParser.nextToken();
-		    				UID = indexJParser.getText();
-		    				moleculeIndex.add(UID);
-		    			}
-		    			
-		    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName())) {
-		    				indexJParser.nextToken();
-		    				moleculeImageMetaDataUIDIndex.put(UID, indexJParser.getText());
-		    			}
-		    			
-		    			if ("Tags".equals(indexJParser.getCurrentName())) {
-		    				indexJParser.nextToken();
-		    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-		    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-		    		            tags.add(indexJParser.getText());
-		    		        }
-		    		    	tagIndex.put(UID, tags);
-		    			}
+		if (indexFile.exists()) {
+			InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
+			
+		    JsonParser indexJParser = jfactory.createParser(indexInputStream);
+			
+		    indexJParser.nextToken();
+		    while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+		    	String fieldname = indexJParser.getCurrentName();
+			    
+			    if (fieldname == null)
+			    	continue;
+		    	
+			    if ("imageMetaDataIndex".equals(fieldname)) {
+			    	indexJParser.nextToken();
+			    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+			    		imageMetaDataIndex.add(indexJParser.getText());
+			        }
+			    	continue;
+			    }
+			    
+			    if("moleculeIndex".equals(fieldname)) {
+			    	indexJParser.nextToken();
+		    		while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+		    			String UID = "NULL";
+			    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+			    			if("UID".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    				UID = indexJParser.getText();
+			    				moleculeIndex.add(UID);
+			    			}
+			    			
+			    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    				moleculeImageMetaDataUIDIndex.put(UID, indexJParser.getText());
+			    			}
+			    			
+			    			if ("Tags".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
+			    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+			    		            tags.add(indexJParser.getText());
+			    		        }
+			    		    	tagIndex.put(UID, tags);
+			    			}
+			    		}
 		    		}
-	    		}
-	    		continue;
+		    		continue;
+			    }
+			    
+			    //SHOULD BE UNREACHABLE
+			    //This is only reached if there is an unexpected field added to the json record
+			    //In that case we simply pass through it
+			    //This ensure if extra fields are added in the future
+			    //old versions will be able to open the new files
+			    //However, the missing fields will not be saved properly
+			    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+			    if (indexJParser.getCurrentToken() == JsonToken.START_OBJECT) {
+			    	System.out.println("unknown object encountered in indexes ... skipping");
+			    	passThroughUnknownObjects(indexJParser);
+			    }
 		    }
 		    
-		    //SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it
-		    //This ensure if extra fields are added in the future
-		    //old versions will be able to open the new files
-		    //However, the missing fields will not be saved properly
-		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
-		    if (indexJParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object encountered in indexes ... skipping");
-		    	passThroughUnknownObjects(indexJParser);
-		    }
-	    }
-	    
-		indexJParser.close();
-		indexInputStream.close();
+			indexJParser.close();
+			indexInputStream.close();
+		} else {
+			System.out.println("No indexes.json file found. Rebuilding indexes... This might take a while...");
+			rebuildIndexes();
+		}
 		
-		updateArchiveProperties();
+		updateProperties();
 	}
 	
 	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
@@ -359,13 +371,13 @@ public class MoleculeArchive {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					addImageMetaData(new ImageMetaData(jParser));
+					putImageMetaData(new MARSImageMetaData(jParser));
 				}
 			}
 			
 			if ("Molecules".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					add(new Molecule(jParser));
+					put(new Molecule(jParser));
 				}
 			}
 		}
@@ -374,7 +386,7 @@ public class MoleculeArchive {
 		inputStream.close();
 		
 		//Once we are done reading we should update molecule archive properties
-		updateArchiveProperties();		
+		updateProperties();		
 	}
 	
 	private void buildFromTable(MARSResultsTable results) {
@@ -386,8 +398,8 @@ public class MoleculeArchive {
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
 		//Also, the DataTable can be updated manually.
 		String metaUID = MARSMath.getUUID58().substring(0, 10);
-		ImageMetaData meta = new ImageMetaData(metaUID);
-		addImageMetaData(meta);
+		MARSImageMetaData meta = new MARSImageMetaData(metaUID);
+		putImageMetaData(meta);
 
 		String[] headers = new String[results.getColumnCount() - 1];
 		int col = 0;
@@ -418,7 +430,7 @@ public class MoleculeArchive {
 			}
 			Molecule molecule = new Molecule(MARSMath.getUUID58(), molTable);
 			molecule.setImageMetaDataUID(metaUID);
-			add(molecule);
+			put(molecule);
 		}
 	}
 	
@@ -454,14 +466,26 @@ public class MoleculeArchive {
 			ConcurrentMap<String, String> newMoleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
 			
 			//Let's also rebuild the parameter index stored in the archiveProperties
-			LinkedHashSet<String> newParameterSet = new LinkedHashSet<String>();
+			//ConcurrentHashMap<String, Boolean> paramListMap = new ConcurrentHashMap<>();
+			Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
+			
+			//ConcurrentHashMap<String, Boolean> tagListMap = new ConcurrentHashMap<>();
+			Set<String> newTagSet = ConcurrentHashMap.newKeySet();
+			
+			//ConcurrentHashMap<String, Boolean> molListMap = new ConcurrentHashMap<>();
+			Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 			
 			try {
 		        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
 		        	Molecule molecule = get(UID);
 		        	newTagIndex.put(UID, molecule.getTags());
-		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newMoleculeImageMetaDataUIDIndex.put(UID, molecule.getImageMetaDataUID());
+		        	
+		        	newParameterSet.addAll(molecule.getParameters().keySet());
+		        	newTagSet.addAll(molecule.getTags());
+		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+		        	
+		        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 		        })).get();        
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -475,10 +499,12 @@ public class MoleculeArchive {
 		   this.tagIndex = newTagIndex;
 		   this.moleculeImageMetaDataUIDIndex = newMoleculeImageMetaDataUIDIndex;
 		   
-		   archiveProperties.setParameterList(newParameterSet);
+		   archiveProperties.setTagSet(newTagSet);
+		   archiveProperties.setParameterSet(newParameterSet);
+		   archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 			
 		   saveIndexes();
-		   updateArchiveProperties();
+		   updateProperties();
 		}
 	}
 	
@@ -534,7 +560,7 @@ public class MoleculeArchive {
 	
 	public void save() {
 		if (virtual) {
-			updateArchiveProperties();
+			updateProperties();
 			saveIndexes();
 		} else
 			saveAs(file);
@@ -562,7 +588,7 @@ public class MoleculeArchive {
 			//We have to have a starting { for the json...
 			jGenerator.writeStartObject();
 			
-			updateArchiveProperties();
+			updateProperties();
 			
 			archiveProperties.toJSON(jGenerator);
 			
@@ -624,7 +650,7 @@ public class MoleculeArchive {
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		try {
-			//Generate all imageMetaData record files...
+			//Generate all MARSImageMetaData record files...
 			forkJoinPool.submit(() -> imageMetaDataIndex.parallelStream().forEach(metaUID -> { 
 	        	try {
 					saveImageMetaDataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData"), getImageMetaData(metaUID), jfactory);
@@ -678,84 +704,119 @@ public class MoleculeArchive {
 		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex,  newTagIndex, jfactory);
 	}
 	
-	//Method for adding molecules to the archive
-	//A key assumption here is that we never try to add two molecules that have the same key
-	//So the idea is that we would only ever call this method once for a molecule with a given UID.
-	public void add(Molecule molecule) {
-		//We should increment the numberOfMolecules and set the correct index for molecule
-		if (moleculeIndex.contains(molecule.getUID())) {
-			addLogMessage("The archive already contains the molecule " + molecule.getUID() + ".");
-		} else {
+	
+	/**
+	 * For adding molecules to the archive. The method name has changed to put, since it is more consistent with the intended use.
+	 *
+	 * @deprecated use {@link #put()} instead.  
+	 */
+	/*
+	@Deprecated
+	public void set(Molecule molecule) {
+		put(molecule);
+	}
+	*/
+	
+	/**
+	 * Adds a molecule to the archive. If a molecule with the same UID 
+	 * is already in the archive, the record is updated.
+	 * <p>
+	 * All indexes are updated using the new molecule record.
+	 */
+	public void put(Molecule molecule) {		
+		if (virtual) {
 			//Need to make sure all write operations to moleculeIndex 
 			//are synchronized to avoid two threads working at the same time
 			//during a write operation
+			//We check with a set for speed, then add to index
+			if (!virtualMoleculesSet.contains(molecule.getUID())) {
+				synchronized(moleculeIndex) {
+					moleculeIndex.add(molecule.getUID());
+				}
+				virtualMoleculesSet.add(molecule.getUID());
+				archiveProperties.setNumberOfMolecules(moleculeIndex.size());
+			}
+			try {
+				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			updateTagIndex(molecule);
+		} else if (!molecules.containsKey(molecule.getUID())) {
+			//If working in memory and the key is already in the map
+			//there is only one copy and all changes have already been saved
+			//otherwise, we add it as a new record.
 			synchronized(moleculeIndex) {
 				moleculeIndex.add(molecule.getUID());
 			}
+			molecule.setParent(this);
+			molecules.put(molecule.getUID(), molecule);
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-			if (virtual) {
-				set(molecule);
-				updateTagIndex(molecule);
-			} else {
-				molecules.put(molecule.getUID(), molecule);
-				molecule.setParentArchive(this);
-			}
 		}
+		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 	}
 	
-	public void addImageMetaData(ImageMetaData metaData) {
-		setImageMetaData(metaData);
-	}
-	
-	public void setImageMetaData(ImageMetaData metaData) {
-		synchronized(imageMetaDataIndex) {
-			if (!imageMetaDataIndex.contains(metaData.getUID()))
-				imageMetaDataIndex.add(metaData.getUID());
-		}
+	public void putImageMetaData(MARSImageMetaData metaData) {
 		if (virtual) {
+				if (!virtualImageMetaDataSet.contains(metaData.getUID())) {
+					synchronized(imageMetaDataIndex) {	
+						imageMetaDataIndex.add(metaData.getUID());
+					}
+					virtualImageMetaDataSet.add(metaData.getUID());
+					archiveProperties.setNumImageMetaData(imageMetaDataIndex.size());
+				}
 			try {
 				saveImageMetaDataToFile(new File(file.getAbsolutePath() + "/ImageMetaData"), metaData, jfactory);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else {
+		} else if (!imageMetaData.containsKey(metaData.getUID())) {
+			//If working in memory and the key is already in the map
+			//there is only one copy and all changes have already been saved
+			//otherwise, we add it as a new record.
+			synchronized(imageMetaDataIndex) {	
+				imageMetaDataIndex.add(metaData.getUID());
+			}
+			metaData.setParent(this);
 			imageMetaData.put(metaData.getUID(), metaData);
+			archiveProperties.setNumImageMetaData(imageMetaDataIndex.size());
 		}
 	}
 	
 	public void removeImageMetaData(String metaUID) {
 		synchronized(imageMetaDataIndex) {
-			if (!imageMetaDataIndex.contains(metaUID))
-				imageMetaDataIndex.remove(metaUID);
+			imageMetaDataIndex.remove(metaUID);
 		}
 		if (virtual) {
 			File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
 			if (metaDataFile.exists())
 				metaDataFile.delete();
+			virtualImageMetaDataSet.remove(metaUID);
 		} else {
 			imageMetaData.remove(metaUID);
 		}
 	}
 
-	public void removeImageMetaData(ImageMetaData meta) {
+	public void removeImageMetaData(MARSImageMetaData meta) {
 		removeImageMetaData(meta.getUID());
 	}
 	
-	public ImageMetaData getImageMetaData(int index) {
+	public MARSImageMetaData getImageMetaData(int index) {
 		return getImageMetaData(imageMetaDataIndex.get(index));
 	}
 	
-	public ImageMetaData getImageMetaData(String metaUID) {
+	public MARSImageMetaData getImageMetaData(String metaUID) {
 		if (virtual) {
-			ImageMetaData metaData = null;
+			MARSImageMetaData metaData = null;
 			try {
 				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + metaUID + ".json");
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(metaDataFile));
 		
 				JsonParser jParser = jfactory.createParser(inputStream);
 
-				metaData = new ImageMetaData(jParser);
+				metaData = new MARSImageMetaData(jParser);
 				
 				jParser.close();
 				inputStream.close();
@@ -777,7 +838,7 @@ public class MoleculeArchive {
 		return moleculeIndex.size();
 	}
 	
-	public int getNumberOfImageMetaDataItems() {
+	public int getNumberOfImageMetaDataRecords() {
 		return imageMetaDataIndex.size();
 	}
 	
@@ -830,18 +891,25 @@ public class MoleculeArchive {
 		return tagList;
 	}
 	
-	public void set(Molecule molecule) {
-		if (virtual) {
-			try {
-				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			updateTagIndex(molecule);
+	public String getImageMetaDataTagList(String UID) {
+		LinkedHashSet<String> tags;
+		if (UID == null)
+			 return null;
+		else if (virtual) {
+			tags = imageMetaDataTagIndex.get(UID);
 		} else {
-			molecules.put(molecule.getUID(), molecule);
+			tags = getImageMetaData(UID).getTags();
 		}
+		
+		if (tags == null)
+			return "";
+		
+		String tagList = "";
+		for (String tag: tags)
+			tagList += tag + ", ";
+		if (tags.size() > 0)
+			tagList = tagList.substring(0, tagList.length() - 2);
+		return tagList;
 	}
 	
 	public void saveMoleculeToFile(File directory, Molecule molecule, JsonFactory jfactory) throws IOException {
@@ -856,7 +924,7 @@ public class MoleculeArchive {
 		stream.close();
 	}
 	
-	public void saveImageMetaDataToFile(File directory, ImageMetaData imageMetaData, JsonFactory jfactory) throws IOException {
+	public void saveImageMetaDataToFile(File directory, MARSImageMetaData imageMetaData, JsonFactory jfactory) throws IOException {
 		File imageMetaDataFile = new File(directory.getAbsolutePath() + "/" + imageMetaData.getUID() + ".json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(imageMetaDataFile));
 		
@@ -866,6 +934,22 @@ public class MoleculeArchive {
 		
 		stream.flush();
 		stream.close();
+	}
+	
+	public void updateImageMetaDataTagIndex(String updateUID) {
+		updateImageMetaDataTagIndex(getImageMetaData(updateUID));
+	}
+	
+	public void updateImageMetaDataTagIndex(MARSImageMetaData metaData) {
+		if (virtual) {
+			if (metaData.getTags() == null) {
+				//Shouldn't happen..do nothing...
+			} else if (metaData.getTags().size() > 0) {
+				imageMetaDataTagIndex.put(metaData.getUID(), metaData.getTags());
+			} else {
+				imageMetaDataTagIndex.remove(metaData.getUID());
+			}
+		}
 	}
 
 	public void updateTagIndex(String updateUID) {
@@ -885,7 +969,7 @@ public class MoleculeArchive {
 	}
 	
 	//This will check if a molecule has a tag in the index
-	//by just checking in the index retreiving records
+	//by just checking in the index retrieving records
 	//based on tags will be much faster for virtual
 	//storage
 	public boolean moleculeHasTag(String UID, String tag) {
@@ -903,6 +987,25 @@ public class MoleculeArchive {
 		return false;
 	}
 	
+	//This will check if an imageMetaData record has a tag in the index
+	//by just checking in the index retreiving records
+	//based on tags will be much faster for virtual
+	//storage
+	public boolean imageMetaDataHasTag(String UID, String tag) {
+		if (UID != null && tag != null) {
+			if (virtual) {
+				if (imageMetaDataTagIndex.get(UID).contains(tag)) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return getImageMetaData(UID).hasTag(tag);
+			}
+		}
+		return false;
+	}
+	
 	public void remove(String UID) {
 		synchronized(moleculeIndex) {
 			moleculeIndex.remove(UID);
@@ -911,6 +1014,7 @@ public class MoleculeArchive {
 			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
 			if (moleculeFile.exists())
 				moleculeFile.delete();
+			virtualMoleculesSet.remove(UID);
 		} else {
 			molecules.remove(UID);
 		}
@@ -920,10 +1024,9 @@ public class MoleculeArchive {
 		remove(molecule.getUID());
 	}
 	
-	//Should update to use tagIndex in virtual mode
-	//So all records are not opened...
+	//At the moment this method doesn't use the index for safely reasons
+	//If we are sure the index is alway correct then this can be changed.
 	public void deleteMoleculesWithTag(String tag) {
-		//We should do this with streams but for the moment this is faster
 		ArrayList<String> newMoleculeIndex = new ArrayList<String>();
 		
 		for (String UID : moleculeIndex) {
@@ -934,9 +1037,9 @@ public class MoleculeArchive {
 					File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
 					if (moleculeFile.exists())
 						moleculeFile.delete();
-				} else {
-					molecules.remove(UID);
+					virtualMoleculesSet.remove(UID);
 				}
+				tagIndex.remove(UID);
 			} else {
 				newMoleculeIndex.add(molecule.getUID());
 			}
@@ -946,15 +1049,49 @@ public class MoleculeArchive {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());	
 	}
 	
+	//At the moment this method doesn't use the index for safely reasons
+	//If we are sure the index is always correct then this can be changed.
+	public void deleteImageMetaDataRecordsWithTag(String tag) {
+		//We should do this with streams but for the moment this is faster
+		ArrayList<String> newImageMetaDataIndex = new ArrayList<String>();
+		
+		for (String UID : imageMetaDataIndex) {
+			MARSImageMetaData metaData = getImageMetaData(UID);
+			
+			if (metaData.hasTag(tag)) {
+				if (virtual) {
+					File imageMetaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + UID + ".json");
+					if (imageMetaDataFile.exists())
+						imageMetaDataFile.delete();
+					virtualImageMetaDataSet.remove(metaData.getUID());
+				}
+				imageMetaDataTagIndex.remove(UID);			
+			} else {
+				newImageMetaDataIndex.add(metaData.getUID());
+			}
+		}
+		
+		imageMetaDataIndex = newImageMetaDataIndex;
+		archiveProperties.setNumImageMetaData(imageMetaDataIndex.size());
+	}
+	
 	public boolean contains(String UID) {
 		if (virtual) {
-			return moleculeIndex.contains(UID);
+			return virtualMoleculesSet.contains(UID);
 		} else {
 			return molecules.containsKey(UID);
 		}
 	}
+	
+	public boolean containsMetaDataRecord(String UID) {
+		if (virtual) {
+			return virtualImageMetaDataSet.contains(UID);
+		} else {
+			return imageMetaData.containsKey(UID);
+		}
+	}
 
-	//Retrieve molecule based on UUID58 key
+	//Retrieve molecule based on UID key
 	public Molecule get(String UID) {
 		if (virtual) {
 			Molecule molecule = null;
@@ -984,12 +1121,6 @@ public class MoleculeArchive {
 	
 	public String getUIDAtIndex(int index) {
 		return moleculeIndex.get(index);
-	}
-	
-	public void destroy() {
-		if (virtual) {
-			//archive.close();
-		}
 	}
 	
 	public File getFile() {
@@ -1048,24 +1179,23 @@ public class MoleculeArchive {
 		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
 	}
 	
-	public MoleculeArchiveProperties getProperties() {
-		return archiveProperties;
-	}
-	
 	public void addLogMessage(String message) {
 		for (String metaUID : imageMetaDataIndex) {
 			if (virtual) {
-				ImageMetaData meta = getImageMetaData(metaUID);
+				MARSImageMetaData meta = getImageMetaData(metaUID);
 				meta.addLogMessage(message);
-				setImageMetaData(meta);
+				putImageMetaData(meta);
 			} else {
 				imageMetaData.get(metaUID).addLogMessage(message);
 			}
 		}
 	}
 	
-	//Utility functions
-	public void updateArchiveProperties() {
+	public MoleculeArchiveProperties getProperties() {
+		return archiveProperties;
+	}
+	
+	public void updateProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		archiveProperties.setNumImageMetaData(imageMetaDataIndex.size());
 		
@@ -1078,7 +1208,7 @@ public class MoleculeArchive {
 				newTagSet.addAll(get(UID).getTags());
 		}
 		
-		archiveProperties.setTagList(newTagSet);
+		archiveProperties.setTagSet(newTagSet);
 		
 		if (virtual) {
 			try {

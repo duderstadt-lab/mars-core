@@ -114,7 +114,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
 		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			ImageMetaData meta = archive.getImageMetaData(metaUID);
+			MARSImageMetaData meta = archive.getImageMetaData(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
@@ -178,7 +178,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				datatable.set(output_y, i, y_drift_corr_value);
 			}
 			
-			archive.set(molecule);
+			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
@@ -191,7 +191,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private HashMap<Double, Double> getSliceToColumnMap(ImageMetaData meta, String columnName) {
+	private HashMap<Double, Double> getSliceToColumnMap(MARSImageMetaData meta, String columnName) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
 		MARSResultsTable metaTable = meta.getDataTable();

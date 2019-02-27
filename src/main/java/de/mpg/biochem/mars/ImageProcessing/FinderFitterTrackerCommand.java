@@ -37,9 +37,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.molecule.ImageMetaData;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import io.scif.config.SCIFIOConfig;
@@ -437,8 +435,8 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 		    archive = new MoleculeArchive(newName + ".yama");
 		    
-		    ImageMetaData metaData = new ImageMetaData(image, microscope, imageFormat, metaDataStack);
-			archive.addImageMetaData(metaData);
+		    MARSImageMetaData metaData = new MARSImageMetaData(image, microscope, imageFormat, metaDataStack);
+			archive.putImageMetaData(metaData);
 		    
 		    tracker.track(PeakStack, archive);
 		    

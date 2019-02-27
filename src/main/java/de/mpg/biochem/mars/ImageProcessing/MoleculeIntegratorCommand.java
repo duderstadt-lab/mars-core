@@ -376,8 +376,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    }
 	        archive = new MoleculeArchive(newName + ".yama");
 	        
-		    ImageMetaData metaData = new ImageMetaData(image, microscope, imageFormat, metaDataStack);
-			archive.addImageMetaData(metaData);
+		    MARSImageMetaData metaData = new MARSImageMetaData(image, microscope, imageFormat, metaDataStack);
+			archive.putImageMetaData(metaData);
 			
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
@@ -440,7 +440,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	Molecule molecule = new Molecule(UID, table);
 	        	molecule.setImageMetaDataUID(metaData.getUID());
 	        	
-	        	archive.add(molecule);
+	        	archive.put(molecule);
 	        	
 		        progressInteger.incrementAndGet();
 		        statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);

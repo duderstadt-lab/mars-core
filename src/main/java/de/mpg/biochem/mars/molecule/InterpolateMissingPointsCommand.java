@@ -109,7 +109,7 @@ public class InterpolateMissingPointsCommand extends DynamicCommand implements C
 			//now that we have added all the new rows we need to resort the table by slice.
 			datatable.sort(true, "slice");
 			
-			archive.set(molecule);
+			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

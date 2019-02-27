@@ -314,7 +314,7 @@ public class PeakTracker {
 
 		Molecule mol = new Molecule(startingPeak.getUID(), table);
 		mol.setImageMetaDataUID(metaDataUID);
-		archive.add(mol);
+		archive.put(mol);
 	}
 	
 	private MARSResultsTable buildResultsTable() {

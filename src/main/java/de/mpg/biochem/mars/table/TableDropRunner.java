@@ -30,6 +30,7 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,8 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.UIService;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 //Can we just make this a module so the services are automatically populated???
 public class TableDropRunner implements DropTargetListener, Runnable {
@@ -64,7 +67,8 @@ public class TableDropRunner implements DropTargetListener, Runnable {
 	private ArrayList<File> tables = new ArrayList<File>();
 	
 	private JFrame frame;
-	private JLabel label = new JLabel("Drop ResultsTable Files Here", JLabel.CENTER);
+	private JLabel label = new JLabel("<html><body><center>Drop MARSResultsTable files here</center><br><center>(csv, tab, or json)</center></body></html>", JLabel.CENTER);
+	
 	JPanel pane = new JPanel(new GridLayout(1,1), false);
 	
 	public TableDropRunner() {}
@@ -113,13 +117,17 @@ public class TableDropRunner implements DropTargetListener, Runnable {
          		}
          	}
          	if (open) { 	
-         		ResultsTableOpenerCommand opener = new ResultsTableOpenerCommand();
-         		opener.setStatusService(statusService);
-         		opener.setTableService(resultsTableService);
-         		opener.setUIService(uiService);
-         		opener.setLogService(logService);
-         		MARSResultsTable results = opener.open(file.getAbsolutePath());
-         		uiService.show(title, results);
+         		MARSResultsTable results;
+				try {
+					results = new MARSResultsTable(file, statusService);
+					uiService.show(title, results);
+				} catch (JsonParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
          	} else {
          		open = true;
          	}

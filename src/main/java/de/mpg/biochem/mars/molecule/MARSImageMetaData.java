@@ -37,6 +37,9 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
@@ -64,9 +67,12 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MARSMath;
 import io.scif.services.FormatService;
 
-public class ImageMetaData {
+public class MARSImageMetaData {
 	//Unique ID used for universal identification and indexing.
 	private String UID;
+	
+	//Reference to MoleculeArchive containing the MARSImageMetaData record
+	private	MoleculeArchive parent;
 	
 	//Any comments specific to the data collection
 	//a possible issue, the condition collected etc..
@@ -93,7 +99,7 @@ public class ImageMetaData {
     //We make it static becasue we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
     
-    public ImageMetaData(String UID) {
+    public MARSImageMetaData(String UID) {
     	this.UID = UID;
     	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
@@ -106,11 +112,11 @@ public class ImageMetaData {
 		Tags = new LinkedHashSet<String>();
 		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
     }
     
-    public ImageMetaData(String UID, MARSResultsTable DataTable) {
+    public MARSImageMetaData(String UID, MARSResultsTable DataTable) {
     	this.UID = UID;
     	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
@@ -122,7 +128,7 @@ public class ImageMetaData {
 		this.DataTable = DataTable;
     }
 	
-	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
+	public MARSImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.Microscope = Microscope;
 		if (img.getOriginalFileInfo() != null) {
 			this.SourceDirectory = img.getOriginalFileInfo().directory;
@@ -149,7 +155,10 @@ public class ImageMetaData {
 		}
 	}
 	
-	public ImageMetaData(JsonParser jParser) throws IOException {
+	public MARSImageMetaData(JsonParser jParser) throws IOException {
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
+		
 		fromJSON(jParser);
 	}
 	
@@ -198,7 +207,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 	}
 	
@@ -225,7 +234,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 		DataTable.add(timeCol);
 		DataTable.add(labelCol);
@@ -371,7 +380,7 @@ public class ImageMetaData {
 			//Get t0 in seconds...
 			double t0 = Double.valueOf(propertiesStack.get(1).get("ElapsedTime-ms"))/1000;
 			
-			DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+			DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 			DataTable.add(new DoubleColumn("slice"));
 			DataTable.add(new DoubleColumn("Time (s)"));
 			
@@ -563,7 +572,7 @@ public class ImageMetaData {
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {		    	
-		    	DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		    	DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		    	DataTable.fromJSON(jParser);
 		    	continue;
 		    }
@@ -576,7 +585,7 @@ public class ImageMetaData {
 		    //However, the missing fields will not be saved properly
 		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
 		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object encountered in ImageMetaData record ... skipping");
+		    	System.out.println("unknown object encountered in MARSImageMetaData record ... skipping");
 		    	passThroughUnknownObjects(jParser);
 		    }
 		}
@@ -641,20 +650,34 @@ public class ImageMetaData {
 		return SourceDirectory;
 	}
 	
+	
 	public void addTag(String tag) {
 		Tags.add(tag);
+		if (parent != null) {
+			parent.getProperties().addTag(tag);
+			parent.updateImageMetaDataTagIndex(this);
+		}
 	}
 	
 	public void removeTag(String tag) {
 		Tags.remove(tag);
+		if (parent != null) {
+			parent.updateImageMetaDataTagIndex(this);
+		}
 	}
 	
 	public void removeAllTags() {
 		Tags.clear();
+		if (parent != null) {
+			parent.updateImageMetaDataTagIndex(this);
+		}
 	}
 	
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
+		if (parent != null) {
+			parent.getProperties().addParameter(parameter);
+		}
 	}
 	
 	public void removeAllParameters() {
@@ -705,6 +728,10 @@ public class ImageMetaData {
 	
 	public String getLog() {
 		return log;
+	}
+	
+	public void setParent(MoleculeArchive archive) {
+		parent = archive;
 	}
 	
 	//DataTable column exclusion list

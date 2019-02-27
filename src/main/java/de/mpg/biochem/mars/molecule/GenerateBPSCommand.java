@@ -209,7 +209,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					table.setValue(distance_column_name, j, output);
 				}
 
-				archive.set(molecule);
+				archive.put(molecule);
 			});
 		} else if (conversionType.equals("Region")) {
 			
@@ -239,7 +239,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					table.setValue(distance_column_name, j, bps);
 				}
 				
-				archive.set(molecule);
+				archive.put(molecule);
 			});
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

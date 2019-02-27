@@ -104,7 +104,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 			
 			molecule.setParameter(ParameterName, molecule.getDataTable().msd(column));
 			
-			archive.set(molecule);
+			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

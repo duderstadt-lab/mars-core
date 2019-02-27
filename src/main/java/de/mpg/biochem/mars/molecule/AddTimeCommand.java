@@ -89,7 +89,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			ImageMetaData meta = archive.getImageMetaData(metaUID);
+			MARSImageMetaData meta = archive.getImageMetaData(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
 			} else {
@@ -123,7 +123,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 				molecule.getDataTable().set("Time (s)", i, sliceToTimeMap.get(datatable.get("slice", i)));
 			}
 			
-			archive.set(molecule);
+			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

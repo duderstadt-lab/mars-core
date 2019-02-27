@@ -41,7 +41,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.RealRect;
 
-import de.mpg.biochem.mars.molecule.ImageMetaData;
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;

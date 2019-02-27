@@ -473,7 +473,7 @@ public class Molecule {
 		datatable = table;
 	}
 	
-	public void setParentArchive(MoleculeArchive archive) {
+	public void setParent(MoleculeArchive archive) {
 		parent = archive;
 	}
 }

@@ -98,6 +98,10 @@ public class OpenVirtualStoreCommand extends DynamicCommand {
 		log += builder.buildParameterList();
 		
 		logService.info(log);
+		if (!file.getName().endsWith(".yama.store")) {
+			logService.error("Chosen directory does not have .yama.store extension. Are you sure it is a virtual store?");
+			logService.error(LogBuilder.endBlock(false));
+		}
 		
 		try {
 			//Since we give it a directory for file. It will know its a virtual store
@@ -108,15 +112,15 @@ public class OpenVirtualStoreCommand extends DynamicCommand {
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			logService.error("JsonParseExcpetion - are you sure this is a proper yama virtual store?");
-			logService.error(builder.endBlock(false));
+			logService.error(LogBuilder.endBlock(false));
 			return;
 		} catch (IOException e) {
 			e.printStackTrace();
 			logService.error("IOException - does the store directory exist?");
-			logService.error(builder.endBlock(false));
+			logService.error(LogBuilder.endBlock(false));
 			return;
 		}
-		logService.info(builder.endBlock(true));
+		logService.info(LogBuilder.endBlock(true));
 	}
     
     //Getters and Setters
