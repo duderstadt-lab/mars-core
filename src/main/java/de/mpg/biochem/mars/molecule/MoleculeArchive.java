@@ -12,10 +12,6 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -275,7 +271,11 @@ public class MoleculeArchive {
 			    if ("imageMetaDataIndex".equals(fieldname)) {
 			    	indexJParser.nextToken();
 			    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-			    		imageMetaDataIndex.add(indexJParser.getText());
+			    		String metaUID = indexJParser.getText();
+			    		//if (!virtualImageMetaDataSet.contains(metaUID)) {
+			    			virtualImageMetaDataSet.add(metaUID);
+			    			imageMetaDataIndex.add(metaUID);
+			    		//}
 			        }
 			    	continue;
 			    }
@@ -288,7 +288,10 @@ public class MoleculeArchive {
 			    			if("UID".equals(indexJParser.getCurrentName())) {
 			    				indexJParser.nextToken();
 			    				UID = indexJParser.getText();
-			    				moleculeIndex.add(UID);
+			    				//if (!virtualMoleculesSet.contains(UID)) {
+			    					virtualMoleculesSet.add(UID);
+					    			moleculeIndex.add(UID);
+					    		//}
 			    			}
 			    			
 			    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName())) {
@@ -715,19 +718,6 @@ public class MoleculeArchive {
 		//In the case of saving virtual archives this method then re-indexes completely.
 		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex,  newTagIndex, jfactory);
 	}
-	
-	
-	/**
-	 * For adding molecules to the archive. The method name has changed to put, since it is more consistent with the intended use.
-	 *
-	 * @deprecated use {@link #put()} instead.  
-	 */
-	/*
-	@Deprecated
-	public void set(Molecule molecule) {
-		put(molecule);
-	}
-	*/
 	
 	/**
 	 * Adds a molecule to the archive. If a molecule with the same UID 
