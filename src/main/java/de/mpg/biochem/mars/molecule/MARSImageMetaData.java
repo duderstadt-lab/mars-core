@@ -661,24 +661,14 @@ public class MARSImageMetaData {
 	
 	public void addTag(String tag) {
 		Tags.add(tag);
-		if (parent != null) {
-			parent.getProperties().addTag(tag);
-			parent.updateImageMetaDataTagIndex(this);
-		}
 	}
 	
 	public void removeTag(String tag) {
 		Tags.remove(tag);
-		if (parent != null) {
-			parent.updateImageMetaDataTagIndex(this);
-		}
 	}
 	
 	public void removeAllTags() {
 		Tags.clear();
-		if (parent != null) {
-			parent.updateImageMetaDataTagIndex(this);
-		}
 	}
 	
 	public void setParameter(String parameter, double value) {

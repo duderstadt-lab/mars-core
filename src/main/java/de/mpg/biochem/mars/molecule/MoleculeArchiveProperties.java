@@ -57,22 +57,12 @@ public class MoleculeArchiveProperties {
 	private Set<String> parameterSet;
 	private Set<String> moleculeDataTableColumnSet;
 	
-	private MoleculeArchive parent;
-	
 	public MoleculeArchiveProperties() {
 		initializeVariables();
 	}
 	
-	public MoleculeArchiveProperties(MoleculeArchive parent) {
-		initializeVariables();
-		
-		this.parent = parent;
-	}
-	
 	public MoleculeArchiveProperties(JsonParser jParser, MoleculeArchive parent) throws IOException {
 		initializeVariables();
-		
-		this.parent = parent;
 		
 		fromJSON(jParser);
 	}

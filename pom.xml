@@ -51,7 +51,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>GPL3.0</name>
+			<name>BSD-2</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -108,7 +108,7 @@
 
 	<properties>
 		<package-name>de.mpg.biochem.mars</package-name>
-		<license.licenseName>GPL3.0</license.licenseName>
+		<license.licenseName>BSD-2</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 	</properties>
 	
@@ -118,6 +118,19 @@
 			<url>http://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
+
+	<build>
+	    <resources>
+	    <resource>
+	      <directory>src/main/resources</directory>
+	      <includes>
+	        <include>project.properties</include>
+	      </includes>
+	      <filtering>true</filtering>
+	    </resource>
+	  </resources>
+	  </build>
+
 
 	<dependencies>
 		<dependency>

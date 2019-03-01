@@ -84,9 +84,6 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     @Parameter(label="Table with molecule column")
 	private MARSResultsTable table;
     
-    @Parameter(label="build in virtual memory")
-    private boolean virtual = true;
-    
     //OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 	private MoleculeArchive archive;
@@ -111,14 +108,13 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
 
 		builder.addParameter("From Table", table.getName());
-		builder.addParameter("Virtual", String.valueOf(virtual));
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new MoleculeArchive(name, table, moleculeArchiveService, virtual);
+		archive = new MoleculeArchive(name, table, moleculeArchiveService);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
-		log += builder.endBlock(true);
+		log += LogBuilder.endBlock(true);
 		
 		//Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
@@ -138,13 +134,5 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     
     public MARSResultsTable getTable() {
     	return table;
-    }
-    
-    public void setVirtual(boolean virtual) {
-    	this.virtual = virtual;
-    }
-    
-    public boolean getVirtual() {
-    	return virtual;
     }
 }

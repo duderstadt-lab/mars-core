@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+f * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -785,6 +785,10 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 	 	dataANDPlot.add(multiPlotPane, 0);
 	 	dataANDPlot.setSelectedIndex(0);
+	}
+	
+	public void saveCurrentRecord() {
+		archive.put(molecule);
 	}
 
 	public void updateAll() {

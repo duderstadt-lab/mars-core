@@ -115,15 +115,15 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");
-			logService.error(builder.endBlock(false));
+			logService.error(LogBuilder.endBlock(false));
 			return;
 		} catch (IOException e) {
 			e.printStackTrace();
 			logService.error("IOException - does the yama file exist?");
-			logService.error(builder.endBlock(false));
+			logService.error(LogBuilder.endBlock(false));
 			return;
 		}
-		logService.info(builder.endBlock(true));
+		logService.info(LogBuilder.endBlock(true));
 	}
     
     //Getters and Setters

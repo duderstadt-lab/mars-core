@@ -738,6 +738,10 @@ public class ImageMetaDataPanel extends JPanel {
 		return tagPanel;
 	}
 	
+	public void saveCurrentRecord() {
+		archive.putImageMetaData(imageMetaData);
+	}
+	
 	public void updateAll() {
 		if (archive.getNumberOfImageMetaDataRecords() == 0) {
 			imageMetaData = DummyImageMetaData;
