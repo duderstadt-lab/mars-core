@@ -128,8 +128,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (use_incomplete_traces) {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.get(UID).getImageMetaDataUID().equals(meta.getUID()))
-					.filter(UID -> archive.get(UID).hasTag(backgroundTag))
+					.filter(UID -> archive.getImageMetaDataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MARSResultsTable datatable = archive.get(UID).getDataTable();
 						double x_mean = datatable.mean(input_x);
@@ -142,36 +142,33 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						}
 				});
 			} else {
-				long num_full_traj = archive.getMoleculeUIDs().stream()
-						.filter(UID -> archive.get(UID).getImageMetaDataUID().equals(meta.getUID()))
-						.filter(UID -> archive.get(UID).hasTag(backgroundTag))
-						.filter(UID -> archive.get(UID).getDataTable().getRowCount() == slices).count();
-				
-				if (num_full_traj == 0) {
-				    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
-				    logService.info("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
-				    //archive.addLogMessage(builder.endBlock(false));
-				    //archive.addLogMessage("  ");
-					//uiService.showDialog("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
-					continue;
-				}
-				
 				//For all molecules in this dataset that are marked with the background tag and have all slices
+				//Throws and error for a non array... So strange...
+				long[] num_full_traj = new long[1];
+				num_full_traj[0] = 0;
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.get(UID).getImageMetaDataUID().equals(meta.getUID()))
-					.filter(UID -> archive.get(UID).hasTag(backgroundTag))
-					.filter(UID -> archive.get(UID).getDataTable().getRowCount() == slices)
+					.filter(UID -> archive.getImageMetaDataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MARSResultsTable datatable = archive.get(UID).getDataTable();
-						double x_mean = datatable.mean(input_x);
-						double y_mean = datatable.mean(input_y);
-						
-						for (int row = 0; row < datatable.getRowCount(); row++) {
-							x_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_x, row) - x_mean;
-							y_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_y, row) - y_mean;
-							observations[(int)datatable.getValue("slice", row) - 1]++;
+						if (archive.get(UID).getDataTable().getRowCount() == slices) {
+							double x_mean = datatable.mean(input_x);
+							double y_mean = datatable.mean(input_y);
+							
+							for (int row = 0; row < datatable.getRowCount(); row++) {
+								x_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_x, row) - x_mean;
+								y_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_y, row) - y_mean;
+								observations[(int)datatable.getValue("slice", row) - 1]++;
+							}
+							num_full_traj[0]++;
 						}
 				});
+				
+				if (num_full_traj[0] == 0) {
+				    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+				    logService.info("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+				    continue;
+				}
 			}
 			
 			if (!metaDataTable.hasColumn(output_x))
@@ -195,8 +192,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    archive.addLogMessage("  ");
 	    
 		//Unlock the window so it can be changed

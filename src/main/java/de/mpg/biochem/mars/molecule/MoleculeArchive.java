@@ -1271,7 +1271,7 @@ public class MoleculeArchive {
 		for (String UID : moleculeIndex) {
 			Molecule molecule = get(UID);
 			
-			if (molecule.hasTag(tag)) {
+			if (moleculeHasTag(UID, tag)) {
 				if (virtual) {
 					File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
 					if (moleculeFile.exists())
@@ -1300,7 +1300,7 @@ public class MoleculeArchive {
 		for (String UID : imageMetaDataIndex) {
 			MARSImageMetaData metaData = getImageMetaData(UID);
 			
-			if (metaData.hasTag(tag)) {
+			if (imageMetaDataHasTag(UID,tag)) {
 				if (virtual) {
 					File imageMetaDataFile = new File(file.getAbsolutePath() + "/ImageMetaData/" + UID + ".json");
 					if (imageMetaDataFile.exists())
@@ -1385,6 +1385,24 @@ public class MoleculeArchive {
 	 */
 	public int getIndex(String UID) {
 		return moleculeIndex.indexOf(UID);
+	}
+	
+	/**
+	 * Get the UID of the MARSImageMetaData for a molecule record. If 
+	 * working from a virtual store, this will use an index providing
+	 * optimal performance. If working in memory this is the same as
+	 * retrieving the molecule record and the ImageMetaData UID from 
+	 * it directly.
+	 * 
+	 * @param UID The UID of the molecule to get the MARSImageMetaData UID for.
+	 * @return The UID string of the MARSImageMetaData record corresponding to the
+	 * molecule record whose UID was provided.
+	 */
+	public String getImageMetaDataUIDforMolecule(String UID) {
+		if (virtual)
+			return moleculeImageMetaDataUIDIndex.get(UID);
+		else 
+			return get(UID).getImageMetaDataUID();
 	}
 	
 	/**

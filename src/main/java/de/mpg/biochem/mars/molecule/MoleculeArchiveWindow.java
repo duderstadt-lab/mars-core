@@ -556,7 +556,7 @@ public class MoleculeArchiveWindow {
 		     		
 		     		String tag = dialog.getNextString().trim();
 			     		 
-		     		ArrayList<String> mergeUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasTag(tag)).collect(toList());
+		     		ArrayList<String> mergeUIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.moleculeHasTag(UID, tag)).collect(toList());
 	             
 		     		if (mergeUIDs.size() < 2) 
 		     			return;

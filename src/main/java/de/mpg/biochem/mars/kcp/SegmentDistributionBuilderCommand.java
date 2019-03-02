@@ -186,7 +186,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
 				boolean hasTags = true;
 				for (int i=0; i<tagList.length; i++) {
-					if (!archive.get(UID).hasTag(tagList[i])) {
+					if (!archive.moleculeHasTag(UID, tagList[i])) {
 						hasTags = false;
 						break;
 					}
