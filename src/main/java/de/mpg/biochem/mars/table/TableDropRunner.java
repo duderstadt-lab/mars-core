@@ -1,20 +1,28 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.table;
 
@@ -30,6 +38,7 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +52,8 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.UIService;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 //Can we just make this a module so the services are automatically populated???
 public class TableDropRunner implements DropTargetListener, Runnable {
@@ -64,7 +75,8 @@ public class TableDropRunner implements DropTargetListener, Runnable {
 	private ArrayList<File> tables = new ArrayList<File>();
 	
 	private JFrame frame;
-	private JLabel label = new JLabel("Drop ResultsTable Files Here", JLabel.CENTER);
+	private JLabel label = new JLabel("<html><body><center>Drop MARSResultsTable files here</center><br><center>(csv, tab, or json)</center></body></html>", JLabel.CENTER);
+	
 	JPanel pane = new JPanel(new GridLayout(1,1), false);
 	
 	public TableDropRunner() {}
@@ -113,13 +125,17 @@ public class TableDropRunner implements DropTargetListener, Runnable {
          		}
          	}
          	if (open) { 	
-         		ResultsTableOpenerCommand opener = new ResultsTableOpenerCommand();
-         		opener.setStatusService(statusService);
-         		opener.setTableService(resultsTableService);
-         		opener.setUIService(uiService);
-         		opener.setLogService(logService);
-         		MARSResultsTable results = opener.open(file.getAbsolutePath());
-         		uiService.show(title, results);
+         		MARSResultsTable results;
+				try {
+					results = new MARSResultsTable(file, statusService);
+					uiService.show(title, results);
+				} catch (JsonParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
          	} else {
          		open = true;
          	}

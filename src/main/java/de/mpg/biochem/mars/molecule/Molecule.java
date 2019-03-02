@@ -1,20 +1,28 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
@@ -22,9 +30,6 @@ import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.MARSMath;
 
 import org.scijava.table.DoubleColumn;
-import net.openhft.chronicle.bytes.BytesIn;
-import net.openhft.chronicle.bytes.BytesMarshallable;
-import net.openhft.chronicle.bytes.BytesOut;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -87,10 +92,6 @@ public class Molecule {
 	//this will be the most robust...
 	private LinkedHashMap<String,String[]> segmentsColumns;
 	
-	//Really ugly HACK to also store ImageMetaData and Archive Properties in the virtual store
-	private ImageMetaData WrappedImageMetaData;
-	private MoleculeArchiveProperties WrappedMoleculeArchiveProperties;
-	
 	public Molecule(JsonParser jParser) {
 		datatable = new MARSResultsTable();
 		initializeVariables();
@@ -114,24 +115,6 @@ public class Molecule {
 		initializeVariables();
 	}
 	
-	//If we are just using this as a wrapper for ImageMetaData
-	public Molecule(ImageMetaData meta) {
-		WrappedImageMetaData = meta;
-	}
-	
-	public ImageMetaData UnwrapImageMetaData() {
-		return WrappedImageMetaData;
-	}
-	
-	//If we are just using this as a wrapper for MoleculeArchiveProperties
-	public Molecule(MoleculeArchiveProperties props) {
-		WrappedMoleculeArchiveProperties = props;
-	}
-	
-	public MoleculeArchiveProperties UnwrapMoleculeArchiveProperties() {
-		return WrappedMoleculeArchiveProperties;
-	}
-	
 	private void initializeVariables() {
 		segments = new LinkedHashMap<>();
 		segmentsColumns = new LinkedHashMap<>();
@@ -142,17 +125,6 @@ public class Molecule {
 	//jackson custom JSON serialization 
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
-		
-		//Check if this is a Wrapper molecule...
-		//If so process accordingly..
-		if (WrappedMoleculeArchiveProperties != null) {
-			WrappedMoleculeArchiveProperties.toJSON(jGenerator);
-			return;
-		} else if (WrappedImageMetaData != null) {
-			jGenerator.writeFieldName("ImageMetaDataItem");
-			WrappedImageMetaData.toJSON(jGenerator);
-			return;
-		}
 		
 		//write out UID - all molecules must have this field.
 		jGenerator.writeStringField("UID", UID);
@@ -215,30 +187,26 @@ public class Molecule {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
-		    
-		  //Check if this is a Wrapper molecule...
-			if ("MoleculeArchiveProperties".equals(fieldname)) {
-				//This must be a MoleculeArchive Properties Wrapper record
-				WrappedMoleculeArchiveProperties = new MoleculeArchiveProperties(jParser, this.parent);
-				return;
-			} else if ("ImageMetaDataItem".equals(fieldname)) {
-				WrappedImageMetaData = new ImageMetaData(jParser);
-				return;
-			}
+
+		    if (fieldname == null)
+		    	continue;
 		    
 		    if ("UID".equals(fieldname)) {
 		    	jParser.nextToken();
 		        UID = jParser.getText();
+		        continue;
 		    }
 		    
 		    if ("ImageMetaDataUID".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	imageMetaDataUID = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
 		        Notes = jParser.getText();
+		        continue;
 		    }
 		    
 		    if("Tags".equals(fieldname)) {
@@ -248,6 +216,7 @@ public class Molecule {
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		            Tags.add(jParser.getText());
 		        }
+		    	continue;
 		    }
 			    
 		    if("Parameters".equals(fieldname)) {
@@ -271,10 +240,12 @@ public class Molecule {
 	    				Parameters.put(subfieldname, jParser.getDoubleValue());
 	    			}
 		    	}
+		    	continue;
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {
 			    datatable.fromJSON(jParser);
+			    continue;
 		    }
 		    
 		    if("SegmentTables".equals(fieldname)) {
@@ -306,8 +277,28 @@ public class Molecule {
 				    	segments.put(tableKey, segmenttable);
 			    	}
 		    	}
+		    	continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensure if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in molecule record ... skipping");
+		    	passThroughUnknownObjects(jParser);
 		    }
 		}
+	}
+	
+	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
+    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+    		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+    			passThroughUnknownObjects(jParser);
+    	}
 	}
 	
 	public String toJSONString() {
@@ -357,30 +348,22 @@ public class Molecule {
 	public void addTag(String tag) {
 		Tags.add(tag);
 		if (parent != null) {
-			parent.getArchiveProperties().addTag(tag);
-			parent.updateTagIndex(UID);
+			parent.getProperties().addTag(tag);
 		}
 	}
 	
 	public void removeTag(String tag) {
 		Tags.remove(tag);
-		if (parent != null) {
-			parent.getArchiveProperties().removeTag(tag);
-			parent.updateTagIndex(UID);
-		}
 	}
 	
 	public void removeAllTags() {
 		Tags.clear();
-		if (parent != null) {
-			parent.updateTagIndex(UID);
-		}
 	}
 	
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
 		if (parent != null) {
-			parent.getArchiveProperties().addParameter(parameter);
+			parent.getProperties().addParameter(parameter);
 		}
 	}
 	
@@ -491,7 +474,7 @@ public class Molecule {
 		datatable = table;
 	}
 	
-	public void setParentArchive(MoleculeArchive archive) {
+	public void setParent(MoleculeArchive archive) {
 		parent = archive;
 	}
 }

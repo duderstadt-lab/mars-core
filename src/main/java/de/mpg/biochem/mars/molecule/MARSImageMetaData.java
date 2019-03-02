@@ -1,20 +1,28 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
@@ -33,7 +41,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
@@ -62,9 +75,12 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MARSMath;
 import io.scif.services.FormatService;
 
-public class ImageMetaData {
+public class MARSImageMetaData {
 	//Unique ID used for universal identification and indexing.
 	private String UID;
+	
+	//Reference to MoleculeArchive containing the MARSImageMetaData record
+	private	MoleculeArchive parent;
 	
 	//Any comments specific to the data collection
 	//a possible issue, the condition collected etc..
@@ -78,6 +94,12 @@ public class ImageMetaData {
 	//Date and time when the data was collected...
 	private String CollectionDate;
 	
+	//tags added for filtering...
+	private LinkedHashSet<String> Tags;
+		
+	//Hashmap that maps string parameters to doubles
+	private LinkedHashMap<String, Double> Parameters;
+	
 	//Table that maps slices to times
 	private MARSResultsTable DataTable;
     
@@ -85,7 +107,7 @@ public class ImageMetaData {
     //We make it static becasue we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
     
-    public ImageMetaData(String UID) {
+    public MARSImageMetaData(String UID) {
     	this.UID = UID;
     	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
@@ -94,21 +116,27 @@ public class ImageMetaData {
     	DoubleColumn sliceCol = new DoubleColumn("slice");
 		sliceCol.add((double)1);
 		
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
+		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
     }
     
-    public ImageMetaData(String UID, MARSResultsTable DataTable) {
+    public MARSImageMetaData(String UID, MARSResultsTable DataTable) {
     	this.UID = UID;
     	this.Microscope = "unknown";
     	this.SourceDirectory = "unknown";
     	log = "";
+    	
+    	Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
 		
 		this.DataTable = DataTable;
     }
 	
-	public ImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
+	public MARSImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		this.Microscope = Microscope;
 		if (img.getOriginalFileInfo() != null) {
 			this.SourceDirectory = img.getOriginalFileInfo().directory;
@@ -135,7 +163,10 @@ public class ImageMetaData {
 		}
 	}
 	
-	public ImageMetaData(JsonParser jParser) throws IOException {
+	public MARSImageMetaData(JsonParser jParser) throws IOException {
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
+		
 		fromJSON(jParser);
 	}
 	
@@ -184,7 +215,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 	}
 	
@@ -211,7 +242,7 @@ public class ImageMetaData {
 		}
 		
 		//Create the table and add all the columns...
-		DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		DataTable.add(sliceCol);
 		DataTable.add(timeCol);
 		DataTable.add(labelCol);
@@ -333,18 +364,17 @@ public class ImageMetaData {
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					String fieldname = jParser.getCurrentName();
 					
-					//Summary is an object, so that will break the loop
-					//Therefore, we need to skip over it...
-					if ("Summary".equals(fieldname)) {
-						while (jParser.nextToken() != JsonToken.END_OBJECT) {
-							// We just want to skip over the summary
-						}
-						//once we have skipped over we just want to continue
+					if (fieldname == null)
 						continue;
-					}
 					
-					jParser.nextToken();
-
+					//At the moment, we skip all object fields
+					//We can add above if statements for specific
+					//known fields we want to parse...
+					if (jParser.nextToken() == JsonToken.START_OBJECT) {
+				    	passThroughUnknownObjects(jParser);
+				    	continue;
+				    }
+					
 					properties.put(fieldname, jParser.getValueAsString());
 				}
 				propertiesStack.put(slice, properties);
@@ -358,7 +388,7 @@ public class ImageMetaData {
 			//Get t0 in seconds...
 			double t0 = Double.valueOf(propertiesStack.get(1).get("ElapsedTime-ms"))/1000;
 			
-			DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+			DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 			DataTable.add(new DoubleColumn("slice"));
 			DataTable.add(new DoubleColumn("Time (s)"));
 			
@@ -421,6 +451,24 @@ public class ImageMetaData {
 		if (CollectionDate != null)
 			jGenerator.writeStringField("CollectionDate", CollectionDate);
 		
+		//Write out arrays of tags if tags have been added.
+		if (Tags.size() > 0) {
+			jGenerator.writeFieldName("Tags");
+			jGenerator.writeStartArray();
+			Iterator<String> iterator = Tags.iterator();
+			while(iterator.hasNext())
+				jGenerator.writeString(iterator.next());
+			jGenerator.writeEndArray();
+		}
+		
+		//Write out parameters, which are number fields used to filter and process the molecule..
+		if (Parameters.size() > 0) {
+			jGenerator.writeObjectFieldStart("Parameters");
+			for (String name:Parameters.keySet())
+				jGenerator.writeNumberField(name, Parameters.get(name));
+			jGenerator.writeEndObject();
+		}
+		
 		if (Notes != null)
 			jGenerator.writeStringField("Notes", Notes);
 		
@@ -457,42 +505,105 @@ public class ImageMetaData {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
+
+		    if (fieldname == null)
+		    	continue;
 		    
 		    if ("UID".equals(fieldname)) {
 		    	jParser.nextToken();
 		        UID = jParser.getText();
+		        continue;
 		    }
 		    
 		    if("Microscope".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	Microscope = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("SourceDirectory".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	SourceDirectory = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if ("CollectionDate".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	CollectionDate = jParser.getText();
+		    	continue;
+		    }
+		    
+		    if("Tags".equals(fieldname)) {
+		    	//First we move past object start ?
+		    	jParser.nextToken();
+		    	
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		            Tags.add(jParser.getText());
+		        }
+		    	continue;
+		    }
+			    
+		    if("Parameters".equals(fieldname)) {
+		    	//First we move past object start ?
+		    	jParser.nextToken();
+		    	
+		    	//Then we move through fields
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String subfieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+	    				String str = jParser.getValueAsString();
+	    				if (Objects.equals(str, new String("Infinity"))) {
+	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("-Infinity"))) {
+	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("NaN"))) {
+	    					Parameters.put(subfieldname, Double.NaN);
+	    				}
+	    			} else {
+	    				Parameters.put(subfieldname, jParser.getDoubleValue());
+	    			}
+		    	}
+		    	continue;
 		    }
 		    
 		    if("Notes".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	Notes = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if("Log".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	log = jParser.getText();
+		    	continue;
 		    }
 		    
 		    if("DataTable".equals(fieldname)) {		    	
-		    	DataTable = new MARSResultsTable("ImageMetaData - " + UID);
+		    	DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
 		    	DataTable.fromJSON(jParser);
+		    	continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensure if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in MARSImageMetaData record ... skipping");
+		    	passThroughUnknownObjects(jParser);
 		    }
 		}
+	}
+	
+	private void passThroughUnknownObjects(JsonParser jParser) throws IOException {
+    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+    		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+    			passThroughUnknownObjects(jParser);
+    	}
 	}
 	
 	//Utility method
@@ -547,6 +658,64 @@ public class ImageMetaData {
 		return SourceDirectory;
 	}
 	
+	
+	public void addTag(String tag) {
+		Tags.add(tag);
+	}
+	
+	public void removeTag(String tag) {
+		Tags.remove(tag);
+	}
+	
+	public void removeAllTags() {
+		Tags.clear();
+	}
+	
+	public void setParameter(String parameter, double value) {
+		Parameters.put(parameter, value);
+		if (parent != null) {
+			parent.getProperties().addParameter(parameter);
+		}
+	}
+	
+	public void removeAllParameters() {
+		Parameters.clear();
+	}
+	
+	public void removeParameter(String parameter) {
+		if (Parameters.containsKey(parameter)) {
+			Parameters.remove(parameter);
+		}
+	}
+	
+	public double getParameter(String parameter) {
+		if (Parameters.containsKey(parameter)) {
+			return Parameters.get(parameter);
+		} else {
+			return Double.NaN;
+		}
+	}
+	
+	public boolean hasParameter(String parameter) {
+		return Parameters.containsKey(parameter);
+	}
+	
+	public boolean hasTag(String tag) {
+		return Tags.contains(tag);
+	}
+	
+	public boolean hasNoTags() {
+		return Tags.size() == 0;
+	}
+	
+	public LinkedHashMap<String, Double> getParameters() {
+		return Parameters;
+	}
+	
+	public LinkedHashSet<String> getTags() {
+		return Tags;
+	}
+	
 	public String getNotes() {
 		return Notes;
 	}
@@ -559,8 +728,8 @@ public class ImageMetaData {
 		return log;
 	}
 	
-	public Molecule getMoleculeWrapper() {
-		return new Molecule(this);
+	public void setParent(MoleculeArchive archive) {
+		parent = archive;
 	}
 	
 	//DataTable column exclusion list

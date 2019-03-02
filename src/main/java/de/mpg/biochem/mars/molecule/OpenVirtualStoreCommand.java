@@ -25,7 +25,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
+/*******************************************************************************
+ * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * 
+ * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
@@ -38,8 +57,6 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
-import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -48,29 +65,28 @@ import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 
+import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
+
 import com.fasterxml.jackson.core.JsonParseException;
 
-import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
 
-@Plugin(type = Command.class, label = "Build archive from table", menu = {
+@Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule Utils", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
-public class BuildArchiveFromTableCommand extends DynamicCommand {
+		@Menu(label = "Open Virtual Store", weight = 1, mnemonic = 'o')})
+public class OpenVirtualStoreCommand extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-	private ResultsTableService resultsTableService;
 	
     @Parameter
     private UIService uiService;
@@ -81,58 +97,69 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     @Parameter
     private LogService logService;
     
-    @Parameter(label="Table with molecule column")
-	private MARSResultsTable table;
+    @Parameter(label="MoleculeArchive (.yama.store directory)", style="directory")
+    private File file;
     
-    //OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 	private MoleculeArchive archive;
     
     @Override
 	public void run() {				
+		if (file == null)
+			return;
 		
-		String name = table.getName() + ".yama";
+		String name = file.getName();
 		
 		if (moleculeArchiveService.contains(name)) {
-			uiService.showDialog("The MoleculeArchive " + name + " has already been created and is open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
-			return;
-		}
-		
-		if (table.get("molecule") == null) {
-			uiService.showDialog("The table given doesn't have a molecule column. It must have a molecule column in order to generate the Molecule Archive.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
 		}
 		
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
-
-		builder.addParameter("From Table", table.getName());
-		builder.addParameter("Ouput Archive Name", name);
+		String log = builder.buildTitleBlock("Opening Virtual Store");
+		builder.addParameter("Loading from directory", file.getAbsolutePath());
+		builder.addParameter("Archive Name", name);
 		
-		archive = new MoleculeArchive(name, table, moleculeArchiveService);
-
-		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
-		log += LogBuilder.endBlock(true);
 		
-		//Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
-        
-        archive.addLogMessage(log);
-        
-        logService.info(log);
+		logService.info(log);
+		if (!file.getName().endsWith(".yama.store")) {
+			logService.error("Chosen directory does not have .yama.store extension. Are you sure it is a virtual store?");
+			logService.error(LogBuilder.endBlock(false));
+		}
+		
+		try {
+			//Since we give it a directory for file. It will know its a virtual store
+			archive = new MoleculeArchive(name,file,moleculeArchiveService);
+			
+			getInfo().getOutput("archive", MoleculeArchive.class).setLabel(name);
+			
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+			logService.error("JsonParseExcpetion - are you sure this is a proper yama virtual store?");
+			logService.error(LogBuilder.endBlock(false));
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+			logService.error("IOException - does the store directory exist?");
+			logService.error(LogBuilder.endBlock(false));
+			return;
+		}
+		logService.info(LogBuilder.endBlock(true));
 	}
     
+    //Getters and Setters
     public MoleculeArchive getArchive() {
     	return archive;
     }
     
-    public void setTable(MARSResultsTable table) {
-    	this.table = table;
+    public void setFile(File file) {
+    	this.file = file;
     }
     
-    public MARSResultsTable getTable() {
-    	return table;
+    public File getFile() {
+    	return file;
     }
 }
+

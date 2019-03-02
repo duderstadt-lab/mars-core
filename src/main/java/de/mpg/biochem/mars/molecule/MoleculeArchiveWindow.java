@@ -1,56 +1,55 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
 import static java.util.stream.Collectors.toList;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -58,39 +57,26 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowFilter;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableRowSorter;
 
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
-import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.ui.DialogPrompt.OptionType;
 
-import de.mpg.biochem.mars.plot.CurvePlot;
 import de.mpg.biochem.mars.plot.PlotDialog;
 import de.mpg.biochem.mars.plot.PlotProperties;
-import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
+
 import ij.WindowManager;
 import ij.gui.GenericDialog;
-import ij.plugin.frame.Recorder;
 
 public class MoleculeArchiveWindow {
 	
@@ -123,7 +109,8 @@ public class MoleculeArchiveWindow {
 	
 	private JMenuItem propertiesMenuItem = new JMenuItem("Properties");
 	private JMenuItem saveMenuItem = new JMenuItem("Save");
-	private JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+	private JMenuItem saveAsMenuItem = new JMenuItem("Save a Copy...");
+	private JMenuItem saveAsVirtualStoreMenuItem = new JMenuItem("Save a Virtual Store Copy...");
 	
 	private JRadioButton JSONencodingButton, SMILEencodingButton;
 	
@@ -138,11 +125,10 @@ public class MoleculeArchiveWindow {
 	private JMenuItem deleteMenuItem = new JMenuItem("Delete Molecules");
 	private JMenuItem deleteTagsMenuItem = new JMenuItem("Delete Tags");
 	private JMenuItem deleteParametersMenuItem = new JMenuItem("Delete Parameters");
-	//private JMenuItem generateNewMenuItem = new JMenuItem("Generate new archive");
 	//private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
 	private JMenuItem mergeMenuItem = new JMenuItem("Merge Molecules");
-	private JMenuItem updateMenuItem = new JMenuItem("Update");
-	//private JMenuItem unlockMenuItem = new JMenuItem("Unlock");
+	private JMenuItem updateMenuItem = new JMenuItem("Update Window");
+	private JMenuItem rebuildIndexesMenuItem = new JMenuItem("Rebuild Indexes");
 	
 	//static so that window locations are offset...
 	static int pos_x = 100;
@@ -216,8 +202,11 @@ public class MoleculeArchiveWindow {
 	        	//Prevent change if archive is locked
 	        	if (lockArchive)
 	        		tabbedPane.setSelectedIndex(0);
-	        	else
+	        	else {
+	        		moleculePanel.saveCurrentRecord();
+	        		imageMetaDataPanel.saveCurrentRecord();
 	        		updateAll();
+	        	}
 	        }
 	    });
 		
@@ -226,6 +215,7 @@ public class MoleculeArchiveWindow {
 		mb.add(fileMenu);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(saveAsMenuItem);
+		fileMenu.add(saveAsVirtualStoreMenuItem);
 		fileMenu.addSeparator();
 		fileMenu.add(propertiesMenuItem);
 		
@@ -263,18 +253,29 @@ public class MoleculeArchiveWindow {
 		saveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-		        	 archive.set(moleculePanel.getMolecule());
+		        	 moleculePanel.saveCurrentRecord();
+		        	 imageMetaDataPanel.saveCurrentRecord();
 		        	 
-		 			 if (archive.getFile() != null) {
-		 				 if(archive.getFile().getName().equals(archive.getName())) {
-		 				 	archive.save();
-		 				 } else {
-		 					 //the archive name has changed... so let's check with the user about the new name...
-			 				saveAs(archive.getFile());
-		 				 }
-		 			 } else {
-		 				saveAs(new File(archive.getName()));
-		 			 }
+		        	 try {
+			 			 if (archive.getFile() != null) {
+			 				 if(archive.getFile().getName().equals(archive.getName())) {
+			 				 	try {
+									archive.save();
+								} catch (IOException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+			 				 } else {
+			 					 //the archive name has changed... so let's check with the user about the new name...
+								saveAs(archive.getFile());
+			 				 }
+			 			 } else {
+			 				saveAs(new File(archive.getName()));
+			 			 }
+		        	 } catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					 }
 		 			updateAll();
 	        	 }
 	          }
@@ -282,18 +283,45 @@ public class MoleculeArchiveWindow {
 		saveAsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-	        		 	archive.set(moleculePanel.getMolecule());
-	        		 
-		 				if (archive.getFile() != null) {
-			 				saveAs(new File(archive.getFile(), archive.getName()));
-		 				} else {
-		 					saveAs(new File(archive.getName()));
-		 				}
+	        		    moleculePanel.saveCurrentRecord();
+		        	    imageMetaDataPanel.saveCurrentRecord();
+		        	    
+		        	    try {
+			 				if (archive.getFile() != null) {
+								saveAs(new File(archive.getFile(), archive.getName()));
+			 				} else {
+			 					saveAs(new File(archive.getName()));
+			 				}
+		        	    } catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 		 				updateAll();
 	        	 }
 	          }
 	       });
 		
+		saveAsVirtualStoreMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+	        		    moleculePanel.saveCurrentRecord();
+		        	    imageMetaDataPanel.saveCurrentRecord();
+	        		 	
+	        		 	String name = archive.getName();
+	        		 	
+	        		 	if (!name.endsWith(".store")) {
+		        		 	name += ".store";
+		        		 }
+	        		 
+		 				try {
+							saveAsVirtualStore(new File(name));
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+	        	 }
+	          }
+	       });
 		
 		JMenu plotMenu = new JMenu("Plot");
 		mb.add(plotMenu);
@@ -310,6 +338,8 @@ public class MoleculeArchiveWindow {
 		singleCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+	        		moleculePanel.saveCurrentRecord();
+	        		 
 		        	PlotDialog dialog = new PlotDialog("Curve Plot", archive.get(0).getDataTable(), 1, false);
 		        	dialog.showDialog();
 		        	if (dialog.wasCanceled())
@@ -329,6 +359,8 @@ public class MoleculeArchiveWindow {
 		multiCurveMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+	        		 moleculePanel.saveCurrentRecord();
+	        		 
 		        	//First we ask how many curves will be added
 		        	 GenericDialog Numdialog = new GenericDialog("MultiPlot");
 		     		 Numdialog.addNumericField("Number_of_curves", 2, 0);
@@ -358,6 +390,8 @@ public class MoleculeArchiveWindow {
 		multiPlotMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+	        		 moleculePanel.saveCurrentRecord();
+	        		 
 	        	    //First we ask how many plots will be added
 		        	GenericDialog dialog = new GenericDialog("Multiple Plots");
 		        	String[] columnNames = archive.get(0).getDataTable().getColumnHeadings();
@@ -383,6 +417,8 @@ public class MoleculeArchiveWindow {
 		deleteMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+			         moleculePanel.saveCurrentRecord();
+	        		 
 		        	GenericDialog dialog = new GenericDialog("Delete Molecules");
 		     		dialog.addStringField("Tags (comma separated list)", "", 30);
 		     		dialog.addCheckbox("remove molecules with no tags", false);
@@ -429,6 +465,8 @@ public class MoleculeArchiveWindow {
 		deleteTagsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+			        	moleculePanel.saveCurrentRecord();
+	        		 
 			        	GenericDialog dialog = new GenericDialog("Delete Tags");
 			     		dialog.addStringField("Tags (comma separated list)", "", 30);
 			     		dialog.addCheckbox("remove all tags", false);
@@ -455,7 +493,7 @@ public class MoleculeArchiveWindow {
 			     		        		molecule.removeTag(tag);
 			     		        	}
 			            	 	}
-			            	 	archive.set(molecule);
+			            	 	archive.put(molecule);
 			     			});
 			             
 			     		 moleculePanel.updateAll();
@@ -467,6 +505,8 @@ public class MoleculeArchiveWindow {
 		deleteParametersMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+			        	moleculePanel.saveCurrentRecord();
+
 			        	GenericDialog dialog = new GenericDialog("Delete Parameters");
 			     		dialog.addStringField("Parameters (comma separated list)", "", 30);
 			     		dialog.addCheckbox("remove all parameters", false);
@@ -493,7 +533,7 @@ public class MoleculeArchiveWindow {
 			     		        		molecule.removeParameter(parameter);
 			     		        	}
 			            	 	}
-			            	 	archive.set(molecule);
+			            	 	archive.put(molecule);
 			     			});
 			             
 			     		 moleculePanel.updateAll();
@@ -505,6 +545,8 @@ public class MoleculeArchiveWindow {
 		mergeMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
+			        moleculePanel.saveCurrentRecord();
+			        
 	        		GenericDialog dialog = new GenericDialog("Merge molecules");
 		     		dialog.addStringField("Merge Molecules with Tag", "", 20);
 		     		dialog.showDialog();
@@ -567,8 +609,32 @@ public class MoleculeArchiveWindow {
 		toolsMenu.add(updateMenuItem);
 		updateMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+		        	 moleculePanel.saveCurrentRecord();
+		        	 imageMetaDataPanel.saveCurrentRecord();
+	        	 }
+	        	 
 	        	 updateAll();
 	        	 lockArchive = false;
+	          }
+	       });
+		
+		toolsMenu.add(rebuildIndexesMenuItem);
+		rebuildIndexesMenuItem.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	 if (!lockArchive) {
+		        	 moleculePanel.saveCurrentRecord();
+		        	 imageMetaDataPanel.saveCurrentRecord();
+		        	 
+		        	 try {
+						archive.rebuildIndexes();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+		        	 
+		        	 updateAll();
+	        	 }
 	          }
 	       });
 		
@@ -588,7 +654,12 @@ public class MoleculeArchiveWindow {
  		frame.addWindowListener(new WindowAdapter() {
  	         public void windowClosing(WindowEvent e) {
  	        	if (!lockArchive)
- 	        		close();
+					try {
+						close();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
  	         }
  	      });
 		frame.setLayout(new BorderLayout());
@@ -626,10 +697,7 @@ public class MoleculeArchiveWindow {
 		panel.add(new JLabel("Number of Molecules                " + archive.getNumberOfMolecules()), gbc);
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Average Molecule Size (in bytes)   " + archive.getAverageMoleculeSize()), gbc);
-		
-		gbc.gridy += 1;
-		panel.add(new JLabel("Number of Image MetaData Items     " + archive.getNumberOfImageMetaDataItems()), gbc);
+		panel.add(new JLabel("Number of Image MetaData Items     " + archive.getNumberOfImageMetaDataRecords()), gbc);
 		
 		gbc.gridy += 1;
 		panel.add(new JLabel("                                   "), gbc);
@@ -649,17 +717,24 @@ public class MoleculeArchiveWindow {
 			panel.add(new JLabel("This archive is stored in normal memory."), gbc);
 		}
 		
-		//gbc.gridy += 1;
-		//panel.add(new JLabel("                                   "), gbc);
+		String encoding;
+		if (archive.isSMILEInputEncoding()) {
+			encoding = "Smile";
+		} else {
+			encoding = "JSON";
+		}
 		
 		gbc.gridy += 1;
-		panel.add(new JLabel("Encoding:                                 "), gbc);
+		panel.add(new JLabel("Input encoding: " + encoding), gbc);
+		
+		gbc.gridy += 1;
+		panel.add(new JLabel("Save with encoding:                       "), gbc);
 		
 		JSONencodingButton = new JRadioButton("JSON");
 		JSONencodingButton.setMnemonic(KeyEvent.VK_J);
 		JSONencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	archive.unsetSMILEencoding();
+	        	archive.unsetSMILEOutputEncoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -669,7 +744,7 @@ public class MoleculeArchiveWindow {
 	    SMILEencodingButton.setMnemonic(KeyEvent.VK_S);
 		SMILEencodingButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	archive.setSMILEencoding();
+	        	archive.setSMILEOutputEncoding();
 	         }
 		});
 		gbc.gridy += 1;
@@ -680,7 +755,7 @@ public class MoleculeArchiveWindow {
 	    group.add(JSONencodingButton);
 	    group.add(SMILEencodingButton);
 	    
-	    if (archive.isSMILEencoding()) {
+	    if (archive.isSMILEOutputEncoding()) {
 	    	JSONencodingButton.setSelected(false);
 		    SMILEencodingButton.setSelected(true);
 	    } else {
@@ -730,9 +805,12 @@ public class MoleculeArchiveWindow {
 		return pane;
 	}
 	
-	private boolean saveAs(File saveAsFile) {
+	private boolean saveAs(File saveAsFile) throws IOException {
 		File file = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
 		if (file != null) {
+			archive.saveAs(file);
+			return true;
+			/*
 			if (moleculeArchiveService.rename(archive.getName(), file.getName())) {
 				if (!uiService.isHeadless())
 					WindowManager.removeWindow(frame);
@@ -750,6 +828,15 @@ public class MoleculeArchiveWindow {
 				archive.saveAs(file);
 				return true;
 			}
+			*/
+		}
+		return false;
+	}
+	
+	private boolean saveAsVirtualStore(File saveAsFile) throws IOException {
+		File virtualDirectory = uiService.chooseFile(saveAsFile, FileWidget.SAVE_STYLE);
+		if (virtualDirectory != null) {	
+			archive.saveAsVirtualStore(virtualDirectory);
 		}
 		return false;
 	}
@@ -785,8 +872,15 @@ public class MoleculeArchiveWindow {
 		}
 	}
 	
-	public void close() {
+	public void close() throws IOException {
 		moleculeArchiveService.removeArchive(archive.getName());
+		
+		if (archive.isVirtual()) {
+			imageMetaDataPanel.saveCurrentRecord();
+			moleculePanel.saveCurrentRecord();
+			archive.save();
+		}
+		
 		frame.setVisible(false);
 		frame.dispose();
 		

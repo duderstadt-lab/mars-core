@@ -1,20 +1,28 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+f * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
@@ -108,6 +116,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	private Molecule molecule;
 	private MoleculeArchive archive;
 	
+	private boolean moleculeRecordChanged;
+	
 	private JTable moleculeIndex;
 	private AbstractTableModel moleculeIndexTableModel;
 	private TableRowSorter moleculeSorter;
@@ -125,6 +135,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		} else {
 			molecule = DummyMolecule;
 		}
+		moleculeRecordChanged = false;
 		
 		DummyMolecule.setDataTable(new MARSResultsTable());
 		DummyMolecule.setImageMetaDataUID("XXXXXXXXXX");
@@ -137,7 +148,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private void buildPanel() {
 		//MOLECULE INDEX LIST
-		//Need to build the datamodel backed by the archive index...
+		//Need to build the data model backed by the archive index...
 		moleculeIndexTableModel = new AbstractTableModel() {
 			private static final long serialVersionUID = 1L;
 
@@ -148,7 +159,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 				} else if (columnIndex == 1) {
 					return archive.getUIDAtIndex(rowIndex);
 				} else if (columnIndex == 2) {
-					//archive.updateTagIndex(archive.getUIDAtIndex(rowIndex));
 					return archive.getTagList(archive.getUIDAtIndex(rowIndex));
 				}
 				return null;
@@ -199,14 +209,15 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
                 ListSelectionModel lsm = (ListSelectionModel)e.getSource();
                 if (!lsm.isSelectionEmpty()) {
                     int selectedRow = lsm.getMinSelectionIndex();
-                    archive.set(molecule);
+                    if (moleculeRecordChanged)
+                    	archive.put(molecule);
                     molecule = archive.get((String)moleculeIndex.getValueAt(selectedRow, 1));
                     updateAll();
                 }
             }
         });
 
-		moleculeIndex.getColumnModel().getColumn(0).setMinWidth(70);
+		moleculeIndex.getColumnModel().getColumn(0).setMinWidth(40);
 		moleculeIndex.getColumnModel().getColumn(1).setMinWidth(150);
 		
 		JScrollPane moleculeIndexScrollPane = new JScrollPane(moleculeIndex);
@@ -406,16 +417,22 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
         notes.getDocument().addDocumentListener(
 	        new DocumentListener() {
 	            public void changedUpdate(DocumentEvent e) {
-	                if (archive.getNumberOfMolecules() != 0)
+	                if (archive.getNumberOfMolecules() != 0) {
+	                	moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	                }
 	            }
 	            public void insertUpdate(DocumentEvent e) {
-	            	if (archive.getNumberOfMolecules() != 0)
+	            	if (archive.getNumberOfMolecules() != 0) {
+	            		moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	            	}
 	            }
 	            public void removeUpdate(DocumentEvent e) {
-	            	if (archive.getNumberOfMolecules() != 0)
+	            	if (archive.getNumberOfMolecules() != 0) {
+	            		moleculeRecordChanged = true;
 	            		molecule.setNotes(notes.getText());
+	            	}
 	            }
 	        });
 		
@@ -469,6 +486,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			
 			@Override
 			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				moleculeRecordChanged = true;
 				double value = Double.parseDouble((String)aValue);
 				molecule.setParameter(ParameterList[rowIndex], value);
 			}
@@ -528,6 +546,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newParameter.getText().equals("") && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					molecule.setParameter(newParameter.getText().trim(), 0);
 					updateParameterList();
 					ParameterTableModel.fireTableDataChanged();
@@ -542,6 +561,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (ParameterTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					String param = (String)ParameterTable.getValueAt(ParameterTable.getSelectedRow(), 0);
 					molecule.removeParameter(param);
 					updateParameterList();
@@ -633,6 +653,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		Add.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!newTag.getText().equals("") && archive.getNumberOfMolecules() != 0) {
+					moleculeRecordChanged = true;
 					molecule.addTag(newTag.getText().trim());
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
@@ -652,6 +673,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			public void actionPerformed(ActionEvent e) {
 				if (TagTable.getSelectedRow() != -1 && archive.getNumberOfMolecules() != 0) {
 					String tag = (String)TagTable.getValueAt(TagTable.getSelectedRow(), 0);
+					moleculeRecordChanged = true;
 					molecule.removeTag(tag);
 					updateTagList();
 					TagTableModel.fireTableDataChanged();
@@ -764,9 +786,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	 	dataANDPlot.add(multiPlotPane, 0);
 	 	dataANDPlot.setSelectedIndex(0);
 	}
+	
+	public void saveCurrentRecord() {
+		archive.put(molecule);
+	}
 
 	public void updateAll() {
 		if (archive.getNumberOfMolecules() == 0) {
+			System.out.println("No molecules found");
 			molecule = DummyMolecule;
 			notes.setEditable(false);
 		} else if (archive.get(molecule.getUID()) == null) {
@@ -782,6 +809,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			molecule = archive.get(molecule.getUID());
 			notes.setEditable(true);
 		}
+		moleculeRecordChanged = false;
 		
 		//Update index table in case tags were changed
 		if (moleculeCount < archive.getNumberOfMolecules()) {

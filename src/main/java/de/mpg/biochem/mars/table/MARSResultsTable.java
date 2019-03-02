@@ -1,27 +1,38 @@
 /*******************************************************************************
- * MARS - MoleculeArchive Suite - A collection of ImageJ2 commands for single-molecule analysis.
+ * Copyright (C) 2019, Karl Duderstadt
+ * All rights reserved.
  * 
- * Copyright (C) 2018 - 2019 Karl Duderstadt
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.table;
 
+import org.scijava.app.StatusService;
+import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -29,6 +40,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,6 +58,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.autoComplete.MethodDocs;
+import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.util.MARSMath;
 import ij.text.TextWindow;
 import net.imagej.ImgPlus;
@@ -64,14 +80,14 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	//Just added for debugging
-	//private TextWindow log_window;
-	
 	private MARSResultsTableWindow win;
 	
 	private StringBuilder sb;
 	
 	private String name = new String("MARSResultsTable");
+	
+    @Parameter
+    private StatusService statusService;
 	
 	/** Creates an empty results table. */
 	public MARSResultsTable() {
@@ -86,7 +102,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	public MARSResultsTable(File file) throws JsonParseException, IOException {
 		super();
-		loadJSON(file);
+		setName(file.getName());
+		if (file.getName().endsWith(".json"))
+			loadJSON(file);
+		else
+			loadCSV(file);
+	}
+	
+	public MARSResultsTable(File file, StatusService statusService) throws JsonParseException, IOException {
+		super();
+		setName(file.getName());
+		
+		this.statusService = statusService;
+		
+		if (file.getName().endsWith(".json"))
+			loadJSON(file);
+		else
+			loadCSV(file);
 	}
 	
 	/** Creates a results table with the given row and column dimensions. */
@@ -353,6 +385,94 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return true;
 	}
 	
+	public void loadCSV(File file) {
+		String absolutePath = file.getAbsolutePath();
+		double size_in_bytes = file.length();
+		double readPosition = 0;
+		final String lineSeparator =  "\n";
+		int currentPercentDone = 0;
+		int currentPercent = 0;
+				
+        Path path = Paths.get(absolutePath);
+        boolean csv = absolutePath.endsWith(".csv") || absolutePath.endsWith(".CSV");
+        String cellSeparator =  csv?",":"\t";
+        
+        try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+        	    String header = br.readLine();
+        	    readPosition += header.getBytes().length + lineSeparator.getBytes().length;
+        	    String[] headings = header.split(cellSeparator);
+        	    
+        	    int firstColumn = headings.length>0&&headings[0].equals(" ")?1:0;
+
+            for (int i=firstColumn; i<headings.length; i++) {
+                headings[i] = headings[i].trim();
+            }
+            
+            boolean[] stringColumn = new boolean[headings.length];
+
+            int row = 0;
+            for(String line = null; (line = br.readLine()) != null;) {
+        	    String[] items = line.split(cellSeparator);
+        	    
+        	    //During the first cycle we need to build the table with columns that are either 
+                //DoubleColumns or GenericColumns for numbers or strings
+            	//We need to detect this by what is in the first row...
+        	    if (row == 0) {
+        	    	for (int i=firstColumn; i<headings.length;i++) {
+        	    		if(items[i].equals("NaN") || items[i].equals("-Infinity") || items[i].equals("Infinity")) {
+        	    			//This should be a DoubleColumn
+        	    			add(new DoubleColumn(headings[i]));
+        	    			stringColumn[i] = false;
+        	    		} else {
+        	    			double value = Double.NaN;
+        	    			try {
+         	    				value = Double.parseDouble(items[i]);
+         	    			} catch (NumberFormatException e) {}
+        	    			
+        	    			if (Double.isNaN(value)) {
+        	    				add(new GenericColumn(headings[i]));
+        	    				stringColumn[i] = true;
+        	    			} else {
+        	    				add(new DoubleColumn(headings[i]));
+        	    				stringColumn[i] = false;
+        	    			}
+        	    		}
+        	    	}
+        	    }
+        	    
+        	    appendRow();
+        	    for (int i=firstColumn; i<headings.length;i++) {
+        	    	if (stringColumn[i]) {
+		    		    setStringValue(i - firstColumn, row, items[i].trim());
+        	    	} else {
+        	    		double value = Double.NaN;
+		    			try {
+		    				value = Double.parseDouble(items[i]);
+		    			} catch (NumberFormatException e) {}
+		    			
+		    			setValue(i - firstColumn, row, value);
+        	    	}
+        	    }
+        	    if (statusService != null) {
+	        	    readPosition += line.getBytes().length + lineSeparator.getBytes().length;
+	        	    currentPercent = (int)Math.round(readPosition*1000/size_in_bytes);
+	        	    if (currentPercent > currentPercentDone) {
+	    	    		currentPercentDone = currentPercent;
+	    	    		statusService.showStatus(currentPercent, 1000, "Opening file " + file.getName());
+	        	    }
+        	    }
+        	    row++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (statusService != null) {
+        	statusService.showProgress(100, 100);
+        	statusService.showStatus("Opening file " + file.getName() + " - Done!");
+        }
+	}
+	
 	//open method for JSON Table format input...
 	//Assumes all columns are type number
 	//if not this will fail
@@ -549,6 +669,26 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return Math.sqrt(diffSquares/(count-1));
 	}
 	
+	public double sem(String column) {
+		return std(column)/Math.sqrt(getRowCount());
+	}
+	
+	public double sem(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
+			return Double.NaN;
+		double mean = mean(meanColumn, rowSelectionColumn, rangeStart, rangeEnd);
+		double diffSquares = 0;
+		int count = 0;
+		for (int i = 0; i < getRowCount() ; i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				diffSquares += (mean - getValue(meanColumn, i))*(mean - getValue(meanColumn, i));
+				count++;
+			}
+		}
+		
+		return Math.sqrt(diffSquares/(count-1))/Math.sqrt(count);
+	}
+	
 	public double msd(String column) {
 		if (get(column) == null)
 			return Double.NaN;
@@ -656,5 +796,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			}
 		}
 		return table;
+	}
+	
+	public void setStatusService(StatusService statusService) {
+		this.statusService = statusService;
+	}
+	
+	public StatusService getStatusService() {
+		return statusService;
 	}
 }
