@@ -627,10 +627,10 @@ public class MoleculeArchive {
 	}
 	
 	private void saveIndexes() throws IOException {
-		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex, tagIndex, jfactory);
+		saveIndexes(file, moleculeIndex, imageMetaDataIndex, moleculeImageMetaDataUIDIndex, imageMetaDataTagIndex, tagIndex, jfactory);
 	}
 	
-	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
+	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> imageMetaDataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
 		File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 		
@@ -647,7 +647,7 @@ public class MoleculeArchive {
 			
 			if (imageMetaDataTagIndex.containsKey(metaUID)) {
 				jGenerator.writeArrayFieldStart("Tags");
-				for (String tag : tagIndex.get(metaUID)) {
+				for (String tag : imageMetaDataTagIndex.get(metaUID)) {
 					jGenerator.writeString(tag);
 				}
 				jGenerator.writeEndArray();
@@ -773,16 +773,14 @@ public class MoleculeArchive {
 
 		//We will generate the index as we save records...
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
+		ConcurrentMap<String, LinkedHashSet<String>> newImageMetaDataTagIndex = new ConcurrentHashMap<>();
 		ConcurrentMap<String, String> newMoleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
 		
 		//Let's also rebuild the parameter index stored in the archiveProperties
-		//ConcurrentHashMap<String, Boolean> paramListMap = new ConcurrentHashMap<>();
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		
-		//ConcurrentHashMap<String, Boolean> tagListMap = new ConcurrentHashMap<>();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
 		
-		//ConcurrentHashMap<String, Boolean> molListMap = new ConcurrentHashMap<>();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		
 		//build a new factory just for this output run...
@@ -799,7 +797,9 @@ public class MoleculeArchive {
 			//Generate all MARSImageMetaData record files...
 			forkJoinPool.submit(() -> imageMetaDataIndex.parallelStream().forEach(metaUID -> { 
 	        	try {
-					saveImageMetaDataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData"), getImageMetaData(metaUID), jfactory);
+	        		MARSImageMetaData metaData = getImageMetaData(metaUID);
+	        		newImageMetaDataTagIndex.put(metaUID, metaData.getTags());
+					saveImageMetaDataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetaData"), metaData, jfactory);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -857,7 +857,7 @@ public class MoleculeArchive {
 		//then we save the resulting indexes from the operation..
 		//this way virtual or in memory archive can both be saved no problem..
 		//In the case of saving virtual archives this method then re-indexes completely.
-		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex, newTagIndex, jfactory);
+		saveIndexes(virtualDirectory, moleculeIndex, imageMetaDataIndex, newMoleculeImageMetaDataUIDIndex, newImageMetaDataTagIndex, newTagIndex, jfactory);
 	}
 	
 	/**
