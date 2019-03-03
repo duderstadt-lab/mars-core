@@ -245,7 +245,7 @@ public class MoleculeArchiveProperties {
 		this.moleculeDataTableColumnSet.add(column);
 	}
 	
-	public void addAllColumns(ArrayList<String> columns) {
+	public void addAllColumns(Set<String> columns) {
 		this.moleculeDataTableColumnSet.addAll(columns);
 	}
 	

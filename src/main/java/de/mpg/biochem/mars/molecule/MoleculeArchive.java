@@ -160,7 +160,7 @@ public class MoleculeArchive {
 	private boolean inputSmileEncoding = true;
 	
 	//Need to determine the number of threads
-	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+	private final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
 	/**
 	 * Constructor for creating an empty MoleculeArchive. 
@@ -352,9 +352,25 @@ public class MoleculeArchive {
 			    if ("imageMetaDataIndex".equals(fieldname)) {
 			    	indexJParser.nextToken();
 			    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
-			    		String metaUID = indexJParser.getText();
-		    			virtualImageMetaDataSet.add(metaUID);
-		    			imageMetaDataIndex.add(metaUID);
+		    			String UID = "NULL";
+			    		while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
+			    			if("UID".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    				String metaUID = indexJParser.getText();
+				    			virtualImageMetaDataSet.add(metaUID);
+				    			imageMetaDataIndex.add(metaUID);
+			    			}
+			    			
+			    			if ("Tags".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
+			    		    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
+			    		            tags.add(indexJParser.getText());
+			    		        }
+			    		    	imageMetaDataTagIndex.put(UID, tags);
+			    			}
+			    		}
+			    		
 			        }
 			    	continue;
 			    }
@@ -587,7 +603,7 @@ public class MoleculeArchive {
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 		        	
-		        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+		        	archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
 		        })).get();        
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -626,7 +642,18 @@ public class MoleculeArchive {
 		jGenerator.writeFieldName("imageMetaDataIndex");
 		jGenerator.writeStartArray();
 		for (String metaUID : imageMetaDataIndex) {
-			jGenerator.writeString(metaUID);
+			jGenerator.writeStartObject();
+			jGenerator.writeStringField("UID", metaUID);
+			
+			if (imageMetaDataTagIndex.containsKey(metaUID)) {
+				jGenerator.writeArrayFieldStart("Tags");
+				for (String tag : tagIndex.get(metaUID)) {
+					jGenerator.writeString(tag);
+				}
+				jGenerator.writeEndArray();
+			}
+			
+			jGenerator.writeEndObject();
 		}
 		jGenerator.writeEndArray();
 		
@@ -788,7 +815,7 @@ public class MoleculeArchive {
 	        	newTagSet.addAll(molecule.getTags());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 	        	
-	        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+	        	archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
 	        	try {
 					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
 	        	} catch (IOException e) {
@@ -874,7 +901,7 @@ public class MoleculeArchive {
 			molecules.put(molecule.getUID(), molecule);
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
-		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+		archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
 	}
 	
 	/**
@@ -1125,6 +1152,16 @@ public class MoleculeArchive {
 	}
 	
 	/**
+	 * Tags for the molecule with the given UID.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the tag set for.
+	 * @return A set containing all tags for the given molecule.
+	 */
+	public LinkedHashSet<String> getTagSet(String UID) {
+		return tagIndex.get(UID);
+	}
+	
+	/**
 	 * Comma separated list of tags for the MARSImageMetaData record with the given UID.
 	 * 
 	 * @param UID The UID of the MARSImageMetaData record to retrieve the tag list for.
@@ -1149,6 +1186,16 @@ public class MoleculeArchive {
 		if (tags.size() > 0)
 			tagList = tagList.substring(0, tagList.length() - 2);
 		return tagList;
+	}
+	
+	/**
+	 * Tags for the MARSImageMetaData record with the given UID.
+	 * 
+	 * @param UID The UID of the MARSImageMetaData record to retrieve the tag list for.
+	 * @return The set of tags for the given MARSImageMetaData record.
+	 */
+	public LinkedHashSet<String> getImageMetaDataTagSet(String UID) {
+		return imageMetaDataTagIndex.get(UID);
 	}
 	
 	/**

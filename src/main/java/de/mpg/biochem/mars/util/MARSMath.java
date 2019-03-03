@@ -44,6 +44,10 @@ public class MARSMath {
 	//Primarily used for DataTable output
 	final static int DECIMAL_PLACE_PRECISION = 7;
 	
+	private static final BigInteger INIT64  = new BigInteger("cbf29ce484222325", 16);
+	private static final BigInteger PRIME64 = new BigInteger("100000001b3",      16);
+	private static final BigInteger MOD64   = new BigInteger("2").pow(64);
+	
 	public static double round(double input) {
 		return DoubleRounder.round(input, DECIMAL_PLACE_PRECISION);
 	}
@@ -106,10 +110,6 @@ public class MARSMath {
 		UUID uuid = bu.decode(uuid58);
 		return uuid;
 	}
-	
-	private static final BigInteger INIT64  = new BigInteger("cbf29ce484222325", 16);
-	private static final BigInteger PRIME64 = new BigInteger("100000001b3",      16);
-	private static final BigInteger MOD64   = new BigInteger("2").pow(64);
 	
 	public static String getFNV1aBase58(String str) {
 		Base58Codec codec = new Base58Codec();

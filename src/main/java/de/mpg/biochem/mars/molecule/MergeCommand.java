@@ -156,6 +156,8 @@ public class MergeCommand extends DynamicCommand {
 		
 			//No conflicts found so we start building and writing the merged file
 			//First we need to build the global MoleculeArchiveProperties
+			MoleculeArchiveProperties newArchiveProperties = new MoleculeArchiveProperties();
+			
 			int numMolecules = 0; 
 			int numImageMetaData = 0;
 			String globalComments = "";
@@ -164,10 +166,15 @@ public class MergeCommand extends DynamicCommand {
 				numMolecules += archiveProperties.getNumberOfMolecules();
 				numImageMetaData += archiveProperties.getNumImageMetaData();
 				globalComments += "Comments from Merged Archive " + archiveFileList[count].getName() + ":\n" + archiveProperties.getComments() + "\n";
+				
+				//update global indexes
+				newArchiveProperties.addAllTags(archiveProperties.getTagSet());
+				newArchiveProperties.addAllParameters(archiveProperties.getParameterSet());
+				newArchiveProperties.addAllColumns(archiveProperties.getColumnSet());
+				
 				count++;
 			}
-				
-			MoleculeArchiveProperties newArchiveProperties = new MoleculeArchiveProperties();
+
 			newArchiveProperties.setNumberOfMolecules(numMolecules);
 			newArchiveProperties.setNumImageMetaData(numImageMetaData);
 			newArchiveProperties.setComments(globalComments);
@@ -224,10 +231,10 @@ public class MergeCommand extends DynamicCommand {
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
 			logService.info("In total " + newArchiveProperties.getNumImageMetaData() + " Datasets were merged.");
 			logService.info("In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.");
-			logService.info(builder.endBlock(true));
+			logService.info(LogBuilder.endBlock(true));
 		} else {
 			logService.info("No .yama files in this directory.");
-			logService.info(builder.endBlock(false));
+			logService.info(LogBuilder.endBlock(false));
 		}
 	}
 	
