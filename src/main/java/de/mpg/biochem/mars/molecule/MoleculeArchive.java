@@ -603,7 +603,7 @@ public class MoleculeArchive {
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 		        	
-		        	archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
+		        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 		        })).get();        
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -815,7 +815,7 @@ public class MoleculeArchive {
 	        	newTagSet.addAll(molecule.getTags());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 	        	
-	        	archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
+	        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 	        	try {
 					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
 	        	} catch (IOException e) {
@@ -901,7 +901,7 @@ public class MoleculeArchive {
 			molecules.put(molecule.getUID(), molecule);
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
-		archiveProperties.addAllColumns((Set<String>)molecule.getDataTable().getColumnHeadingList());
+		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 	}
 	
 	/**
