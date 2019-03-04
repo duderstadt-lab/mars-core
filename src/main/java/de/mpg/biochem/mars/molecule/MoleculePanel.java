@@ -1,5 +1,5 @@
 /*******************************************************************************
-f * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -160,6 +160,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 					return archive.getUIDAtIndex(rowIndex);
 				} else if (columnIndex == 2) {
 					return archive.getTagList(archive.getUIDAtIndex(rowIndex));
+				} else if (columnIndex == 3) {
+					return archive.getImageMetaDataUIDforMolecule(archive.getUIDAtIndex(rowIndex));
 				}
 				return null;
 			}
@@ -168,12 +170,14 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			public String getColumnName(int columnIndex) {
 				if (columnIndex == 0) {
 					return "Index";
-				} else if (columnIndex ==1) {
+				} else if (columnIndex == 1) {
 					return "UID";
 				} else if (columnIndex == 2) {
 					return "Tags";
-				}	
-				return null;
+				} else if (columnIndex == 3) {
+					return "metaUID";
+				}
+					return null;
 			}
 
 			@Override
@@ -183,7 +187,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			
 			@Override
 			public int getColumnCount() {
-				return 3;
+				return 4;
 			}
 			
 			@Override
@@ -854,6 +858,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		notes.setText(molecule.getNotes());
 		
+		int selectedTab = dataANDPlot.getSelectedIndex();
 		dataANDPlot.removeAll();
 		
 		if (multiPlot) {
@@ -877,6 +882,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 				dataANDPlot.addTab(YX[0] + " vs. " + YX[1], segmentTablePane);
 			}
 		}
+		
+		if (selectedTab < dataANDPlot.getTabCount())
+			dataANDPlot.setSelectedIndex(selectedTab);
 	}
 	
 	private void filterMoleculeIndex() {
@@ -897,7 +905,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	            }
         	}
         	
-            rf = RowFilter.regexFilter(searchString, 0, 1, 2);
+            rf = RowFilter.regexFilter(searchString, 0, 1, 2, 3);
         } catch (java.util.regex.PatternSyntaxException e) {
             return;
         }

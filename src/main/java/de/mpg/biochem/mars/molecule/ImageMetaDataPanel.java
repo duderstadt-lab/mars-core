@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -127,9 +127,9 @@ public class ImageMetaDataPanel extends JPanel {
 				if (columnIndex == 0) {
 					return "" + rowIndex;
 				} else if (columnIndex == 1) {
-					return archive.getImageMetaData(rowIndex).getUID();
+					return archive.getImageMetaDataUIDAtIndex(rowIndex);
 				}  else if (columnIndex == 2) {
-					return archive.getImageMetaDataTagList(archive.getImageMetaData(rowIndex).getUID());
+					return archive.getImageMetaDataTagList(archive.getImageMetaDataUIDAtIndex(rowIndex));
 				}	
 				return null;
 			}

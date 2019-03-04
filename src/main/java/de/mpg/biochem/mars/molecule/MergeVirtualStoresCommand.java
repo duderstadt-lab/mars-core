@@ -1,17 +1,17 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -25,6 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
+
+import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -98,10 +100,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		builder.addParameter("IO encoding is Smile", String.valueOf(smileEncoding));
 		log += builder.buildParameterList();
 		logService.info(log);
-		
-		File newVirtualDirectory = new File(directory.getAbsolutePath() + "/merged.yama.store");
-		newVirtualDirectory.mkdirs();
-		
+	
 		ArrayList<MoleculeArchive> archives = new ArrayList<MoleculeArchive>();
 		
 		FilenameFilter fileNameFilter = new FilenameFilter() {
@@ -114,8 +113,13 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
            }
         };
 
-        //Load all virtual archives...
+        //Get all virtual archive folders
 		File[] archiveDirectoryList = directory.listFiles(fileNameFilter);
+		
+		//Create merged archive folder.
+		File newVirtualDirectory = new File(directory.getAbsolutePath() + "/merged.yama.store");
+		newVirtualDirectory.mkdirs();
+		
 		if (archiveDirectoryList.length > 0) {
 			for (File virtualDirectory: archiveDirectoryList) {
 				MoleculeArchive archive;
@@ -212,12 +216,17 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					}
 					imageMetaDataIndex.add(metaUID);
 					virtualImageMetaDataSet.add(metaUID);
-					imageMetaDataTagIndex.put(metaUID, archive.getImageMetaDataTagSet(metaUID));
+					if (archive.getImageMetaDataTagSet(metaUID) != null)
+						imageMetaDataTagIndex.put(metaUID, archive.getImageMetaDataTagSet(metaUID));
 				}
 			}
 			
 			//Let's release the memory used up by the archives..
 			archives = null;
+			
+			//Before we write the new indexes file we should natural order sort the entries.
+			moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
+			imageMetaDataIndex = (ArrayList<String>)imageMetaDataIndex.stream().sorted().collect(toList());
 			
 			File indexFile = new File(newVirtualDirectory.getAbsolutePath() + "/indexes.json");
 			OutputStream stream;
@@ -325,10 +334,10 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		   }
 			
 			//Now we just need to update the MARSImageMetaData logs.
-			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store";
-			log += "In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.";
-			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.";
-			log += LogBuilder.endBlock(true);
+			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
+			log += "In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.\n";
+			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
+			log += LogBuilder.endBlock(true) + "\n";
 			try {
 				MoleculeArchive newArchive = new MoleculeArchive(newVirtualDirectory);
 				newArchive.addLogMessage(log);

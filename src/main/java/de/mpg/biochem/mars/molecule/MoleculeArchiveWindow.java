@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -286,11 +286,15 @@ public class MoleculeArchiveWindow {
 	        		    moleculePanel.saveCurrentRecord();
 		        	    imageMetaDataPanel.saveCurrentRecord();
 		        	    
+		        	    String fileName = archive.getName();
+		        	    if (fileName.endsWith(".store"))
+		        	    	fileName = fileName.substring(0, fileName.length() - 5);
+		        	    
 		        	    try {
 			 				if (archive.getFile() != null) {
-								saveAs(new File(archive.getFile(), archive.getName()));
+								saveAs(new File(archive.getFile(), fileName));
 			 				} else {
-			 					saveAs(new File(archive.getName()));
+			 					saveAs(new File(fileName));
 			 				}
 		        	    } catch (IOException e1) {
 							// TODO Auto-generated catch block
@@ -623,10 +627,10 @@ public class MoleculeArchiveWindow {
 		rebuildIndexesMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {
-		        	 moleculePanel.saveCurrentRecord();
-		        	 imageMetaDataPanel.saveCurrentRecord();
+		        	moleculePanel.saveCurrentRecord();
+		        	imageMetaDataPanel.saveCurrentRecord();
 		        	 
-		        	 try {
+		        	try {
 						archive.rebuildIndexes();
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
