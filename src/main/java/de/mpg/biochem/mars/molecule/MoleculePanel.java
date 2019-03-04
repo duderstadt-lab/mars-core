@@ -988,6 +988,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		updateParameterList();
 		updateTagList();
 		
+		moleculeRecordChanged = true;
+		
 		//Update Parameter list
 		ParameterTableModel.fireTableStructureChanged();
 		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
