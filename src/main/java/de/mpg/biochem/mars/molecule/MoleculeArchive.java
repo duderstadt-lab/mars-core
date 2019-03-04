@@ -670,57 +670,55 @@ public class MoleculeArchive {
 	}
 	
 	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetaDataIndex, ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> imageMetaDataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
-		if (virtual) {
-			File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
-			OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
-			
-			JsonGenerator jGenerator = jfactory.createGenerator(stream);
-			
+		File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
+		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
+		
+		JsonGenerator jGenerator = jfactory.createGenerator(stream);
+		
+		jGenerator.writeStartObject();
+
+		//Write imageMetaDataIndex
+		jGenerator.writeFieldName("imageMetaDataIndex");
+		jGenerator.writeStartArray();
+		for (String metaUID : imageMetaDataIndex) {
 			jGenerator.writeStartObject();
-	
-			//Write imageMetaDataIndex
-			jGenerator.writeFieldName("imageMetaDataIndex");
-			jGenerator.writeStartArray();
-			for (String metaUID : imageMetaDataIndex) {
-				jGenerator.writeStartObject();
-				jGenerator.writeStringField("UID", metaUID);
-				
-				if (imageMetaDataTagIndex.containsKey(metaUID)) {
-					jGenerator.writeArrayFieldStart("Tags");
-					for (String tag : imageMetaDataTagIndex.get(metaUID)) {
-						jGenerator.writeString(tag);
-					}
-					jGenerator.writeEndArray();
-				}
-				
-				jGenerator.writeEndObject();
-			}
-			jGenerator.writeEndArray();
+			jGenerator.writeStringField("UID", metaUID);
 			
-			//Write moleculeIndex
-			jGenerator.writeArrayFieldStart("moleculeIndex");
-			for (String UID : moleculeIndex) {
-				jGenerator.writeStartObject();
-				jGenerator.writeStringField("UID", UID);
-				jGenerator.writeStringField("ImageMetaDataUID", moleculeImageMetaDataUIDIndex.get(UID));
-				
-				if (tagIndex.containsKey(UID)) {
-					jGenerator.writeArrayFieldStart("Tags");
-					for (String tag : tagIndex.get(UID)) {
-						jGenerator.writeString(tag);
-					}
-					jGenerator.writeEndArray();
+			if (imageMetaDataTagIndex.containsKey(metaUID)) {
+				jGenerator.writeArrayFieldStart("Tags");
+				for (String tag : imageMetaDataTagIndex.get(metaUID)) {
+					jGenerator.writeString(tag);
 				}
-				
-				jGenerator.writeEndObject();
+				jGenerator.writeEndArray();
 			}
-			jGenerator.writeEndArray();
-	
-			jGenerator.close();
 			
-			stream.flush();
-			stream.close();
+			jGenerator.writeEndObject();
 		}
+		jGenerator.writeEndArray();
+		
+		//Write moleculeIndex
+		jGenerator.writeArrayFieldStart("moleculeIndex");
+		for (String UID : moleculeIndex) {
+			jGenerator.writeStartObject();
+			jGenerator.writeStringField("UID", UID);
+			jGenerator.writeStringField("ImageMetaDataUID", moleculeImageMetaDataUIDIndex.get(UID));
+			
+			if (tagIndex.containsKey(UID)) {
+				jGenerator.writeArrayFieldStart("Tags");
+				for (String tag : tagIndex.get(UID)) {
+					jGenerator.writeString(tag);
+				}
+				jGenerator.writeEndArray();
+			}
+			
+			jGenerator.writeEndObject();
+		}
+		jGenerator.writeEndArray();
+
+		jGenerator.close();
+		
+		stream.flush();
+		stream.close();
 	}
 	
 	/**

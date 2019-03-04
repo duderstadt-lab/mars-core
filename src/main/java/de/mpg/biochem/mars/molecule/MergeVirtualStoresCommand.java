@@ -246,7 +246,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					
 					if (imageMetaDataTagIndex.containsKey(metaUID)) {
 						jGenerator.writeArrayFieldStart("Tags");
-						for (String tag : tagIndex.get(metaUID)) {
+						for (String tag : imageMetaDataTagIndex.get(metaUID)) {
 							jGenerator.writeString(tag);
 						}
 						jGenerator.writeEndArray();
