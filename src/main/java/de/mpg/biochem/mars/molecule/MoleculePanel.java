@@ -975,6 +975,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	    }
 	    public void actionPerformed(ActionEvent e) {
 	        molecule.addTag(name);
+	        moleculeRecordChanged = true;
 	        updateTagList();
 			TagTableModel.fireTableDataChanged();
 	    }
