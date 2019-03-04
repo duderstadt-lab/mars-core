@@ -170,6 +170,8 @@ public class MoleculeArchiveWindow {
 		if (prefService.getMap(MoleculeArchiveWindow.class, "tagHotKeyList") != null) {
 			tagHotKeyList = (HashMap<String, String>)prefService.getMap(MoleculeArchiveWindow.class, "tagHotKeyList");
 		}
+		
+		moleculePanel.updateTagHotKeyList(tagHotKeyList);
 	}
 	
 	public void updateAll() {

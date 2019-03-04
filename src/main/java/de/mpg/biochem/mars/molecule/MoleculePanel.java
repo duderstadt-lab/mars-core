@@ -939,9 +939,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 
 	public void updateTagHotKeyList(HashMap<String, String> newHotKeys) {
-		for (String key : tagHotKeyList.keySet()) {
-			removeTagHotKey(key);
-		}
+		getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).clear();
+		getActionMap().clear();
+		
 		this.tagHotKeyList = newHotKeys;
 		for (String key : tagHotKeyList.keySet()) {
 			addTagHotKey(key, tagHotKeyList.get(key));
@@ -954,10 +954,10 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		getActionMap().put(keyStrokeAndKey, new addTag(tag));
 	}
 	
-	private void removeTagHotKey(String keyStrokeAndKey) {
-		KeyStroke remove = KeyStroke.getKeyStroke(keyStrokeAndKey);
-		getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(remove, "none");
-	}
+	//private void removeTagHotKey(String keyStrokeAndKey) {
+	//	KeyStroke remove = KeyStroke.getKeyStroke(keyStrokeAndKey);
+	//	getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(remove);
+	//}
 	
 	class addTag extends AbstractAction {
 	    /**
