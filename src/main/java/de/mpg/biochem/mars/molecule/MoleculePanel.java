@@ -514,8 +514,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		ParameterTable.getColumnModel().getColumn(0).setMinWidth(125);
 		ParameterTable.getColumnModel().getColumn(1).setCellRenderer( new DecimalFormatRenderer() );
 		
-		//ParameterTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		
 		JScrollPane ParameterScrollPane = new JScrollPane(ParameterTable);
 		
 		Dimension dim2 = new Dimension(225, 10000);
@@ -845,16 +843,13 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			DataTable.getColumnModel().getColumn(i).sizeWidthToFit();
 		
 		//Update Parameter list
-		//ParameterTableModel.fireTableStructureChanged();
 		ParameterTableModel.fireTableDataChanged();
-		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
-			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		ParameterTable.getColumnModel().getColumn(0).setMinWidth(125);
+		ParameterTable.getColumnModel().getColumn(1).setCellRenderer( new DecimalFormatRenderer() );
 		
 		//Update TagList
-		//TagTableModel.fireTableStructureChanged();
 		TagTableModel.fireTableDataChanged();
-		for (int i = 0; i < TagTable.getColumnCount(); i++)
-			TagTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		TagTable.getColumnModel().getColumn(0).sizeWidthToFit();
 		
 		notes.setText(molecule.getNotes());
 		
@@ -1001,37 +996,28 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		//Update Parameter list
 		ParameterTableModel.fireTableStructureChanged();
-		for (int i = 0; i < ParameterTable.getColumnCount(); i++)
-			ParameterTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		ParameterTable.getColumnModel().getColumn(0).setMinWidth(125);
+		ParameterTable.getColumnModel().getColumn(1).setCellRenderer( new DecimalFormatRenderer() );
 		
 		//Update TagList
 		TagTableModel.fireTableStructureChanged();
-		for (int i = 0; i < TagTable.getColumnCount(); i++)
-			TagTable.getColumnModel().getColumn(i).sizeWidthToFit();
+		TagTable.getColumnModel().getColumn(0).sizeWidthToFit();
 	}
 	
 	static class DecimalFormatRenderer extends DefaultTableCellRenderer {
-	      /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		private static final DecimalFormat formatterSci = new DecimalFormat( "0.###E0" );
+		  private static final long serialVersionUID = 1L;
+		  private static final DecimalFormat formatterSci = new DecimalFormat( "0.###E0" );
 	      private static final DecimalFormat formatterNum = new DecimalFormat( "####.###" );
 	      
-	      public Component getTableCellRendererComponent(
-	         JTable table, Object value, boolean isSelected,
-	         boolean hasFocus, int row, int column) {
+	      public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 	 
-	         // First format the cell value as required
 	    	  if ((double)value > 1000 || (double)value < -1000 || (double)value < 0.001 && !((double)value < -0.001)) {
 	    		  value = formatterSci.format((Number)value);
 	    	  } else {
 	    		  value = formatterNum.format((Number)value);
 	    	  }
-	            // And pass it on to parent class
-	 
-	         return super.getTableCellRendererComponent(
-	            table, value, isSelected, hasFocus, row, column );
+	
+	         return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column );
 	      }
-	   }
+	}
 }
