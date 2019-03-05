@@ -144,7 +144,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	public String[] getColumnHeadings() {
 		String[] columns = new String[getColumnCount()];
 		for (int i=0;i<columns.length;i++) {
-			columns[i] = get(i).getHeader();
+			columns[i] = getColumnHeader(i);
 		}
 		return columns;
 	}
@@ -433,7 +433,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
         	    				add(new GenericColumn(headings[i]));
         	    				stringColumn[i] = true;
         	    			} else {
-        	    				add(new DoubleColumn(headings[i]));
+            	    			add(new DoubleColumn(headings[i]));
         	    				stringColumn[i] = false;
         	    			}
         	    		}

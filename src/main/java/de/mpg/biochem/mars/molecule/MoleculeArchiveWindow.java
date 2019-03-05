@@ -282,6 +282,7 @@ public class MoleculeArchiveWindow {
 	        	 }
 	          }
 	       });
+		
 		saveAsMenuItem.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	        	 if (!lockArchive) {

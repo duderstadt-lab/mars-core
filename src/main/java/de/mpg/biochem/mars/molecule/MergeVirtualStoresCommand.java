@@ -333,8 +333,15 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		      forkJoinPool.shutdown();
 		   }
 			
+			String storeList = "";
+			for (int i=0; i<archiveDirectoryList.length; i++) 
+				storeList += archiveDirectoryList[i].getName() + ", ";
+			if (archiveDirectoryList.length > 0)
+				storeList = storeList.substring(0, storeList.length() - 2);
+			
 			//Now we just need to update the MARSImageMetaData logs.
 			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
+			log += "Including: " + storeList + "\n";
 			log += "In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
@@ -347,6 +354,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			logService.info("Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store");
+			log += "Including: " + storeList + "\n";
 			logService.info("In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));

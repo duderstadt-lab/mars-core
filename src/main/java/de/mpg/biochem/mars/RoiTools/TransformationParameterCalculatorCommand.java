@@ -178,16 +178,15 @@ public class TransformationParameterCalculatorCommand extends DynamicCommand imp
 		alignment_parameters_table = new MARSResultsTable(10, 1);
 		alignment_parameters_table.setName("Coordinate Alignment Parameters");
 		alignment_parameters_table.setColumnHeader(0, "x_translation");
-		
-		alignment_parameters_table.setColumnHeader(0, "x_translation_error");
-		alignment_parameters_table.setColumnHeader(0, "y_translation");
-		alignment_parameters_table.setColumnHeader(0, "y_translation_error");
-		alignment_parameters_table.setColumnHeader(0, "x_scaling");
-		alignment_parameters_table.setColumnHeader(0, "x_scaling_error");
-		alignment_parameters_table.setColumnHeader(0, "y_scaling");
-		alignment_parameters_table.setColumnHeader(0, "y_scaling_error");
-		alignment_parameters_table.setColumnHeader(0, "rotation_angle");
-		alignment_parameters_table.setColumnHeader(0, "rotation_angle_error");
+		alignment_parameters_table.setColumnHeader(1, "x_translation_error");
+		alignment_parameters_table.setColumnHeader(2, "y_translation");
+		alignment_parameters_table.setColumnHeader(3, "y_translation_error");
+		alignment_parameters_table.setColumnHeader(4, "x_scaling");
+		alignment_parameters_table.setColumnHeader(5, "x_scaling_error");
+		alignment_parameters_table.setColumnHeader(6, "y_scaling");
+		alignment_parameters_table.setColumnHeader(7, "y_scaling_error");
+		alignment_parameters_table.setColumnHeader(8, "rotation_angle");
+		alignment_parameters_table.setColumnHeader(9, "rotation_angle_error");
 		
 		alignment_parameters_table.setValue("x_translation", 0, p[0]);
 		alignment_parameters_table.setValue("x_translation_error", 0, e[0]);
@@ -200,7 +199,7 @@ public class TransformationParameterCalculatorCommand extends DynamicCommand imp
 		alignment_parameters_table.setValue("rotation_angle", 0, p[4]);
 		alignment_parameters_table.setValue("rotation_angle_error", 0, e[4]);
 		
-		logService.info(builder.endBlock(true));
+		logService.info(LogBuilder.endBlock(true));
 		logService.info(" ");
 	}
 	

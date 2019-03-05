@@ -138,22 +138,6 @@ public class MergeCommand extends DynamicCommand {
 				}
 			}
 			
-			//Check for duplicate ImageMetaData items
-			for (ArrayList<MARSImageMetaData> archiveMetaList : allMetaDataItems) {
-				for (MARSImageMetaData metaItem : archiveMetaList) {
-					String metaUID = metaItem.getUID();
-					if (metaUIDs.contains(metaUID)) {
-						logService.info("Duplicate ImageMetaData record " + metaUID + " found.");
-						logService.info("Are you trying to merge copies of the same dataset?");
-						logService.info("Please resolve the conflict and run the merge command again.");
-						logService.info(builder.endBlock(false));
-						return;
-					} else {
-						metaUIDs.add(metaUID);
-					}
-				}
-			}
-		
 			//No conflicts found so we start building and writing the merged file
 			//First we need to build the global MoleculeArchiveProperties
 			MoleculeArchiveProperties newArchiveProperties = new MoleculeArchiveProperties();
@@ -178,6 +162,35 @@ public class MergeCommand extends DynamicCommand {
 			newArchiveProperties.setNumberOfMolecules(numMolecules);
 			newArchiveProperties.setNumImageMetaData(numImageMetaData);
 			newArchiveProperties.setComments(globalComments);
+			
+			String archiveList = "";
+			for (int i=0; i<archiveFileList.length; i++) 
+				archiveList += archiveFileList[i].getName() + ", ";
+			if (archiveFileList.length > 0)
+				archiveList = archiveList.substring(0, archiveList.length() - 2);
+			
+			log += "Merged " + archiveFileList.length + " yama files into the output archive merged.yama\n";
+			log += "Including: " + archiveList + "\n";
+			log += "In total " + newArchiveProperties.getNumImageMetaData() + " Datasets were merged.\n";
+			log += "In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.\n";
+			log += LogBuilder.endBlock(true);
+			
+			//Check for duplicate ImageMetaData items
+			for (ArrayList<MARSImageMetaData> archiveMetaList : allMetaDataItems) {
+				for (MARSImageMetaData metaItem : archiveMetaList) {
+					String metaUID = metaItem.getUID();
+					if (metaUIDs.contains(metaUID)) {
+						logService.info("Duplicate ImageMetaData record " + metaUID + " found.");
+						logService.info("Are you trying to merge copies of the same dataset?");
+						logService.info("Please resolve the conflict and run the merge command again.");
+						logService.info(LogBuilder.endBlock(false));
+						return;
+					} else {
+						metaUIDs.add(metaUID);
+						metaItem.addLogMessage(log);
+					}
+				}
+			}
 			
 			//Now we just need to write the file starting with the new MoleculeArchiveProperties
 			File fileOUT = new File(directory.getAbsolutePath() + "/merged.yama");
@@ -227,8 +240,10 @@ public class MergeCommand extends DynamicCommand {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}			
+			}
+			
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
+			logService.info("Including: " + archiveList);
 			logService.info("In total " + newArchiveProperties.getNumImageMetaData() + " Datasets were merged.");
 			logService.info("In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));

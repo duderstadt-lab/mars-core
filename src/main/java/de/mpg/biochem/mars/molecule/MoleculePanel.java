@@ -84,6 +84,7 @@ import de.mpg.biochem.mars.plot.PlotProperties;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 
 public class MoleculePanel extends JPanel implements BoundsChangedListener, MoleculeChangedListener {
+
 	private JTextField UIDLabel, ImageMetaDataUIDLabel;
 	
 	private JTabbedPane dataANDPlot;
@@ -322,7 +323,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			@Override
 			public boolean isCellEditable(int rowIndex, int columnIndex)  {
 				return false;
-				//return columnIndex > 0;
 			}
 		};
 		
@@ -619,10 +619,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		tagPanelGBC.gridx = 0;
 		tagPanelGBC.gridy = 0;
 		
-		//JLabel tagsName = new JLabel("Tags");
-		//tagsName.setFont(new Font("Menlo", Font.BOLD, 12));
-		//tagPanel.add(tagsName, tagPanelGBC);
-		
 		TagTable = new JTable(TagTableModel);
 		TagTable.setAutoCreateColumnsFromModel(true);
 		TagTable.setRowSelectionAllowed(true);
@@ -729,7 +725,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			@Override
 			public boolean isCellEditable(int rowIndex, int columnIndex)  {
 				return false;
-				//return columnIndex > 0;
 			}
 		};
 			
@@ -806,7 +801,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			//working in virtual storage
 			//This ensures if a command changed the values
 			//The new values are loaded 
-			//this prevents overwritting when switching records
+			//this prevents overwriting when switching records
 			//in the window..
 			molecule = archive.get(molecule.getUID());
 			notes.setEditable(true);
@@ -954,15 +949,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		getActionMap().put(keyStrokeAndKey, new addTag(tag));
 	}
 	
-	//private void removeTagHotKey(String keyStrokeAndKey) {
-	//	KeyStroke remove = KeyStroke.getKeyStroke(keyStrokeAndKey);
-	//	getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(remove);
-	//}
-	
 	class addTag extends AbstractAction {
-	    /**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 		String name;
 		public addTag(String name) {
