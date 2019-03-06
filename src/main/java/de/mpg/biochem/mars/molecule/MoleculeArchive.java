@@ -1303,14 +1303,12 @@ public class MoleculeArchive {
 	public boolean moleculeHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (tagIndex.get(UID).contains(tag)) {
+				if (tagIndex.containsKey(UID) && tagIndex.get(UID).contains(tag))
 					return true;
-				} else {
+				else
 					return false;
-				}
-			} else {
+			} else
 				return get(UID).hasTag(tag);
-			}
 		}
 		return false;
 	}
@@ -1327,14 +1325,12 @@ public class MoleculeArchive {
 	public boolean imageMetaDataHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (imageMetaDataTagIndex.get(UID).contains(tag)) {
+				if (imageMetaDataTagIndex.containsKey(UID) && imageMetaDataTagIndex.get(UID).contains(tag))
 					return true;
-				} else {
+				else
 					return false;
-				}
-			} else {
+			} else
 				return getImageMetaData(UID).hasTag(tag);
-			}
 		}
 		return false;
 	}
