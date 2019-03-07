@@ -443,7 +443,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
         	    appendRow();
         	    for (int i=firstColumn; i<headings.length;i++) {
         	    	if (stringColumn[i]) {
-		    		    setStringValue(i - firstColumn, row, items[i].trim());
+		    		    setValue(i - firstColumn, row, items[i].trim());
         	    	} else {
         	    		double value = Double.NaN;
 		    			try {
@@ -500,7 +500,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		setValue(getColumnHeader(col), row, value);
 	}
 	
-	public void setStringValue(int col, int row, String value) {
+	public void setValue(int col, int row, String value) {
 		((GenericColumn)get(getColumnHeader(col))).set(row, value);
 	}
 	

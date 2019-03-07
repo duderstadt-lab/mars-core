@@ -29,10 +29,7 @@ package de.mpg.biochem.mars.util;
 import java.math.BigInteger;
 import java.util.UUID;
 
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.solvers.AllowedSolution;
-import org.apache.commons.math3.analysis.solvers.BracketingNthOrderBrentSolver;
-import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.decimal4j.util.DoubleRounder;
 
 import com.chrylis.codec.base58.Base58Codec;
@@ -139,5 +136,19 @@ public class MARSMath {
 		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, temperature);
 		double[] output = calculator.calculate(msd);
 		return output;
+	}
+	
+	//Returns true if the value should be rejected and false it if should be kept.
+	//Based on Error Analysis by Taylor
+	public static boolean chauvenetRejectionCriterion(double mean, double std, int N, double value) {
+		NormalDistribution norm = new NormalDistribution();
+		
+		double normValue = (value - mean)/std;
+		double prob = 2*norm.cumulativeProbability(-Math.abs(normValue));
+		
+		if (N*prob < 0.5)
+			return true;
+		else 
+			return false;
 	}
 }
