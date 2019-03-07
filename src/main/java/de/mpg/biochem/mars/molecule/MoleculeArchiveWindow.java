@@ -207,6 +207,7 @@ public class MoleculeArchiveWindow {
 	        	else {
 	        		moleculePanel.saveCurrentRecord();
 	        		imageMetaDataPanel.saveCurrentRecord();
+	        		archive.updateProperties();
 	        		updateAll();
 	        	}
 	        }
