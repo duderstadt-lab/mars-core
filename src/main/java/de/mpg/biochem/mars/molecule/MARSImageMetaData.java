@@ -137,6 +137,9 @@ public class MARSImageMetaData {
     }
 	
 	public MARSImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
+		Parameters = new LinkedHashMap<>();
+		Tags = new LinkedHashSet<String>();
+		
 		this.Microscope = Microscope;
 		if (img.getOriginalFileInfo() != null) {
 			this.SourceDirectory = img.getOriginalFileInfo().directory;
