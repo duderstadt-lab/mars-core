@@ -57,6 +57,8 @@ import ij.gui.Roi;
 import ij.io.DirectoryChooser;
 import ij.process.ImageProcessor;
 
+import ij.IJ;
+
 public class ROITilesWindow implements MouseListener, MouseMotionListener, ActionListener {
 	private String input_path;
 	
@@ -174,6 +176,8 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 		for (int e=0 ; e < 8 ; e++)
 			tiled_images.getCanvas().zoomIn(horizontal_tiles*tile_width/2, vertical_tiles*tile_height/2);
 		
+		IJ.run(tiled_images, "Enhance Contrast", "saturated=0.35");
+		
 	}
 	
 	private boolean load_names() {
@@ -259,6 +263,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 				draw_rois();
 			}
 			win.requestFocus();
+			IJ.run(tiled_images, "Enhance Contrast", "saturated=0.35");
 		}
 		else if (e.getSource() == nextButton) {
 			if (panel_offset + vertical_tiles*horizontal_tiles < filenames.length) {
@@ -267,6 +272,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 				draw_rois();
 			}
 			win.requestFocus();
+			IJ.run(tiled_images, "Enhance Contrast", "saturated=0.35");
 		}
 		else if (e.getSource() == Process) {
 			File reject_directory = new File(input_path + "/rejected");
@@ -295,6 +301,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 				file_label.setText("");
 			}
 			win.requestFocus();
+			IJ.run(tiled_images, "Enhance Contrast", "saturated=0.35");
 		} else if (e.getSource() == play) {
 			if (running) {
 				running = false;
@@ -306,6 +313,7 @@ public class ROITilesWindow implements MouseListener, MouseMotionListener, Actio
 				thread.start();
 			}
 			win.requestFocus();
+			IJ.run(tiled_images, "Enhance Contrast", "saturated=0.35");
 		}
 		/*else if (e.getSource() == input_button) {
 			DirectoryChooser dirChooser = new DirectoryChooser("Choose directory");
