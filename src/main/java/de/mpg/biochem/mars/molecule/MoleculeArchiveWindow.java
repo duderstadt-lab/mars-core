@@ -127,8 +127,6 @@ public class MoleculeArchiveWindow {
 	private JMenuItem deleteTagsMenuItem = new JMenuItem("Delete Tags");
 	private JMenuItem deleteParametersMenuItem = new JMenuItem("Delete Parameters");
 	
-	private JMenuItem addVideosMenuItem = new JMenuItem("Add Videos");
-	
 	private JMenuItem mergeMenuItem = new JMenuItem("Merge Molecules");
 	private JMenuItem updateMenuItem = new JMenuItem("Update Window");
 	private JMenuItem rebuildIndexesMenuItem = new JMenuItem("Rebuild Indexes");
@@ -616,25 +614,6 @@ public class MoleculeArchiveWindow {
 	        	 }
 	          }
 	       });
-		/*
-		toolsMenu.add(addVideosMenuItem);
-		addVideosMenuItem.addActionListener(new ActionListener() {
-	         public void actionPerformed(ActionEvent e) {
-	        	 if (!lockArchive) {
-	        		//Create a file chooser
-	        		final JFileChooser fc = new JFileChooser();
-	        		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
-	        		int returnVal = fc.showOpenDialog(frame);
-        		    if (returnVal == JFileChooser.APPROVE_OPTION) {
-        		    	File videoDirectory = fc.getSelectedFile();
-        		    	
-        		    	moleculePanel.addVideos(videoDirectory);
-        	         }
-	        	 }
-	         }
-	    });
-	    */
 		
 		toolsMenu.add(updateMenuItem);
 		updateMenuItem.addActionListener(new ActionListener() {

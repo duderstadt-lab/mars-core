@@ -52,7 +52,7 @@ public class OpenROIsCommand extends DynamicCommand implements Command {
 	@Parameter
 	private UIService uiService;
 	
-	@Parameter(label="Choose input directory", style = "both")
+	@Parameter(label="Choose input directory", style="directory")
 	private File directory;
 	
 	@Parameter(label="Vertical Tiles")

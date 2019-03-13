@@ -26,6 +26,8 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
+import de.mpg.biochem.mars.ImageProcessing.*;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -72,7 +74,7 @@ import org.scijava.table.*;
  * <p>
  * The MoleculeArchive is designed as an optimal storage structure for single-molecule 
  * time-series data. Time-series data for each molecule in a dataset is stored in the 
- * form of molecule records, which may also contain calculated parameters, tags, notes, and 
+ * form of {@link Molecule} records, which may also contain calculated parameters, tags, notes, and 
  * kinetic change point segments. These records are assigned UID string at the time of creation
  * and have UID string for corresponding ImageMetaData records. 
  * </p>
@@ -181,6 +183,9 @@ public class MoleculeArchive {
 	 * be activated if a directory is provided.
 	 * 
 	 * @param file The file or directory to load the archive from.
+	 * 
+	 * @throws JsonParseException if there is a problem parsing the file provided.
+	 * @throws IOException if there is a problem with the file location.
 	 */
 	public MoleculeArchive(File file) throws JsonParseException, IOException {
 		this.name = file.getName();
@@ -213,6 +218,9 @@ public class MoleculeArchive {
 	 * @param file The file or directory to load the archive from.
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
+	 * 
+	 * @throws JsonParseException if there is a parsing exception.
+	 * @throws IOException if there is a problem with the file provided.
 	 */
 	public MoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
 		this.name = name;
@@ -1047,7 +1055,7 @@ public class MoleculeArchive {
 	 * Retrieves the list of UIDs of all MARSImageMetaData records.
 	 * Useful for stream().forEach(...) operations.
 	 * 
-	 * @return An ArrayList<String> with all MARImageMetaData UIDs.
+	 * @return The list of all MARImageMetaData UIDs.
 	 */
 	public ArrayList<String> getImageMetaDataUIDs() {
 		return imageMetaDataIndex;
@@ -1150,7 +1158,7 @@ public class MoleculeArchive {
 	 * Retrieves the list of UIDs for all Molecule records. 
 	 * Useful for stream().forEach(...) operations.
 	 * 
-	 * @return An ArrayList<String> with all Molecule UIDs.
+	 * @return The list with all Molecule UIDs.
 	 */
 	public ArrayList<String> getMoleculeUIDs() {
 		return moleculeIndex;
@@ -1237,6 +1245,8 @@ public class MoleculeArchive {
 	 * @param molecule The molecule record to save.
 	 * @param jfactory the JsonFactory to use when saving. 
 	 * Determines if smile or text encoding is used.
+	 * 
+	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
 	public void saveMoleculeToFile(File directory, Molecule molecule, JsonFactory jfactory) throws IOException {
 		File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
@@ -1257,6 +1267,8 @@ public class MoleculeArchive {
 	 * @param imageMetaData The MARSImageMetaData record to save.
 	 * @param jfactory the JsonFactory to use when saving. 
 	 * Determines if smile or text encoding is used.
+	 * 
+	 * @throws IOException if the MARSImageMetaData can't be saved to the file given.
 	 */
 	public void saveImageMetaDataToFile(File directory, MARSImageMetaData imageMetaData, JsonFactory jfactory) throws IOException {
 		File imageMetaDataFile = new File(directory.getAbsolutePath() + "/" + imageMetaData.getUID() + ".json");
@@ -1602,8 +1614,6 @@ public class MoleculeArchive {
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
 	 * records or after recovery to ensure the molecule records preserve an order.
-	 * 
-	 * @return True if SMILE was the input encoding, false if not.
 	 */
 	public void naturalOrderSortMoleculeIndex() {
 		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
@@ -1632,7 +1642,7 @@ public class MoleculeArchive {
 	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
 	 * tags, and parameters. 
 	 * 
-	 * @param message The String message to add to all MARSImageMetaData logs.
+	 * @return The {@link MoleculeArchiveProperties} for this {@link MoleculeArchive}.
 	 */
 	public MoleculeArchiveProperties getProperties() {
 		return archiveProperties;
@@ -1651,8 +1661,6 @@ public class MoleculeArchive {
 	 * 
 	 * If a complete update is required then use the {@link #rebuildIndexes()} method 
 	 * or corresponding menu item in the MoleculeArchiveWindow.
-	 * 
-	 * @param message The String message to add to all MARSImageMetaData logs.
 	 */
 	public void updateProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());

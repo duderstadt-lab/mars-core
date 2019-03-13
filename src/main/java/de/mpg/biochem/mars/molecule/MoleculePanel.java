@@ -85,6 +85,7 @@ import de.mpg.biochem.mars.plot.PlotProperties;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import ij.ImagePlus;
 import ij.gui.ImageCanvas;
+import ij.gui.ImageLayout;
 
 public class MoleculePanel extends JPanel implements BoundsChangedListener, MoleculeChangedListener {
 
@@ -109,8 +110,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	//For videos.
 	private JPanel videoPanel;
-	
-	private File videoDirectory;
 	
 	private JTable ParameterTable;
 	private AbstractTableModel ParameterTableModel;
@@ -792,18 +791,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	 	dataANDPlot.setSelectedIndex(0);
 	}
 	
-	public void addVideos(File videoDirectory) {
-		this.videoDirectory = videoDirectory;
-		if (dataANDPlot.indexOfTab("Video") != -1) 
-			dataANDPlot.removeTabAt(dataANDPlot.indexOfTab("Video"));
-    	
-		videoPanel = new JPanel();
-		videoPanel.add(new ImageCanvas(new ImagePlus(videoDirectory + "/" + molecule.getUID() + "tif")));
-		
-	 	dataANDPlot.add(videoPanel, 0);
-	 	dataANDPlot.setSelectedIndex(0);
-	}
-	
 	public void saveCurrentRecord() {
 		archive.put(molecule);
 	}
@@ -870,15 +857,6 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		
 		int selectedTab = dataANDPlot.getSelectedIndex();
 		dataANDPlot.removeAll();
-		
-		/*
-		if (videoDirectory != null) {
-			videoPanel = new JPanel();
-			videoPanel.add(new ImageCanvas(new ImagePlus(videoDirectory + "/" + molecule.getUID() + "tif")));
-			
-		 	dataANDPlot.add("Video", videoPanel);
-		}
-		*/
 		
 		if (multiPlot) {
 			for (PlotPanel plotPane : multiPlots) {
