@@ -13,7 +13,7 @@ Documentation on how to use the commands and build groovy scripts with MARS can 
 
 Copyright and license information
 ===========================================
-Copyright (C) 2019, Duderstadt Lab
+Copyright (C) 2019, Karl Duderstadt
 All rights reserved.
  
 Redistribution and use in source and binary forms, with or without

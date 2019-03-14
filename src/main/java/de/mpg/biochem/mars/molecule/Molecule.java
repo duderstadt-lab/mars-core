@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -300,13 +300,13 @@ public class Molecule {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				    	//Then move past field Name - xColumnName...
+				    	//Then move past field Name - yColumnName...
 				    	jParser.nextToken();
 				    	
 				    	ArrayList<String> tableColumnNames = new ArrayList<String>();
 				    	tableColumnNames.add(jParser.getText());
 				    	
-				    	//Then move past the field and next field Name - yColumnName...
+				    	//Then move past the field and next field Name - xColumnName...
 				    	jParser.nextToken();
 				    	jParser.nextToken();
 				    	tableColumnNames.add(jParser.getText());

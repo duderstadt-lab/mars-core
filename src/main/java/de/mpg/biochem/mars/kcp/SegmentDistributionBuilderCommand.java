@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -146,11 +148,24 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	
     @Parameter(label="Distribution", type = ItemIO.OUTPUT)
     private MARSResultsTable results;
+    
+    private Map<String, ArrayList<String>> segmentTableNameToColumns;
 
 	@Override
 	public void initialize() {
 		final MutableModuleItem<String> SegmentTableNames = getInfo().getMutableInput("segmentsTableName", String.class);
-		SegmentTableNames.setChoices(moleculeArchiveService.getSegmentTableNames());
+		Set<ArrayList<String>> segTableNames = moleculeArchiveService.getSegmentTableNames();
+		segmentTableNameToColumns = new HashMap<>();
+		
+		ArrayList<String> names = new ArrayList<String>();
+		
+		for (ArrayList<String> tableName : segTableNames) {
+			String name = tableName.get(0) + " vs " + tableName.get(1);
+			names.add(name);
+			
+			segmentTableNameToColumns.put(name, tableName);
+		}
+		SegmentTableNames.setChoices(names);
 	}
 	
 	@Override
@@ -200,7 +215,9 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 			UIDs = archive.getMoleculeUIDs();
 		}
 		
-		SegmentDistributionBuilder distBuilder = new SegmentDistributionBuilder(archive, UIDs, segmentsTableName, start, end, bins, logService, statusService);
+		ArrayList<String> name = segmentTableNameToColumns.get(segmentsTableName);
+		
+		SegmentDistributionBuilder distBuilder = new SegmentDistributionBuilder(archive, UIDs, name.get(0), name.get(1), start, end, bins, logService, statusService);
 		
 		//Configure segment builder
 		if (filter) {

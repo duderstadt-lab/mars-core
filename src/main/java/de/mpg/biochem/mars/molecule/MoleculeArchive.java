@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -565,10 +565,11 @@ public class MoleculeArchive {
 	public void rebuildIndexes() throws IOException {
 		lock();
 		
-		//Global sets stores in MoleculeArchiveProperties
+		//Global sets stored in MoleculeArchiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
+		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
@@ -617,6 +618,7 @@ public class MoleculeArchive {
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
 		        })).get();    
 		        
 		        forkJoinPool.submit(() -> newImageMetaDataIndex.parallelStream().forEach(metaUID -> { 
@@ -642,6 +644,7 @@ public class MoleculeArchive {
 		   archiveProperties.setTagSet(newTagSet);
 		   archiveProperties.setParameterSet(newParameterSet);
 		   archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
+		   archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
 			
 		   updateProperties();
 		   saveIndexes();
@@ -655,6 +658,7 @@ public class MoleculeArchive {
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
 		        })).get();    
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -666,7 +670,8 @@ public class MoleculeArchive {
 			archiveProperties.setTagSet(newTagSet);
 			archiveProperties.setParameterSet(newParameterSet);
 			archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-				
+			archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);	
+			
 			updateProperties();
 		}
 		
@@ -821,10 +826,10 @@ public class MoleculeArchive {
 		
 		//Let's also rebuild the parameter index stored in the archiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
-		
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
-		
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
+		
+		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 		
 		//build a new factory just for this output run...
 		JsonFactory jfactory;
@@ -858,6 +863,8 @@ public class MoleculeArchive {
 	        	newTagSet.addAll(molecule.getTags());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 	        	
+	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
+	        	
 	        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 	        	try {
 					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
@@ -880,6 +887,7 @@ public class MoleculeArchive {
 		archiveProperties.setTagSet(newTagSet);
 		archiveProperties.setParameterSet(newParameterSet);
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
+		archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
 
 		//Save archive properties
 		File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");

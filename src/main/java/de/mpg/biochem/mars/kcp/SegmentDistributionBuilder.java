@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@ public class SegmentDistributionBuilder {
 	
 	private MoleculeArchive archive;
 	private ArrayList<String> UIDs;
-	private String SegmentsTableName;
+	private String yColumnName, xColumnName;
 	
     //Global variables
     //For the progress thread
@@ -91,10 +91,11 @@ public class SegmentDistributionBuilder {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	public SegmentDistributionBuilder(MoleculeArchive archive, ArrayList<String> UIDs, String SegmentsTableName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
+	public SegmentDistributionBuilder(MoleculeArchive archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
 		this.archive = archive;
 		this.UIDs = UIDs;
-		this.SegmentsTableName = SegmentsTableName;
+		this.yColumnName = yColumnName;
+		this.xColumnName = xColumnName;
 		
 		this.Dstart = Dstart;
 		this.Dend = Dend;
@@ -579,9 +580,9 @@ public class SegmentDistributionBuilder {
 		
 		//Can't do this multithreaded at the moment since we are using an arraylist
 		UIDset.stream().forEach(UID -> {
-			if (archive.get(UID).getSegmentsTable(SegmentsTableName) != null) {
+			if (archive.get(UID).getSegmentsTable(yColumnName, xColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(SegmentsTableName);
+				MARSResultsTable segments = archive.get(UID).getSegmentsTable(yColumnName, xColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)))
@@ -600,9 +601,9 @@ public class SegmentDistributionBuilder {
 		
 		//Can't do this multithreaded at the moment since we are using an arraylist
 		UIDset.stream().forEach(UID -> {
-			if (archive.get(UID).getSegmentsTable(SegmentsTableName) != null) {
+			if (archive.get(UID).getSegmentsTable(yColumnName, xColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(SegmentsTableName);
+				MARSResultsTable segments = archive.get(UID).getSegmentsTable(yColumnName, xColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2", row)) || Double.isNaN(segments.getValue("x1", row)))

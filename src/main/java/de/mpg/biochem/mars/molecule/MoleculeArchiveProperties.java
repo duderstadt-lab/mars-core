@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.MARSMath;
 
 public class MoleculeArchiveProperties {
@@ -56,6 +57,8 @@ public class MoleculeArchiveProperties {
 	private Set<String> tagSet;
 	private Set<String> parameterSet;
 	private Set<String> moleculeDataTableColumnSet;
+	
+	private Set<ArrayList<String>> moleculeSegmentTableNames;
 	
 	public MoleculeArchiveProperties() {
 		initializeVariables();
@@ -75,6 +78,7 @@ public class MoleculeArchiveProperties {
 		tagSet = ConcurrentHashMap.newKeySet();
 		parameterSet = ConcurrentHashMap.newKeySet();
 		moleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
+		moleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 	}
 	
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
@@ -91,6 +95,24 @@ public class MoleculeArchiveProperties {
 			Iterator<String> iterator = moleculeDataTableColumnSet.iterator();
 			while(iterator.hasNext())
 				jGenerator.writeString(iterator.next());	
+			jGenerator.writeEndArray();
+		}
+		
+		//Write moleculeSegmentTableNames array if there are any segment tables.
+		if (moleculeSegmentTableNames.size() > 0) {
+			jGenerator.writeFieldName("moleculeSegmentTableNames");
+			jGenerator.writeStartArray();
+			Iterator<ArrayList<String>> iterator = moleculeSegmentTableNames.iterator();
+			while(iterator.hasNext()) {
+				jGenerator.writeStartObject();
+				
+				ArrayList<String> SegmentTableName = iterator.next();
+				
+				jGenerator.writeStringField("yColumnName", SegmentTableName.get(0));
+				jGenerator.writeStringField("xColumnName", SegmentTableName.get(1));
+				
+				jGenerator.writeEndObject();
+			}
 			jGenerator.writeEndArray();
 		}
 		
@@ -144,6 +166,26 @@ public class MoleculeArchiveProperties {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 		    		moleculeDataTableColumnSet.add(jParser.getText());
+		    	continue;
+		    }
+		    
+		    if("moleculeSegmentTableNames".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	ArrayList<String> segemntTableName = new ArrayList<String>();
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    	//Then move past field Name - yColumnName...
+				    	jParser.nextToken();
+				    	
+				    	segemntTableName.add(jParser.getText());
+				    	
+				    	//Then move past the field and next field Name - xColumnName...
+				    	jParser.nextToken();
+				    	jParser.nextToken();
+				    	segemntTableName.add(jParser.getText());
+			    	}
+			    	moleculeSegmentTableNames.add(segemntTableName);
+		    	}
 		    	continue;
 		    }
 		    
@@ -259,6 +301,14 @@ public class MoleculeArchiveProperties {
 	
 	public Set<String> getColumnSet() {
 		return moleculeDataTableColumnSet;
+	}
+	
+	public void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames) {
+		this.moleculeSegmentTableNames = moleculeSegmentTableNames;
+	}
+	
+	public Set<ArrayList<String>> getSegmnetTableNames() {
+		return moleculeSegmentTableNames;
 	}
 	
 	public String getComments() {

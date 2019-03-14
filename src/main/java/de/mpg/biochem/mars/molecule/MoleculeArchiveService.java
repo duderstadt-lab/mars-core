@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
+ * Copyright (C) 2019, Karl Duderstadt
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,9 @@ package de.mpg.biochem.mars.molecule;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import io.scif.services.FormatService;
 
@@ -144,31 +146,23 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public ArrayList<String> getColumnNames() {
-		ArrayList<String> columns = new ArrayList<String>();
-	
+		Set<String> columnSet = new LinkedHashSet<String>();
 		for (MoleculeArchive archive: archives.values()) {
-			//We assume all the molecules have the same columns
-			//I think this should be strictly enforced
-			MARSResultsTable datatable = archive.get(0).getDataTable();
-			
-			for (int i=0;i<datatable.getColumnCount();i++) {
-				if(!columns.contains(datatable.getColumnHeader(i)))
-					columns.add(datatable.getColumnHeader(i));
-			}
+			columnSet.addAll(archive.getProperties().getColumnSet());
 		}
+		
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(columnSet);
 		
 		return columns;
 	}
 	
-	public ArrayList<String> getSegmentTableNames() {
-		ArrayList<String> segTableNames = new ArrayList<String>();
+	public Set<ArrayList<String>> getSegmentTableNames() {
+		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 	
 		for (MoleculeArchive archive: archives.values()) {
-			//We assume all the molecules have the same segment tables
-			//I think this should be strictly enforced
-			for (String segTableName : archive.get(0).getSegmentTableNames()) {
-				if(!segTableNames.contains(segTableName))
-					segTableNames.add(segTableName);
+			for (ArrayList<String> segTableName : archive.getProperties().getSegmnetTableNames()) {
+				segTableNames.add(segTableName);
 			}
 		}
 		
