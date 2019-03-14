@@ -569,20 +569,22 @@ public class Molecule {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(yColumnName);
 		tableColumnNames.add(xColumnName);
+		
+		//Let's also make sure the MARSResultsTable contains
+		//the y and x column names...
+		//Should always be set but just in case....
+		segs.setYXColumnNames(yColumnName, xColumnName);
 		segmentTables.put(tableColumnNames, segs);
 	}
 	
 	/**
-	 * Add or update a Segments table ({@link MARSResultsTable}) generated 
-	 * with
-	 * columnNames[0] = yColumnName
-	 * columnNames[1] = xColumnName
+	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
+	 * using yColumnName and xColumnName.
 	 * 
-	 * @param columnNames The names of the columns used for KCP analysis.
-	 * @param segs The {@link MARSResultsTable} to add that contains the 
-	 * segments.
-	 */
-	
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @param xColumnName The name of the x column used for analysis.
+	 * @return The MARSResultsTable generated using the columns specified.
+	 */	
 	public MARSResultsTable getSegmentsTable(String yColumnName, String xColumnName) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(yColumnName);
@@ -590,6 +592,27 @@ public class Molecule {
 		return segmentTables.get(tableColumnNames);
 	}
 	
+	/**
+	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
+	 * using yColumnName and xColumnName provided in index positions 0
+	 * and 1 of an ArrayList, respectively.
+	 * 
+	 * @param tableColumnNames The yColumnName and xColumnName used when
+	 * generating the table, provided in index positions 0 and 1 of an 
+	 * ArrayList, respectively.
+	 * @return The MARSResultsTable generated using the columns specified.
+	 */	
+	public MARSResultsTable getSegmentsTable(ArrayList<String> tableColumnNames) {
+		return segmentTables.get(tableColumnNames);
+	}
+	
+	/**
+	 * Remove the Segments table ({@link MARSResultsTable}) generated 
+	 * using yColumnName and xColumnName.
+	 * 
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @param xColumnName The name of the x column used for analysis.
+	 */
 	public void removeSegmentsTable(String yColumnName, String xColumnName) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(yColumnName);
@@ -597,6 +620,13 @@ public class Molecule {
 		segmentTables.remove(tableColumnNames);
 	}
 	
+	/**
+	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
+	 * using yColumnName and xColumnName.
+	 * 
+	 * @return The Set of ArrayLists holding the y and x column names at
+	 * index positions 0 and 1, respectively.
+	 */
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		return segmentTables.keySet();
 	}

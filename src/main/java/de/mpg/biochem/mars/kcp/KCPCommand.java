@@ -241,7 +241,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 			ArrayList<Segment> segs = new ArrayList<Segment>();
 			Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 			segs.add(segment);
-			molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(segs));
+			molecule.putSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(segs));
 			numFinished.incrementAndGet();
 			return;
 		}
@@ -259,7 +259,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
 		KCP change = new KCP(sigma, confidenceLevel, xRegion, yRegion, step_analysis);
 		try {
-			molecule.setSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(change.generate_segments()));
+			molecule.putSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(change.generate_segments()));
 		} catch (ArrayIndexOutOfBoundsException e) {
 			logService.error("Out of Bounds Exception");
 			logService.error("UID " + molecule.getUID() + " gave an error ");
