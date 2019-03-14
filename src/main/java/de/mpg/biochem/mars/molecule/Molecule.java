@@ -593,25 +593,25 @@ public class Molecule {
 	 * @param segs The {@link MARSResultsTable} to add that contains the 
 	 * segments.
 	 */
-	public void setSegmentsTable(String[] columnNames, MARSResultsTable segs) {
-		String str = columnNames[0] + " vs " + columnNames[1];
-		segmentsColumns.put(str, columnNames);
-		segments.put(str, segs);
-	}
+	//public void setSegmentsTable(String[] columnNames, MARSResultsTable segs) {
+	//	String str = columnNames[0] + " vs " + columnNames[1];
+	//	segmentsColumns.put(str, columnNames);
+	//	segments.put(str, segs);
+	//}
 	
-	public String[] getSegmentTableColumns(String key) {
-		if (segmentsColumns.containsKey(key))
-			return segmentsColumns.get(key);
-		else
-			return null;
-	}
+	//public String[] getSegmentTableColumns(String key) {
+	//	if (segmentsColumns.containsKey(key))
+	//		return segmentsColumns.get(key);
+	//	else
+	//		return null;
+	//}
 	
-	public MARSResultsTable getSegmentsTable(String key) {
-		if (segments.containsKey(key))
-			return segments.get(key);
-		else 
-			return null;
-	}
+	//public MARSResultsTable getSegmentsTable(String key) {
+	//	if (segments.containsKey(key))
+	//		return segments.get(key);
+	//	else 
+	//		return null;
+	//}
 	
 	public MARSResultsTable getSegmentsTable(String yColumnName, String xColumnName) {
 		String[] columnNames = new String[2];
@@ -627,21 +627,21 @@ public class Molecule {
 		removeSegmentsTable(columnNames);
 	}
 	
-	public void removeSegmentsTable(String[] columnNames) {
-		String str = columnNames[0] + " " + columnNames[1];
-		segmentsColumns.remove(str);
-		segments.remove(str);
+	//public void removeSegmentsTable(String[] columnNames) {
+	//	String str = columnNames[0] + " " + columnNames[1];
+	//	segmentsColumns.remove(str);
+	//	segments.remove(str);
+	//}
+	
+	public ArrayList<String[]> getSegmentTableNames() {
+		return new ArrayList<String[]>(segments.keySet());
 	}
 	
-	public ArrayList<String> getSegmentTableNames() {
-		return new ArrayList<String>(segments.keySet());
-	}
 	
-	
-	public MARSResultsTable getSegmentsTable(String[] columnNames) {
-		String str = columnNames[0] + " vs " + columnNames[1];
-		return segments.get(str);
-	}
+	//public MARSResultsTable getSegmentsTable(String[] columnNames) {
+	//	String str = columnNames[0] + " vs " + columnNames[1];
+	//	return segments.get(str);
+	//}
 	
 	/**
 	 * Get the {@link MARSResultsTable} DataTable holding the primary data for
