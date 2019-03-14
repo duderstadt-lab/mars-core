@@ -86,6 +86,9 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	private String name = new String("MARSResultsTable");
 	
+	//Special column names for a segments table...
+	private String yColumnName, xColumnName;
+	
     @Parameter
     private StatusService statusService;
 	
@@ -98,6 +101,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	public MARSResultsTable(String name) {
 		super();
 		this.name = name;
+	}
+	
+	public MARSResultsTable(String yColumnName, String xColumnName) {
+		super();
+		this.yColumnName = yColumnName;
+		this.xColumnName = xColumnName;
+		this.name = yColumnName + " vs " + xColumnName;
 	}
 	
 	public MARSResultsTable(File file) throws JsonParseException, IOException {
@@ -776,6 +786,20 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
+	}
+	
+	public void setYXColumnNames(String yColumnName, String xColumnName) {
+		this.yColumnName = yColumnName;
+		this.xColumnName = xColumnName;
+		this.name = yColumnName + " vs " + xColumnName;
+	}
+	
+	public String getYColumnName() {
+		return this.yColumnName;
+	}
+	
+	public String getXColumnName() {
+		return this.xColumnName;
 	}
 	
 	public MARSResultsTable clone() {

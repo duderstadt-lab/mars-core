@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import java.util.Objects;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -68,7 +69,7 @@ import com.fasterxml.jackson.core.JsonToken;
  * Molecule records can be saved to JSON for storage when done processing. They are then either 
  * housed as an array within MoleculeArchive yama files or as individual json files within 
  * .yama.store directories if working with virtual storage. Currently molecule records can only be
- * opened and examined withini MoleculeArchives. There is no way to open them in the gui directly.
+ * opened and examined within MoleculeArchives. There is no way to open them in the gui directly.
  * </p>
  * @author Karl Duderstadt
  */
@@ -96,16 +97,10 @@ public class Molecule {
 	private MARSResultsTable datatable;
 	
 	//Segments tables resulting from change point fitting
-	//String is XColumn + " vs " + YColumn
-	private LinkedHashMap<String, MARSResultsTable> segments;
-	
-	//This is a bit ugly, but we want to keep track of
-	//both columns used for the changepoint plot
-	//However, if you use a String[] array as a key 
-	//it uses object ref and keys never match... so we just keep track here 
-	//and add them above. There are other ways but I think ultimately
-	//this will be the most robust...
-	private LinkedHashMap<String,String[]> segmentsColumns;
+	//ArrayList has two items:
+	//YColumn is at index 0
+	//XColumn is at index 1
+	private LinkedHashMap<ArrayList<String>, MARSResultsTable> segmentTables;
 	
 	/**
 	 * Constructor for loading a Molecule record from a file. Typically,
@@ -154,8 +149,7 @@ public class Molecule {
 	}
 	
 	private void initializeVariables() {
-		segments = new LinkedHashMap<>();
-		segmentsColumns = new LinkedHashMap<>();
+		segmentTables = new LinkedHashMap<>();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 	}
@@ -208,18 +202,17 @@ public class Molecule {
 		}
 		
 		//Write out segment tables generated from KCP as object that have two fields that store the x column and y column names used during KCP
-		if (segments.size() > 0) {
+		if (segmentTables.size() > 0) {
 			jGenerator.writeArrayFieldStart("SegmentTables");
-			for (String tableName:segments.keySet()) {
-				if (segments.get(tableName).size() > 0) {
+			for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
+				if (segmentTables.get(tableColumnNames).size() > 0) {
 					jGenerator.writeStartObject();
 					
-					String[] YX = segmentsColumns.get(tableName);
-					jGenerator.writeStringField("yColumnName", YX[0]);
-					jGenerator.writeStringField("xColumnName", YX[1]);
+					jGenerator.writeStringField("yColumnName", tableColumnNames.get(0));
+					jGenerator.writeStringField("xColumnName", tableColumnNames.get(1));
 					
 					jGenerator.writeFieldName("Table");
-					segments.get(tableName).toJSON(jGenerator);
+					segmentTables.get(tableColumnNames).toJSON(jGenerator);
 					
 					jGenerator.writeEndObject();
 				}
@@ -310,26 +303,22 @@ public class Molecule {
 				    	//Then move past field Name - xColumnName...
 				    	jParser.nextToken();
 				    	
-				    	//Should we create a special kind of table or just parse with a space?
-				    	String[] columnNames = new String[2];
-				    	columnNames[0] = jParser.getText();
+				    	ArrayList<String> tableColumnNames = new ArrayList<String>();
+				    	tableColumnNames.add(jParser.getText());
 				    	
 				    	//Then move past the field and next field Name - yColumnName...
 				    	jParser.nextToken();
 				    	jParser.nextToken();
-				    	columnNames[1] = jParser.getText();
+				    	tableColumnNames.add(jParser.getText());
 				    	
-				    	String tableKey = columnNames[0] + " vs " + columnNames[1];
-				    	
-				    	MARSResultsTable segmenttable = new MARSResultsTable(tableKey);
+				    	MARSResultsTable segmenttable = new MARSResultsTable(tableColumnNames.get(0), tableColumnNames.get(1));
 				    	
 				    	//Move past Table
 				    	jParser.nextToken();
 				    	
 				    	segmenttable.fromJSON(jParser);
 				    	
-				    	segmentsColumns.put(tableKey, columnNames);
-				    	segments.put(tableKey, segmenttable);
+				    	segmentTables.put(tableColumnNames, segmenttable);
 			    	}
 		    	}
 		    	continue;
@@ -576,11 +565,11 @@ public class Molecule {
 	 * @param segs The {@link MARSResultsTable} to add that contains the 
 	 * segments.
 	 */
-	public void setSegmentsTable(String yColumnName, String xColumnName, MARSResultsTable segs) {
-		String[] columnNames = new String[2];
-		columnNames[0] = yColumnName;
-		columnNames[1] = xColumnName;
-		setSegmentsTable(columnNames, segs);
+	public void putSegmentsTable(String yColumnName, String xColumnName, MARSResultsTable segs) {
+		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		tableColumnNames.add(yColumnName);
+		tableColumnNames.add(xColumnName);
+		segmentTables.put(tableColumnNames, segs);
 	}
 	
 	/**
@@ -593,56 +582,25 @@ public class Molecule {
 	 * @param segs The {@link MARSResultsTable} to add that contains the 
 	 * segments.
 	 */
-	//public void setSegmentsTable(String[] columnNames, MARSResultsTable segs) {
-	//	String str = columnNames[0] + " vs " + columnNames[1];
-	//	segmentsColumns.put(str, columnNames);
-	//	segments.put(str, segs);
-	//}
-	
-	//public String[] getSegmentTableColumns(String key) {
-	//	if (segmentsColumns.containsKey(key))
-	//		return segmentsColumns.get(key);
-	//	else
-	//		return null;
-	//}
-	
-	//public MARSResultsTable getSegmentsTable(String key) {
-	//	if (segments.containsKey(key))
-	//		return segments.get(key);
-	//	else 
-	//		return null;
-	//}
 	
 	public MARSResultsTable getSegmentsTable(String yColumnName, String xColumnName) {
-		String[] columnNames = new String[2];
-		columnNames[0] = yColumnName;
-		columnNames[1] = xColumnName;
-		return getSegmentsTable(columnNames);
+		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		tableColumnNames.add(yColumnName);
+		tableColumnNames.add(xColumnName);
+		return segmentTables.get(tableColumnNames);
 	}
 	
 	public void removeSegmentsTable(String yColumnName, String xColumnName) {
-		String[] columnNames = new String[2];
-		columnNames[0] = yColumnName;
-		columnNames[1] = xColumnName;
-		removeSegmentsTable(columnNames);
+		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		tableColumnNames.add(yColumnName);
+		tableColumnNames.add(xColumnName);
+		segmentTables.remove(tableColumnNames);
 	}
 	
-	//public void removeSegmentsTable(String[] columnNames) {
-	//	String str = columnNames[0] + " " + columnNames[1];
-	//	segmentsColumns.remove(str);
-	//	segments.remove(str);
-	//}
-	
-	public ArrayList<String[]> getSegmentTableNames() {
-		return new ArrayList<String[]>(segments.keySet());
+	public Set<ArrayList<String>> getSegmentTableNames() {
+		return segmentTables.keySet();
 	}
-	
-	
-	//public MARSResultsTable getSegmentsTable(String[] columnNames) {
-	//	String str = columnNames[0] + " vs " + columnNames[1];
-	//	return segments.get(str);
-	//}
-	
+
 	/**
 	 * Get the {@link MARSResultsTable} DataTable holding the primary data for
 	 * this molecule record.
