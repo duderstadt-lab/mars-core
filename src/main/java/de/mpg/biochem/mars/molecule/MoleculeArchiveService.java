@@ -45,9 +45,7 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
-import de.mpg.biochem.mars.table.MARSResultsTable;
 import net.imagej.ImageJService;
-import net.imagej.display.WindowService;
 
 @Plugin(type = Service.class)
 public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
@@ -144,7 +142,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			}
 		}
 	}
-	
+
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
 		for (MoleculeArchive archive: archives.values()) {
@@ -168,7 +166,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		
 		return segTableNames;
 	}
-	
 	
 	public ArrayList<String> getArchiveNames() {
 		return new ArrayList<String>(archives.keySet());

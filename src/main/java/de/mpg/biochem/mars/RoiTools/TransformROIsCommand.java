@@ -74,6 +74,7 @@ import ij.text.TextWindow;
 import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.realtransform.AffineTransform2D;
 import ij.plugin.PlugIn;
 
 @Plugin(type = Command.class, label = "Transform ROIs", menu = {
@@ -105,8 +106,28 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	@Parameter(label = "Image")
 	private ImagePlus image; 
 	
-	@Parameter(label = "Transformation Parameters")
-	private MARSResultsTable data_table;
+	//PEAK FITTER
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String affineTitle =
+			"Affine2D Transformation Matrix:";
+	
+	@Parameter(label="m00")
+	private double m00;
+	
+	@Parameter(label="m01")
+	private double m01;
+	
+	@Parameter(label="m02")
+	private double m02;
+	
+	@Parameter(label="m10")
+	private double m10;
+	
+	@Parameter(label="m11")
+	private double m11;
+	
+	@Parameter(label="m12")
+	private double m12;
 	
 	@Parameter(label = "Transformation Direction", choices = {"Long Wavelength to Short Wavelength", "Short Wavelength to Long Wavelength"})
 	private String transformationDirection = "Long Wavelength to Short Wavelength";
@@ -139,8 +160,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
     private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
     
     private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
-    
-	private Roi startingRoi;
 
 	@Override
 	public void run() {
@@ -185,10 +204,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 			}
 		}
 		
-		logService.info(builder.endBlock(true));
-		
-		//ImagePlus image = WindowManager.getCurrentImage();
-		//image.updateAndRepaintWindow();
+		logService.info(LogBuilder.endBlock(true));
 	}
 	
 	public ArrayList<Point> findPeaks(ImageProcessor ip) {
@@ -276,25 +292,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	}
 	
 	public void transformROIs() {
-		String[] columns = {
-				"x_translation",
-				"y_translation",
-				"x_scaling",
-				"y_scaling", 
-				"rotation_angle"
-		};	
-		
-		double[] trans = new double[columns.length];
-		
-		for (int i=0; i < columns.length;i++) {
-			if (data_table.get(columns[i]) == null) {
-				uiService.showDialog("The table provided does not have the correct format. It must have the columns: x_translation, y_translation, x_scaling, y_scaling, rotation_angle. The transformation parameters will be taken from the first row of each of these columns", "Wrong table format");
-				return;
-			} else {
-				trans[i] = data_table.getValue(columns[i],0);
-			}	
-		}
-		
 		OriginalROIs.clear();
 		TransformedROIs.clear();
 		
@@ -305,14 +302,19 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 		
 		int roiNum = roiManager.getCount();
 		
+		AffineTransform2D transform = new AffineTransform2D();
+		transform.set(m00, m01, m02, m10, m11, m12);
+		
 		for (int i=0; i<roiNum; i++) {
 			Roi roi = roiManager.getRoi(i);
 			//Using getFloatBounds should work well with either points or boxes.
 			//Here I remove the 0.5 offset, then transform and add it back below since the transformation matrix was calculated without the offset.
-			double x = roi.getFloatBounds().x - 0.5;
-			double y = roi.getFloatBounds().y - 0.5;
-	        
+			double[] source = new double[2];
+			source[0] = roi.getFloatBounds().x;
+			source[1] = roi.getFloatBounds().y;
 			
+			double[] target = new double[2];
+	        
 			//Here we generate a new UID... This is in preparation for the Molecule Integrator
 	        String baseRoiName = MARSMath.getUUID58();
 	        
@@ -332,8 +334,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	        OriginalROIs.add(oldRoi);
 	     
 	        Roi newRoi = (Roi)roi.clone();
-	        newRoi.setLocation(trans[2]*Math.cos(trans[4])*x - trans[3]*Math.sin(trans[4])*y + trans[0] + 0.5, 
-					trans[2]*Math.sin(trans[4])*x + trans[3]*Math.cos(trans[4])*y + trans[1] + 0.5);
+	        
+	        transform.apply(source, target);
+	        
+	        newRoi.setLocation(target[0], target[1]);
 	        newRoi.setName(baseRoiName + "_" + newPosition);
 	        TransformedROIs.add(newRoi);
 		}
@@ -378,7 +382,12 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Transformation Parameters", data_table.getName());
+		builder.addParameter("Affine2D m00", String.valueOf(m00));
+		builder.addParameter("Affine2D m01", String.valueOf(m01));
+		builder.addParameter("Affine2D m02", String.valueOf(m02));
+		builder.addParameter("Affine2D m10", String.valueOf(m10));
+		builder.addParameter("Affine2D m11", String.valueOf(m11));
+		builder.addParameter("Affine2D m12", String.valueOf(m12));
 		builder.addParameter("Transformation Direction", transformationDirection);
 		builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
 		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
@@ -402,14 +411,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	
 	public ImagePlus getImage() {
 		return image;
-	}
-	
-	public void setTransformationParameters(MARSResultsTable data_table) {
-		this.data_table = data_table;
-	}
-	
-	public MARSResultsTable getTransformationParameters() {
-		return data_table;
 	}
 	
 	public void setTransformationDirection(String transformationDirection) {
