@@ -953,6 +953,7 @@ public class MoleculeArchive {
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
 		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+		archiveProperties.addSegmentTableNames(molecule.getSegmentTableNames());
 	}
 	
 	/**

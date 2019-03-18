@@ -123,7 +123,7 @@ public class PlotPanel extends JPanel {
   		segmentColor = (String)SegmentColor.getSelectedItem();
   		curveColor = (String)yColor.getSelectedItem();
 		
-		caption = String.format("UID = %s", molecule.getUID());
+		caption = "";//String.format("UID = %s", molecule.getUID());
 		
   		type = typeComboBox.getSelectedIndex();
   		

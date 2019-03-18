@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
@@ -96,7 +97,9 @@ public class MoleculeArchiveWindow {
 	private JFrame frame;
 	
 	private JTabbedPane tabbedPane = new JTabbedPane();
-	private JPanel propertiesTab;
+	
+	private JTabbedPane propertiesTabs;
+	private JTextArea indexes;
 	
 	private ImageMetaDataPanel imageMetaDataPanel;
 	
@@ -135,6 +138,8 @@ public class MoleculeArchiveWindow {
 	static int pos_x = 100;
 	static int pos_y = 130;
 	static int offsetX = 0;
+	
+    static int charactersPerLine = 70;
 
 	public MoleculeArchiveWindow(MoleculeArchiveService moleculeArchiveService) {
 		this.moleculeArchiveService = moleculeArchiveService;
@@ -178,16 +183,16 @@ public class MoleculeArchiveWindow {
 	public void updateAll() {
 		//We just update everything when the tab is changed.
     	//We could just update the selected tab but it probably doesn't matter much.
-		propertiesTab = archiveProperties();
-		tabbedPane.setComponentAt(0, propertiesTab);
+		propertiesTabs = archiveProperties();
+		tabbedPane.setComponentAt(0, propertiesTabs);
         imageMetaDataPanel.updateAll();
         moleculePanel.updateAll();
         comments.setText(archive.getComments());
 	}
 	
 	private void createFrame(String title) {
-		propertiesTab = archiveProperties();
-		tabbedPane.addTab("Properties", propertiesTab);
+		propertiesTabs = archiveProperties();
+		tabbedPane.addTab("Properties", propertiesTabs);
 		
 		imageMetaDataPanel = new ImageMetaDataPanel(archive);
 		tabbedPane.addTab("ImageMetaData", imageMetaDataPanel);
@@ -679,7 +684,7 @@ public class MoleculeArchiveWindow {
 		frame.setVisible(true);	
 	}
 	
-	protected JPanel archiveProperties() {
+	protected JTabbedPane archiveProperties() {
 		JPanel panel = new JPanel(false);
 		panel.setLayout(new GridBagLayout());
 		
@@ -782,7 +787,93 @@ public class MoleculeArchiveWindow {
 		
 		northPanel.add(panel, northGBC);
 		
-		return northPanel;
+		JTabbedPane propTabs = new JTabbedPane();
+		
+		propTabs.addTab("General", northPanel);
+		
+		indexes = new JTextArea(generateIndexSummary());
+		indexes.setFont(new Font("Menlo", Font.PLAIN, 12));
+		indexes.setEditable(false);
+        JScrollPane pane = new JScrollPane(indexes);
+        
+        propTabs.add("Molecule Indexes", pane);
+		
+		return propTabs;
+	}
+	
+	public String generateIndexSummary() {
+		String summary = "";
+		
+		//Generate index summaries from Archive Properties...
+		if (archive.getProperties().getColumnSet().size() > 0) {
+			String dataTableColumns = "Molecule DataTable Columns:\n";
+		    int characters = 0;
+	        for (String item : archive.getProperties().getColumnSet()) {
+	        	dataTableColumns += item + ", ";
+	        	characters += item.length() + 2;
+	        	if (characters > charactersPerLine) {
+	        		dataTableColumns += "\n";
+	        		characters = 0;
+	        	}
+	        }
+	        dataTableColumns = dataTableColumns.substring(0, dataTableColumns.length() - 2);	
+	        
+	        summary += dataTableColumns;
+	        summary += "\n\n";
+		}
+		
+		if (archive.getProperties().getSegmnetTableNames().size() > 0) {
+			String segmentTableColumns = "Molecule Segment Tables:\n";
+		    int characters = 0;
+	        for (ArrayList<String> name : archive.getProperties().getSegmnetTableNames()) {
+	        	String title = name.get(0) + " vs " + name.get(1);
+	        	segmentTableColumns += title + ", ";
+	            characters += title.length() + 2;
+	            if (characters > charactersPerLine) {
+	            	segmentTableColumns += "\n";
+	        		characters = 0;
+	        	}
+	        }
+	        segmentTableColumns = segmentTableColumns.substring(0, segmentTableColumns.length() - 2);	
+	        
+	        summary += segmentTableColumns;
+	        summary += "\n\n";
+		}
+		
+		if (archive.getProperties().getTagSet().size() > 0) {
+			String tagNames = "Molecule Tags:\n";
+		    int characters = 0;
+	        for (String item : archive.getProperties().getTagSet()) {
+	        	tagNames += item + ", ";
+	        	characters += item.length() + 2;
+	        	if (characters > charactersPerLine) {
+	        		tagNames += "\n";
+	        		characters = 0;
+	        	}
+	        }
+	        tagNames = tagNames.substring(0, tagNames.length() - 2);	
+	        
+	        summary += tagNames;
+	        summary += "\n\n";
+		}
+		
+		if (archive.getProperties().getParameterSet().size() > 0) {
+			String parameterNames = "Molecule Parameters:\n";
+		    int characters = 0;
+	        for (String item : archive.getProperties().getParameterSet()) {
+	        	parameterNames += item + ", ";
+	        	characters += item.length() + 2;
+	        	if (characters > charactersPerLine) {
+	        		parameterNames += "\n";
+	        		characters = 0;
+	        	}
+	        }
+	        parameterNames = parameterNames.substring(0, parameterNames.length() - 2);	
+	        
+	        summary += parameterNames;
+		}
+		
+		return summary;
 	}
 	
 	protected JComponent makeTextPanel(String text) {
@@ -850,7 +941,7 @@ public class MoleculeArchiveWindow {
 		return false;
 	}
 	
-	//We add an lockArchive for duing processing steps
+	//We add an lockArchive for during processing steps
 	public void lockArchive() {
 		lockArchive = true;
 		//We move to the general properties pane

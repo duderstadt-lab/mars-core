@@ -199,7 +199,7 @@ public class MoleculeArchiveProperties {
 		    if("MoleculeParameterSet".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
-		            tagSet.add(jParser.getText());
+		            parameterSet.add(jParser.getText());
 		    	continue;
 		    }
 		    
@@ -301,6 +301,10 @@ public class MoleculeArchiveProperties {
 	
 	public Set<String> getColumnSet() {
 		return moleculeDataTableColumnSet;
+	}
+	
+	public void addSegmentTableNames(Set<ArrayList<String>> segmentTableNames) {
+		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
 	
 	public void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames) {

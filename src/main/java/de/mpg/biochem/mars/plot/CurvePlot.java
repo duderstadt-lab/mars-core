@@ -75,7 +75,7 @@ public class CurvePlot extends JPanel {
 	public void showPlot() {
 		plot.clear();
 		
-		caption = String.format("UID = %s", molecule.getUID());
+		caption = "";//String.format("UID = %s", molecule.getUID());
 		
 		//plot.setPlotTitle(String.format("UID = %s", molecule.getUID()));
 		

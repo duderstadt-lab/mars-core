@@ -91,7 +91,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     @Parameter(label="Global sigma")
 	private double global_sigma = 1;
     
-    @Parameter(label="Calculate from backgorund")
+    @Parameter(label="Calculate from background")
     private boolean calcBackgroundSigma = true;
     
     @Parameter(label="Background start")
@@ -188,7 +188,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        // handle exceptions
 	    	logService.error(e.getMessage());
 	    	e.printStackTrace();
-			logService.info(builder.endBlock(false));
+			logService.info(LogBuilder.endBlock(false));
 			forkJoinPool.shutdown();
 			return;
 	    } finally {
@@ -196,8 +196,8 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	    }
 		
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
