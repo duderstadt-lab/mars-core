@@ -106,7 +106,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
 	@Parameter(label = "Image")
 	private ImagePlus image; 
 	
-	//PEAK FITTER
+	//AFFINE2D Matrix
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String affineTitle =
 			"Affine2D Transformation Matrix:";

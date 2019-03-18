@@ -408,7 +408,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		   } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
 		    	e.printStackTrace();
-				logService.info(builder.endBlock(false));
+				logService.info(LogBuilder.endBlock(false));
 		   } finally {
 		      forkJoinPool.shutdown();
 		   }
