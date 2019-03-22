@@ -261,8 +261,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	            }
 	        });
 		
-		recordCount = new JLabel("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
-		recordCount.setBorder(new EmptyBorder(10,10,10,10));
+		recordCount = new JLabel(moleculeSorter.getViewRowCount() + " molecules");
+		recordCount.setBorder(new EmptyBorder(2,2,2,2));
 		
 		westPane.add(recordCount, BorderLayout.NORTH);
 		westPane.add(moleculeIndexScrollPane, BorderLayout.CENTER);
@@ -836,7 +836,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			moleculeIndexTableModel.fireTableRowsUpdated(0, moleculeCount - 1);
 		}
 		
-		recordCount.setText("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
+		recordCount.setText(moleculeSorter.getViewRowCount() + " molecules");
 		recordCount.repaint();
 		
 		updateParameterList();
@@ -916,7 +916,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
             return;
         }
         moleculeSorter.setRowFilter(rf);
-        recordCount.setText("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
+        recordCount.setText(moleculeSorter.getViewRowCount() + " molecules");
         recordCount.repaint();
         moleculeIndex.updateUI();
     }
