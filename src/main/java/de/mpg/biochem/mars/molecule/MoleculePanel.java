@@ -64,6 +64,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -121,6 +122,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	
 	private JTextArea notes;
 	
+	private JLabel recordCount;
+	
 	private Molecule molecule;
 	private MoleculeArchive archive;
 	
@@ -129,7 +132,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	private JTable moleculeIndex;
 	private AbstractTableModel moleculeIndexTableModel;
 	private TableRowSorter moleculeSorter;
-	
+
 	private JTextField moleculeSearchField;
 	
 	private int moleculeCount;
@@ -257,7 +260,11 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	            	filterMoleculeIndex();
 	            }
 	        });
-
+		
+		recordCount = new JLabel("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
+		recordCount.setBorder(new EmptyBorder(10,10,10,10));
+		
+		westPane.add(recordCount, BorderLayout.NORTH);
 		westPane.add(moleculeIndexScrollPane, BorderLayout.CENTER);
 		westPane.add(moleculeSearchField, BorderLayout.SOUTH);
 		
@@ -829,6 +836,9 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 			moleculeIndexTableModel.fireTableRowsUpdated(0, moleculeCount - 1);
 		}
 		
+		recordCount.setText("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
+		recordCount.repaint();
+		
 		updateParameterList();
 		updateTagList();
 		
@@ -906,6 +916,8 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
             return;
         }
         moleculeSorter.setRowFilter(rf);
+        recordCount.setText("<html><div style='text-align: center;'>" + moleculeSorter.getViewRowCount() + " molecules</div></html>");
+        recordCount.repaint();
         moleculeIndex.updateUI();
     }
 	

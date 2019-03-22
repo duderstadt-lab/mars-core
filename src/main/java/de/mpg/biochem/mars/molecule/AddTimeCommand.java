@@ -28,8 +28,6 @@ package de.mpg.biochem.mars.molecule;
 
 import org.decimal4j.util.DoubleRounder;
 
-import org.scijava.ItemIO;
-import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -102,9 +100,9 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
 			} else {
 				logService.error("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
-				logService.error(builder.endBlock(false));
+				logService.error(LogBuilder.endBlock(false));
 				archive.addLogMessage("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
-				archive.addLogMessage(builder.endBlock(false));
+				archive.addLogMessage(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
 			    if (!uiService.isHeadless()) {
@@ -135,8 +133,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    archive.addLogMessage("  ");
 	    
 		//Unlock the window so it can be changed

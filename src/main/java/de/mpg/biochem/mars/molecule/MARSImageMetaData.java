@@ -103,51 +103,34 @@ public class MARSImageMetaData {
 	//Table that maps slices to times
 	private MARSResultsTable DataTable;
     
-    //Used for making JsonParser isntances..
-    //We make it static becasue we just need to it make parsers so we don't need multiple copies..
+    //Used for making JsonParser instances...
+    //We make it static because we just need to it make parsers so we don't need multiple copies..
     private static JsonFactory jfactory = new JsonFactory();
     
     public MARSImageMetaData(String UID) {
+    	initializeVariables();
     	this.UID = UID;
-    	this.Microscope = "unknown";
-    	this.SourceDirectory = "unknown";
-    	log = "";
-    	
-    	DoubleColumn sliceCol = new DoubleColumn("slice");
-		sliceCol.add((double)1);
-		
-		Parameters = new LinkedHashMap<>();
-		Tags = new LinkedHashSet<String>();
-		
-		//Create the table and add all the columns...
+
+		//Create the table and add a slice column
 		DataTable = new MARSResultsTable("MARSImageMetaData - " + UID);
+		DoubleColumn sliceCol = new DoubleColumn("slice");
+		sliceCol.add((double)1);
 		DataTable.add(sliceCol);
     }
     
     public MARSImageMetaData(String UID, MARSResultsTable DataTable) {
-    	this.UID = UID;
-    	this.Microscope = "unknown";
-    	this.SourceDirectory = "unknown";
-    	log = "";
-    	
-    	Parameters = new LinkedHashMap<>();
-		Tags = new LinkedHashSet<String>();
-		
+    	initializeVariables();
+    	this.UID = UID;		
 		this.DataTable = DataTable;
     }
 	
 	public MARSImageMetaData(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
-		Parameters = new LinkedHashMap<>();
-		Tags = new LinkedHashSet<String>();
-		
+		initializeVariables();
 		this.Microscope = Microscope;
+		
 		if (img.getOriginalFileInfo() != null) {
 			this.SourceDirectory = img.getOriginalFileInfo().directory;
-		} else {
-			this.SourceDirectory = "unknown";
 		}
-		
-		log = "";
 		
 		if (imageFormat.equals("NorPix")) {
 			UID = generateUID(headerLabels);
@@ -167,10 +150,17 @@ public class MARSImageMetaData {
 	}
 	
 	public MARSImageMetaData(JsonParser jParser) throws IOException {
+		initializeVariables();
+		fromJSON(jParser);
+	}
+	
+	private void initializeVariables() {
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		
-		fromJSON(jParser);
+    	this.Microscope = "unknown";
+    	this.SourceDirectory = "unknown";
+		log = "";
 	}
 	
 	//Generate a unique ID using a hash of all headerlabel information...
@@ -305,8 +295,6 @@ public class MARSImageMetaData {
 			    while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					String fieldname = jParser.getCurrentName();
 					
-					//Summary is an object, so that will break the loop
-					//Therefore, we need to skip over it...
 					if ("Summary".equals(fieldname)) {
 						jParser.nextToken();
 						while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -660,7 +648,6 @@ public class MARSImageMetaData {
 	public String getSourceDirectory() {
 		return SourceDirectory;
 	}
-	
 	
 	public void addTag(String tag) {
 		Tags.add(tag);
