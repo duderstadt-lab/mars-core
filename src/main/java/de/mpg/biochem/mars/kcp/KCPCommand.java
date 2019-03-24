@@ -196,7 +196,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
                     try {
         		        while(progressUpdating.get()) {
         		        	Thread.sleep(100);
-        		        	statusService.showStatus(numFinished.intValue(), archive.getNumberOfMolecules(), "Finding Change Points for " + archive.getName());
+        		        	statusService.showStatus(numFinished.intValue(), UIDs.size(), "Finding Change Points for " + archive.getName());
         		        }
                     } catch (Exception e) {
                         e.printStackTrace();
