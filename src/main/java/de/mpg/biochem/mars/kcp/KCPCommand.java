@@ -26,6 +26,8 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.kcp;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -45,6 +47,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
@@ -112,6 +115,14 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     @Parameter(label="Fit steps (zero slope)")
 	private boolean step_analysis = false;
     
+	@Parameter(label = "Include:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "All",
+					"Tagged with", "Untagged" })
+	private String include;
+	
+	@Parameter(label="Tags (comma separated list)")
+	private String tags = "";
+    
     //Global variables
     //For the progress thread
   	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
@@ -139,6 +150,32 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		archive.addLogMessage(log);
+		
+		//Build Collection of UIDs based on tags if they exist...
+        ArrayList<String> UIDs;
+		if (include.equals("Tagged with")) {
+			//First we parse tags to make a list...
+	        String[] tagList = tags.split(",");
+	        for (int i=0; i<tagList.length; i++) {
+	        	tagList[i] = tagList[i].trim();
+	        }
+			
+			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> {
+				boolean hasTags = true;
+				for (int i=0; i<tagList.length; i++) {
+					if (!archive.moleculeHasTag(UID, tagList[i])) {
+						hasTags = false;
+						break;
+					}
+				}
+				return hasTags;
+			}).collect(toList());
+		} else if (include.equals("Untagged")) {
+			UIDs = (ArrayList<String>)archive.getMoleculeUIDs().stream().filter(UID -> archive.get(UID).hasNoTags()).collect(toList());
+		} else {
+			//  we include All molecules...
+			UIDs = archive.getMoleculeUIDs();
+		}
 		
 		//Let's build a thread pool and in a multithreaded manner perform changepoint analysis on all molecules
 		//Need to determine the number of threads
@@ -172,7 +209,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        //This will spawn a bunch of threads that will analyze molecules individually in parallel 
 	        //and put the changepoint tables back into the same molecule record
 	        
-	        forkJoinPool.submit(() -> IntStream.range(0, archive.getNumberOfMolecules()).parallel().forEach(i -> {
+	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 	        		Molecule molecule = archive.get(i);
 	        		
 	        		findChangePoints(molecule);
