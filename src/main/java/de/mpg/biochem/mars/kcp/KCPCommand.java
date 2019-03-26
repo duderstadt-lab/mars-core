@@ -64,7 +64,7 @@ import org.scijava.table.*;
 			mnemonic = 's'),
 		@Menu(label = "KCP", weight = 40,
 			mnemonic = 'k'),
-		@Menu(label = "Change Point Finder", weight = 1, mnemonic = 'f')})
+		@Menu(label = "Change Point Finder", weight = 1, mnemonic = 'c')})
 public class KCPCommand extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED	
 	@Parameter
@@ -294,6 +294,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 		double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
 		double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
+		
 		KCP change = new KCP(sigma, confidenceLevel, xRegion, yRegion, step_analysis);
 		try {
 			molecule.putSegmentsTable(Ycolumn, Xcolumn, buildSegmentTable(change.generate_segments()));

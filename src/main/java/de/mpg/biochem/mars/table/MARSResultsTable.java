@@ -679,6 +679,54 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return Math.sqrt(diffSquares/(count-1));
 	}
 	
+	
+	public double mad(String column) {
+		if (get(column) == null)
+			return Double.NaN;
+		double median = median(column);
+		
+		ArrayList<Double> medianDevs = new ArrayList<Double>();
+		
+		for (int i = 0; i < getRowCount() ; i++) {
+			medianDevs.add(Math.abs(median - getValue(column, i)));
+		}
+		
+		//Now find median of the deviations
+		Collections.sort(medianDevs);
+		
+		double medianDev;
+		if (medianDevs.size() % 2 == 0)
+		    medianDev = (medianDevs.get(medianDevs.size()/2) + medianDevs.get(medianDevs.size()/2 - 1))/2;
+		else
+		    medianDev = medianDevs.get(medianDevs.size()/2);
+		
+		return medianDev;
+	}
+	
+	public double mad(String medianColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (get(medianColumn) == null || get(rowSelectionColumn) == null)
+			return Double.NaN;
+		double median = median(medianColumn, rowSelectionColumn, rangeStart, rangeEnd);
+		
+		ArrayList<Double> medianDevs = new ArrayList<Double>();
+		for (int i = 0; i < getRowCount() ; i++) {
+			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				medianDevs.add(Math.abs(median - getValue(medianColumn, i)));
+			}
+		}
+		
+		//Now find median of the deviations
+		Collections.sort(medianDevs);
+		
+		double medianDev;
+		if (medianDevs.size() % 2 == 0)
+		    medianDev = (medianDevs.get(medianDevs.size()/2) + medianDevs.get(medianDevs.size()/2 - 1))/2;
+		else
+		    medianDev = medianDevs.get(medianDevs.size()/2);
+		
+		return medianDev;
+	}
+	
 	public double sem(String column) {
 		return std(column)/Math.sqrt(getRowCount());
 	}
