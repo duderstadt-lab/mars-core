@@ -57,6 +57,8 @@ public class MARSMath {
 		return output;
 	}
 	
+	//TODO Add Method that does linear regression using just xData and yData..
+	
 	// Equations and notation taken directly from "An Introduction to Error Analysis" by Taylor 2nd edition
 	// y = A + Bx
 	// A = output[0] +/- output[1]

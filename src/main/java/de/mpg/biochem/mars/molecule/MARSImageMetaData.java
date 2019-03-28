@@ -70,11 +70,19 @@ import net.imagej.Dataset;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
+import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
+import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MARSMath;
 import io.scif.services.FormatService;
 
+/**
+ * MARSImageMetaData records act as the storage location for all information
+ * about specific data collections, including imaging settings, frame timing..
+ * 
+ * @author Karl Duderstadt
+ */
 public class MARSImageMetaData {
 	//Unique ID used for universal identification and indexing.
 	private String UID;
