@@ -136,9 +136,8 @@ public class MARSImageMetaData {
 		initializeVariables();
 		this.Microscope = Microscope;
 		
-		if (img.getOriginalFileInfo() != null) {
-			this.SourceDirectory = img.getOriginalFileInfo().directory;
-		}
+		if (img.getOriginalFileInfo() != null && img.getOriginalFileInfo().directory != null)
+				this.SourceDirectory = img.getOriginalFileInfo().directory;
 		
 		if (imageFormat.equals("NorPix")) {
 			UID = generateUID(headerLabels);
