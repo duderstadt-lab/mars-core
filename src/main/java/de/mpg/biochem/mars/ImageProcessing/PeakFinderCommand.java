@@ -354,19 +354,19 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the slice number as a key in the map for each list...
 		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> PeakStack.put(i, findPeaksInSlice(i)))).get();
-		        
+		        	
 		        progressUpdating.set(false);
 		        
 		        statusService.showProgress(100, 100);
 		        statusService.showStatus("Peak search for " + image.getTitle() + " - Done!");
 		        
-		    } catch (InterruptedException | ExecutionException e) {
-		        // handle exceptions
+		 } catch (InterruptedException | ExecutionException e) {
+		        //handle exceptions
 		    	e.printStackTrace();
-				logService.info(builder.endBlock(false));
-		    } finally {
-		        forkJoinPool.shutdown();
-		    }
+				logService.info(LogBuilder.endBlock(false));
+		 } finally {
+		       forkJoinPool.shutdown();
+		 }
 			
 		} else {
 			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
@@ -465,11 +465,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		image.setRoi(startingRoi);
 		
 		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-		logService.info(builder.endBlock(true));
+		logService.info(LogBuilder.endBlock(true));
 	}
 	
 	private ArrayList<Peak> findPeaksInSlice(int slice) {
 		ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, image.getImageStack().getProcessor(slice)));
+		if (peaks.size() == 0)
+			return peaks;
 		if (fitPeaks) {
 			peaks = fitPeaks(image.getImageStack().getProcessor(slice), peaks);
 			peaks = removeNearestNeighbors(peaks);
