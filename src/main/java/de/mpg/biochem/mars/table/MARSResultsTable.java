@@ -773,13 +773,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return diffSquares/count;
 	}
 	
-	public double slope(String slopeColumn, String rowSelectionColumn) {
-		if (get(slopeColumn) == null || get(rowSelectionColumn) == null)
+	public double slope(String yColumn, String xColumn) {
+		if (get(yColumn) == null || get(xColumn) == null)
 			return Double.NaN;
 		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(slopeColumn);
-		double[] xData = this.getColumnAsDoubles(rowSelectionColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
+		double[] xData = this.getColumnAsDoubles(xColumn);
 		
 		if (xData.length < 2) {
 			return Double.NaN;
@@ -788,13 +788,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return output[2];
 	}
 	
-	public double slope(String slopeColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(slopeColumn) == null || get(rowSelectionColumn) == null)
+	public double slope(String yColumn, String xColumn, double rangeStart, double rangeEnd) {
+		if (get(yColumn) == null || get(xColumn) == null)
 			return Double.NaN;
 		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(slopeColumn);
-		double[] xData = this.getColumnAsDoubles(rowSelectionColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
+		double[] xData = this.getColumnAsDoubles(xColumn);
 		int offset = 0;
 		int endIndex = 0;
 		//Let's make sure the end points are always inside the range even if the points given don't exist...
@@ -817,6 +817,52 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 		double[] output = MARSMath.linearRegression(xData, yData, offset, length);
 		return output[2];
+	}
+	
+	public double[] linearFit(String yColumn, String xColumn) {
+		if (get(yColumn) == null || get(xColumn) == null)
+			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+		
+		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
+		//offset and length...
+		double[] yData = this.getColumnAsDoubles(yColumn);
+		double[] xData = this.getColumnAsDoubles(xColumn);
+		
+		if (xData.length < 2) {
+			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+		}
+		return MARSMath.linearRegression(xData, yData, 0, xData.length);
+	}
+	
+	public double[] linearFit(String yColumn, String xColumn, double rangeStart, double rangeEnd) {
+		if (get(yColumn) == null || get(xColumn) == null)
+			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+		//We will get the slope information using the MARSMath.linearRegression function for that we need the
+		//offset and length...
+		double[] yData = this.getColumnAsDoubles(yColumn);
+		double[] xData = this.getColumnAsDoubles(xColumn);
+		int offset = 0;
+		int endIndex = 0;
+		//Let's make sure the end points are always inside the range even if the points given don't exist...
+		//First for offset
+		for (int i = xData.length - 1; i >= 0; i--) {
+			if (xData[i] >= rangeStart) {
+				offset = i;
+			}
+		}
+		
+		//For the end of the range we search in the other direction.. 
+		for (int i = 0; i < xData.length; i++) {
+			if (xData[i] <= rangeEnd) {
+				endIndex = i;
+			}
+		}
+		int length = endIndex - offset;
+		if (length < 2) {
+			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+		}
+
+		return MARSMath.linearRegression(xData, yData, offset, length);
 	}
 	
 	public void sort(final boolean ascending, String column) {
