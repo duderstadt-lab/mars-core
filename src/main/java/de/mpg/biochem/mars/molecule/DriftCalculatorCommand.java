@@ -26,6 +26,8 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
+import java.util.ArrayList;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -40,7 +42,7 @@ import org.scijava.ui.UIService;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
-import org.scijava.table.DoubleColumn;
+import org.scijava.table.*;
 
 @Plugin(type = Command.class, label = "Drift Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -83,6 +85,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     
     @Parameter(label="Use incomplete traces")
     private boolean use_incomplete_traces = false;
+
+    @Parameter(label="mode", choices = {"mean", "median"})
+	private String mode;
     
 	@Override
 	public void run() {	
@@ -116,14 +121,14 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
 			
 			//First calculator global background
-			double[] x_avg_background = new double[slices];
-			double[] y_avg_background = new double[slices];
-			int[] observations = new int[slices];
-			for (int i=0;i<slices;i++) {
-				x_avg_background[i] = 0;
-				y_avg_background[i] = 0;
-				observations[i] = 0;
+			ArrayList<DoubleColumn> xValuesColumns = new ArrayList<DoubleColumn>();
+			ArrayList<DoubleColumn> yValuesColumns = new ArrayList<DoubleColumn>();
+			
+			for (int slice=1;slice<=slices;slice++) {
+				xValuesColumns.add(new DoubleColumn("X " + slice));
+				yValuesColumns.add(new DoubleColumn("Y " + slice));
 			}
+
 			
 			if (use_incomplete_traces) {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
@@ -136,9 +141,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						double y_mean = datatable.mean(input_y);
 						
 						for (int row = 0; row < datatable.getRowCount(); row++) {
-							x_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_x, row) - x_mean;
-							y_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_y, row) - y_mean;
-							observations[(int)datatable.getValue("slice", row) - 1]++;
+							xValuesColumns.get(row).add(datatable.getValue(input_x, row) - x_mean);
+							yValuesColumns.get(row).add(datatable.getValue(input_y, row) - y_mean);
 						}
 				});
 			} else {
@@ -156,9 +160,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 							double y_mean = datatable.mean(input_y);
 							
 							for (int row = 0; row < datatable.getRowCount(); row++) {
-								x_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_x, row) - x_mean;
-								y_avg_background[(int)datatable.getValue("slice", row) - 1] += datatable.getValue(input_y, row) - y_mean;
-								observations[(int)datatable.getValue("slice", row) - 1]++;
+								xValuesColumns.get(row).add(datatable.getValue(input_x, row) - x_mean);
+								yValuesColumns.get(row).add(datatable.getValue(input_y, row) - y_mean);
 							}
 							num_full_traj[0]++;
 						}
@@ -177,15 +180,26 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (!metaDataTable.hasColumn(output_y))
 				metaDataTable.appendColumn(output_y);
 			
-			for (int row = 0; row < slices ; row++) {
-				if (observations[row] == 0) {
-					//No traces had an observation at this position...
-					metaDataTable.setValue(output_x, row, Double.NaN);
-					metaDataTable.setValue(output_y, row, Double.NaN);
+			for (int slice = 1; slice <= slices ; slice++) {
+				double xSliceFinalValue = Double.NaN;
+				double ySliceFinalValue = Double.NaN;
+
+				MARSResultsTable xTempTable = new MARSResultsTable();
+				xTempTable.add(xValuesColumns.get(slice - 1));
+				
+				MARSResultsTable yTempTable = new MARSResultsTable();
+				yTempTable.add(yValuesColumns.get(slice - 1));
+				
+				if (mode.equals("mean")) {
+					xSliceFinalValue = xTempTable.mean("X " + slice);
+					ySliceFinalValue = yTempTable.mean("Y " + slice);
 				} else {
-					metaDataTable.setValue(output_x, row, x_avg_background[row]/observations[row]);
-					metaDataTable.setValue(output_y, row, y_avg_background[row]/observations[row]);
+					xSliceFinalValue = xTempTable.median("X " + slice);
+					ySliceFinalValue = yTempTable.median("Y " + slice);
 				}
+				
+				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue);
+				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue);
 			}
 			
 			archive.putImageMetaData(meta);
@@ -209,6 +223,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("Output Y", output_y);
 		builder.addParameter("Use incomplete traces", String.valueOf(use_incomplete_traces));
 		builder.addParameter("Background Tag", backgroundTag);
+		builder.addParameter("mode", mode);
 	}
 	
 	public void setArchive(MoleculeArchive archive) {

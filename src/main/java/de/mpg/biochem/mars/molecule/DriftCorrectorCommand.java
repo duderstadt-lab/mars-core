@@ -128,9 +128,9 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
 			} else {
 				logService.error("ImageMetaData " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-				logService.error(builder.endBlock(false));
+				logService.error(LogBuilder.endBlock(false));
 				archive.addLogMessage("ImageMetaData " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-				archive.addLogMessage(builder.endBlock(false));
+				archive.addLogMessage(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
 			    if (!uiService.isHeadless())
@@ -173,14 +173,24 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				
 				//First calculate corrected value for current slice x
 				double molX = datatable.getValue(input_x, i) - meanX;
-				double backgroundX = sliceToXMap.get(slice);
+				double backgroundX = Double.NaN;
+				
+				//If using incomplete traces for building the background
+				//sometimes there are missing slices..
+				if (sliceToXMap.containsKey(slice))
+					backgroundX = sliceToXMap.get(slice);
 				
 				double x_drift_corr_value = molX - backgroundX;
 				datatable.set(output_x, i, x_drift_corr_value);
 		
 				//Then calculate corrected value for current slice y
 				double molY = datatable.getValue(input_y, i) - meanY;
-				double backgroundY = sliceToYMap.get(slice);
+				double backgroundY = Double.NaN;
+				
+				//If using incomplete traces for building the background
+				//sometimes there are missing slices..
+				if (sliceToYMap.containsKey(slice))
+					backgroundY = sliceToYMap.get(slice);
 				
 				double y_drift_corr_value = molY - backgroundY;
 				datatable.set(output_y, i, y_drift_corr_value);
@@ -190,8 +200,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    archive.addLogMessage("  ");
 	    
 		//Unlock the window so it can be changed
