@@ -885,7 +885,7 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 		if (molecule.getSegmentTableNames().size() > 0) {
 			for (ArrayList<String> tableColumnNames :molecule.getSegmentTableNames()) {
 				JScrollPane segmentTablePane = buildSegmentsTable(molecule.getSegmentsTable(tableColumnNames));
-				dataANDPlot.addTab(tableColumnNames.get(0) + " vs " + tableColumnNames.get(1), segmentTablePane);
+				dataANDPlot.addTab(tableColumnNames.get(1) + " vs " + tableColumnNames.get(0), segmentTablePane);
 			}
 		}
 		

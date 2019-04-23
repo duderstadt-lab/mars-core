@@ -87,7 +87,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	private String name = new String("MARSResultsTable");
 	
 	//Special column names for a segments table...
-	private String yColumnName, xColumnName;
+	private String xColumnName, yColumnName;
 	
     @Parameter
     private StatusService statusService;
@@ -103,10 +103,10 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		this.name = name;
 	}
 	
-	public MARSResultsTable(String yColumnName, String xColumnName) {
+	public MARSResultsTable(String xColumnName, String yColumnName) {
 		super();
-		this.yColumnName = yColumnName;
 		this.xColumnName = xColumnName;
+		this.yColumnName = yColumnName;
 		this.name = yColumnName + " vs " + xColumnName;
 	}
 	
@@ -773,13 +773,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return diffSquares/count;
 	}
 	
-	public double slope(String yColumn, String xColumn) {
-		if (get(yColumn) == null || get(xColumn) == null)
+	public double slope(String xColumn, String yColumn) {
+		if (get(xColumn) == null || get(yColumn) == null)
 			return Double.NaN;
 		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(yColumn);
 		double[] xData = this.getColumnAsDoubles(xColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
 		
 		if (xData.length < 2) {
 			return Double.NaN;
@@ -788,13 +788,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return output[2];
 	}
 	
-	public double slope(String yColumn, String xColumn, double rangeStart, double rangeEnd) {
-		if (get(yColumn) == null || get(xColumn) == null)
+	public double slope(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
+		if (get(xColumn) == null || get(yColumn) == null)
 			return Double.NaN;
 		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(yColumn);
 		double[] xData = this.getColumnAsDoubles(xColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
 		int offset = 0;
 		int endIndex = 0;
 		//Let's make sure the end points are always inside the range even if the points given don't exist...
@@ -819,14 +819,14 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return output[2];
 	}
 	
-	public double[] linearFit(String yColumn, String xColumn) {
-		if (get(yColumn) == null || get(xColumn) == null)
+	public double[] linearFit(String xColumn, String yColumn) {
+		if (get(xColumn) == null || get(yColumn) == null)
 			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
 		
 		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(yColumn);
 		double[] xData = this.getColumnAsDoubles(xColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
 		
 		if (xData.length < 2) {
 			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
@@ -834,13 +834,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return MARSMath.linearRegression(xData, yData, 0, xData.length);
 	}
 	
-	public double[] linearFit(String yColumn, String xColumn, double rangeStart, double rangeEnd) {
+	public double[] linearFit(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
 		if (get(yColumn) == null || get(xColumn) == null)
 			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
 		//We will get the slope information using the MARSMath.linearRegression function for that we need the
 		//offset and length...
-		double[] yData = this.getColumnAsDoubles(yColumn);
 		double[] xData = this.getColumnAsDoubles(xColumn);
+		double[] yData = this.getColumnAsDoubles(yColumn);
 		int offset = 0;
 		int endIndex = 0;
 		//Let's make sure the end points are always inside the range even if the points given don't exist...
@@ -882,18 +882,18 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return new DoubleColumn(header);
 	}
 	
-	public void setYXColumnNames(String yColumnName, String xColumnName) {
-		this.yColumnName = yColumnName;
+	public void setXYColumnNames(String xColumnName, String yColumnName) {
 		this.xColumnName = xColumnName;
-		this.name = yColumnName + " vs " + xColumnName;
-	}
-	
-	public String getYColumnName() {
-		return this.yColumnName;
+		this.yColumnName = yColumnName;
+		this.name = xColumnName + " vs " + yColumnName;
 	}
 	
 	public String getXColumnName() {
 		return this.xColumnName;
+	}
+	
+	public String getYColumnName() {
+		return this.yColumnName;
 	}
 	
 	public MARSResultsTable clone() {

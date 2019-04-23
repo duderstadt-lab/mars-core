@@ -580,9 +580,9 @@ public class SegmentDistributionBuilder {
 		
 		//Can't do this multithreaded at the moment since we are using an arraylist
 		UIDset.stream().forEach(UID -> {
-			if (archive.get(UID).getSegmentsTable(yColumnName, xColumnName) != null) {
+			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(yColumnName, xColumnName);
+				MARSResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)))
@@ -601,9 +601,9 @@ public class SegmentDistributionBuilder {
 		
 		//Can't do this multithreaded at the moment since we are using an arraylist
 		UIDset.stream().forEach(UID -> {
-			if (archive.get(UID).getSegmentsTable(yColumnName, xColumnName) != null) {
+			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(yColumnName, xColumnName);
+				MARSResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2", row)) || Double.isNaN(segments.getValue("x1", row)))

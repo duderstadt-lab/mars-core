@@ -113,7 +113,7 @@ public class CurvePlot extends JPanel {
 			break;
 		}
 		
-		MARSResultsTable segmentsTable = molecule.getSegmentsTable(props.yColumnName(), props.xColumnName());
+		MARSResultsTable segmentsTable = molecule.getSegmentsTable(props.xColumnName(), props.yColumnName());
 		
 		if (props.drawSegments() && segmentsTable != null) {
 			

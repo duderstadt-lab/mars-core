@@ -28,7 +28,6 @@ package de.mpg.biochem.mars.molecule;
 
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.kcp.*;
-import de.mpg.biochem.mars.ImageProcessing.*;
 
 import java.util.Iterator;
 import java.io.ByteArrayOutputStream;
@@ -97,8 +96,8 @@ public class Molecule {
 	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
-	//YColumn is at index 0
-	//XColumn is at index 1
+	//XColumn is at index 0
+	//YColumn is at index 1
 	private LinkedHashMap<ArrayList<String>, MARSResultsTable> segmentTables;
 	
 	/**
@@ -207,8 +206,8 @@ public class Molecule {
 				if (segmentTables.get(tableColumnNames).size() > 0) {
 					jGenerator.writeStartObject();
 					
-					jGenerator.writeStringField("yColumnName", tableColumnNames.get(0));
-					jGenerator.writeStringField("xColumnName", tableColumnNames.get(1));
+					jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
+					jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
 					
 					jGenerator.writeFieldName("Table");
 					segmentTables.get(tableColumnNames).toJSON(jGenerator);
@@ -299,16 +298,32 @@ public class Molecule {
 		    	jParser.nextToken();
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				    	//Then move past field Name - yColumnName...
-				    	jParser.nextToken();
-				    	
-				    	ArrayList<String> tableColumnNames = new ArrayList<String>();
-				    	tableColumnNames.add(jParser.getText());
-				    	
-				    	//Then move past the field and next field Name - xColumnName...
-				    	jParser.nextToken();
-				    	jParser.nextToken();
-				    	tableColumnNames.add(jParser.getText());
+			    		String xColumnName = "";
+			    		String yColumnName = "";
+			    	
+			    		//Needed for backwards compatibility when reverse order was used...
+					    if ("xColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    } else if ("yColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    }
+					    
+					    ArrayList<String> tableColumnNames = new ArrayList<String>();
+
+				    	tableColumnNames.add(xColumnName);
+				    	tableColumnNames.add(yColumnName);
 				    	
 				    	MARSResultsTable segmenttable = new MARSResultsTable(tableColumnNames.get(0), tableColumnNames.get(1));
 				    	
@@ -559,35 +574,35 @@ public class Molecule {
 	 * of a trace. The information about these segments is added using
 	 * this method.
 	 * 
-	 * @param yColumnName The name of the column used for y for KCP analysis.
 	 * @param xColumnName The name of the column used for x for KCP analysis.
+	 * @param yColumnName The name of the column used for y for KCP analysis.
 	 * @param segs The {@link MARSResultsTable} to add that contains the 
 	 * segments.
 	 */
-	public void putSegmentsTable(String yColumnName, String xColumnName, MARSResultsTable segs) {
+	public void putSegmentsTable(String xColumnName, String yColumnName, MARSResultsTable segs) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
-		tableColumnNames.add(yColumnName);
 		tableColumnNames.add(xColumnName);
+		tableColumnNames.add(yColumnName);
 		
 		//Let's also make sure the MARSResultsTable contains
-		//the y and x column names...
+		//the x and y column names...
 		//Should always be set but just in case....
-		segs.setYXColumnNames(yColumnName, xColumnName);
+		segs.setXYColumnNames(xColumnName, yColumnName);
 		segmentTables.put(tableColumnNames, segs);
 	}
 	
 	/**
 	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
-	 * using yColumnName and xColumnName.
+	 * using xColumnName and yColumnName.
 	 * 
-	 * @param yColumnName The name of the y column used for analysis.
 	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
 	 * @return The MARSResultsTable generated using the columns specified.
 	 */	
-	public MARSResultsTable getSegmentsTable(String yColumnName, String xColumnName) {
+	public MARSResultsTable getSegmentsTable(String xColumnName, String yColumnName) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
-		tableColumnNames.add(yColumnName);
 		tableColumnNames.add(xColumnName);
+		tableColumnNames.add(yColumnName);
 		return segmentTables.get(tableColumnNames);
 	}
 	
@@ -596,7 +611,7 @@ public class Molecule {
 	 * using yColumnName and xColumnName provided in index positions 0
 	 * and 1 of an ArrayList, respectively.
 	 * 
-	 * @param tableColumnNames The yColumnName and xColumnName used when
+	 * @param tableColumnNames The xColumnName and yColumnName used when
 	 * generating the table, provided in index positions 0 and 1 of an 
 	 * ArrayList, respectively.
 	 * @return The MARSResultsTable generated using the columns specified.
@@ -609,13 +624,13 @@ public class Molecule {
 	 * Remove the Segments table ({@link MARSResultsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
-	 * @param yColumnName The name of the y column used for analysis.
 	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
 	 */
-	public void removeSegmentsTable(String yColumnName, String xColumnName) {
+	public void removeSegmentsTable(String xColumnName, String yColumnName) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
-		tableColumnNames.add(yColumnName);
 		tableColumnNames.add(xColumnName);
+		tableColumnNames.add(yColumnName);
 		segmentTables.remove(tableColumnNames);
 	}
 	
@@ -623,7 +638,7 @@ public class Molecule {
 	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
-	 * @return The Set of ArrayLists holding the y and x column names at
+	 * @return The Set of ArrayLists holding the x and y column names at
 	 * index positions 0 and 1, respectively.
 	 */
 	public Set<ArrayList<String>> getSegmentTableNames() {
