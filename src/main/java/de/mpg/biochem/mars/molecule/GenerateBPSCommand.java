@@ -192,7 +192,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 				//This is the attachment_Position in raw yColumn values
 				double attachment_Position = ff_mean + (rf_mean - ff_mean)/2;
 				double mol_bps_per_um;
-				if (!globalorMol.equals("global"))
+				if (!globalorMol.equals("Global"))
 					mol_bps_per_um = DNA_length_bps / (Math.abs(attachment_Position - f_mean)*um_per_pixel - bead_radius);
 				else 
 					mol_bps_per_um = global_bps_per_um;
@@ -251,8 +251,8 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 			});
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    
 	    //Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
