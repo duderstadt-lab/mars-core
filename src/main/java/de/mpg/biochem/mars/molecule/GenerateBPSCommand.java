@@ -124,7 +124,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	private double bead_radius = 0.5;
 	
 	@Parameter(label = "Conversion type", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Global", "By molecule"})
-	private String globalorMol = "global";
+	private String globalorMol = "Global";
 	
 	@Parameter(label="DNA_length_in_bps")
 	private double DNA_length_bps = 20666;
