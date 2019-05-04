@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.AbstractAction;
@@ -894,25 +895,21 @@ public class MoleculePanel extends JPanel implements BoundsChangedListener, Mole
 	}
 	
 	private void filterMoleculeIndex() {
-        RowFilter<AbstractTableModel, Object> rf = null;
-        //If current expression doesn't parse, don't update.
+		RowFilter<Object, Object> rf = null;
+		List<RowFilter<Object,Object>> rfs = new ArrayList<RowFilter<Object,Object>>();
+
         try {
         	String searchString = moleculeSearchField.getText();
+        	String[] searchlist = searchString.split(",");
         	
-        	if (searchString.contains(",")) {
-	        	String[] searchlist = searchString.split(",");
-	            for (int i=0; i<searchlist.length; i++) {
-	            	searchlist[i] = searchlist[i].trim();
-	            }
-	        
-	            searchString = "";
-	            for (int i=0; i<searchlist.length; i++) {
-	            	searchString += "(?=.*?(" + searchlist[i] + "))";
-	            }
-        	}
-        	
-            rf = RowFilter.regexFilter(searchString, 0, 1, 2, 3);
+        	for (int i=0; i<searchlist.length; i++) {
+                //rfs.add(RowFilter.regexFilter("(?=.*?(" + searchlist[i].trim() + "))"));
+        		rfs.add(RowFilter.regexFilter(searchlist[i].trim()));
+            }
+
+            rf = RowFilter.andFilter(rfs);
         } catch (java.util.regex.PatternSyntaxException e) {
+        	System.out.println("error " + e.getMessage());
             return;
         }
         moleculeSorter.setRowFilter(rf);
