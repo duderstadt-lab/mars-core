@@ -33,6 +33,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
@@ -51,6 +56,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
+import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.table.MARSResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
@@ -141,6 +147,10 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	@Parameter(label="Output Column")
 	private String distance_column_name = "bps";
 	
+	//For the progress thread
+	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+	private final AtomicInteger numFinished = new AtomicInteger(0);
+	
 	@Override
 	public void initialize() {
 		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
@@ -170,86 +180,118 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		if (!uiService.isHeadless())
 			archive.lock();
 		
+		//Need to determine the number of threads
+		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		//final int PARALLELISM_LEVEL = 1;
+		
+		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		
 		archive.addLogMessage(log);
 		
-		if (conversionType.equals("Reversal")) {
-			//Loop through each molecule and extract the start and end regions for reversal
-			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-				Molecule molecule = archive.get(UID);
-				
-				double ff_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, ff_start, ff_end);
-				double rf_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, rf_start, rf_end);
-				double f_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, f_start, f_end);
-				
-				//Let's switch rf and ff if the camera orientation is opposite to make sure the math still works out...
-				boolean cameraFlipped = false;
-				if (ff_mean > rf_mean) {
-					cameraFlipped = true;
-					double tmp_ff_mean = ff_mean;
-					ff_mean = rf_mean;
-					rf_mean = tmp_ff_mean;
-				}
-				//This is the attachment_Position in raw yColumn values
-				double attachment_Position = ff_mean + (rf_mean - ff_mean)/2;
-				double mol_bps_per_um;
-				if (!globalorMol.equals("Global"))
-					mol_bps_per_um = DNA_length_bps / (Math.abs(attachment_Position - f_mean)*um_per_pixel - bead_radius);
-				else 
-					mol_bps_per_um = global_bps_per_um;
-				
-				MARSResultsTable table = molecule.getDataTable();
-				
-				if (!table.hasColumn(distance_column_name))
-					table.appendColumn(distance_column_name);
-				
-				for (int j=0; j< table.getRowCount(); j++) {
-					double output = (table.getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
-					if (output > 0)
-						output = (output - bead_radius)*mol_bps_per_um;
-					else if (output < 0)
-						output = (output + bead_radius)*mol_bps_per_um;
-					else 
-						output = output*mol_bps_per_um;
-						
-					if (!cameraFlipped)
-						output *= -1;
-					
-					table.setValue(distance_column_name, j, output);
-				}
+		//Loop through each molecule and extract the start and end regions for reversal
+	    try {
+	    	Thread progressThread = new Thread() {
+	            public synchronized void run() {
+                    try {
+        		        while(progressUpdating.get()) {
+        		        	Thread.sleep(100);
+        		        	statusService.showStatus(numFinished.get(), archive.getNumberOfMolecules(), "Generating bps for " + archive.getName());
+        		        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+	            }
+	        };
 
-				archive.put(molecule);
-			});
-		} else if (conversionType.equals("Region")) {
-			
-			//We loop through all molecules, find mean in background region, subtract it
-			//and transform to correct units...
-			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-				Molecule molecule = archive.get(UID);
-				
-				//First we set to global start and end for the region
-				//Then if the molecule has parameters those override the global values
-				int tab_bg_start = bg_start;
-				int tab_bg_end = bg_end;
-				if (molecule.hasParameter("bg_start") && molecule.hasParameter("bg_end")) {
-					tab_bg_start = (int)molecule.getParameter("bg_start");
-					tab_bg_end = (int)molecule.getParameter("bg_end");
-				}
-				
-				MARSResultsTable table = molecule.getDataTable();
-				
-				double mean_background = table.mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
-				
-				if (!table.hasColumn(distance_column_name))
-					table.appendColumn(distance_column_name);
-				
-				for (int j = 0; j < table.getRowCount(); j++) {
-					double bps = (table.getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
-					table.setValue(distance_column_name, j, bps);
-				}
-				
-				archive.put(molecule);
-			});
-		}
+	        progressThread.start();
+	        
+	        forkJoinPool.submit(() -> archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+        		Molecule molecule = archive.get(UID);
+        		
+        		//If the input columns don't exist, we don't process the record.
+        		if (!molecule.getDataTable().hasColumn(Ycolumn) || !molecule.getDataTable().hasColumn(Xcolumn))
+        			return;
+
+        		if (conversionType.equals("Reversal")) {
+	        		double ff_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, ff_start, ff_end);
+					double rf_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, rf_start, rf_end);
+					double f_mean = molecule.getDataTable().mean(Ycolumn, Xcolumn, f_start, f_end);
+					
+					//Let's switch rf and ff if the camera orientation is opposite to make sure the math still works out...
+					boolean cameraFlipped = false;
+					if (ff_mean > rf_mean) {
+						cameraFlipped = true;
+						double tmp_ff_mean = ff_mean;
+						ff_mean = rf_mean;
+						rf_mean = tmp_ff_mean;
+					}
+					//This is the attachment_Position in raw yColumn values
+					double attachment_Position = ff_mean + (rf_mean - ff_mean)/2;
+					double mol_bps_per_um;
+					if (!globalorMol.equals("Global"))
+						mol_bps_per_um = DNA_length_bps / (Math.abs(attachment_Position - f_mean)*um_per_pixel - bead_radius);
+					else 
+						mol_bps_per_um = global_bps_per_um;
+					
+					MARSResultsTable table = molecule.getDataTable();
+					
+					if (!table.hasColumn(distance_column_name))
+						table.appendColumn(distance_column_name);
+					
+					for (int j=0; j< table.getRowCount(); j++) {
+						double output = (table.getValue(Ycolumn, j) - attachment_Position)*um_per_pixel;
+						if (output > 0)
+							output = (output - bead_radius)*mol_bps_per_um;
+						else if (output < 0)
+							output = (output + bead_radius)*mol_bps_per_um;
+						else 
+							output = output*mol_bps_per_um;
+							
+						if (!cameraFlipped)
+							output *= -1;
+						
+						table.setValue(distance_column_name, j, output);
+					}
+        		} else if (conversionType.equals("Region")) {
+        			//First we set to global start and end for the region
+					//Then if the molecule has parameters those override the global values
+					int tab_bg_start = bg_start;
+					int tab_bg_end = bg_end;
+					if (molecule.hasParameter("bg_start") && molecule.hasParameter("bg_end")) {
+						tab_bg_start = (int)molecule.getParameter("bg_start");
+						tab_bg_end = (int)molecule.getParameter("bg_end");
+					}
+					
+					MARSResultsTable table = molecule.getDataTable();
+					
+					double mean_background = table.mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
+					
+					if (!table.hasColumn(distance_column_name))
+						table.appendColumn(distance_column_name);
+					
+					for (int j = 0; j < table.getRowCount(); j++) {
+						double bps = (table.getValue(Ycolumn, j) - mean_background)*um_per_pixel*global_bps_per_um;
+						table.setValue(distance_column_name, j, bps);
+					}
+        		}
+        		
+        		archive.put(molecule);
+        		numFinished.incrementAndGet();
+	        })).get();
+	        
+	        progressUpdating.set(false);
+	        
+	        statusService.showStatus(1, 1, "Generating bps for " + archive.getName() + " - Done!");
+	        
+	   } catch (InterruptedException | ExecutionException e) {
+	        // handle exceptions
+	    	e.printStackTrace();
+			logService.info(LogBuilder.endBlock(false));
+	   } finally {
+	      forkJoinPool.shutdown();
+	   }
+
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
 	    archive.addLogMessage(LogBuilder.endBlock(true));

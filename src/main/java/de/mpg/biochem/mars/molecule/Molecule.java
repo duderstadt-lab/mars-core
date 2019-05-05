@@ -115,6 +115,7 @@ public class Molecule {
 			fromJSON(jParser);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			System.out.println("IOException");
 			e.printStackTrace();
 		}
 	}
@@ -231,7 +232,15 @@ public class Molecule {
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {
 		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
+		while (nextToken != JsonToken.END_OBJECT) {
+			nextToken = jParser.nextToken(); 
+			if (nextToken == null) {
+				System.out.println("JsonParser encountered an incomplete molecule record.");
+				this.addNote("JsonParser encountered a problem. This record is incomplete.");
+				break;
+			}
+			
 		    String fieldname = jParser.getCurrentName();
 
 		    if (fieldname == null)
@@ -341,7 +350,7 @@ public class Molecule {
 		    //SHOULD BE UNREACHABLE
 		    //This is only reached if there is an unexpected field added to the json record
 		    //In that case we simply pass through it
-		    //This ensure if extra fields are added in the future
+		    //This ensures if extra fields are added in the future
 		    //old versions will be able to open the new files
 		    //However, the missing fields will not be saved properly
 		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...

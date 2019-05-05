@@ -1472,10 +1472,23 @@ public class MoleculeArchive {
 			Molecule molecule = null;
 			try {
 				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+				
+				if (!moleculeFile.exists()) {
+					addLogMessage("Molecule record " + UID + " cannot be found.");
+					molecule = new Molecule(UID);
+					molecule.setNotes("This record cannot be found.");
+					return molecule;
+				} else if (moleculeFile.length() == 0) {
+					addLogMessage("Molecule record " + UID + " has been corrupted.");
+					molecule = new Molecule(UID);
+					molecule.setNotes("There is no data available for this record.");
+					return molecule;
+				}
+				
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(moleculeFile));
 		
 				JsonParser jParser = jfactory.createParser(inputStream);
-	
+
 				molecule = new Molecule(jParser);
 				
 				jParser.close();
