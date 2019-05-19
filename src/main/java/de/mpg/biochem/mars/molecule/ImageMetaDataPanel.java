@@ -107,8 +107,10 @@ public class ImageMetaDataPanel extends JPanel {
 		this.archive = archive;
 		
 		if (archive.getNumberOfImageMetaDataRecords() > 0) {
+			System.out.println("Not Using Dummy");
 			this.imageMetaData = archive.getImageMetaData(0);
 		} else {
+			System.out.println("Using Dummy");
 			imageMetaData = DummyImageMetaData;
 		}
 		
@@ -179,7 +181,7 @@ public class ImageMetaDataPanel extends JPanel {
                 ListSelectionModel lsm = (ListSelectionModel)e.getSource();
                 if (!lsm.isSelectionEmpty()) {
                     int selectedRow = lsm.getMinSelectionIndex();
-                    if (imageMetaDataRecordChanged)
+                    if (imageMetaDataRecordChanged && archive.getNumberOfImageMetaDataRecords() != 0)
                     	archive.putImageMetaData(imageMetaData);
                     imageMetaData = archive.getImageMetaData((String)imageMetaDataIndex.getValueAt(selectedRow, 1));
                     updateAll();
@@ -420,7 +422,7 @@ public class ImageMetaDataPanel extends JPanel {
 			}
 		};
 		
-		DataTable = new JTable(DataTableModel);		
+		DataTable = new JTable(DataTableModel);
 		DataTable.setAutoCreateColumnsFromModel(true);
 		DataTable.setRowSelectionAllowed(true);
 		DataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -739,7 +741,8 @@ public class ImageMetaDataPanel extends JPanel {
 	}
 	
 	public void saveCurrentRecord() {
-		archive.putImageMetaData(imageMetaData);
+		if (archive.getNumberOfImageMetaDataRecords() != 0)
+			archive.putImageMetaData(imageMetaData);
 	}
 	
 	public void updateAll() {
