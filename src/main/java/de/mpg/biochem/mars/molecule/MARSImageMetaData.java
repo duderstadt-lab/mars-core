@@ -368,8 +368,9 @@ public class MARSImageMetaData {
 					//At the moment, we skip all object fields
 					//We can add above if statements for specific
 					//known fields we want to parse...
-					if (jParser.nextToken() == JsonToken.START_OBJECT) {
+					if (jParser.nextValue() == JsonToken.START_OBJECT) {
 				    	passThroughUnknownObjects(jParser);
+				    	jParser.nextToken();
 				    	continue;
 				    }
 					
@@ -428,9 +429,12 @@ public class MARSImageMetaData {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (DataTable.get("Time") != null)
+		if (DataTable.hasColumn("Time"))
 			CollectionDate = (String)DataTable.get("Time").get(0);
-		
+		else if (DataTable.hasColumn("receivedTime"))
+			CollectionDate = (String)DataTable.get("receivedTime").get(0);
+		else
+			CollectionDate = "unknown";
 	}
 	
 	//jackson custom JSON serialization 

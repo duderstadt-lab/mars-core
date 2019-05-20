@@ -107,10 +107,8 @@ public class ImageMetaDataPanel extends JPanel {
 		this.archive = archive;
 		
 		if (archive.getNumberOfImageMetaDataRecords() > 0) {
-			System.out.println("Not Using Dummy");
 			this.imageMetaData = archive.getImageMetaData(0);
 		} else {
-			System.out.println("Using Dummy");
 			imageMetaData = DummyImageMetaData;
 		}
 		

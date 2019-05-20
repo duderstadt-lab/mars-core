@@ -39,7 +39,7 @@
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars</artifactId>
-	<version>1.0.0-SNAPSHOT-beta7</version>
+	<version>1.0.0-SNAPSHOT-beta8</version>
 
 	<name>mars</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
