@@ -126,22 +126,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			return true;
 		}
 	}
-	
-	public void show(String name, MoleculeArchive archive) {
-		//This will make sure we don't try to open archive windows if we are running in headless mode...
-		//If this method is always used for showing archives it will seamlessly allow the same code to 
-		//work in headless mode...
-		if (!archives.containsKey(name))
-			addArchive(archive);
-		if (!uiService.isHeadless()) {
-			if (archives.get(name).getWindow() != null) {
-				archives.get(name).getWindow().updateAll();
-			} else {
-				MoleculeArchiveWindow win = new MoleculeArchiveWindow(archive, this);
-				archives.get(name).setWindow(win);
-			}
-		}
-	}
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
@@ -177,10 +161,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public MoleculeArchive getArchive(String name) {
 		return archives.get(name);
-	}
-	
-	public MoleculeArchiveWindow getArchiveWindow(String name) {
-		return archives.get(name).getWindow();
 	}
 	
 	public UIService getUIService() {

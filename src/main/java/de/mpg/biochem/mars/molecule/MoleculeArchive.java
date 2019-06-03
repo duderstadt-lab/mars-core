@@ -1605,7 +1605,7 @@ public class MoleculeArchive {
 	 */
 	public void lock() {
 		if (win != null) {
-			win.lockArchive();
+			win.lock();
 		}
 	}
 	
@@ -1614,7 +1614,7 @@ public class MoleculeArchive {
 	 */
 	public void unlock() {
 		if (win != null) {
-			win.unlockArchive();
+			win.unlock();
 		}
 	}
 	
