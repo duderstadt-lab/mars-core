@@ -105,10 +105,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 				archive.addLogMessage(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
-			    if (!uiService.isHeadless()) {
-			    	archive.getWindow().updateAll();
-					archive.getWindow().unlockArchive();
-				}
+			    if (!uiService.isHeadless())
+					archive.getWindow().unlock();
 				return;
 			}
 		}

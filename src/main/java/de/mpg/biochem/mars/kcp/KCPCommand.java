@@ -140,7 +140,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	public void run() {		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
-			archive.getWindow().lockArchive();
+			archive.getWindow().lock();
 		
 		//Build log message
 		LogBuilder builder = new LogBuilder();
