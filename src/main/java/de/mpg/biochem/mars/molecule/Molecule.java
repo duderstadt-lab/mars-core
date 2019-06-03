@@ -493,6 +493,16 @@ public class Molecule {
 	}
 	
 	/**
+	 * Get an array list of all tags.
+	 *  
+	 * @return Returns the set of tags for this molecule record as an array.
+	 */
+	public String[] getTagsArray() {
+		String tagArray[] = new String[Tags.size()];
+		return Tags.toArray(tagArray);
+	}
+	
+	/**
 	 * Remove a string tag from the record.
 	 *  
 	 * @param tag The string tag to remove.
