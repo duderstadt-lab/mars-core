@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -246,6 +247,17 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
             if (i!=getColumnCount()-1) sb.append(',');
 	    }
 	    return new String(sb);
+	}
+	
+	public List<Object> getRowAsList(int row) {
+	    if ((row<0) || (row>=getRowCount()))
+	        throw new IllegalArgumentException("Row out of range: "+row);
+	    List<Object> rowList = new ArrayList<Object>();
+	    rowList.add(row);
+	    for (int i=0; i<getColumnCount(); i++) {
+	    	rowList.add(get(i,row));
+	    }
+	    return rowList;
 	}
 	
 	//jackson custom JSON serialization in table format with schema and data objects

@@ -4,4 +4,5 @@ public interface MoleculeArchiveWindow {
 	public void update();
 	public void lock();
 	public void unlock();
+	public void close();
 }

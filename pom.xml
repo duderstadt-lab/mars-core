@@ -66,14 +66,14 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://gitlab-laue.biochem.mpg.de/SDMM/mars</connection>
-		<developerConnection>scm:git:git@gitlab-laue.biochem.mpg.de/SDMM/mars.git</developerConnection>
+		<connection>scm:git:git://gitlab-laue.biochem.mpg.de/SDMM/mars-core</connection>
+		<developerConnection>scm:git:git@gitlab-laue.biochem.mpg.de/SDMM/mars-core.git</developerConnection>
 		<tag>HEAD</tag>
-		<url>git@laue.biochem.mpg.de:SDMM/mars.git</url>
+		<url>git@laue.biochem.mpg.de:SDMM/mars-core.git</url>
 	</scm>
 	<issueManagement>
 		<system>GitLab Issues</system>
-		<url>https://gitlab-laue.biochem.mpg.de/SDMM/mars/issues</url>
+		<url>https://gitlab-laue.biochem.mpg.de/SDMM/mars-core/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>

@@ -626,6 +626,21 @@ public class Molecule {
 	}
 	
 	/**
+	 * Check if record has a Segments table ({@link MARSResultsTable}) generated 
+	 * using xColumnName and yColumnName.
+	 * 
+	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @return Boolean whether the segment table exists.
+	 */	
+	public boolean hasSegmentsTable(String xColumnName, String yColumnName) {
+		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		tableColumnNames.add(xColumnName);
+		tableColumnNames.add(yColumnName);
+		return segmentTables.containsKey(tableColumnNames);
+	}
+	
+	/**
 	 * Retrieve a Segments table ({@link MARSResultsTable}) generated 
 	 * using yColumnName and xColumnName provided in index positions 0
 	 * and 1 of an ArrayList, respectively.
