@@ -45,6 +45,7 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
+import ij.plugin.frame.RoiManager;
 import net.imagej.ImageJService;
 
 @Plugin(type = Service.class)
@@ -70,6 +71,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     
     @Parameter
     private DisplayService displayService;
+    
+    @Parameter
+    private RoiManager roiManager;
     
 	private Map<String, MoleculeArchive> archives;
 	
@@ -181,6 +185,10 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public FormatService getFormatService() {
 		return formatService;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
 	}
 	
 	@Override
