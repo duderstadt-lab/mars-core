@@ -72,9 +72,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private DisplayService displayService;
     
-    @Parameter
-    private RoiManager roiManager;
-    
 	private Map<String, MoleculeArchive> archives;
 	
 	@Override
@@ -185,10 +182,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public FormatService getFormatService() {
 		return formatService;
-	}
-	
-	public RoiManager getRoiManager() {
-		return roiManager;
 	}
 	
 	@Override
