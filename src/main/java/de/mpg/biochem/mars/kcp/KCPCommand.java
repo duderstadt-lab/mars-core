@@ -244,16 +244,34 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	
 	private void findChangePoints(Molecule molecule) {
 		MARSResultsTable datatable = molecule.getDataTable();
+		
+		//START NaN FIX
+		ArrayList<Double> xDataSafe = new ArrayList<Double>();
+		ArrayList<Double> yDataSafe = new ArrayList<Double>();
+		for (int i=0;i<datatable.getRowCount();i++) {
+			if (!Double.isNaN(datatable.getValue(Xcolumn, i)) && !Double.isNaN(datatable.getValue(Ycolumn, i))) {
+				xDataSafe.add(datatable.getValue(Xcolumn, i));
+				yDataSafe.add(datatable.getValue(Ycolumn, i));
+			}
+		}
+		
+		int rowCount = xDataSafe.size();
+		
 		int offset = 0;
-		int length = datatable.getRowCount();
+		int length = rowCount;
 		
 		int SigXstart = 0;
-		int SigXend = datatable.getRowCount();
+		int SigXend = rowCount;
 		
-		double[] xData = datatable.getColumnAsDoubles(Xcolumn);
-		double[] yData = datatable.getColumnAsDoubles(Ycolumn);
+		double[] xData = new double[rowCount];
+		double[] yData = new double[rowCount];
+		for (int i=0;i<rowCount;i++) {
+			xData[i] = xDataSafe.get(i);
+			yData[i] = yDataSafe.get(i);
+		}
+		//END FIX
 		
-		for (int j=0;j<datatable.getRowCount();j++) {
+		for (int j=0;j<rowCount;j++) {
 			if (region) {
 				if (molecule.hasParameter(start_name) && xData[j] <= molecule.getParameter(start_name)) {
 					offset = j;

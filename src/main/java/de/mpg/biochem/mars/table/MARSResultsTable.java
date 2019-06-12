@@ -759,10 +759,15 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			return Double.NaN;
 		double mean = mean(column);
 		double diffSquares = 0;
+		
+		int count = 0;
 		for (int i = 0; i < getRowCount() ; i++) {
+			if (Double.isNaN(getValue(column, i)))
+				continue;
 			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
+			count++;
 		}
-		return diffSquares/getRowCount();
+		return diffSquares/count;
 	}
 	
 	public double msd(String msdColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
@@ -773,6 +778,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		int count = 0;
 		for (int i = 0; i < getRowCount() ; i++) {
 			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				if (Double.isNaN(getValue(msdColumn, i)))
+					continue;
 				diffSquares += (getValue(msdColumn, i) - mean)*(getValue(msdColumn, i) - mean);
 				count++;
 			}
