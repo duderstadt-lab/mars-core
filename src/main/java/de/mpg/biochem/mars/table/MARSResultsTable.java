@@ -600,6 +600,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		double sum = 0;
 		int count = 0;
 		for (int i = 0; i < getRowCount();i++) {
+			if (Double.isNaN(getValue(column, i)))
+				continue;
 			sum += getValue(column, i);
 			count++;
 		}
@@ -613,6 +615,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		int count = 0;
 		for (int i = 0; i < getRowCount();i++) {
 			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+				if (Double.isNaN(getValue(meanColumn, i)))
+					continue;
 				sum += getValue(meanColumn, i);
 				count++;
 			}
