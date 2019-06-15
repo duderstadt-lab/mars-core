@@ -12,6 +12,10 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,12 +76,8 @@ import net.imglib2.type.numeric.real.DoubleType;
  * 
  * @author Karl Duderstadt
  */
-//public class MARSResultsTable extends AbstractTable<DoubleColumn, Double> implements ResultsTable {
 public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	
 	private MARSResultsTableWindow win;
@@ -570,28 +570,38 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * Returns the maximum value in the column.
 	 * 
 	 * @param  column  name of the column.
-	 * @return      maximum value in the column.
+	 * @return maximum value in the column.
 	 */
 	public double max(String column) {
 		if (get(column) == null)
 			return Double.NaN;
-		double max = (double)get(column, 0);
+		double max = Double.MIN_VALUE;
 		for (double value: getDoubleColumn(column)) {
+			if (Double.isNaN(value))
+				continue;
 			if (max < value)
 				max = value;
 		}
-		return max;
+		if (max == Double.MIN_VALUE)
+			return Double.NaN;
+		else
+			return max;
 	}
 	
 	public double min(String column) {
 		if (get(column) == null)
 			return Double.NaN;
-		double min = getDoubleColumn(column).get(0);
+		double min = Double.MAX_VALUE;
 		for (double value: getDoubleColumn(column)) {
+			if (Double.isNaN(value))
+				continue;
 			if (min > value)
 				min = value;
 		}
-		return min;
+		if (min == Double.MAX_VALUE)
+			return Double.NaN;
+		else
+			return min;
 	}
 	
 	public double mean(String column) {
