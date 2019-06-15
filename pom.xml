@@ -43,7 +43,7 @@
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars-core</artifactId>
-	<version>1.0.0-SNAPSHOT-beta9</version>
+	<version>1.0.0-SNAPSHOT-beta10</version>
 
 	<name>mars-core</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
@@ -54,7 +54,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>BSD-2</name>
+			<name>BSD-3</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -96,14 +96,14 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://gitlab-laue.biochem.mpg.de/SDMM/mars-core</connection>
-		<developerConnection>scm:git:git@gitlab-laue.biochem.mpg.de/SDMM/mars-core.git</developerConnection>
+		<connection>scm:git:git://github.com/duderstadt-lab/mars-core.git</connection>
+		<developerConnection>scm:git:git@github.com:duderstadt-lab/mars-core.git</developerConnection>
 		<tag>HEAD</tag>
-		<url>git@laue.biochem.mpg.de:SDMM/mars-core.git</url>
+		<url>https://github.com/duderstadt-lab/mars-core</url>
 	</scm>
 	<issueManagement>
-		<system>GitLab Issues</system>
-		<url>https://gitlab-laue.biochem.mpg.de/SDMM/mars-core/issues</url>
+		<system>GitHub Issues</system>
+		<url>https://github.com/duderstadt-lab/mars-core/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
@@ -111,7 +111,7 @@
 
 	<properties>
 		<package-name>de.mpg.biochem.mars</package-name>
-		<license.licenseName>BSD-2</license.licenseName>
+		<license.licenseName>BSD-3</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 	</properties>
 	
