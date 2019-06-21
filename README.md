@@ -1,3 +1,5 @@
+![mars repos](https://raw.githubusercontent.com/duderstadt-lab/mars-docs/master/images/MARS_front_page.png "MARS repos")
+
 **MARS** - **M**olecule **AR**chive **S**uite - A collection of ImageJ2 commands for single-molecule analysis.
 
 How to install this project in your local Fiji
