@@ -86,9 +86,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	private String name = new String("MARSResultsTable");
 	
-	//Special column names for a segments table...
-	private String xColumnName, yColumnName;
-	
     @Parameter
     private StatusService statusService;
 	
@@ -103,13 +100,14 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		this.name = name;
 	}
 	
-	public MARSResultsTable(String xColumnName, String yColumnName) {
+	/** Creates a results table with the name given and column headers. */
+	public MARSResultsTable(String name, String... headers) {
 		super();
-		this.xColumnName = xColumnName;
-		this.yColumnName = yColumnName;
-		this.name = yColumnName + " vs " + xColumnName;
+		this.name = name;
+		for (String header : headers)
+			add(createColumn(header));
 	}
-	
+
 	public MARSResultsTable(File file) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
@@ -526,11 +524,31 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	public void setValue(String column, int row, double value) {
-		((DoubleColumn)get(column)).set(row, value);
+		if (!hasColumn(column)) {
+			DoubleColumn col = new DoubleColumn(column);
+			for (int i=0;i<getRowCount();i++) {
+				if (i == row)
+					col.add(value);
+				else
+					col.add(Double.NaN);
+			}
+			add(col);
+		} else
+			getDoubleColumn(column).set(row, value);
 	}
 	
 	public void setValue(String column, int row, String value) {
-		((GenericColumn)get(column)).set(row, value);
+		if (!hasColumn(column)) {
+			GenericColumn col = new GenericColumn(column);
+			for (int i=0;i<getRowCount();i++) {
+				if (i == row)
+					col.add(value);
+				else
+					col.add("");
+			}
+			add(col);
+		} else
+			getGenericColumn(column).set(row, value);
 	}
 	
 	public double getValue(int col, int row) {
@@ -565,7 +583,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return (GenericColumn)get(column);
 	}
 	
-	//Here are some utility methods add for common operations..
+	//Here are some utility methods added for common operations..
 	/**
 	 * Returns the maximum value in the column.
 	 * 
@@ -909,21 +927,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
 	}
-	
-	public void setXYColumnNames(String xColumnName, String yColumnName) {
-		this.xColumnName = xColumnName;
-		this.yColumnName = yColumnName;
-		this.name = xColumnName + " vs " + yColumnName;
-	}
-	
-	public String getXColumnName() {
-		return this.xColumnName;
-	}
-	
-	public String getYColumnName() {
-		return this.yColumnName;
-	}
-	
+
 	public MARSResultsTable clone() {
 		MARSResultsTable table = new MARSResultsTable(this.getName());
 		for (int col = 0; col < getColumnCount(); col++) {

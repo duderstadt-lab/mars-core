@@ -338,7 +338,7 @@ public class Molecule {
 				    	tableColumnNames.add(xColumnName);
 				    	tableColumnNames.add(yColumnName);
 				    	
-				    	MARSResultsTable segmenttable = new MARSResultsTable(tableColumnNames.get(0), tableColumnNames.get(1));
+				    	MARSResultsTable segmenttable = new MARSResultsTable(yColumnName + " vs " + xColumnName);
 				    	
 				    	//Move past Table
 				    	jParser.nextToken();
@@ -610,7 +610,7 @@ public class Molecule {
 		//Let's also make sure the MARSResultsTable contains
 		//the x and y column names...
 		//Should always be set but just in case....
-		segs.setXYColumnNames(xColumnName, yColumnName);
+		//segs.setXYColumnNames(xColumnName, yColumnName);
 		segmentTables.put(tableColumnNames, segs);
 	}
 	
