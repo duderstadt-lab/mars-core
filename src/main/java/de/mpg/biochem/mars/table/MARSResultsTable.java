@@ -71,6 +71,8 @@ import net.imagej.axis.AxisType;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.DoubleType;
 
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+
 /**
  * MARS implementation of a double precision results table. Based on org.scijava.table.DefaultResultsTable.
  * 
@@ -84,7 +86,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	private StringBuilder sb;
 	
-	private String name = new String("MARSResultsTable");
+	private String name = "MARSResultsTable";
 	
     @Parameter
     private StatusService statusService;
@@ -492,9 +494,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
         }
 	}
 	
-	//open method for JSON Table format input...
-	//Assumes all columns are type number
-	//if not this will fail
 	private void loadJSON(File file) throws JsonParseException, IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		
@@ -533,8 +532,12 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 					col.add(Double.NaN);
 			}
 			add(col);
-		} else
-			getDoubleColumn(column).set(row, value);
+		} else if (get(column) instanceof DoubleColumn)
+			((DoubleColumn)get(column)).set(row, value);
+		else if (get(column) instanceof GenericColumn) {
+			String str = String.valueOf(value);
+			((GenericColumn)get(column)).set(row, str);
+		}
 	}
 	
 	public void setValue(String column, int row, String value) {
@@ -547,8 +550,17 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 					col.add("");
 			}
 			add(col);
-		} else
-			getGenericColumn(column).set(row, value);
+		} else if (get(column) instanceof GenericColumn) 
+			((GenericColumn)get(column)).set(row, value);
+		else if (get(column) instanceof DoubleColumn) {
+			double num = Double.NaN;
+			try {
+				num = Double.valueOf(value);
+			} catch(NumberFormatException e) {
+			    //Do nothing.. set NaN as value...
+			}
+			((DoubleColumn)get(column)).set(row, num);
+		}
 	}
 	
 	public double getValue(int col, int row) {
@@ -556,7 +568,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	public double getValue(String column, int index) {
-		return getDoubleColumn(column).get(index);
+		return ((DoubleColumn) get(column)).get(index);
 	}
 	
 	public String getStringValue(String column, int index) {
@@ -575,26 +587,17 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return false;
 	}
 	
-	public DoubleColumn getDoubleColumn(String column) {
-		return (DoubleColumn)get(column);
-	}
-	
-	public GenericColumn getGenericColumn(String column) {
-		return (GenericColumn)get(column);
-	}
-	
-	//Here are some utility methods added for common operations..
 	/**
-	 * Returns the maximum value in the column.
+	 * Returns the maximum value in the column. NaN values are ignored. 
 	 * 
 	 * @param  column  name of the column.
-	 * @return maximum value in the column.
+	 * @return maximum value in the column. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double max(String column) {
 		if (get(column) == null)
 			return Double.NaN;
 		double max = Double.MIN_VALUE;
-		for (double value: getDoubleColumn(column)) {
+		for (double value: (DoubleColumn) get(column)) {
 			if (Double.isNaN(value))
 				continue;
 			if (max < value)
@@ -606,11 +609,17 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			return max;
 	}
 	
+	/**
+	 * Returns the minimum value in the column. NaN values are ignored. 
+	 * 
+	 * @param  column  name of the column.
+	 * @return minimum value in the column. NaN is returned if all values are NaN or the column does not exist.
+	 */
 	public double min(String column) {
 		if (get(column) == null)
 			return Double.NaN;
 		double min = Double.MAX_VALUE;
-		for (double value: getDoubleColumn(column)) {
+		for (double value: (DoubleColumn) get(column)) {
 			if (Double.isNaN(value))
 				continue;
 			if (min > value)
@@ -622,18 +631,22 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			return min;
 	}
 	
-	public double mean(String column) {
+	/**
+	 * Returns the mean value of the column. NaN values are ignored. 
+	 * 
+	 * @param  column  name of the column.
+	 * @return mean value of the column. NaN is returned if all values are NaN or the column does not exist.
+	 */
+	public double mean(String column) {		
 		if (get(column) == null)
 			return Double.NaN;
-		double sum = 0;
-		int count = 0;
+		Mean mean = new Mean();
 		for (int i = 0; i < getRowCount();i++) {
 			if (Double.isNaN(getValue(column, i)))
 				continue;
-			sum += getValue(column, i);
-			count++;
+			mean.increment(getValue(column, i));
 		}
-		return sum/count;
+		return mean.getResult();
 	}
 	
 	public double mean(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
@@ -657,9 +670,14 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			return Double.NaN;
 		ArrayList<Double> values = new ArrayList<Double>();
 		for (int i = 0; i < getRowCount();i++) {
+			if (Double.isNaN(getValue(column, i)))
+				continue;
 			values.add(getValue(column, i));
 		}
 		Collections.sort(values);
+		
+		if (values.size() == 0)
+			return Double.NaN;
 		
 		double median;
 		if (values.size() % 2 == 0)
@@ -921,6 +939,10 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	public void sort(final boolean ascending, String... column) {
 		ResultsTableService.sort(this, ascending, column);
+	}
+	
+	public void filter() {
+		
 	}
 	
 	@Override

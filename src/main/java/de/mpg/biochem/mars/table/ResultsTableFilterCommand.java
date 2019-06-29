@@ -46,6 +46,7 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.table.DoubleColumn;
 import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
@@ -106,9 +107,9 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 
 	private void updateMinMax() {
 		if (table.get(columnName) != null) {
-			min = max = table.getDoubleColumn(columnName).get(0);
+			min = max = table.getValue(columnName, 0);
 			
-			for (double value: table.getDoubleColumn(columnName)) {
+			for (double value: (DoubleColumn) table.get(columnName)) {
 				
 				if (min > value)
 					min = value;
@@ -150,7 +151,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		
 		double[] filterList = new double[0];
 		if (TableFilter) {
-			filterList = filterTable.getDoubleColumn(columnName).getArray();
+			filterList = filterTable.getColumnAsDoubles(columnName);
 		}
 		
 		//If STDFilter was selected we have to calculate mean and STD before filtering
