@@ -207,7 +207,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 			delList[i] = deleteList.get(i);
 		}
 
-		resultsTableService.deleteRows(table, delList);
+		table.deleteRows(delList);
 		
 		if (table.getWindow() != null)
 			table.getWindow().update();

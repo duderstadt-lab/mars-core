@@ -48,10 +48,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -62,16 +62,11 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.util.MARSMath;
-import ij.text.TextWindow;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.axis.AxisType;
-import net.imglib2.img.Img;
-import net.imglib2.type.numeric.real.DoubleType;
 
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
  * MARS implementation of a double precision results table. Based on org.scijava.table.DefaultResultsTable.
@@ -588,13 +583,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/**
-	 * Returns the maximum value in the column. NaN values are ignored. 
+	 * Finds the maximum of the column values. NaN values are ignored. 
 	 * 
 	 * @param  column  name of the column.
-	 * @return maximum value in the column. NaN is returned if all values are NaN or the column does not exist.
+	 * @return maximum value in the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double max(String column) {
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
 		double max = Double.MIN_VALUE;
 		for (double value: (DoubleColumn) get(column)) {
@@ -610,13 +605,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/**
-	 * Returns the minimum value in the column. NaN values are ignored. 
+	 * Finds the minimum of the column values. NaN values are ignored. 
 	 * 
 	 * @param  column  name of the column.
-	 * @return minimum value in the column. NaN is returned if all values are NaN or the column does not exist.
+	 * @return minimum value in the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double min(String column) {
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
 		double min = Double.MAX_VALUE;
 		for (double value: (DoubleColumn) get(column)) {
@@ -632,13 +627,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/**
-	 * Returns the mean value of the column. NaN values are ignored. 
+	 * Calculates the mean of the values for the column given. NaN values are ignored. 
 	 * 
 	 * @param  column  name of the column.
-	 * @return mean value of the column. NaN is returned if all values are NaN or the column does not exist.
+	 * @return mean value of the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double mean(String column) {		
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
 		Mean mean = new Mean();
 		for (int i = 0; i < getRowCount();i++) {
@@ -649,24 +644,37 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return mean.getResult();
 	}
 	
-	public double mean(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
+	/**
+	 * Calculates the mean of the values for the meanColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. 
+	 * 
+	 * @param  meanColumn  name of the column used for calculating the mean.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return mean value of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double mean(String meanColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(meanColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
-		double sum = 0;
-		int count = 0;
-		for (int i = 0; i < getRowCount();i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				if (Double.isNaN(getValue(meanColumn, i)))
-					continue;
-				sum += getValue(meanColumn, i);
-				count++;
-			}
+		Mean mean = new Mean();
+		for (int row = 0; row < getRowCount(); row++) {
+			if (Double.isNaN(getValue(meanColumn, row)))
+				continue;
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
+				mean.increment(getValue(meanColumn, row));
 		}
-		return sum/count;
+		return mean.getResult();
 	}
 	
+	/**
+	 * Calculates the median of the column values. NaN values are ignored. 
+	 * 
+	 * @param  column  name of the column.
+	 * @return median value of the column values. NaN is returned if all values are NaN or the column does not exist.
+	 */
 	public double median(String column) {
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
 		ArrayList<Double> values = new ArrayList<Double>();
 		for (int i = 0; i < getRowCount();i++) {
@@ -688,17 +696,31 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return median;
 	}
 	
-	public double median(String column, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(column) == null || get(rowSelectionColumn) == null)
+	/**
+	 * Finds the median of the values for the medianColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. 
+	 * 
+	 * @param  medianColumn  name of the column used for finding the median.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return median value of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double median(String medianColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+		if (!hasColumn(medianColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
 		ArrayList<Double> values = new ArrayList<Double>();
-		for (int i = 0; i < getRowCount();i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				values.add(getValue(column, i));
-			}
+		for (int row = 0; row < getRowCount();row++) {
+			if (Double.isNaN(getValue(medianColumn, row)))
+				continue;
+			
+			if (getValue(rowSelectionColumn, row) >= rangeStart && getValue(rowSelectionColumn, row) <= rangeEnd)
+				values.add(getValue(medianColumn, row));
 		}
-		Collections.sort(values);
+		if (values.size() == 0)
+			return Double.NaN;
 		
+		Collections.sort(values);
 		double median;
 		if (values.size() % 2 == 0)
 		    median = (values.get(values.size()/2) + values.get(values.size()/2 - 1))/2;
@@ -708,35 +730,56 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return median;
 	}
 	
+	/**
+	 * Calculates the standard deviation of the column. NaN values are ignored. 
+	 * 
+	 * @param  column  name of the column.
+	 * @return standard deviation of the column values. NaN is returned if all values are NaN or the column does not exist.
+	 */
 	public double std(String column) {
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
-		double mean = mean(column);
-		double diffSquares = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
-		}
 		
-		return Math.sqrt(diffSquares/(getRowCount()-1));
+		StandardDeviation standardDeviation = new StandardDeviation();
+		for (int i = 0; i < getRowCount() ; i++) {
+			if (Double.isNaN(getValue(column, i)))
+				continue;
+			standardDeviation.increment(getValue(column, i));
+		}
+		return standardDeviation.getResult();
 	}
 	
-	public double std(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
+	/**
+	 * Calculates the standard deviation of the values for the stdColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. 
+	 * 
+	 * @param  stdColumn  name of the column to use for the standard deviation calculation.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return standard deviation of the stdColumn for the rowSelection. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double std(String stdColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(stdColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
-		double mean = mean(meanColumn, rowSelectionColumn, rangeStart, rangeEnd);
-		double diffSquares = 0;
-		int count = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				diffSquares += (mean - getValue(meanColumn, i))*(mean - getValue(meanColumn, i));
-				count++;
-			}
+		
+		StandardDeviation standardDeviation = new StandardDeviation();
+		for (int row = 0; row < getRowCount() ; row++) {
+			if (Double.isNaN(getValue(stdColumn, row)))
+				continue;
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
+				standardDeviation.increment(getValue(stdColumn, row));
 		}
 		
-		return Math.sqrt(diffSquares/(count-1));
+		return standardDeviation.getResult();
 	}
 	
-	
+	/**
+	 * Calculates the median absolute deviation. NaN values are ignored.
+	 *
+	 * @param column  name of the column.
+	 * @return median absolute deviation of the column values. NaN is returned if all values are NaN or the column does not exist.
+	 */
 	public double mad(String column) {
 		if (get(column) == null)
 			return Double.NaN;
@@ -837,112 +880,130 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return diffSquares/count;
 	}
 	
-	public double slope(String xColumn, String yColumn) {
-		if (get(xColumn) == null || get(yColumn) == null)
-			return Double.NaN;
-		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
-		//offset and length...
-		double[] xData = this.getColumnAsDoubles(xColumn);
-		double[] yData = this.getColumnAsDoubles(yColumn);
+	//linear fit of x and y for the range of x values given (inclusive of end points)
+	public SimpleRegression linearFit(String xColumn, String yColumn) {
+		SimpleRegression linearFit = new SimpleRegression(true);
+		if (!hasColumn(xColumn) || !hasColumn(yColumn))
+			return new SimpleRegression(true);
 		
-		if (xData.length < 2) {
-			return Double.NaN;
+		for (int row=0; row < getRowCount(); row++) {
+			if (Double.isNaN(getValue(xColumn, row)) || Double.isNaN(getValue(yColumn, row)))
+				continue;
+			linearFit.addData(getValue(xColumn, row), getValue(yColumn, row));
 		}
-		double[] output = MARSMath.linearRegression(xData, yData, 0, xData.length);
-		return output[2];
+		
+		return linearFit;
 	}
 	
-	public double slope(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
-		if (get(xColumn) == null || get(yColumn) == null)
-			return Double.NaN;
-		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
-		//offset and length...
-		double[] xData = this.getColumnAsDoubles(xColumn);
-		double[] yData = this.getColumnAsDoubles(yColumn);
-		int offset = 0;
-		int endIndex = 0;
-		//Let's make sure the end points are always inside the range even if the points given don't exist...
-		//First for offset
-		for (int i = xData.length - 1; i >= 0; i--) {
-			if (xData[i] >= rangeStart) {
-				offset = i;
-			}
+	//linear fit of x and y for the range of x values given (inclusive of end points)
+	public SimpleRegression linearFit(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
+		SimpleRegression linearFit = new SimpleRegression(true);
+		if (!hasColumn(xColumn) || !hasColumn(yColumn))
+			return linearFit;
+		
+		int rowStart = 0;
+		int rowEnd = 0;
+		
+		//Find first row in range.
+		//NaN values will be skipped
+		for (int i = getRowCount() - 1; i >= 0; i--) {
+			if (getValue(xColumn, i) >= rangeStart)
+				rowStart = i;
 		}
 		
-		//For the end of the range we search in the other direction.. 
-		for (int i = 0; i < xData.length; i++) {
-			if (xData[i] <= rangeEnd) {
-				endIndex = i;
-			}
+		//Find last row in range
+		//NaN values are skipped
+		for (int i = 0; i < getRowCount(); i++) {
+			if (getValue(xColumn, i) <= rangeEnd)
+				rowEnd = i;
 		}
-		int length = endIndex - offset;
-		if (length < 2) {
-			return Double.NaN;
+		int length = rowEnd - rowStart;
+		if (length < 2) 
+			return linearFit;
+		
+		for (int row=rowStart; row <= rowEnd; row++) {
+			if (Double.isNaN(getValue(xColumn, row)) || Double.isNaN(getValue(yColumn, row)))
+				continue;
+			linearFit.addData(getValue(xColumn, row), getValue(yColumn, row));
 		}
-		double[] output = MARSMath.linearRegression(xData, yData, offset, length);
-		return output[2];
+		
+		return linearFit;
 	}
-	
-	public double[] linearFit(String xColumn, String yColumn) {
-		if (get(xColumn) == null || get(yColumn) == null)
-			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
-		
-		//We will get the slope information using the SMMMath.LinearRegression function for that we need the
-		//offset and length...
-		double[] xData = this.getColumnAsDoubles(xColumn);
-		double[] yData = this.getColumnAsDoubles(yColumn);
-		
-		if (xData.length < 2) {
-			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
-		}
-		return MARSMath.linearRegression(xData, yData, 0, xData.length);
-	}
-	
-	public double[] linearFit(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
-		if (get(yColumn) == null || get(xColumn) == null)
-			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
-		//We will get the slope information using the MARSMath.linearRegression function for that we need the
-		//offset and length...
-		double[] xData = this.getColumnAsDoubles(xColumn);
-		double[] yData = this.getColumnAsDoubles(yColumn);
-		int offset = 0;
-		int endIndex = 0;
-		//Let's make sure the end points are always inside the range even if the points given don't exist...
-		//First for offset
-		for (int i = xData.length - 1; i >= 0; i--) {
-			if (xData[i] >= rangeStart) {
-				offset = i;
-			}
-		}
-		
-		//For the end of the range we search in the other direction.. 
-		for (int i = 0; i < xData.length; i++) {
-			if (xData[i] <= rangeEnd) {
-				endIndex = i;
-			}
-		}
-		int length = endIndex - offset;
-		if (length < 2) {
-			return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
-		}
 
-		return MARSMath.linearRegression(xData, yData, offset, length);
+	public boolean sort(String... columns) {
+		return sort(true, columns);
 	}
 	
-	public void sort(final boolean ascending, String column) {
-		ResultsTableService.sort(this, ascending, column);
-	}
+	//Only tables composed of DoubleColumns are sortable currently.
+	//If the table contains another column type sort will not do anything.
 	
-	public void sort(final boolean ascending, String group, String column) {
-		ResultsTableService.sort(this, ascending, group, column);
-	}
-	
-	public void sort(final boolean ascending, String... column) {
-		ResultsTableService.sort(this, ascending, column);
+	public boolean sort(final boolean ascending, String... columns) {
+		for (int index=0; index<columns.length; index++) {	
+			if (!hasColumn(columns[index]))
+				return false;
+			if (!(get(columns[index]) instanceof DoubleColumn))
+				return false;
+		}
+		
+		final int[] columnIndexes = new int[columns.length];
+		
+		for (int i = 0; i < columns.length; i++)
+			columnIndexes[i] = getColumnIndex(columns[i]);
+		
+		//Maybe there is a better way using the sort method for Lists directly 
+		//without a need for the inner class that also works with GenericColumns
+		Collections.sort(new ResultsTableList(this), new Comparator<double[]>() {
+			
+			@Override
+			public int compare(double[] o1, double[] o2) {				
+				for (int columnIndex: columnIndexes) {
+					int groupDifference = Double.compare(o1[columnIndex], o2[columnIndex]); 
+				
+					if (groupDifference != 0)
+						return ascending ? groupDifference : -groupDifference;
+				}
+				return 0;
+			}
+			
+		});
+		
+		
+		return true;
 	}
 	
 	public void filter() {
 		
+	}
+	
+	public void deleteRows(int[] rows) {
+		if (rows.length == 0)
+			return;
+		
+		int pos = 0;
+		int rowsIndex = 0;
+		for (int i = 0; i < getRowCount(); i++) {
+			if (rowsIndex < rows.length) {
+				if (rows[rowsIndex] == i) {
+					rowsIndex++;
+					continue;
+				}
+			}
+			
+			if (pos != i) {
+				//means we need to move row i to position row.
+				for (int j=0;j<getColumnCount();j++)
+					set(j, pos, get(j, i));
+			}
+			pos++;
+		}
+		
+		// delete last rows
+		for (int row = getRowCount() - 1; row > pos-1; row--)
+			removeRow(row);
+	}
+	
+	public void deleteRows(int firstRow, int LastRow) {
+	
 	}
 	
 	@Override
@@ -976,5 +1037,52 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	public StatusService getStatusService() {
 		return statusService;
+	}
+	
+	class ResultsTableList extends AbstractList<double[]> {
+		private MARSResultsTable table;
+		
+		public ResultsTableList(MARSResultsTable table) {
+			this.table = table;
+		}
+		
+		@Override
+		public double[] get(int row) {
+			double[] values = new double[table.getColumnCount()];
+			
+			for (int col = 0; col < values.length; col++)
+				values[col] = table.getValue(col, row);
+			
+			return values;
+		}
+		
+		@Override
+		public double[] set(int row, double[] values) {
+			double[] old = get(row);
+			
+			for (int col = 0; col < values.length; col++)
+				table.setValue(col, row, values[col]);
+			
+			return old;
+		}
+		@Override
+		public int size() {
+			return table.getRowCount();
+		}
+		
+		@Override
+		public void removeRange(int fromIndex, int toIndex) {
+			int n = toIndex - fromIndex;
+			int m = size();
+			
+			// move range to the end of the table
+			for (int row = fromIndex; row + n < m; row++)
+				set(row, get(row + n));
+			
+			// delete last rows
+			for (int row = m - 1; row >= m - n; row--)
+				table.removeRow(row);
+			
+		}
 	}
 }

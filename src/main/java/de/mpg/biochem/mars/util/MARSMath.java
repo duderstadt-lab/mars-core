@@ -61,10 +61,6 @@ public class MARSMath {
 		return output;
 	}
 	
-	//TODO Add Method that does linear regression using just xData and yData..
-	
-	//TODO Add Method that does linear regression using DoubleColumns as input
-	
 	// Equations and notation taken directly from "An Introduction to Error Analysis" by Taylor 2nd edition
 	// y = A + Bx
 	// A = output[0] +/- output[1]
@@ -144,19 +140,5 @@ public class MARSMath {
 		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, temperature);
 		double[] output = calculator.calculate(msd);
 		return output;
-	}
-	
-	//Returns true if the value should be rejected and false it if should be kept.
-	//Based on Error Analysis by Taylor
-	public static boolean chauvenetRejectionCriterion(double mean, double std, int N, double value) {
-		NormalDistribution norm = new NormalDistribution();
-		
-		double normValue = (value - mean)/std;
-		double prob = 2*norm.cumulativeProbability(-Math.abs(normValue));
-		
-		if (N*prob < 0.5)
-			return true;
-		else 
-			return false;
 	}
 }
