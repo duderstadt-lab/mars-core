@@ -64,12 +64,24 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.util.MARSMath;
 
-import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- * MARS implementation of a double precision results table. Based on org.scijava.table.DefaultResultsTable.
+ * MARS implementation of a results table. All numbers are stored as doubles.
+ * Convenience methods and constructors are provided for common operations 
+ * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
+ * for saving and opening tables in csv or json format, and retrieval of values
+ * in many formats.
+ * 
+ * GenericColumns containing Strings can also be added to MARSResultsTables. However,
+ * some operations are not currently implemented for tables with GenericColumns (such as sorting).
+ * Their primary intended use is for generating output tables that need to combine numbers and strings or static
+ * data storage of tables composed entirely strings (for example, with frame metadata information for time points as rows).
+ * 
+ * Throughout org.apache.commons.math3 is used for common operations where possible.
  * 
  * @author Karl Duderstadt
  */
@@ -105,6 +117,11 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			add(createColumn(header));
 	}
 
+	/** Opens a results table from the file provided. The values are loaded in based on 
+	 * the extension of the file provided, which can be json or csv. If no file extension
+	 * is found it is assumed the file has csv format.
+	 *  
+	 */
 	public MARSResultsTable(File file) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
@@ -114,6 +131,12 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			loadCSV(file);
 	}
 	
+	/** Opens a results table from the file provided. The values are loaded in based on 
+	 * the extension of the file provided, which can be json or csv. If no file extension
+	 * is found it is assumed the file has csv format.
+	 *  
+	 *  If the StatusService is provided, then a progress bar is shown during loading of csv files.
+	 */
 	public MARSResultsTable(File file, StatusService statusService) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
@@ -131,21 +154,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		super(columnCount, rowCount);
 	}
 
-	/** Creates a results table with the given row and column dimensions and name. */
+	/** Creates a results table with the given name and column and row dimensions. */
 	public MARSResultsTable(final String name, final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 		this.name = name;
 	}
 	
-	// -- DoubleResultsTable methods --
+	/** Sets the name of the table. */
 	public void setName(String name) {
 		this.name = name;
 	}
 	
+	/** Retrieves the name of the table. */
 	public String getName() {
 		return name;
 	}
 	
+	/** Returns the column headings as a array of strings. */
 	public String[] getColumnHeadings() {
 		String[] columns = new String[getColumnCount()];
 		for (int i=0;i<columns.length;i++) {
@@ -154,6 +179,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return columns;
 	}
 	
+	/** Returns the column headings as an ArrayList of strings. */
 	public ArrayList<String> getColumnHeadingList() {
 		ArrayList<String> columns = new ArrayList<String>();
 	
@@ -165,14 +191,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return columns;
 	}
 	
+	/** Returns a reference to the window containing the table if there is one. 
+	 * This could be a swing or javafx window.
+	 */
 	public MARSResultsTableWindow getWindow() {
 		return win;
 	}
 	
+	/** Sets a reference to the window holding the table. 
+	 * This could be a swing or javafx window.
+	 */
 	public void setWindow(MARSResultsTableWindow win) {
 		this.win = win;
 	}
 	
+	/** Returns an array of double values for the column given.
+	 * All rows will have an entry in the array even if they have NaN values.
+	 */
 	public double[] getColumnAsDoubles(String column) {
 		if (get(column) instanceof DoubleColumn) { 
 			double[] col_array = new double[getRowCount()];
@@ -185,16 +220,81 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 	}
 	
-	//IMPORT/EXPORT METHODS
-	public boolean save(String path) {
-        try {
-            saveAs(path);
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
+	/** Returns an array of double values for the column given. NaN values are ignored.
+	 */
+	public double[] getColumnAsDoublesNoNaNs(String column) {
+		if (!hasColumn(column))
+			return new double[0];
+		ArrayList<Double> values = new ArrayList<Double>();
+		for (int row=0;row<getRowCount();row++) {
+			if (Double.isNaN(getValue(column, row)))
+				continue;
+			
+			values.add(getValue(column, row));
+		}
+		
+		return values.stream().mapToDouble(i->i).toArray();
+	}
 	
+	/** Returns an array of double values for the column within the range given 
+	 * for a rowSelectionColumn (inclusive of bounds). NaN values are ignored.
+	 */
+	public double[] getColumnAsDoublesNoNaNs(String column, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(column) || !hasColumn(rowSelectionColumn))
+			return new double[0];
+		
+		ArrayList<Double> values = new ArrayList<Double>();
+		for (int row = 0; row < getRowCount(); row++) {
+			if (Double.isNaN(getValue(column, row)))
+				continue;
+			
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
+				values.add(getValue(column, row));
+		}
+		
+		return values.stream().mapToDouble(i->i).toArray();
+	}
+	
+    /** Returns a comma delimited string of the values in the row specified.
+	 */
+	public String getRowAsString(int row) {
+	    if ((row<0) || (row>=getRowCount()))
+	        throw new IllegalArgumentException("Row out of range: "+row);
+	    if (sb==null)
+	        sb = new StringBuilder(200);
+	    else
+	        sb.setLength(0);
+	    for (int i=0; i<getColumnCount(); i++) {
+            String value = String.valueOf(get(i,row));
+            if (value.contains(","))
+                value = "\""+value+"\"";
+            sb.append(value);
+            if (i!=getColumnCount()-1) sb.append(',');
+	    }
+	    return new String(sb);
+	}
+	
+	/** Returns the row specified as a List of Objects. These could be Doubles or Strings.
+	 */
+	public List<Object> getRowAsList(int row) {
+	    if ((row<0) || (row>=getRowCount()))
+	        throw new IllegalArgumentException("Row out of range: "+row);
+	    List<Object> rowList = new ArrayList<Object>();
+	    rowList.add(row);
+	    for (int i=0; i<getColumnCount(); i++)
+	    	rowList.add(get(i,row));
+	    return rowList;
+	}
+	
+	/* 
+	 * IMPORT AND EXPORT
+	 */
+	
+	/** Saves the table to the file path specified in
+	 * csv format.
+	 * 
+	 * @param file File where the table is written.
+	 */
 	public boolean saveAs(File file) {
         try {
             saveAs(file.getAbsolutePath());
@@ -204,7 +304,9 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
         }
     }
 
-	//Outputs the table in csv format
+	/** Saves the table to the string file path specified in
+	 * csv format.
+	 */
     public void saveAs(String path) throws IOException {
         if (getRowCount() == 0) return;
         PrintWriter pw = null;
@@ -226,36 +328,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
             pw.println(getRowAsString(i));
         pw.close();
     }
-    
-	public String getRowAsString(int row) {
-	    if ((row<0) || (row>=getRowCount()))
-	        throw new IllegalArgumentException("Row out of range: "+row);
-	    if (sb==null)
-	        sb = new StringBuilder(200);
-	    else
-	        sb.setLength(0);
-	    for (int i=0; i<getColumnCount(); i++) {
-            String value = String.valueOf(get(i,row));
-            if (value.contains(","))
-                value = "\""+value+"\"";
-            sb.append(value);
-            if (i!=getColumnCount()-1) sb.append(',');
-	    }
-	    return new String(sb);
-	}
 	
-	public List<Object> getRowAsList(int row) {
-	    if ((row<0) || (row>=getRowCount()))
-	        throw new IllegalArgumentException("Row out of range: "+row);
-	    List<Object> rowList = new ArrayList<Object>();
-	    rowList.add(row);
-	    for (int i=0; i<getColumnCount(); i++) {
-	    	rowList.add(get(i,row));
-	    }
-	    return rowList;
-	}
-	
-	//jackson custom JSON serialization in table format with schema and data objects
+	/** JSON serialization of table values. Includes schema with column type definitions of either string or number.
+	 * values specified in records format, with each row an object containing column:value pairs.
+	 * 
+	 * @param jGenerator JsonGenerator stream the table should be serialized to.
+	 * @throws IOException 
+	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
 		if (getColumnCount() > 0) {
@@ -293,7 +372,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		jGenerator.writeEndObject();
 	}
 	
-	//jackson custom JSON deserialization in table format with schema and data objects
+	/** JSON deserialization of table values. Schema is used to determine column type of either DoubleColumn or
+	 * GenericColumn. Record objects are added as the stream is parsed. The Double value types of 
+	 * NaN, Infinity, -Infinity are serialized and deserialized.
+	 * 
+	 * @param jParser JsonParser stream to read objects and fields from.
+	 * @throws IOException 
+	 */
 	public boolean fromJSON(JsonParser jParser) throws IOException {			
 		//First we move past object start
     	jParser.nextToken();
@@ -373,7 +458,11 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
     	return true;
 	}
 	
-	//saveAs method for JSON Table format output...
+	/** Saves the table to the file path specified in
+	 * json format.
+	 * 
+	 * @param path String path for writing.
+	 */
 	public boolean saveAsJSON(String path) {
 		try {
 			if (!path.endsWith(".json")) {
@@ -394,14 +483,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			stream.flush();
 			stream.close();		
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
 		return true;
 	}
 	
-	public void loadCSV(File file) {
+	private void loadCSV(File file) {
 		String absolutePath = file.getAbsolutePath();
 		double size_in_bytes = file.length();
 		double readPosition = 0;
@@ -505,18 +593,49 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	@Override
+	/** 
+	 * Returns a JSON string representation of the table.
+	 */
 	public String toString() {
 		return name;
 	}
 	
+	/** 
+	 * Set the double value for a pair of column and row indices. 
+	 * Sets a double value for a DoubleColumn and a String value 
+	 * for a GenericColumn.
+	 * 
+	 * @param col Index of the column that contains the value to set.
+	 * @param row Index of the row that contains the value to set.
+	 * @param value The new value to set at the position given.
+	 */
 	public void setValue(int col, int row, double value) {
 		setValue(getColumnHeader(col), row, value);
 	}
 	
+	/** 
+	 * Set the String value for a pair of column and row indices. 
+	 * Sets a String value for a GenericColumn and tries to convert 
+	 * to a double value for a DoubleColumn. If conversion is not possible
+	 * an NaN value is set.
+	 * 
+	 * @param col Index of the column that contains the value to set.
+	 * @param row Index of the row that contains the value to set.
+	 * @param value The new String value to set at the position given.
+	 */
 	public void setValue(int col, int row, String value) {
 		((GenericColumn)get(getColumnHeader(col))).set(row, value);
 	}
 	
+	/** 
+	 * Set the double value for the column heading and row index specified. 
+	 * Sets a double value for a DoubleColumn and a String value 
+	 * for a GenericColumn.
+	 * 
+	 * @param column Heading of the column that contains the value to set.
+	 * @param row Index of the row that contains the value to set.
+	 * @param value The new double value to set at the position given.
+	 */
 	public void setValue(String column, int row, double value) {
 		if (!hasColumn(column)) {
 			DoubleColumn col = new DoubleColumn(column);
@@ -535,6 +654,16 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 	}
 	
+	/** 
+	 * Set the String value for the column heading and row index specified. 
+	 * Sets a String value for a GenericColumn and attempts to convert to
+	 * a double value for DoubleColumns. If conversion is not possible an
+	 * NaN value is set.
+	 * 
+	 * @param column Heading of the column that contains the value to set.
+	 * @param row Index of the row that contains the value to set.
+	 * @param value The new double value to set at the position given.
+	 */
 	public void setValue(String column, int row, String value) {
 		if (!hasColumn(column)) {
 			GenericColumn col = new GenericColumn(column);
@@ -558,22 +687,92 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 	}
 	
+	/** 
+	 * Returns the double value at the column and row indices specified.
+	 * NaN is returned if the position given does not exist. 
+	 * 
+	 * @param col Index of the column that contains the value.
+	 * @param row Index of the row that contains the value.
+	 * @return The value at the specified col and row indices.
+	 */
 	public double getValue(int col, int row) {
-		return getValue(getColumnHeader(col), row);
+		try {
+			return ((DoubleColumn) get(col)).get(row);
+		} catch (ClassCastException e1) {
+			if (get(col) instanceof GenericColumn)
+				return Double.valueOf((String)get(col).get(row));
+			else
+				return Double.NaN;
+		}
 	}
 	
-	public double getValue(String column, int index) {
-		return ((DoubleColumn) get(column)).get(index);
+	/** 
+	 * Returns the double value at the column header and row index specified.
+	 * NaN is returned if the position given does not exist. If the column is
+	 *  of type GenericColumn conversion to double is attempted. If conversion
+	 *  is not possible NaN is returned;
+	 * 
+	 * @param column Header of the column that contains the value.
+	 * @param row Index of the row that contains the value.
+	 * @return The double value at the column header and row index specified.
+	 */
+	public double getValue(String column, int row) {
+		try {
+			return ((DoubleColumn) get(column)).get(row);
+		} catch (ClassCastException e1) {
+			if (get(column) instanceof GenericColumn)
+				return Double.valueOf((String)get(column).get(row));
+			else
+				return Double.NaN;
+		}
 	}
 	
-	public String getStringValue(String column, int index) {
-		return (String)get(column).get(index);
+	/** 
+	 * Returns the string value for the column header and row index specified. 
+	 * If the column type is DoubleColumn the double value is converted to a string.
+	 * 
+	 * 
+	 * @param column Header of the column that contains the value.
+	 * @param row Index of the row that contains the value.
+	 * @return The String value at the column header and row index specified.
+	 */
+	public String getStringValue(String column, int row) {
+		try {
+			return (String)get(column).get(row);
+		} catch (ClassCastException e1) {
+			if (get(column) instanceof DoubleColumn)
+				return String.valueOf(get(column).get(row));
+			else
+				return null;
+		}
 	}
 	
+	/** 
+	 * Returns the string value at the column and row indices specified. 
+	 * If the column type is DoubleColumn the double value is converted to a string.
+	 * 
+	 * 
+	 * @param col Index of the column that contains the value.
+	 * @param row Index of the row that contains the value.
+	 * @return The double value at the column and row indices specified.
+	 */
 	public String getStringValue(int col, int row) {
-		return getStringValue(getColumnHeader(col), row);
+		try {
+			return (String)get(col, row);
+		} catch (ClassCastException e1) {
+			if (get(col) instanceof DoubleColumn)
+				return String.valueOf(get(col, row));
+			else
+				return null;
+		}
 	}
 	
+	/** 
+	 * Returns true if the table contains a column with the name specified. 
+	 * 
+	 * @param colName String column header to check for.
+	 * @return Returns true if the table contains the column.
+	 */
 	public boolean hasColumn(String colName) {
 		for (String column : getColumnHeadingList()) {
 			if (column.equals(colName))
@@ -633,20 +832,12 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @return mean value of the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double mean(String column) {		
-		if (!hasColumn(column))
-			return Double.NaN;
-		Mean mean = new Mean();
-		for (int i = 0; i < getRowCount();i++) {
-			if (Double.isNaN(getValue(column, i)))
-				continue;
-			mean.increment(getValue(column, i));
-		}
-		return mean.getResult();
+		return StatUtils.mean(this.getColumnAsDoublesNoNaNs(column));
 	}
 	
 	/**
 	 * Calculates the mean of the values for the meanColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
-	 * NaN values are ignored. 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
 	 * @param  meanColumn  name of the column used for calculating the mean.
 	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
@@ -655,16 +846,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @return mean value of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
 	public double mean(String meanColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
-		if (!hasColumn(meanColumn) || !hasColumn(rowSelectionColumn))
-			return Double.NaN;
-		Mean mean = new Mean();
-		for (int row = 0; row < getRowCount(); row++) {
-			if (Double.isNaN(getValue(meanColumn, row)))
-				continue;
-			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
-				mean.increment(getValue(meanColumn, row));
-		}
-		return mean.getResult();
+		return StatUtils.mean(this.getColumnAsDoublesNoNaNs(meanColumn, rowSelectionColumn, lowerBound, upperBound));
 	}
 	
 	/**
@@ -698,7 +880,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	/**
 	 * Finds the median of the values for the medianColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
-	 * NaN values are ignored. 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
 	 * @param  medianColumn  name of the column used for finding the median.
 	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
@@ -737,21 +919,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @return standard deviation of the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double std(String column) {
-		if (!hasColumn(column))
-			return Double.NaN;
-		
 		StandardDeviation standardDeviation = new StandardDeviation();
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (Double.isNaN(getValue(column, i)))
-				continue;
-			standardDeviation.increment(getValue(column, i));
-		}
-		return standardDeviation.getResult();
+		return standardDeviation.evaluate(this.getColumnAsDoublesNoNaNs(column));
 	}
 	
 	/**
 	 * Calculates the standard deviation of the values for the stdColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
-	 * NaN values are ignored. 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
 	 * @param  stdColumn  name of the column to use for the standard deviation calculation.
 	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
@@ -760,18 +934,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @return standard deviation of the stdColumn for the rowSelection. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
 	public double std(String stdColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
-		if (!hasColumn(stdColumn) || !hasColumn(rowSelectionColumn))
-			return Double.NaN;
-		
 		StandardDeviation standardDeviation = new StandardDeviation();
-		for (int row = 0; row < getRowCount() ; row++) {
-			if (Double.isNaN(getValue(stdColumn, row)))
-				continue;
-			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
-				standardDeviation.increment(getValue(stdColumn, row));
-		}
-		
-		return standardDeviation.getResult();
+		return standardDeviation.evaluate(this.getColumnAsDoublesNoNaNs(stdColumn, rowSelectionColumn, lowerBound, upperBound));
 	}
 	
 	/**
@@ -780,6 +944,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @param column  name of the column.
 	 * @return median absolute deviation of the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
+	//TODO CHECK
 	public double mad(String column) {
 		if (get(column) == null)
 			return Double.NaN;
@@ -803,14 +968,25 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return medianDev;
 	}
 	
-	public double mad(String medianColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+	/**
+	 * Calculates the median absolute deviation of the values for the medianColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param  medianColumn  Name of the column used to calculate the median absolute deviation.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return standard deviation of the stdColumn for the rowSelection. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	//TODO CHECK
+	public double mad(String medianColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
 		if (get(medianColumn) == null || get(rowSelectionColumn) == null)
 			return Double.NaN;
-		double median = median(medianColumn, rowSelectionColumn, rangeStart, rangeEnd);
+		double median = median(medianColumn, rowSelectionColumn, lowerBound, upperBound);
 		
 		ArrayList<Double> medianDevs = new ArrayList<Double>();
 		for (int i = 0; i < getRowCount() ; i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
+			if (getValue(rowSelectionColumn, i) >= lowerBound && getValue(rowSelectionColumn, i) <= upperBound) {
 				medianDevs.add(Math.abs(median - getValue(medianColumn, i)));
 			}
 		}
@@ -827,108 +1003,111 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return medianDev;
 	}
 	
+	/**
+	 * Calculates the standard error of the mean for the column given. NaN values are ignored. 
+	 * 
+	 * @param  column  Name of the column used to calculate the median absolute deviation.
+	 * @return The standard error of the mean for the column given. NaN is returned if all values are NaN or one the column does not exist.
+	 */
 	public double sem(String column) {
-		return std(column)/Math.sqrt(getRowCount());
+		StandardDeviation standardDeviation = new StandardDeviation();
+		double[] values = this.getColumnAsDoublesNoNaNs(column);
+		return standardDeviation.evaluate(values)/Math.sqrt(values.length);
 	}
 	
-	public double sem(String meanColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(meanColumn) == null || get(rowSelectionColumn) == null)
-			return Double.NaN;
-		double mean = mean(meanColumn, rowSelectionColumn, rangeStart, rangeEnd);
-		double diffSquares = 0;
-		int count = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				diffSquares += (mean - getValue(meanColumn, i))*(mean - getValue(meanColumn, i));
-				count++;
-			}
-		}
-		
-		return Math.sqrt(diffSquares/(count-1))/Math.sqrt(count);
+	/**
+	 * Calculates the standard error of the mean for the meanColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param  meanColumn  Name of the column used to calculate the standard error of the mean.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return Standard error of the mean. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double sem(String meanColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		StandardDeviation standardDeviation = new StandardDeviation();
+		double[] values = this.getColumnAsDoublesNoNaNs(meanColumn, rowSelectionColumn, lowerBound, upperBound);
+		return standardDeviation.evaluate(values)/Math.sqrt(values.length);
 	}
 	
+	/**
+	 * Calculates the mean squared displacement for the column given. NaN values are ignored. 
+	 * 
+	 * @param  column  Name of the column used to calculate the mean squared displacement.
+	 * @return The mean squared displacement for the column given. NaN is returned if all values are NaN or the column does not exist.
+	 */
 	public double msd(String column) {
-		if (get(column) == null)
-			return Double.NaN;
-		double mean = mean(column);
-		double diffSquares = 0;
-		
-		int count = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (Double.isNaN(getValue(column, i)))
-				continue;
-			diffSquares += (mean - getValue(column, i))*(mean - getValue(column, i));
-			count++;
-		}
-		return diffSquares/count;
+		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(column));
 	}
 	
-	public double msd(String msdColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
-		if (get(msdColumn) == null || get(rowSelectionColumn) == null)
-			return Double.NaN;
-		double mean = mean(msdColumn, rowSelectionColumn, rangeStart, rangeEnd);
-		double diffSquares = 0;
-		int count = 0;
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (getValue(rowSelectionColumn, i) >= rangeStart && getValue(rowSelectionColumn, i) <= rangeEnd) {
-				if (Double.isNaN(getValue(msdColumn, i)))
-					continue;
-				diffSquares += (getValue(msdColumn, i) - mean)*(getValue(msdColumn, i) - mean);
-				count++;
-			}
-		}
-		return diffSquares/count;
+	/**
+	 * Calculates the mean squared displacement for the msdColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param  msdColumn  Name of the column used to calculate the mean squared displacement.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return Mean squared displacement. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double msd(String msdColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(msdColumn, rowSelectionColumn, lowerBound, upperBound));
 	}
 	
-	//linear fit of x and y for the range of x values given (inclusive of end points)
-	public SimpleRegression linearFit(String xColumn, String yColumn) {
+	/**
+	 * Calculates the linear fit given an xColumn and yColumn pair. NaN values are ignored. 
+	 * y = A + Bx
+	 * A = output[0] +/- output[1]
+	 * B = output[2] +/- output[3]
+	 * Standard error is reported.
+	 * 
+	 * @param  xColumn Name of the column containing the x values.
+	 * @return yColumn Name of the column containing the y values.
+	 */
+	public double[] linearRegression(String xColumn, String yColumn) {
 		SimpleRegression linearFit = new SimpleRegression(true);
 		if (!hasColumn(xColumn) || !hasColumn(yColumn))
-			return new SimpleRegression(true);
+			return new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
 		
+		//Is linearFit.evaluate with arrays faster ???
 		for (int row=0; row < getRowCount(); row++) {
 			if (Double.isNaN(getValue(xColumn, row)) || Double.isNaN(getValue(yColumn, row)))
 				continue;
 			linearFit.addData(getValue(xColumn, row), getValue(yColumn, row));
 		}
 		
-		return linearFit;
+		return new double[] {linearFit.getIntercept(), linearFit.getInterceptStdErr(), linearFit.getSlope(), linearFit.getSlopeStdErr()};
 	}
 	
-	//linear fit of x and y for the range of x values given (inclusive of end points)
-	public SimpleRegression linearFit(String xColumn, String yColumn, double rangeStart, double rangeEnd) {
+	/**
+	 * Calculates the linear fit given an xColumn and yColumn pair. NaN values are ignored. 
+	 * y = A + Bx
+	 * A = output[0] +/- output[1]
+	 * B = output[2] +/- output[3]
+	 * Standard error is reported.
+	 * 
+	 * @param  xColumn Name of the column containing the x values.
+	 * @return yColumn Name of the column containing the y values.
+	 */
+	public double[] linearRegression(String xColumn, String yColumn, double lowerBound, double upperBound) {
 		SimpleRegression linearFit = new SimpleRegression(true);
 		if (!hasColumn(xColumn) || !hasColumn(yColumn))
-			return linearFit;
+			return new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
 		
-		int rowStart = 0;
-		int rowEnd = 0;
-		
-		//Find first row in range.
-		//NaN values will be skipped
-		for (int i = getRowCount() - 1; i >= 0; i--) {
-			if (getValue(xColumn, i) >= rangeStart)
-				rowStart = i;
-		}
-		
-		//Find last row in range
-		//NaN values are skipped
-		for (int i = 0; i < getRowCount(); i++) {
-			if (getValue(xColumn, i) <= rangeEnd)
-				rowEnd = i;
-		}
-		int length = rowEnd - rowStart;
-		if (length < 2) 
-			return linearFit;
-		
-		for (int row=rowStart; row <= rowEnd; row++) {
+		//Is linearFit.evaluate with arrays faster ???
+		for (int row=0; row < getRowCount(); row++) {
 			if (Double.isNaN(getValue(xColumn, row)) || Double.isNaN(getValue(yColumn, row)))
 				continue;
-			linearFit.addData(getValue(xColumn, row), getValue(yColumn, row));
+			
+			if (getValue(xColumn, row) >= lowerBound && getValue(xColumn, row) <= upperBound)
+				linearFit.addData(getValue(xColumn, row), getValue(yColumn, row));
 		}
-		
-		return linearFit;
+
+		return new double[] {linearFit.getIntercept(), linearFit.getInterceptStdErr(), linearFit.getSlope(), linearFit.getSlopeStdErr()};
 	}
+	
+	//TODO add linearRegression methods that take and return SimpleRegression objects to allow more flexibility.
 
 	public boolean sort(String... columns) {
 		return sort(true, columns);

@@ -71,13 +71,13 @@ class MARSResultsTableTest {
 	@Test
 	void mean() {
 		MARSResultsTable table = buildTestArrayTable();
-		assertEquals(-457.490631682, table.mean("col0"));
+		assertEquals(-457.49063168200007, table.mean("col0"));
 	}
 	
 	@Test
 	void meanNaNs() {
 		MARSResultsTable table = buildTestArrayNaNsTable();
-		assertEquals(-457.490631682, table.mean("col0"));
+		assertEquals(-457.49063168200007, table.mean("col0"));
 	}
 	
 	@Test
@@ -189,13 +189,13 @@ class MARSResultsTableTest {
 	@Test
 	void std() {
 		MARSResultsTable table = buildTestArrayTable();
-		assertEquals(2785.974502807221, table.std("col0"));
+		assertEquals(2785.9745028072207, table.std("col0"));
 	}
 	
 	@Test
 	void stdNaNs() {
 		MARSResultsTable table = buildTestArrayNaNsTable();
-		assertEquals(2785.974502807221, table.std("col0"));
+		assertEquals(2785.9745028072207, table.std("col0"));
 	}
 	
 	@Test
@@ -236,6 +236,117 @@ class MARSResultsTableTest {
 	void stdSelectedRowsNoColumn() {
 		MARSResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.std("Not a column", "col0", 2, 4));
+	}
+	
+	/*
+	 * TEST sem()
+	 */
+
+	@Test
+	void sem() {
+		MARSResultsTable table = buildTestArrayTable();
+		assertEquals(278.59745028072206, table.sem("col0"));
+	}
+	
+	@Test
+	void semNaNs() {
+		MARSResultsTable table = buildTestArrayNaNsTable();
+		assertEquals(278.59745028072206, table.sem("col0"));
+	}
+	
+	@Test
+	void semAllNaNs() {
+		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		assertEquals(Double.NaN, table.sem("col0"));
+	}
+	
+	@Test
+	void semNoColumn() {
+		MARSResultsTable table = buildTestArrayTable();
+		assertEquals(Double.NaN, table.sem("not here"));
+	}
+	
+	/*
+	 * TEST sem() for selected rows
+	 */
+
+	@Test
+	void semSelectedRows() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(571.2465095748861, table.sem("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void semSelectedRowsNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertEquals(571.2465095748861, table.sem("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void semSelectedRowsAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertEquals(Double.NaN, table.sem("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void semSelectedRowsNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(Double.NaN, table.sem("Not a column", "col0", 2, 4));
+	}
+	/*
+	 * TEST linearRegression()
+	 */
+
+	@Test
+	void linearRegression() {
+		MARSResultsTable table = buildTestXYTable();
+		assertArrayEquals(new double[] {265.2601469487532, 636.3646939229644, -121.47071909760561, 96.22579573697894}, table.linearRegression("col0", "col1"));
+	}
+	
+	@Test
+	void linearRegressionNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertArrayEquals(new double[] {265.2601469487532, 636.3646939229644, -121.47071909760561, 96.22579573697894}, table.linearRegression("col0", "col1"));
+	}
+	
+	@Test
+	void linearRegressionAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("col0", "col1"));
+	}
+	
+	@Test
+	void linearRegressionNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("Not a column", "col1"));
+	}
+	
+	/*
+	 * TEST linearRegression() for selected rows
+	 */
+
+	@Test
+	void linearRegressionSelectedRows() {
+		MARSResultsTable table = buildTestXYTable();
+		assertArrayEquals(new double[] {-4803.156050166231, 2732.521749986391, 1628.9532088935057, 892.8347701436365}, table.linearRegression("col0", "col1", 2, 4));
+	}
+	
+	@Test
+	void linearRegressionSelectedRowsNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertArrayEquals(new double[] {-4803.156050166231, 2732.521749986391, 1628.9532088935057, 892.8347701436365}, table.linearRegression("col0", "col1", 2, 4));
+	}
+	
+	@Test
+	void linearRegressionSelectedRowsAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("col0", "col1", 2, 4));
+	}
+	
+	@Test
+	void linearRegressionSelectedRowsNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("Not a column", "col1", 2, 4));
 	}
 	
 	/*
