@@ -52,8 +52,13 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import java.util.Iterator;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -64,9 +69,9 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.util.MARSMath;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
@@ -75,12 +80,11 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
  * for saving and opening tables in csv or json format, and retrieval of values
  * in many formats.
- * 
- * GenericColumns containing Strings can also be added to MARSResultsTables. However,
- * some operations are not currently implemented for tables with GenericColumns (such as sorting).
- * Their primary intended use is for generating output tables that need to combine numbers and strings or static
+ * <p>
+ * GenericColumns containing Strings can also be added to MARSResultsTables. Their primary intended 
+ * use is for generating output tables that need to combine numbers and strings or static
  * data storage of tables composed entirely strings (for example, with frame metadata information for time points as rows).
- * 
+ * </p>
  * Throughout org.apache.commons.math3 is used for common operations where possible.
  * 
  * @author Karl Duderstadt
@@ -1109,13 +1113,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	//TODO add linearRegression methods that take and return SimpleRegression objects to allow more flexibility.
 
+	/**
+	 * Sort the table in ascending order on one or more columns.
+	 * 
+	 * @param  columns Comma separated list of columns to sort by.
+	 */
+	//TODO check with strings
 	public boolean sort(String... columns) {
 		return sort(true, columns);
 	}
 	
-	//Only tables composed of DoubleColumns are sortable currently.
-	//If the table contains another column type sort will not do anything.
-	
+	/**
+	 * Sort the table on one or more columns either in ascending or descending order.
+	 * 
+	 * @param  ascending Determines sort order.
+	 * @param  columns Comma separated list of columns to sort by.
+	 */
+	//TODO check with strings
 	public boolean sort(final boolean ascending, String... columns) {
 		for (int index=0; index<columns.length; index++) {	
 			if (!hasColumn(columns[index]))
@@ -1129,15 +1143,17 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		for (int i = 0; i < columns.length; i++)
 			columnIndexes[i] = getColumnIndex(columns[i]);
 		
-		//Maybe there is a better way using the sort method for Lists directly 
-		//without a need for the inner class that also works with GenericColumns
-		Collections.sort(new ResultsTableList(this), new Comparator<double[]>() {
+		Collections.sort(new ResultsTableList(this), new Comparator<Row>() {
 			
 			@Override
-			public int compare(double[] o1, double[] o2) {				
+			public int compare(Row o1, Row o2) {				
 				for (int columnIndex: columnIndexes) {
-					int groupDifference = Double.compare(o1[columnIndex], o2[columnIndex]); 
-				
+					int groupDifference = 0;
+					if (get(columnIndex) instanceof DoubleColumn)
+						groupDifference = Double.compare(o1.getValue(columnIndex), o2.getValue(columnIndex)); 
+					else if (get(columnIndex) instanceof GenericColumn)
+						groupDifference = StringUtils.compare(o1.getStringValue(columnIndex), o2.getStringValue(columnIndex)); 
+					
 					if (groupDifference != 0)
 						return ascending ? groupDifference : -groupDifference;
 				}
@@ -1146,14 +1162,43 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			
 		});
 		
-		
 		return true;
 	}
 	
-	public void filter() {
-		
-	}
+	//TODO add filter utility methods
 	
+	/**
+	 * Returns a stream of MARSTableRow. This is useful for performing operations on all rows
+	 * using Consumers. 
+	 * 
+	 * @return A stream of MARSTableRows.
+	 */
+	public Stream<MARSTableRow> rowStream() {
+		Iterator<MARSTableRow> iterator = new Iterator<MARSTableRow>() {
+
+                final private MARSTableRow row = new MARSTableRow(MARSResultsTable.this);
+
+                @Override
+                public MARSTableRow next() {
+                    return row.next();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return row.hasNext();
+                }
+        };
+        
+        Iterable<MARSTableRow> iterable = () -> iterator;
+        return StreamSupport.stream(iterable.spliterator(), false);
+    }
+	
+	/**
+	 * Remove Rows at the positions specified in the list given. 
+	 * 
+	 * @param rows The list of rows to remove.
+	 */
+	//TODO check with strings
 	public void deleteRows(int[] rows) {
 		if (rows.length == 0)
 			return;
@@ -1181,15 +1226,16 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			removeRow(row);
 	}
 	
-	public void deleteRows(int firstRow, int LastRow) {
-	
-	}
-	
 	@Override
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
 	}
 
+	/**
+	 * Create a copy of the MARSResultsTable. 
+	 * 
+	 * @return A copy of the MARSResultsTable.
+	 */
 	public MARSResultsTable clone() {
 		MARSResultsTable table = new MARSResultsTable(this.getName());
 		for (int col = 0; col < getColumnCount(); col++) {
@@ -1210,15 +1256,31 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return table;
 	}
 	
+	/**
+	 * Set the StatusService for the current context. If provided
+	 * (in the constructor usually) a progress bar will appear during
+	 * table opening. 
+	 * 
+	 * @param statusService The StatusService instance for the current context.
+	 */
 	public void setStatusService(StatusService statusService) {
 		this.statusService = statusService;
 	}
 	
+	/**
+	 * Gets the StatusService.
+	 * 
+	 * @return Returns the StatusService instance if set. Otherwise null is returned.
+	 */
 	public StatusService getStatusService() {
 		return statusService;
 	}
 	
-	class ResultsTableList extends AbstractList<double[]> {
+	//These classes are used for sorting in place of both
+	//double and string values columns. They are not exposed 
+	//as part of the external api because they may be replaced 
+	//with a different sort implementation in future releases.
+	private class ResultsTableList extends AbstractList<Row> {
 		private MARSResultsTable table;
 		
 		public ResultsTableList(MARSResultsTable table) {
@@ -1226,21 +1288,26 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		}
 		
 		@Override
-		public double[] get(int row) {
-			double[] values = new double[table.getColumnCount()];
-			
-			for (int col = 0; col < values.length; col++)
-				values[col] = table.getValue(col, row);
-			
+		public Row get(int row) {
+			Row values = new Row(row, table);
 			return values;
 		}
 		
 		@Override
-		public double[] set(int row, double[] values) {
-			double[] old = get(row);
+		public Row set(int row, Row values) {
+			Row old = get(row);
 			
-			for (int col = 0; col < values.length; col++)
-				table.setValue(col, row, values[col]);
+			for (int colIndex=0;colIndex < table.getColumnCount(); colIndex++) {
+	        	Column<?> column = table.get(colIndex);
+	        	
+	        	if (column instanceof DoubleColumn) {
+	        		table.setValue(column.getHeader(), row, values.getValue(column.getHeader()));
+	        	} 
+	        	
+	        	if (column instanceof GenericColumn) {
+	        		table.setValue(column.getHeader(), row, values.getStringValue(column.getHeader()));
+	        	}
+	        }
 			
 			return old;
 		}
@@ -1248,20 +1315,44 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		public int size() {
 			return table.getRowCount();
 		}
+	}
+
+	private class Row {
+		private Map<String, Double> doubleValues = new HashMap<>();
+		private Map<String, String> stringValues = new HashMap<>();
 		
-		@Override
-		public void removeRange(int fromIndex, int toIndex) {
-			int n = toIndex - fromIndex;
-			int m = size();
+		private MARSResultsTable table;
+		
+		Row(int row, MARSResultsTable table) {
+			this.table = table;
 			
-			// move range to the end of the table
-			for (int row = fromIndex; row + n < m; row++)
-				set(row, get(row + n));
-			
-			// delete last rows
-			for (int row = m - 1; row >= m - n; row--)
-				table.removeRow(row);
-			
+			for (int colIndex=0;colIndex < table.getColumnCount(); colIndex++) {
+	        	Column<?> column = table.get(colIndex);
+	        	
+	        	if (column instanceof DoubleColumn) {
+	        		doubleValues.put(column.getHeader(), table.getValue(colIndex, row));
+	        	} 
+	        	
+	        	if (column instanceof GenericColumn) {
+	        		stringValues.put(column.getHeader(), table.getStringValue(colIndex, row));
+	        	}
+	        }
+		}
+		
+		double getValue(String column) {
+			return doubleValues.get(column);
+		}
+		
+		double getValue(int colIndex) {
+			return doubleValues.get(table.getColumnHeader(colIndex));
+		}
+		
+		String getStringValue(String column) {
+			return stringValues.get(column);
+		}
+		
+		String getStringValue(int colIndex) {
+			return stringValues.get(table.getColumnHeader(colIndex));
 		}
 	}
 }
