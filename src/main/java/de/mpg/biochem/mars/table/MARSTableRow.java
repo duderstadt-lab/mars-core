@@ -13,10 +13,9 @@ public class MARSTableRow implements Iterator<MARSTableRow> {
 	private final String[] columnNames;
 	private int rowNumber;
 	
-	private final Map<String, DoubleColumn> doubleColumnMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-	private final Map<String, GenericColumn> genericColumnMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-	private final Map<String, Column<?>> columnMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-	
+	private final Map<String, DoubleColumn> doubleColumnMap = new TreeMap<>();
+	private final Map<String, GenericColumn> genericColumnMap = new TreeMap<>();
+	private final Map<String, Column<?>> columnMap = new TreeMap<>();
 	
 	public MARSTableRow(MARSResultsTable table) {
         this.table = table;

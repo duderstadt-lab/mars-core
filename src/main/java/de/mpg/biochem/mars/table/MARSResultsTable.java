@@ -1134,8 +1134,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		for (int index=0; index<columns.length; index++) {	
 			if (!hasColumn(columns[index]))
 				return false;
-			if (!(get(columns[index]) instanceof DoubleColumn))
-				return false;
 		}
 		
 		final int[] columnIndexes = new int[columns.length];
@@ -1165,8 +1163,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return true;
 	}
 	
-	//TODO add filter utility methods
-	
 	/**
 	 * Returns a stream of MARSTableRow. This is useful for performing operations on all rows
 	 * using Consumers. 
@@ -1194,7 +1190,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
     }
 	
 	/**
-	 * Remove Rows at the positions specified in the list given. 
+	 * Remove rows at the positions specified in the ordered list given. 
 	 * 
 	 * @param rows The list of rows to remove.
 	 */
@@ -1223,6 +1219,94 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		
 		// delete last rows
 		for (int row = getRowCount() - 1; row > pos-1; row--)
+			removeRow(row);
+	}
+	
+	/**
+	 * Remove rows at the positions specified in the ordered list given. 
+	 * 
+	 * @param rows An ArrayList containing the rows to remove.
+	 */
+	//TODO check
+	public void deleteRows(ArrayList<Integer> rows) {
+		if (rows.size() == 0)
+			return;
+		
+		int pos = 0;
+		int rowsIndex = 0;
+		for (int i = 0; i < getRowCount(); i++) {
+			if (rowsIndex < rows.size()) {
+				if (rows.get(rowsIndex) == i) {
+					rowsIndex++;
+					continue;
+				}
+			}
+			
+			if (pos != i) {
+				//means we need to move row i to position row.
+				for (int j=0;j<getColumnCount();j++)
+					set(j, pos, get(j, i));
+			}
+			pos++;
+		}
+		
+		// delete last rows
+		for (int row = getRowCount() - 1; row > pos-1; row--)
+			removeRow(row);
+	}
+	
+	/**
+	 * Remove rows at the positions specified in the ordered list given. 
+	 * 
+	 * @param rows The list of rows to remove.
+	 */
+	//TODO check with strings
+	public void keepRows(int[] rows) {
+		if (rows.length == 0)
+			return;
+		
+		int rowsIndex = 0;
+		for (int row = 0; row < getRowCount(); row++) {
+			if (rowsIndex < rows.length) {
+				if (rows[rowsIndex] == row) {
+					//means we need to move row i to position row.
+					for (int j=0;j<getColumnCount();j++)
+						set(j, rowsIndex, get(j, row));
+					rowsIndex++;
+				}
+			}
+		}
+		
+		// delete last rows
+		for (int row = getRowCount() - 1; row > rows.length-1; row--)
+			removeRow(row);
+	}
+	
+	/**
+	 * Keep rows at the positions specified in the ordered list given. 
+	 * Remove all other rows.
+	 * 
+	 * @param rows An ArrayList containing the rows to keep.
+	 */
+	//TODO check
+	public void keepRows(ArrayList<Integer> rows) {
+		if (rows.size() == 0)
+			return;
+		
+		int rowsIndex = 0;
+		for (int row = 0; row < getRowCount(); row++) {
+			if (rowsIndex < rows.size()) {
+				if (rows.get(rowsIndex) == row) {
+					//means we need to move row i to position row.
+					for (int j=0;j<getColumnCount();j++)
+						set(j, rowsIndex, get(j, row));
+					rowsIndex++;
+				}
+			}
+		}
+		
+		// delete last rows
+		for (int row = getRowCount() - 1; row > rows.size()-1; row--)
 			removeRow(row);
 	}
 	
@@ -1256,30 +1340,9 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return table;
 	}
 	
-	/**
-	 * Set the StatusService for the current context. If provided
-	 * (in the constructor usually) a progress bar will appear during
-	 * table opening. 
-	 * 
-	 * @param statusService The StatusService instance for the current context.
-	 */
-	public void setStatusService(StatusService statusService) {
-		this.statusService = statusService;
-	}
-	
-	/**
-	 * Gets the StatusService.
-	 * 
-	 * @return Returns the StatusService instance if set. Otherwise null is returned.
-	 */
-	public StatusService getStatusService() {
-		return statusService;
-	}
-	
-	//These classes are used for sorting in place of both
-	//double and string values columns. They are not exposed 
-	//as part of the external api because they may be replaced 
-	//with a different sort implementation in future releases.
+	//These classes are used for sorting in place. They may 
+	//may be replaced with a different sort implementation in future releases.
+	//But the external API will not need to change.
 	private class ResultsTableList extends AbstractList<Row> {
 		private MARSResultsTable table;
 		
