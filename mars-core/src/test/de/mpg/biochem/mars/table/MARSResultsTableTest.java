@@ -2,9 +2,12 @@ package de.mpg.biochem.mars.table;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 
 class MARSResultsTableTest {
 
@@ -37,6 +40,34 @@ class MARSResultsTableTest {
 	}
 	
 	/*
+	 * TEST max() for selected rows
+	 */
+	
+	@Test
+	void maxSelectedRows() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(4869.277227, table.max("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void maxSelectedRowsNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertEquals(4869.277227, table.max("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void maxSelectedRowsAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertEquals(Double.NaN, table.max("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void maxSelectedRowsNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(Double.NaN, table.max("Not a Column", "col0", 3, 3.5));
+	}
+	
+	/*
 	 * TEST min()
 	 */
 	
@@ -62,6 +93,34 @@ class MARSResultsTableTest {
 	void minNoColumn() {
 		MARSResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.min("not here"));
+	}
+	
+	/*
+	 * TEST min() for selected rows
+	 */
+	
+	@Test
+	void minSelectedRows() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(-1569.147553, table.min("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void minSelectedRowsNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertEquals(-1569.147553, table.min("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void minSelectedRowsAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertEquals(Double.NaN, table.max("col1", "col0", 3, 3.5));
+	}
+	
+	@Test
+	void minSelectedRowsNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(Double.NaN, table.min("Not a Column", "col0", 3, 3.5));
 	}
 	
 	/*
@@ -154,6 +213,7 @@ class MARSResultsTableTest {
 		assertEquals(Double.NaN, table.median("not here"));
 	}
 	
+	
 	/*
 	 * TEST median() for selected rows
 	 */
@@ -180,6 +240,68 @@ class MARSResultsTableTest {
 	void medianSelectedRowsNoColumn() {
 		MARSResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.median("Not a Column", "col0", 2, 4));
+	}
+	
+	/*
+	 * TEST mad()
+	 */
+	
+	@Test
+	void mad() {
+		MARSResultsTable table = buildTestArrayTable();
+		assertEquals(2219.2335605, table.mad("col0"));
+	}
+	
+	@Test
+	void madOdd() {
+		MARSResultsTable table = this.buildTestArrayOddTable();
+		assertEquals(2265.1944510000003, table.mad("col0"));
+	}
+	
+	@Test
+	void madNaNs() {
+		MARSResultsTable table = buildTestArrayNaNsTable();
+		assertEquals(2219.2335605, table.mad("col0"));
+	}
+	
+	@Test
+	void madAllNaNs() {
+		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		assertEquals(Double.NaN, table.mad("col0"));
+	}
+	
+	@Test
+	void madNoColumn() {
+		MARSResultsTable table = buildTestArrayTable();
+		assertEquals(Double.NaN, table.mad("not here"));
+	}
+	
+	/*
+	 * TEST mad() for selected rows.
+	 */
+	
+	@Test
+	void madSelectedRows() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(1953.6326657, table.mad("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void madSelectedRowsNaNs() {
+		MARSResultsTable table = buildTestXYNaNsTable();
+		assertEquals(1953.6326657, table.mad("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void madSelectedRowsAllNaNs() {
+		MARSResultsTable table = buildTestXYAllNaNsTable();
+		assertEquals(Double.NaN, table.mad("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void madSelectedRowsNoColumn() {
+		MARSResultsTable table = buildTestXYTable();
+		assertEquals(Double.NaN, table.mad("Not a Column", "col0", 2, 4));
 	}
 	
 	/*
@@ -381,6 +503,25 @@ class MARSResultsTableTest {
 		assertArrayEquals(XYZSortZY, result);
 	}
 	
+	@Test
+	void sortStringColumn() {
+		MARSResultsTable table = buildTestXYStringTable();
+		table.sort(true, "col2");
+		double[][] XYresult = new double[table.getRowCount()][2]; 
+		for (int row=0;row < table.getRowCount(); row++) {
+			XYresult[row][0] = table.getValue("col0", row);
+			XYresult[row][1] = table.getValue("col1", row);
+		}
+		assertArrayEquals(XYStringColumnSorted, XYresult);
+		
+		String[] stringResult = new String[table.getRowCount()];
+		for (int row=0;row < table.getRowCount(); row++) {
+			stringResult[row] = table.getStringValue("col2", row);
+		}
+		
+		assertArrayEquals(stringColumnSorted, stringResult);
+	}
+	
 	/*
 	 * TEST deleteRows()
 	 */
@@ -398,6 +539,77 @@ class MARSResultsTableTest {
 		}
 		
 		assertArrayEquals(XYZRowsDeleted, result);
+	}
+
+	@Test
+	void deleteRowsArrayList() {
+		MARSResultsTable table = buildTestXYZTable();
+		ArrayList<Integer> rows = new ArrayList<Integer>();
+		rows.add(9);
+		rows.add(10);
+		rows.add(11);
+		rows.add(12);
+		rows.add(24);
+		table.deleteRows(rows);
+		double[][] result = new double[table.getRowCount()][3]; 
+		for (int row=0;row < table.getRowCount(); row++) {
+			result[row][0] = table.getValue("col0", row);
+			result[row][1] = table.getValue("col1", row);
+			result[row][2] = table.getValue("col2", row);
+		}
+		
+		assertArrayEquals(XYZRowsDeleted, result);
+	}
+	
+	/*
+	 * TEST keepRows()
+	 */
+	
+	@Test
+	void keepRows() {
+		MARSResultsTable table = buildTestXYZTable();
+		int[] rows = new int[] {9,10,11,12,24};
+		table.keepRows(rows);
+		double[][] result = new double[table.getRowCount()][3]; 
+		for (int row=0;row < table.getRowCount(); row++) {
+			result[row][0] = table.getValue("col0", row);
+			result[row][1] = table.getValue("col1", row);
+			result[row][2] = table.getValue("col2", row);
+		}
+		
+		assertArrayEquals(XYZKeepRows, result);
+	}
+
+	@Test
+	void keepRowsArrayList() {
+		MARSResultsTable table = buildTestXYZTable();
+		ArrayList<Integer> rows = new ArrayList<Integer>();
+		rows.add(9);
+		rows.add(10);
+		rows.add(11);
+		rows.add(12);
+		rows.add(24);
+		table.keepRows(rows);
+		double[][] result = new double[table.getRowCount()][3]; 
+		for (int row=0;row < table.getRowCount(); row++) {
+			result[row][0] = table.getValue("col0", row);
+			result[row][1] = table.getValue("col1", row);
+			result[row][2] = table.getValue("col2", row);
+		}
+		
+		assertArrayEquals(XYZKeepRows, result);
+	}
+	
+	/*
+	 * TEST clone()
+	 */
+	
+	@Test
+	void cloneTest() {
+		MARSResultsTable table = buildTestXYStringTable();
+		MARSResultsTable copy = table.clone();
+		
+		assert(table.equals(copy));
 	}
 	
 	/*
@@ -502,6 +714,27 @@ class MARSResultsTableTest {
 			col0.add(value[0]);
 			col1.add(value[1]);
 			col2.add(value[2]);
+		}
+		
+		table.add(col0);
+		table.add(col1);
+		table.add(col2);
+		
+		return table;
+	}
+	
+	private MARSResultsTable buildTestXYStringTable() {
+		MARSResultsTable table = new MARSResultsTable();
+		DoubleColumn col0 = new DoubleColumn("col0");
+		DoubleColumn col1 = new DoubleColumn("col1");
+		GenericColumn col2 = new GenericColumn("col2");
+		for (double[] value : XYString) {
+			col0.add(value[0]);
+			col1.add(value[1]);
+		}
+		
+		for (String str : stringColumn) {
+			col2.add(str);
 		}
 		
 		table.add(col0);
@@ -687,4 +920,23 @@ class MARSResultsTableTest {
 			{9.9,-2392.739537,5}, {10,-2466.804294,4}, {10.1,-4724.617614,3}, {10.2,-4700.818179,2}, {10.3,-829.9974383,1}, 
 			{10.4,299.5609289,2}, {10.5,-4882.151576,1}, {10.6,3537.51919,2}, {10.7,832.2358674,3}, {10.8,-3007.967915,4}, 
 			{10.9,-2885.338512,5}};
+	
+	private final double[][] XYZKeepRows = {{1.9,195.7610837,3}, {2,-1785.972797,2}, {2.1,190.3236654,3}, {2.2,-4411.370252,4}, {3.4,4869.277227,2}};
+	
+	private final String[] stringColumn = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", 
+			"ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one"};
+	
+	private final double[][] XYString = {{1,721.4053492}, {1.1,-2340.864487}, {1.2,-2694.189541}, {1.3,4995.646673}, 
+			{1.4,1643.211239}, {1.5,3860.546144}, {1.6,815.7884318}, {1.7,-1007.139018}, {1.8,-1404.076795}, 
+			{1.9,195.7610837}, {2,-1785.972797}, {2.1,190.3236654}, {2.2,-4411.370252}, {2.3,-4743.992124}, 
+			{2.4,-1015.504958}, {2.5,-2371.327814}, {2.6,-1253.05302}, {2.7,1880.42598}, {2.8,2403.053577}, 
+			{2.9,3225.70651}, {3,3197.5338}, {3.1, 1430.499206}};
+	
+	private final String[] stringColumnSorted = {"eight", "eighteen", "eleven", "fifteen", "five", "four", "fourteen", "nine", "nineteen", "one", 
+			"seven", "seventeen", "six", "sixteen", "ten", "thirteen", "three", "twelve", "twenty", "twenty one", "two", "zero"};
+	
+	private final double[][] XYStringColumnSorted = {{1.8,-1404.076795}, {2.8,2403.053577}, {2.1,190.3236654}, {2.5,-2371.327814}, {1.5,3860.546144}, 
+			{1.4,1643.211239}, {2.4,-1015.504958}, {1.9,195.7610837}, {2.9,3225.70651}, {1.1,-2340.864487}, {1.7,-1007.139018}, 
+			{2.7,1880.42598}, {1.6,815.7884318}, {2.6,-1253.05302}, {2,-1785.972797}, {2.3,-4743.992124}, {1.3,4995.646673}, {2.2,-4411.370252}, 
+			{3,3197.5338}, {3.1,1430.499206}, {1.2,-2694.189541}, {1,721.4053492}};
 }

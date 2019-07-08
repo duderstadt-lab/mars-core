@@ -79,14 +79,22 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * Convenience methods and constructors are provided for common operations 
  * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
  * for saving and opening tables in csv or json format, and retrieval of values
- * in many formats.
+ * in many formats. Throughout org.apache.commons.math3 is used for common operations where possible.
  * <p>
  * GenericColumns containing Strings can also be added to MARSResultsTables. Their primary intended 
  * use is for generating output tables that need to combine numbers and strings or static
- * data storage of tables composed entirely strings (for example, with frame metadata information for time points as rows).
+ * data storage of tables composed entirely of strings (for example, with frame metadata information for time points as rows).
  * </p>
- * Throughout org.apache.commons.math3 is used for common operations where possible.
- * 
+ * <p>
+ * More complex row filtering operations can be accomplished using the rowStream method and java 8 stream framework. The
+ * optimal implementation would return an ArrayList<Integer> with a set of rows to remove or keep. This list can then be used
+ * with the deleteRows or keepRows methods.
+ * </p>
+ * <p>
+ * All sorting and filtering operations are performed in place. This allows for processing of larger tables
+ * in memory without requiring enough memory for a copy. If a copy is desired. For example, if several filtering and sorting
+ * steps are performed from the same primary table, prior to each operation a copy can be made using the clone() method.
+ * </p>
  * @author Karl Duderstadt
  */
 public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
@@ -808,6 +816,33 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/**
+	 * Finds the max of the values for the maxColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param  maxColumn  name of the column used for finding the max.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return max of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double max(String maxColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(maxColumn) || !hasColumn(rowSelectionColumn))
+			return Double.NaN;
+		double max = Double.MIN_VALUE;
+		for (int row = 0; row < getRowCount();row++) {
+			if (Double.isNaN(getValue(maxColumn, row)))
+				continue;
+			
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound && max < getValue(maxColumn, row))
+				max = getValue(maxColumn, row);
+		}
+		if (max == Double.MIN_VALUE)
+			return Double.NaN;
+		else
+			return max;
+	}
+	
+	/**
 	 * Finds the minimum of the column values. NaN values are ignored. 
 	 * 
 	 * @param  column  name of the column.
@@ -822,6 +857,33 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 				continue;
 			if (min > value)
 				min = value;
+		}
+		if (min == Double.MAX_VALUE)
+			return Double.NaN;
+		else
+			return min;
+	}
+	
+	/**
+	 * Finds the min of the values for the maxColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param  minColumn  name of the column used for finding the min.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return min of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
+	 */
+	public double min(String minColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(minColumn) || !hasColumn(rowSelectionColumn))
+			return Double.NaN;
+		double min = Double.MAX_VALUE;
+		for (int row = 0; row < getRowCount();row++) {
+			if (Double.isNaN(getValue(minColumn, row)))
+				continue;
+			
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound && min > getValue(minColumn, row))
+				min = getValue(minColumn, row);
 		}
 		if (min == Double.MAX_VALUE)
 			return Double.NaN;
@@ -892,7 +954,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @param  upperBound  largest value included in the row selection range.
 	 * @return median value of the column values. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
-	public double median(String medianColumn, String rowSelectionColumn, double rangeStart, double rangeEnd) {
+	public double median(String medianColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
 		if (!hasColumn(medianColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
 		ArrayList<Double> values = new ArrayList<Double>();
@@ -900,7 +962,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 			if (Double.isNaN(getValue(medianColumn, row)))
 				continue;
 			
-			if (getValue(rowSelectionColumn, row) >= rangeStart && getValue(rowSelectionColumn, row) <= rangeEnd)
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
 				values.add(getValue(medianColumn, row));
 		}
 		if (values.size() == 0)
@@ -948,17 +1010,22 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @param column  name of the column.
 	 * @return median absolute deviation of the column values. NaN is returned if all values are NaN or the column does not exist.
 	 */
-	//TODO CHECK
 	public double mad(String column) {
-		if (get(column) == null)
+		if (!hasColumn(column))
 			return Double.NaN;
 		double median = median(column);
 		
 		ArrayList<Double> medianDevs = new ArrayList<Double>();
 		
-		for (int i = 0; i < getRowCount() ; i++) {
-			medianDevs.add(Math.abs(median - getValue(column, i)));
+		for (int row = 0; row < getRowCount() ; row++) {
+			if (Double.isNaN(getValue(column, row)))
+				continue;
+			
+			medianDevs.add(Math.abs(median - getValue(column, row)));
 		}
+		
+		if (medianDevs.size() == 0)
+			return Double.NaN;
 		
 		//Now find median of the deviations
 		Collections.sort(medianDevs);
@@ -973,7 +1040,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/**
-	 * Calculates the median absolute deviation of the values for the medianColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * Calculates the median absolute deviation of the values for the madColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
 	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
 	 * @param  medianColumn  Name of the column used to calculate the median absolute deviation.
@@ -982,18 +1049,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @param  upperBound  largest value included in the row selection range.
 	 * @return standard deviation of the stdColumn for the rowSelection. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
-	//TODO CHECK
-	public double mad(String medianColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
-		if (get(medianColumn) == null || get(rowSelectionColumn) == null)
+	public double mad(String madColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		if (!hasColumn(madColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
-		double median = median(medianColumn, rowSelectionColumn, lowerBound, upperBound);
+		double median = median(madColumn, rowSelectionColumn, lowerBound, upperBound);
 		
 		ArrayList<Double> medianDevs = new ArrayList<Double>();
-		for (int i = 0; i < getRowCount() ; i++) {
-			if (getValue(rowSelectionColumn, i) >= lowerBound && getValue(rowSelectionColumn, i) <= upperBound) {
-				medianDevs.add(Math.abs(median - getValue(medianColumn, i)));
+		for (int row = 0; row < getRowCount() ; row++) {
+			if (Double.isNaN(getValue(madColumn, row)))
+				continue;
+			
+			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound) {
+				medianDevs.add(Math.abs(median - getValue(madColumn, row)));
 			}
 		}
+		
+		if (medianDevs.size() == 0)
+			return Double.NaN;
 		
 		//Now find median of the deviations
 		Collections.sort(medianDevs);
@@ -1111,14 +1183,13 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return new double[] {linearFit.getIntercept(), linearFit.getInterceptStdErr(), linearFit.getSlope(), linearFit.getSlopeStdErr()};
 	}
 	
-	//TODO add linearRegression methods that take and return SimpleRegression objects to allow more flexibility.
+	//Should additional linearRegression methods that take and return SimpleRegression objects to allow more flexibility be added?
 
 	/**
 	 * Sort the table in ascending order on one or more columns.
 	 * 
 	 * @param  columns Comma separated list of columns to sort by.
 	 */
-	//TODO check with strings
 	public boolean sort(String... columns) {
 		return sort(true, columns);
 	}
@@ -1129,7 +1200,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * @param  ascending Determines sort order.
 	 * @param  columns Comma separated list of columns to sort by.
 	 */
-	//TODO check with strings
 	public boolean sort(final boolean ascending, String... columns) {
 		for (int index=0; index<columns.length; index++) {	
 			if (!hasColumn(columns[index]))
@@ -1227,7 +1297,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * 
 	 * @param rows An ArrayList containing the rows to remove.
 	 */
-	//TODO check
 	public void deleteRows(ArrayList<Integer> rows) {
 		if (rows.size() == 0)
 			return;
@@ -1260,7 +1329,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * 
 	 * @param rows The list of rows to remove.
 	 */
-	//TODO check with strings
 	public void keepRows(int[] rows) {
 		if (rows.length == 0)
 			return;
@@ -1288,7 +1356,6 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * 
 	 * @param rows An ArrayList containing the rows to keep.
 	 */
-	//TODO check
 	public void keepRows(ArrayList<Integer> rows) {
 		if (rows.size() == 0)
 			return;
