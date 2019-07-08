@@ -75,11 +75,11 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- * MARS implementation of a results table. All numbers are stored as doubles.
+ * MARS implementation of a scijava results table. All numbers are stored as doubles (as {@link org.scijava.table.DoubleColumn}).
  * Convenience methods and constructors are provided for common operations 
  * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
  * for saving and opening tables in csv or json format, and retrieval of values
- * in many formats. Throughout org.apache.commons.math3 is used for common operations where possible.
+ * in many formats. Throughout ({@link org.apache.commons.math3}) is used for common operations where possible.
  * <p>
  * GenericColumns containing Strings can also be added to MARSResultsTables. Their primary intended 
  * use is for generating output tables that need to combine numbers and strings or static
@@ -93,7 +93,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * <p>
  * All sorting and filtering operations are performed in place. This allows for processing of larger tables
  * in memory without requiring enough memory for a copy. If a copy is desired. For example, if several filtering and sorting
- * steps are performed from the same primary table, prior to each operation a copy can be made using the clone() method.
+ * steps are performed from the same primary table, prior to each operation a copy can be made using the {@link de.mpg.biochem.mars.table.MARSResultsTable#clone()} method.
  * </p>
  * @author Karl Duderstadt
  */
@@ -172,17 +172,23 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		this.name = name;
 	}
 	
-	/** Sets the name of the table. */
+	/** Sets the name of the table. 
+	 * @param name Name of the table.
+	 * */
 	public void setName(String name) {
 		this.name = name;
 	}
 	
-	/** Retrieves the name of the table. */
+	/** Retrieves the name of the table. 
+	 * @return The name of the table.
+	 * */
 	public String getName() {
 		return name;
 	}
 	
-	/** Returns the column headings as a array of strings. */
+	/** Returns the column headings as a array of strings. 
+	 * @return String array contain the column headers.
+	 * */
 	public String[] getColumnHeadings() {
 		String[] columns = new String[getColumnCount()];
 		for (int i=0;i<columns.length;i++) {
@@ -191,7 +197,9 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		return columns;
 	}
 	
-	/** Returns the column headings as an ArrayList of strings. */
+	/** Returns the column headings as an ArrayList of strings. 
+	 * @return ArrayList containing the column headers.
+	 * */
 	public ArrayList<String> getColumnHeadingList() {
 		ArrayList<String> columns = new ArrayList<String>();
 	
@@ -205,6 +213,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	/** Returns a reference to the window containing the table if there is one. 
 	 * This could be a swing or javafx window.
+	 * @return The window containing the table if working with a gui.
 	 */
 	public MARSResultsTableWindow getWindow() {
 		return win;
@@ -212,6 +221,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	/** Sets a reference to the window holding the table. 
 	 * This could be a swing or javafx window.
+	 * @param win The window containing the table if working with a gui.
 	 */
 	public void setWindow(MARSResultsTableWindow win) {
 		this.win = win;
@@ -219,6 +229,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	
 	/** Returns an array of double values for the column given.
 	 * All rows will have an entry in the array even if they have NaN values.
+	 * @param column Header of the column to retrieve.
+	 * @return Array of double values for the column. With NaN values included.
 	 */
 	public double[] getColumnAsDoubles(String column) {
 		if (get(column) instanceof DoubleColumn) { 
@@ -233,6 +245,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/** Returns an array of double values for the column given. NaN values are ignored.
+	 * @param column Header of the column to retrieve.
+	 * @return Array of double values for the column with NaN values removed.
 	 */
 	public double[] getColumnAsDoublesNoNaNs(String column) {
 		if (!hasColumn(column))
@@ -249,7 +263,14 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/** Returns an array of double values for the column within the range given 
-	 * for a rowSelectionColumn (inclusive of bounds). NaN values are ignored.
+	 * for a rowSelectionColumn (inclusive of bounds). NaN values are not
+	 * included in the list.
+	 * 
+	 * @param  column  Header of the column to retrieve.
+	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
+	 * @param  lowerBound  smallest value included in the row selection range.
+	 * @param  upperBound  largest value included in the row selection range.
+	 * @return Array of double values for the column within the range given. NaN values removed.
 	 */
 	public double[] getColumnAsDoublesNoNaNs(String column, String rowSelectionColumn, double lowerBound, double upperBound) {
 		if (!hasColumn(column) || !hasColumn(rowSelectionColumn))
@@ -268,6 +289,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
     /** Returns a comma delimited string of the values in the row specified.
+     * @param row The row index to retrieve as a string.
+     * @return Comma delimited string containing the row items.
 	 */
 	public String getRowAsString(int row) {
 	    if ((row<0) || (row>=getRowCount()))
@@ -287,6 +310,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/** Returns the row specified as a List of Objects. These could be Doubles or Strings.
+	 *  @param row The row index to retrieve as a string.
+	 *  @return Object list of items in each column for the row index provided.
 	 */
 	public List<Object> getRowAsList(int row) {
 	    if ((row<0) || (row>=getRowCount()))
@@ -306,6 +331,7 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * csv format.
 	 * 
 	 * @param file File where the table is written.
+	 * @return Return true if no IO error is encountered.
 	 */
 	public boolean saveAs(File file) {
         try {
@@ -318,6 +344,8 @@ public class MARSResultsTable extends AbstractTable<Column<? extends Object>, Ob
 
 	/** Saves the table to the string file path specified in
 	 * csv format.
+	 * @param path The string path for saving.
+	 * @throws IOException
 	 */
     public void saveAs(String path) throws IOException {
         if (getRowCount() == 0) return;
