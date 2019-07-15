@@ -161,6 +161,16 @@
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-ui-swing</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.2.0</version>
+		</dependency>
 	</dependencies>
 	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
 </project>
