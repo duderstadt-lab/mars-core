@@ -102,40 +102,40 @@ public class Peak implements RealLocalizable {
 	}
 	
 	//Getters
-	double getX() {
+	public double getX() {
 		return x;
 	}
-	double getXError() {
+	public double getXError() {
 		return xError;
 	}
-	double getY() {
+	public double getY() {
 		return y;
 	}
-	double getYError() {
+	public double getYError() {
 		return yError;
 	}
-	double getHeight() {
+	public double getHeight() {
 		return height;
 	}
-	double getHeightError() {
+	public double getHeightError() {
 		return heightError;
 	}
-	double getBaseline() {
+	public double getBaseline() {
 		return baseline;
 	}
-	double getBaselineError() {
+	public double getBaselineError() {
 		return baselineError;
 	}
-	double getSigma() {
+	public double getSigma() {
 		return sigma;
 	}
-	double getSigmaError() {
+	public double getSigmaError() {
 		return sigmaError;
 	}
-	double getPixelValue() {
+	public double getPixelValue() {
 		return pixelValue;
 	}
-	boolean isValid() {
+	public boolean isValid() {
 		return valid;
 	}
 	public String getUID() {

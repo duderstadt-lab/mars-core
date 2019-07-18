@@ -28,7 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.table;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,7 +36,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.widget.*;
@@ -45,18 +44,15 @@ import org.scijava.widget.WidgetModel;
 import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**
- * Swing implementation of multiple choice selector widget for MoleculeArchive selection.
+ * Swing implementation of multiple choice selector widget for SDMMResutlsTable.
  * 
  * @author Karl Duderstadt
  */
 @Plugin(type = InputWidget.class)
-public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> implements InputWidget<MoleculeArchive, JPanel>, ActionListener {
+public class MarsTableWidget extends SwingInputWidget<MarsResultsTable> implements InputWidget<MarsResultsTable, JPanel>, ActionListener {
 
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-	private LogService logService;	
+    private ResultsTableService resultsTableService;
 		
 	private JComboBox<Object> comboBox;
 
@@ -68,8 +64,8 @@ public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> imp
 	// -- InputWidget methods --
 
 	@Override
-	public MoleculeArchive getValue() {
-		return moleculeArchiveService.getArchive((String)comboBox.getSelectedItem());
+	public MarsResultsTable getValue() {
+		return resultsTableService.getResultsTable((String)comboBox.getSelectedItem());
 	}
 
 	// -- WrapperPlugin methods --
@@ -78,16 +74,16 @@ public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> imp
 	public void set(final WidgetModel model) {
 		super.set(model);
 		
-		String[] items = new String[moleculeArchiveService.getArchiveNames().size()];
-		moleculeArchiveService.getArchiveNames().toArray(items);
+		String[] items = new String[resultsTableService.getTableNames().size()];
+		resultsTableService.getTableNames().toArray(items);
 
 		comboBox = new JComboBox<>(items);
 		setToolTip(comboBox);
 		getComponent().add(comboBox);
 		comboBox.addActionListener(this);
-
-		updateModel();
 		
+		updateModel();
+
 		refreshWidget();
 	}
 
@@ -95,15 +91,13 @@ public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> imp
 
 	@Override
 	public boolean supports(final WidgetModel model) {
-		return super.supports(model) && model.isType(AbstractMoleculeArchive.class) && moleculeArchiveService.getArchiveNames().size() > 0;
+		return super.supports(model) && model.isType(MarsResultsTable.class) && resultsTableService.getTableNames().size() > 0;
 	}
-
-	// -- AbstractUIInputWidget methods ---
 
 	@Override
 	public void doRefresh() {
-	//	final String value = get().getValue().toString();
-	//	if (value.equals(comboBox.getSelectedItem())) return; // no change
-	//	comboBox.setSelectedItem(value);
+		//final String value = get().getValue().toString();
+		//if (value.equals(comboBox.getSelectedItem())) return; // no change
+		//comboBox.setSelectedItem(value);
 	}
 }

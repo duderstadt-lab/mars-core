@@ -28,82 +28,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.RoiTools.commands;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.File;
 
-import javax.swing.JComboBox;
-import javax.swing.JPanel;
-
+import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.widget.*;
-import org.scijava.widget.WidgetModel;
+import org.scijava.ui.UIService;
 
-import org.scijava.ui.swing.widget.SwingInputWidget;
+import de.mpg.biochem.mars.RoiTools.ROITilesWindow;
 
-/**
- * Swing implementation of multiple choice selector widget for MoleculeArchive selection.
- * 
- * @author Karl Duderstadt
- */
-@Plugin(type = InputWidget.class)
-public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> implements InputWidget<MoleculeArchive, JPanel>, ActionListener {
-
+@Plugin(type = Command.class, label = "Open ROIs", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "ROI Tools", weight = 30,
+			mnemonic = 'r'),
+		@Menu(label = "Open ROIs", weight = 1, mnemonic = 'o')})
+public class OpenROIsCommand extends DynamicCommand implements Command {
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
+	private LogService logService;
 	
 	@Parameter
-	private LogService logService;	
-		
-	private JComboBox<Object> comboBox;
+	private UIService uiService;
+	
+	@Parameter(label="Choose input directory", style="directory")
+	private File directory;
+	
+	@Parameter(label="Vertical Tiles")
+	private int vertical_tiles = 2;
+	
+	@Parameter(label="Horizontal Tiles")
+	private int horizontal_tiles = 2;
 
 	@Override
-	public void actionPerformed(final ActionEvent e) {
-		updateModel();
-	}
-
-	// -- InputWidget methods --
-
-	@Override
-	public MoleculeArchive getValue() {
-		return moleculeArchiveService.getArchive((String)comboBox.getSelectedItem());
-	}
-
-	// -- WrapperPlugin methods --
-
-	@Override
-	public void set(final WidgetModel model) {
-		super.set(model);
-		
-		String[] items = new String[moleculeArchiveService.getArchiveNames().size()];
-		moleculeArchiveService.getArchiveNames().toArray(items);
-
-		comboBox = new JComboBox<>(items);
-		setToolTip(comboBox);
-		getComponent().add(comboBox);
-		comboBox.addActionListener(this);
-
-		updateModel();
-		
-		refreshWidget();
-	}
-
-	// -- Typed methods --
-
-	@Override
-	public boolean supports(final WidgetModel model) {
-		return super.supports(model) && model.isType(AbstractMoleculeArchive.class) && moleculeArchiveService.getArchiveNames().size() > 0;
-	}
-
-	// -- AbstractUIInputWidget methods ---
-
-	@Override
-	public void doRefresh() {
-	//	final String value = get().getValue().toString();
-	//	if (value.equals(comboBox.getSelectedItem())) return; // no change
-	//	comboBox.setSelectedItem(value);
+	public void run() {
+		ROITilesWindow tilewindow = new ROITilesWindow(directory.getAbsolutePath(), vertical_tiles, horizontal_tiles);
 	}
 }

@@ -16,25 +16,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void max() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(4995.646673, table.max("col0"));
 	}
 	
 	@Test
 	void maxNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(4995.646673, table.max("col0"));
 	}
 	
 	@Test
 	void maxAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.max("col0"));
 	}
 	
 	@Test
 	void maxNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.max("not here"));
 	}
 	
@@ -44,25 +44,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void maxSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(4869.277227, table.max("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void maxSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(4869.277227, table.max("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void maxSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.max("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void maxSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.max("Not a Column", "col0", 3, 3.5));
 	}
 	
@@ -72,25 +72,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void min() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(-4882.151576, table.min("col0"));
 	}
 	
 	@Test
 	void minNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(-4882.151576, table.min("col0"));
 	}
 	
 	@Test
 	void minAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.min("col0"));
 	}
 	
 	@Test
 	void minNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.min("not here"));
 	}
 	
@@ -100,25 +100,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void minSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(-1569.147553, table.min("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void minSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(-1569.147553, table.min("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void minSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.max("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void minSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.min("Not a Column", "col0", 3, 3.5));
 	}
 	
@@ -128,25 +128,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void mean() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(-457.49063168200007, table.mean("col0"));
 	}
 	
 	@Test
 	void meanNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(-457.49063168200007, table.mean("col0"));
 	}
 	
 	@Test
 	void meanAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.mean("col0"));
 	}
 	
 	@Test
 	void meanNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.mean("not here"));
 	}
 	
@@ -156,25 +156,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void meanSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(1115.5639359, table.mean("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void meanSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(1115.5639359, table.mean("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void meanSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.mean("col1", "col0", 3, 3.5));
 	}
 	
 	@Test
 	void meanSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.mean("Not a Column", "col0", 3, 3.5));
 	}
 	
@@ -184,31 +184,31 @@ class MARSResultsTableTest {
 	
 	@Test
 	void median() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(-786.38545115, table.median("col0"));
 	}
 	
 	@Test
 	void medianOdd() {
-		MARSResultsTable table = this.buildTestArrayOddTable();
+		MarsResultsTable table = this.buildTestArrayOddTable();
 		assertEquals(-742.773464, table.median("col0"));
 	}
 	
 	@Test
 	void medianNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(-786.38545115, table.median("col0"));
 	}
 	
 	@Test
 	void medianAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.median("col0"));
 	}
 	
 	@Test
 	void medianNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.median("not here"));
 	}
 	
@@ -219,25 +219,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void medianSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(-401.6722113, table.median("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void medianSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(-401.6722113, table.median("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void medianSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.median("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void medianSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.median("Not a Column", "col0", 2, 4));
 	}
 	
@@ -247,31 +247,31 @@ class MARSResultsTableTest {
 	
 	@Test
 	void mad() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(2219.2335605, table.mad("col0"));
 	}
 	
 	@Test
 	void madOdd() {
-		MARSResultsTable table = this.buildTestArrayOddTable();
+		MarsResultsTable table = this.buildTestArrayOddTable();
 		assertEquals(2265.1944510000003, table.mad("col0"));
 	}
 	
 	@Test
 	void madNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(2219.2335605, table.mad("col0"));
 	}
 	
 	@Test
 	void madAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.mad("col0"));
 	}
 	
 	@Test
 	void madNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.mad("not here"));
 	}
 	
@@ -281,25 +281,25 @@ class MARSResultsTableTest {
 	
 	@Test
 	void madSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(1953.6326657, table.mad("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void madSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(1953.6326657, table.mad("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void madSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.mad("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void madSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.mad("Not a Column", "col0", 2, 4));
 	}
 	
@@ -309,25 +309,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void std() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(2785.9745028072207, table.std("col0"));
 	}
 	
 	@Test
 	void stdNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(2785.9745028072207, table.std("col0"));
 	}
 	
 	@Test
 	void stdAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.std("col0"));
 	}
 	
 	@Test
 	void stdNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.std("not here"));
 	}
 	
@@ -337,25 +337,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void stdSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(2617.7803706062314, table.std("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void stdSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(2617.7803706062314, table.std("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void stdSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.std("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void stdSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.std("Not a column", "col0", 2, 4));
 	}
 	
@@ -365,25 +365,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void sem() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(278.59745028072206, table.sem("col0"));
 	}
 	
 	@Test
 	void semNaNs() {
-		MARSResultsTable table = buildTestArrayNaNsTable();
+		MarsResultsTable table = buildTestArrayNaNsTable();
 		assertEquals(278.59745028072206, table.sem("col0"));
 	}
 	
 	@Test
 	void semAllNaNs() {
-		MARSResultsTable table = buildTestArrayAllNaNsTable();
+		MarsResultsTable table = buildTestArrayAllNaNsTable();
 		assertEquals(Double.NaN, table.sem("col0"));
 	}
 	
 	@Test
 	void semNoColumn() {
-		MARSResultsTable table = buildTestArrayTable();
+		MarsResultsTable table = buildTestArrayTable();
 		assertEquals(Double.NaN, table.sem("not here"));
 	}
 	
@@ -393,25 +393,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void semSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(571.2465095748861, table.sem("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void semSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertEquals(571.2465095748861, table.sem("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void semSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertEquals(Double.NaN, table.sem("col1", "col0", 2, 4));
 	}
 	
 	@Test
 	void semSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertEquals(Double.NaN, table.sem("Not a column", "col0", 2, 4));
 	}
 	/*
@@ -420,25 +420,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void linearRegression() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertArrayEquals(new double[] {265.2601469487532, 636.3646939229644, -121.47071909760561, 96.22579573697894}, table.linearRegression("col0", "col1"));
 	}
 	
 	@Test
 	void linearRegressionNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertArrayEquals(new double[] {265.2601469487532, 636.3646939229644, -121.47071909760561, 96.22579573697894}, table.linearRegression("col0", "col1"));
 	}
 	
 	@Test
 	void linearRegressionAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("col0", "col1"));
 	}
 	
 	@Test
 	void linearRegressionNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("Not a column", "col1"));
 	}
 	
@@ -448,25 +448,25 @@ class MARSResultsTableTest {
 
 	@Test
 	void linearRegressionSelectedRows() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertArrayEquals(new double[] {-4803.156050166231, 2732.521749986391, 1628.9532088935057, 892.8347701436365}, table.linearRegression("col0", "col1", 2, 4));
 	}
 	
 	@Test
 	void linearRegressionSelectedRowsNaNs() {
-		MARSResultsTable table = buildTestXYNaNsTable();
+		MarsResultsTable table = buildTestXYNaNsTable();
 		assertArrayEquals(new double[] {-4803.156050166231, 2732.521749986391, 1628.9532088935057, 892.8347701436365}, table.linearRegression("col0", "col1", 2, 4));
 	}
 	
 	@Test
 	void linearRegressionSelectedRowsAllNaNs() {
-		MARSResultsTable table = buildTestXYAllNaNsTable();
+		MarsResultsTable table = buildTestXYAllNaNsTable();
 		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("col0", "col1", 2, 4));
 	}
 	
 	@Test
 	void linearRegressionSelectedRowsNoColumn() {
-		MARSResultsTable table = buildTestXYTable();
+		MarsResultsTable table = buildTestXYTable();
 		assertArrayEquals(new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN}, table.linearRegression("Not a column", "col1", 2, 4));
 	}
 	
@@ -476,7 +476,7 @@ class MARSResultsTableTest {
 	
 	@Test
 	void sortOneColumn() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		table.sort(true, "col1");
 		double[][] result = new double[table.getRowCount()][3]; 
 		for (int row=0;row < table.getRowCount(); row++) {
@@ -490,7 +490,7 @@ class MARSResultsTableTest {
 	
 	@Test
 	void sortTwoColumns() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		table.sort(true, "col2", "col1");
 		double[][] result = new double[table.getRowCount()][3]; 
 		for (int row=0;row < table.getRowCount(); row++) {
@@ -504,7 +504,7 @@ class MARSResultsTableTest {
 	
 	@Test
 	void sortStringColumn() {
-		MARSResultsTable table = buildTestXYStringTable();
+		MarsResultsTable table = buildTestXYStringTable();
 		table.sort(true, "col2");
 		double[][] XYresult = new double[table.getRowCount()][2]; 
 		for (int row=0;row < table.getRowCount(); row++) {
@@ -527,7 +527,7 @@ class MARSResultsTableTest {
 	
 	@Test
 	void deleteRows() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		int[] rows = new int[] {9,10,11,12,24};
 		table.deleteRows(rows);
 		double[][] result = new double[table.getRowCount()][3]; 
@@ -542,7 +542,7 @@ class MARSResultsTableTest {
 
 	@Test
 	void deleteRowsArrayList() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		ArrayList<Integer> rows = new ArrayList<Integer>();
 		rows.add(9);
 		rows.add(10);
@@ -566,7 +566,7 @@ class MARSResultsTableTest {
 	
 	@Test
 	void keepRows() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		int[] rows = new int[] {9,10,11,12,24};
 		table.keepRows(rows);
 		double[][] result = new double[table.getRowCount()][3]; 
@@ -581,7 +581,7 @@ class MARSResultsTableTest {
 
 	@Test
 	void keepRowsArrayList() {
-		MARSResultsTable table = buildTestXYZTable();
+		MarsResultsTable table = buildTestXYZTable();
 		ArrayList<Integer> rows = new ArrayList<Integer>();
 		rows.add(9);
 		rows.add(10);
@@ -605,8 +605,8 @@ class MARSResultsTableTest {
 	
 	@Test
 	void cloneTest() {
-		MARSResultsTable table = buildTestXYStringTable();
-		MARSResultsTable copy = table.clone();
+		MarsResultsTable table = buildTestXYStringTable();
+		MarsResultsTable copy = table.clone();
 		
 		assert(table.equals(copy));
 	}
@@ -615,8 +615,8 @@ class MARSResultsTableTest {
 	 * CONSTANTS AND UTILITY METHODS
 	 */
 
-	private MARSResultsTable buildTestArrayTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestArrayTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		for (double value : testArray)
 			col0.add(value);
@@ -626,8 +626,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestArrayOddTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestArrayOddTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		for (double value : testArrayOdd)
 			col0.add(value);
@@ -637,8 +637,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestArrayNaNsTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestArrayNaNsTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		for (double value : testArrayNaNs)
 			col0.add(value);
@@ -648,8 +648,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestArrayAllNaNsTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestArrayAllNaNsTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		for (double value : testArrayAllNaNs)
 			col0.add(value);
@@ -659,8 +659,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestXYTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestXYTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		DoubleColumn col1 = new DoubleColumn("col1");
 		for (double[] value : XY) {
@@ -674,8 +674,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestXYNaNsTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestXYNaNsTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		DoubleColumn col1 = new DoubleColumn("col1");
 		for (double[] value : XYNaNs) {
@@ -689,8 +689,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestXYAllNaNsTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestXYAllNaNsTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		DoubleColumn col1 = new DoubleColumn("col1");
 		for (double[] value : XYAllNaNs) {
@@ -704,8 +704,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestXYZTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestXYZTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		DoubleColumn col1 = new DoubleColumn("col1");
 		DoubleColumn col2 = new DoubleColumn("col2");
@@ -722,8 +722,8 @@ class MARSResultsTableTest {
 		return table;
 	}
 	
-	private MARSResultsTable buildTestXYStringTable() {
-		MARSResultsTable table = new MARSResultsTable();
+	private MarsResultsTable buildTestXYStringTable() {
+		MarsResultsTable table = new MarsResultsTable();
 		DoubleColumn col0 = new DoubleColumn("col0");
 		DoubleColumn col1 = new DoubleColumn("col1");
 		GenericColumn col2 = new GenericColumn("col2");

@@ -76,18 +76,18 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MoleculeArchive> archives;
+	private Map<String, AbstractMoleculeArchive> archives;
 	
 	@Override
 	public void initialize() {
 		// This Service method is called when the service is first created.
 		archives = new LinkedHashMap<>();
 		
-		scriptService.addAlias(MoleculeArchive.class);
+		scriptService.addAlias(AbstractMoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 	
-	public void addArchive(MoleculeArchive archive) {
+	public void addArchive(AbstractMoleculeArchive archive) {
 		String name = archive.getName();
 		int num = 1;	    
 	    while (archives.containsKey(name)) {
@@ -112,7 +112,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		}
 	}
 	
-	public void removeArchive(MoleculeArchive archive) {
+	public void removeArchive(AbstractMoleculeArchive archive) {
 		if (archives.containsKey(archive.getName())) {
 			removeArchive(archive.getName());
 			displayService.getDisplay(archive.getName()).close();
@@ -125,7 +125,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			return false;
 		} else {
 			archives.get(oldName).setName(newName);
-			MoleculeArchive arch = archives.remove(oldName);
+			AbstractMoleculeArchive arch = archives.remove(oldName);
 			archives.put(newName, arch);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -134,7 +134,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		for (MoleculeArchive archive: archives.values()) {
+		for (AbstractMoleculeArchive archive: archives.values()) {
 			columnSet.addAll(archive.getProperties().getColumnSet());
 		}
 		
@@ -147,7 +147,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 	
-		for (MoleculeArchive archive: archives.values()) {
+		for (AbstractMoleculeArchive archive: archives.values()) {
 			for (ArrayList<String> segTableName : archive.getProperties().getSegmnetTableNames()) {
 				segTableNames.add(segTableName);
 			}
@@ -164,7 +164,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return archives.containsKey(key);
 	}
 	
-	public MoleculeArchive getArchive(String name) {
+	public AbstractMoleculeArchive getArchive(String name) {
 		return archives.get(name);
 	}
 	

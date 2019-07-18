@@ -83,7 +83,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MARSResultsTable> tables;
+	private Map<String, MarsResultsTable> tables;
 	
 	@Override
 	public void initialize() {
@@ -92,11 +92,11 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		
 		//This allow for just the class name as an input 
 		//in scripts. Otherwise the whole path would have to be given..
-		scriptService.addAlias(MARSResultsTable.class);
+		scriptService.addAlias(MarsResultsTable.class);
 		scriptService.addAlias(ResultsTableService.class);
 	}
 	
-	public void addResultsTable(MARSResultsTable table) {
+	public void addResultsTable(MarsResultsTable table) {
 		String name = table.getName();
 		int num = 1;	    
 	    while (tables.containsKey(name)) {
@@ -119,7 +119,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		}
 	}
 	
-	public void removeResultsTable(MARSResultsTable table) {
+	public void removeResultsTable(MarsResultsTable table) {
 		if (tables.containsKey(table.getName())) {
 			tables.remove(table.getName());
 			displayService.getDisplay(table.getName()).close();
@@ -132,7 +132,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 			return false;
 		} else {
 			tables.get(oldName).setName(newName);
-			MARSResultsTable tab = tables.remove(oldName);
+			MarsResultsTable tab = tables.remove(oldName);
 			tables.put(newName, tab);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -146,7 +146,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	public ArrayList<String> getColumnNames() {
 		ArrayList<String> columns = new ArrayList<String>();
 	
-		for (MARSResultsTable table: tables.values()) {
+		for (MarsResultsTable table: tables.values()) {
 			for (int i=0;i<table.getColumnCount();i++) {
 				if(!columns.contains(table.getColumnHeader(i)))
 					columns.add(table.getColumnHeader(i));
@@ -171,7 +171,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	
 	//Utility method returning HashMap of molecule numbers and start and stop index positions.
 	//Here we are assuming the table is already sorted on the groupColumn..
-	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MARSResultsTable table, String groupColumn) {
+	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MarsResultsTable table, String groupColumn) {
 		// make sure we sort on groupColumn
 		//ResultsTableSorter.sort(table, true, groupColumn);
 		
@@ -201,7 +201,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		return map;
 	}
 	
-	public MARSResultsTable getResultsTable(String name) {
+	public MarsResultsTable getResultsTable(String name) {
 		return tables.get(name);
 	}
 	

@@ -48,9 +48,9 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.ImageProcessing.Peak;
-import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.table.MARSResultsTable;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsResultsTable;
 
 import org.scijava.table.*;
 import org.scijava.ui.UIService;
@@ -79,7 +79,7 @@ public class SegmentDistributionBuilder {
 	private boolean bootstrap_Segments = false;
 	private boolean bootstrap_Molecules = false;
 	
-	private MoleculeArchive archive;
+	private AbstractMoleculeArchive archive;
 	private ArrayList<String> UIDs;
 	private String yColumnName, xColumnName;
 	
@@ -95,7 +95,7 @@ public class SegmentDistributionBuilder {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	public SegmentDistributionBuilder(MoleculeArchive archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
+	public SegmentDistributionBuilder(AbstractMoleculeArchive archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
 		this.archive = archive;
 		this.UIDs = UIDs;
 		this.yColumnName = yColumnName;
@@ -143,12 +143,12 @@ public class SegmentDistributionBuilder {
 	}
 	
 	//METHODS FOR EACH DISTRIBUTION TYPE
-	public MARSResultsTable buildRateGaussian() {
-		MARSResultsTable table;
+	public MarsResultsTable buildRateGaussian() {
+		MarsResultsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			table = new MARSResultsTable(7, bins);
+			table = new MarsResultsTable(7, bins);
 		} else {
-			table = new MARSResultsTable(3, bins);
+			table = new MarsResultsTable(3, bins);
 		}
 		
 		table.setColumnHeader(0,"Rate");
@@ -257,12 +257,12 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 
-	public MARSResultsTable buildRateHistogram() {
-		MARSResultsTable table;
+	public MarsResultsTable buildRateHistogram() {
+		MarsResultsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			 table = new MARSResultsTable(7, bins);
+			 table = new MarsResultsTable(7, bins);
 		} else {
-			table = new MARSResultsTable(3, bins);
+			table = new MarsResultsTable(3, bins);
 		}
 		
 		table.setColumnHeader(0,"Rate");
@@ -369,24 +369,24 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 	
-	public MARSResultsTable buildDurationHistogram() {
+	public MarsResultsTable buildDurationHistogram() {
 		return buildDurationHistogram(false, false);
 	}
 	
-	public MARSResultsTable buildProcessivityByMoleculeHistogram() {
+	public MarsResultsTable buildProcessivityByMoleculeHistogram() {
 		return buildDurationHistogram(false, true);
 	}
 	
-	public MARSResultsTable buildProcessivityByRegionHistogram() {	
+	public MarsResultsTable buildProcessivityByRegionHistogram() {	
 		return buildDurationHistogram(true, false);
 	}
 	
-	private MARSResultsTable buildDurationHistogram(boolean processivityPerRegion, boolean processivityPerMolecule) {
-		MARSResultsTable table;
+	private MarsResultsTable buildDurationHistogram(boolean processivityPerRegion, boolean processivityPerMolecule) {
+		MarsResultsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			table = new MARSResultsTable(4, bins);
+			table = new MarsResultsTable(4, bins);
 		} else {
-			table = new MARSResultsTable(2, bins);
+			table = new MarsResultsTable(2, bins);
 		}
 		
 		table.setColumnHeader(0,"Duration");
@@ -586,7 +586,7 @@ public class SegmentDistributionBuilder {
 		UIDset.stream().forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
+				MarsResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)))
@@ -607,7 +607,7 @@ public class SegmentDistributionBuilder {
 		UIDset.stream().forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MARSResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
+				MarsResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2", row)) || Double.isNaN(segments.getValue("x1", row)))
@@ -623,7 +623,7 @@ public class SegmentDistributionBuilder {
 		return Gaussians;
 	}
 	
-	public void buildBootstrapRateColumns(MARSResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
+	public void buildBootstrapRateColumns(MarsResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
 		//Now we build and add additional columns to the table.
 		double[] mean_distribution = new double[bins];
 		double[] std_distribution = new double[bins];
@@ -662,7 +662,7 @@ public class SegmentDistributionBuilder {
 	
 	//Kind of duplicated from above...
 	//should simplify
-	public void buildBootstrapDurationColumns(MARSResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
+	public void buildBootstrapDurationColumns(MarsResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
 		//Now we build and add additional columns to the table.
 		double[] mean_distribution = new double[bins];
 		double[] std_distribution = new double[bins];
