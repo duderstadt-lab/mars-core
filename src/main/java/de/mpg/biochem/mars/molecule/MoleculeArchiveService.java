@@ -48,8 +48,6 @@ import org.scijava.prefs.PrefService;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
-
-import ij.plugin.frame.RoiManager;
 import net.imagej.ImageJService;
 
 @Plugin(type = Service.class)
@@ -76,18 +74,18 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, AbstractMoleculeArchive> archives;
+	private Map<String, MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties>> archives;
 	
 	@Override
 	public void initialize() {
 		// This Service method is called when the service is first created.
 		archives = new LinkedHashMap<>();
 		
-		scriptService.addAlias(AbstractMoleculeArchive.class);
+		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 	
-	public void addArchive(AbstractMoleculeArchive archive) {
+	public void addArchive(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
 		String name = archive.getName();
 		int num = 1;	    
 	    while (archives.containsKey(name)) {
@@ -112,7 +110,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		}
 	}
 	
-	public void removeArchive(AbstractMoleculeArchive archive) {
+	public void removeArchive(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
 		if (archives.containsKey(archive.getName())) {
 			removeArchive(archive.getName());
 			displayService.getDisplay(archive.getName()).close();
@@ -125,7 +123,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			return false;
 		} else {
 			archives.get(oldName).setName(newName);
-			AbstractMoleculeArchive arch = archives.remove(oldName);
+			MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> arch = archives.remove(oldName);
 			archives.put(newName, arch);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -134,7 +132,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		for (AbstractMoleculeArchive archive: archives.values()) {
+		for (MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive: archives.values()) {
 			columnSet.addAll(archive.getProperties().getColumnSet());
 		}
 		
@@ -147,7 +145,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 	
-		for (AbstractMoleculeArchive archive: archives.values()) {
+		for (MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive: archives.values()) {
 			for (ArrayList<String> segTableName : archive.getProperties().getSegmnetTableNames()) {
 				segTableNames.add(segTableName);
 			}
@@ -164,7 +162,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return archives.containsKey(key);
 	}
 	
-	public AbstractMoleculeArchive getArchive(String name) {
+	public MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> getArchive(String name) {
 		return archives.get(name);
 	}
 	

@@ -48,6 +48,10 @@ import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 
@@ -74,7 +78,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 		"Archive molecules must contain x, y columns for particle positions.";
 	
 	@Parameter(label="MoleculeArchive")
-	private AbstractMoleculeArchive archive;
+	private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
 	
 	@Parameter(label="Tags (comma separated list)")
 	private String tags = "";
@@ -141,7 +145,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
 		moleculeUIDs.stream().forEach(UID -> {
-			SingleMolecule molecule = archive.get(UID);
+			Molecule molecule = archive.get(UID);
 			MarsResultsTable datatable = molecule.getDataTable();
 			
 			int x_value = (int)(datatable.mean("x") + 0.5);

@@ -56,7 +56,12 @@ import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.mars.table.ResultsTableService;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
@@ -92,7 +97,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     
     //OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-	private AbstractMoleculeArchive archive;
+	private SingleMoleculeArchive archive;
     
     @Override
 	public void run() {				
@@ -116,7 +121,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		builder.addParameter("From Table", table.getName());
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new AbstractMoleculeArchive(name, table, moleculeArchiveService);
+		archive = new SingleMoleculeArchive(name, table, moleculeArchiveService);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();

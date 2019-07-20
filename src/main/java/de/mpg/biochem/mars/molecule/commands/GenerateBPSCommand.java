@@ -62,6 +62,10 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsResultsTable;
@@ -94,7 +98,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
     private UIService uiService;
     
     @Parameter(label="MoleculeArchive")
-    private AbstractMoleculeArchive archive;
+    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="X Column", choices = {"a", "b", "c"})
 	private String Xcolumn;
@@ -214,7 +218,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 	        progressThread.start();
 	        
 	        forkJoinPool.submit(() -> archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-        		SingleMolecule molecule = archive.get(UID);
+        		Molecule molecule = archive.get(UID);
         		
         		//If the input columns don't exist, we don't process the record.
         		if (!molecule.getDataTable().hasColumn(Ycolumn) || !molecule.getDataTable().hasColumn(Xcolumn))
@@ -329,11 +333,11 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 		builder.addParameter("Output Column", distance_column_name);
 	}
 	
-	public void setArchive(AbstractMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public AbstractMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

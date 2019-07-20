@@ -82,6 +82,8 @@ import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
 
+import de.mpg.biochem.mars.molecule.*;
+
 @Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
@@ -107,7 +109,7 @@ public class OpenVirtualStoreCommand extends DynamicCommand {
     private File file;
     
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-	private AbstractMoleculeArchive archive;
+	private SingleMoleculeArchive archive;
     
     @Override
 	public void run() {				
@@ -137,7 +139,7 @@ public class OpenVirtualStoreCommand extends DynamicCommand {
 		
 		try {
 			//Since we give it a directory for file. It will know its a virtual store
-			archive = new AbstractMoleculeArchive(name,file,moleculeArchiveService);
+			archive = new SingleMoleculeArchive(name,file,moleculeArchiveService);
 			
 			getInfo().getOutput("archive", AbstractMoleculeArchive.class).setLabel(name);
 			
@@ -156,7 +158,7 @@ public class OpenVirtualStoreCommand extends DynamicCommand {
 	}
     
     //Getters and Setters
-    public AbstractMoleculeArchive getArchive() {
+    public SingleMoleculeArchive getArchive() {
     	return archive;
     }
     

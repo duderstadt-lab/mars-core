@@ -5,11 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
+import org.scijava.Typed;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import de.mpg.biochem.mars.util.JsonConvertable;
 
 public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> extends JsonConvertable {
-
 	
 	/**
 	 * Rebuild all indexes by inspecting the contents of store directories. 

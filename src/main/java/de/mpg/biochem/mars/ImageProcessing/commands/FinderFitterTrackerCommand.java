@@ -261,7 +261,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		
 		//OUTPUT PARAMETERS
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-		private AbstractMoleculeArchive archive;
+		private SingleMoleculeArchive archive;
 		
 		//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
 		private PeakFinder finder;

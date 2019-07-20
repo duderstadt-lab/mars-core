@@ -1,15 +1,19 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 public abstract class AbstractMarsRecord implements MarsRecord {
 	//Unique ID for storage in maps and universal identification.
@@ -30,12 +34,17 @@ public abstract class AbstractMarsRecord implements MarsRecord {
 	//Table housing main record data.
 	protected MarsResultsTable dataTable;
 	
+	protected LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
 	
+	protected HashMap<String, Predicate<JsonParser>> inputMap;
 	
 	public AbstractMarsRecord() {
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		dataTable = new MarsResultsTable();
+		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
+		inputMap = new HashMap<String, Predicate<JsonParser>>();
+		createIOMaps();
 	}
 	
 	public AbstractMarsRecord(String UID) {
@@ -45,7 +54,6 @@ public abstract class AbstractMarsRecord implements MarsRecord {
 	
 	public AbstractMarsRecord(JsonParser jParser) throws IOException {
 		this();
-		createJsonMaps();
 		fromJSON(jParser);
 	}
 	
@@ -61,71 +69,150 @@ public abstract class AbstractMarsRecord implements MarsRecord {
 	public AbstractMarsRecord(String UID, MarsResultsTable dataTable) {
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
+		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
+		inputMap = new HashMap<String, Predicate<JsonParser>>();
 		this.UID = UID;
 		this.dataTable = dataTable;
-		createJsonMaps();
+		createIOMaps();
 	}
 	
-	protected void createJsonMaps() {
+	protected void createIOMaps() {
+		//Output Map
+		outputMap.put("UID", MarsUtil.catchConsumerException(jGenerator ->
+			jGenerator.writeStringField("UID", UID), IOException.class));
+		outputMap.put("Type", MarsUtil.catchConsumerException(jGenerator ->
+			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
+		outputMap.put("Notes", MarsUtil.catchConsumerException(jGenerator -> {
+				if (Notes != null)
+					jGenerator.writeStringField("Notes", Notes);
+			}, IOException.class));
+		outputMap.put("Tags", MarsUtil.catchConsumerException(jGenerator -> {
+			if (Tags.size() > 0) {
+				jGenerator.writeFieldName("Tags");
+				jGenerator.writeStartArray();
+				Iterator<String> iterator = Tags.iterator();
+				while(iterator.hasNext())
+					jGenerator.writeString(iterator.next());
+				jGenerator.writeEndArray();
+			}
+		}, IOException.class));
+		outputMap.put("Parameters", MarsUtil.catchConsumerException(jGenerator -> {
+			if (Parameters.size() > 0) {
+				jGenerator.writeObjectFieldStart("Parameters");
+				for (String name:Parameters.keySet())
+					jGenerator.writeNumberField(name, Parameters.get(name));
+				jGenerator.writeEndObject();
+			}
+		}, IOException.class));
+		outputMap.put("Parameters", MarsUtil.catchConsumerException(jGenerator -> {
+			if (Parameters.size() > 0) {
+				jGenerator.writeObjectFieldStart("Parameters");
+				for (String name:Parameters.keySet())
+					jGenerator.writeNumberField(name, Parameters.get(name));
+				jGenerator.writeEndObject();
+			}
+		}, IOException.class));
+		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
+			if (dataTable.getColumnCount() > 0) {
+				jGenerator.writeFieldName("DataTable");
+				dataTable.toJSON(jGenerator);
+			}
+		}, IOException.class));
 		
+		//Input Map
+		inputMap.put("UID", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	        UID = jParser.getText();
+		}, IOException.class));
+		inputMap.put("Notes", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	        Notes = jParser.getText();
+		}, IOException.class));
+		inputMap.put("Tags", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	
+	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+	            Tags.add(jParser.getText());
+	        }
+		}, IOException.class));
+		inputMap.put("Parameters", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	
+	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+	    		String subfieldname = jParser.getCurrentName();
+	    		jParser.nextToken();
+	    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+    				String str = jParser.getValueAsString();
+    				if (Objects.equals(str, new String("Infinity"))) {
+    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+    				} else if (Objects.equals(str, new String("-Infinity"))) {
+    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+    				} else if (Objects.equals(str, new String("NaN"))) {
+    					Parameters.put(subfieldname, Double.NaN);
+    				}
+    			} else {
+    				Parameters.put(subfieldname, jParser.getDoubleValue());
+    			}
+	    	}
+		}, IOException.class));
+		    
+		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
+			dataTable.fromJSON(jParser);
+		}, IOException.class));		
 	}
 	
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
-		
-		//write out UID - all molecules must have this field.
-		jGenerator.writeStringField("UID", UID);
-		
-		if (imageMetaDataUID != null)
-			jGenerator.writeStringField("ImageMetaDataUID", imageMetaDataUID);
-		
-		//Write out notes if there are any
-		if (Notes != null)
-			jGenerator.writeStringField("Notes", Notes);
-		
-		//Write out arrays of tags if tags have been added.
-		if (Tags.size() > 0) {
-			jGenerator.writeFieldName("Tags");
-			jGenerator.writeStartArray();
-			Iterator<String> iterator = Tags.iterator();
-			while(iterator.hasNext())
-				jGenerator.writeString(iterator.next());
-			jGenerator.writeEndArray();
-		}
-		
-		//Write out parameters, which are number fields used to filter and process the molecule..
-		if (Parameters.size() > 0) {
-			jGenerator.writeObjectFieldStart("Parameters");
-			for (String name:Parameters.keySet())
-				jGenerator.writeNumberField(name, Parameters.get(name));
-			jGenerator.writeEndObject();
-		}
- 		
-		//Write out data table (will do nothing if there are no columns
-		if (dataTable.getColumnCount() > 0) {
-			jGenerator.writeFieldName("DataTable");
-			dataTable.toJSON(jGenerator);
-		}
-		
-		//Write out segment tables generated from KCP as object that have two fields that store the x column and y column names used during KCP
-		if (segmentTables.size() > 0) {
-			jGenerator.writeArrayFieldStart("SegmentTables");
-			for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
-				if (segmentTables.get(tableColumnNames).size() > 0) {
-					jGenerator.writeStartObject();
-					
-					jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
-					jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
-					
-					jGenerator.writeFieldName("Table");
-					segmentTables.get(tableColumnNames).toJSON(jGenerator);
-					
-					jGenerator.writeEndObject();
-				}
-			}
-			jGenerator.writeEndArray();
+		for (String field : outputMap.keySet()) {
+			if (!outputMap.get(field).test(jGenerator))
+				throw new IOException("IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
 		}
 		jGenerator.writeEndObject();
+	}
+	
+	/**
+	 * Read a molecule record from JSON. Load a molecule record
+	 * from a file using the JsonParser stream provided.
+	 * 
+	 * @param jParser A JsonParser for loading the molecule
+	 * record from a file.
+	 * 
+     * @throws IOException if there is a problem reading from the file.
+	 */
+	public void fromJSON(JsonParser jParser) throws IOException {
+		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
+		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
+		while (nextToken != JsonToken.END_OBJECT) {
+			nextToken = jParser.nextToken(); 
+			if (nextToken == null) {
+				System.out.println("JsonParser encountered an incomplete molecule record.");
+				this.addNote("JsonParser encountered a problem. This record is incomplete.");
+				break;
+			}
+			
+		    String fieldname = jParser.getCurrentName();
+
+		    if (fieldname == null)
+		    	continue;
+		    
+		    if (inputMap.containsKey(fieldname)) {
+			    if (!inputMap.get(fieldname).test(jParser))
+			    	throw new IOException("IOExcpetion: JsonParser encountered a problem reading from the input stream");
+			    continue;
+		    }
+		    
+		    //SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it
+		    //This ensures if extra fields are added in the future
+		    //old versions will be able to open the new files
+		    //However, the missing fields will not be saved properly
+		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object encountered in molecule record ... skipping");
+		    	MarsUtil.passThroughUnknownObjects(jParser);
+		    }
+		}
 	}
 	
 	/**

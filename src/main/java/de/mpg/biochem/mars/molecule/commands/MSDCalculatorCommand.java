@@ -48,6 +48,10 @@ import org.scijava.ui.UIService;
 import java.util.HashMap;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsResultsTable;
@@ -77,7 +81,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private AbstractMoleculeArchive archive;
+    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="Column", choices = {"a", "b", "c"})
 	private String column;
@@ -115,7 +119,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		
 		//Loop through each molecule and add MSD parameter for each
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			SingleMolecule molecule = archive.get(UID);
+			Molecule molecule = archive.get(UID);
 			
 			molecule.setParameter(ParameterName, molecule.getDataTable().msd(column));
 			
@@ -139,11 +143,11 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	}
 	
 	//Getters and Setters
-	public void setArchive(AbstractMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public AbstractMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

@@ -3,9 +3,7 @@ package de.mpg.biochem.mars.molecule;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -75,212 +73,82 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		segmentTables = new LinkedHashMap<>();
 	}
 	
-	/**
-	 * Write the molecule record to JSON. Uses the provided
-	 * JsonGenerator created elsewhere to stream the molecule 
-	 * record to file.
-	 * 
-	 * @param jGenerator A JsonGenerator for stream the molecule
-	 * record to a file.
-	 * 
-	 * @throws IOException if there is a problem writing to the file.
-	 */
-	public void toJSON(JsonGenerator jGenerator) throws IOException {
-		jGenerator.writeStartObject();
+	@Override
+	protected void createIOMaps() {
+		super.createIOMaps();
 		
-		//write out UID - all molecules must have this field.
-		jGenerator.writeStringField("UID", UID);
-		
-		if (imageMetaDataUID != null)
-			jGenerator.writeStringField("ImageMetaDataUID", imageMetaDataUID);
-		
-		//Write out notes if there are any
-		if (Notes != null)
-			jGenerator.writeStringField("Notes", Notes);
-		
-		//Write out arrays of tags if tags have been added.
-		if (Tags.size() > 0) {
-			jGenerator.writeFieldName("Tags");
-			jGenerator.writeStartArray();
-			Iterator<String> iterator = Tags.iterator();
-			while(iterator.hasNext())
-				jGenerator.writeString(iterator.next());
-			jGenerator.writeEndArray();
-		}
-		
-		//Write out parameters, which are number fields used to filter and process the molecule..
-		if (Parameters.size() > 0) {
-			jGenerator.writeObjectFieldStart("Parameters");
-			for (String name:Parameters.keySet())
-				jGenerator.writeNumberField(name, Parameters.get(name));
-			jGenerator.writeEndObject();
-		}
- 		
-		//Write out data table (will do nothing if there are no columns
-		if (dataTable.getColumnCount() > 0) {
-			jGenerator.writeFieldName("DataTable");
-			dataTable.toJSON(jGenerator);
-		}
-		
-		//Write out segment tables generated from KCP as object that have two fields that store the x column and y column names used during KCP
-		if (segmentTables.size() > 0) {
-			jGenerator.writeArrayFieldStart("SegmentTables");
-			for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
-				if (segmentTables.get(tableColumnNames).size() > 0) {
-					jGenerator.writeStartObject();
-					
-					jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
-					jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
-					
-					jGenerator.writeFieldName("Table");
-					segmentTables.get(tableColumnNames).toJSON(jGenerator);
-					
-					jGenerator.writeEndObject();
+		//Add to output map
+		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
+			if (imageMetaDataUID != null)
+				jGenerator.writeStringField("ImageMetaDataUID", imageMetaDataUID);
+	 	}, IOException.class));
+		outputMap.put("SegmentTables", MarsUtil.catchConsumerException(jGenerator -> {
+			if (segmentTables.size() > 0) {
+				jGenerator.writeArrayFieldStart("SegmentTables");
+				for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
+					if (segmentTables.get(tableColumnNames).size() > 0) {
+						jGenerator.writeStartObject();
+						
+						jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
+						jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
+						
+						jGenerator.writeFieldName("Table");
+						segmentTables.get(tableColumnNames).toJSON(jGenerator);
+						
+						jGenerator.writeEndObject();
+					}
 				}
+				jGenerator.writeEndArray();
 			}
-			jGenerator.writeEndArray();
-		}
-		jGenerator.writeEndObject();
-	}
-	
-	/**
-	 * Read a molecule record from JSON. Load a molecule record
-	 * from a file using the JsonParser stream provided.
-	 * 
-	 * @param jParser A JsonParser for loading the molecule
-	 * record from a file.
-	 * 
-     * @throws IOException if there is a problem reading from the file.
-	 */
-	public void fromJSON(JsonParser jParser) throws IOException {
-		//We assume a molecule object and just been detected and now we want to parse all the values into this molecule entry.
-		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
-		while (nextToken != JsonToken.END_OBJECT) {
-			nextToken = jParser.nextToken(); 
-			if (nextToken == null) {
-				System.out.println("JsonParser encountered an incomplete molecule record.");
-				this.addNote("JsonParser encountered a problem. This record is incomplete.");
-				break;
-			}
-			
-		    String fieldname = jParser.getCurrentName();
-
-		    if (fieldname == null)
-		    	continue;
-		    
-		    if ("UID".equals(fieldname)) {
-		    	jParser.nextToken();
-		        UID = jParser.getText();
-		        continue;
-		    }
-		    
-		    if ("ImageMetaDataUID".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	imageMetaDataUID = jParser.getText();
-		    	continue;
-		    }
-		    
-		    if ("Notes".equals(fieldname)) {
-		    	jParser.nextToken();
-		        Notes = jParser.getText();
-		        continue;
-		    }
-		    
-		    if("Tags".equals(fieldname)) {
-		    	//First we move past object start ?
-		    	jParser.nextToken();
-		    	
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            Tags.add(jParser.getText());
-		        }
-		    	continue;
-		    }
-			    
-		    if("Parameters".equals(fieldname)) {
-		    	//First we move past object start ?
-		    	jParser.nextToken();
-		    	
-		    	//Then we move through fields
+	 	}, IOException.class));
+		
+		//Add to input map
+		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	imageMetaDataUID = jParser.getText();
+		}, IOException.class));
+		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String subfieldname = jParser.getCurrentName();
-		    		jParser.nextToken();
-		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-	    				String str = jParser.getValueAsString();
-	    				if (Objects.equals(str, new String("Infinity"))) {
-	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
-	    				} else if (Objects.equals(str, new String("-Infinity"))) {
-	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
-	    				} else if (Objects.equals(str, new String("NaN"))) {
-	    					Parameters.put(subfieldname, Double.NaN);
-	    				}
-	    			} else {
-	    				Parameters.put(subfieldname, jParser.getDoubleValue());
-	    			}
-		    	}
-		    	continue;
-		    }
-		    
-		    if("DataTable".equals(fieldname)) {
-			    dataTable.fromJSON(jParser);
-			    continue;
-		    }
-		    
-		    if("SegmentTables".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    		String xColumnName = "";
-			    		String yColumnName = "";
-			    	
-			    		//Needed for backwards compatibility when reverse order was used...
-					    if ("xColumnName".equals(jParser.getCurrentName())) {
-					    	jParser.nextToken();
-					    	xColumnName = jParser.getText();
-					    	
-					    	//Then move past the field and next name
-						    jParser.nextToken();
-						    jParser.nextToken();
-					    	yColumnName = jParser.getText();
-					    } else if ("yColumnName".equals(jParser.getCurrentName())) {
-					    	jParser.nextToken();
-					    	yColumnName = jParser.getText();
-					    	
-					    	//Then move past the field and next name
-						    jParser.nextToken();
-						    jParser.nextToken();
-					    	xColumnName = jParser.getText();
-					    }
-					    
-					    ArrayList<String> tableColumnNames = new ArrayList<String>();
-
-				    	tableColumnNames.add(xColumnName);
-				    	tableColumnNames.add(yColumnName);
-				    	
-				    	MarsResultsTable segmenttable = new MarsResultsTable(yColumnName + " vs " + xColumnName);
-				    	
-				    	//Move past Table
+		    		String xColumnName = "";
+		    		String yColumnName = "";
+		    	
+		    		//Needed for backwards compatibility when reverse order was used...
+				    if ("xColumnName".equals(jParser.getCurrentName())) {
 				    	jParser.nextToken();
+				    	xColumnName = jParser.getText();
 				    	
-				    	segmenttable.fromJSON(jParser);
+				    	//Then move past the field and next name
+					    jParser.nextToken();
+					    jParser.nextToken();
+				    	yColumnName = jParser.getText();
+				    } else if ("yColumnName".equals(jParser.getCurrentName())) {
+				    	jParser.nextToken();
+				    	yColumnName = jParser.getText();
 				    	
-				    	segmentTables.put(tableColumnNames, segmenttable);
-			    	}
+				    	//Then move past the field and next name
+					    jParser.nextToken();
+					    jParser.nextToken();
+				    	xColumnName = jParser.getText();
+				    }
+				    
+				    ArrayList<String> tableColumnNames = new ArrayList<String>();
+
+			    	tableColumnNames.add(xColumnName);
+			    	tableColumnNames.add(yColumnName);
+			    	
+			    	MarsResultsTable segmenttable = new MarsResultsTable(yColumnName + " vs " + xColumnName);
+			    	
+			    	//Move past Table
+			    	jParser.nextToken();
+			    	
+			    	segmenttable.fromJSON(jParser);
+			    	
+			    	segmentTables.put(tableColumnNames, segmenttable);
 		    	}
-		    	continue;
-		    }
-		    
-		    //SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it
-		    //This ensures if extra fields are added in the future
-		    //old versions will be able to open the new files
-		    //However, the missing fields will not be saved properly
-		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
-		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object encountered in molecule record ... skipping");
-		    	MarsUtil.passThroughUnknownObjects(jParser);
-		    }
-		}
+	    	}
+		}, IOException.class));
 	}
 	
 	/**

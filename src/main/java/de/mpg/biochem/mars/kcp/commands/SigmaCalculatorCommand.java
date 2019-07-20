@@ -71,7 +71,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private AbstractMoleculeArchive archive;
+    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="X Column", choices = {"a", "b", "c"})
 	private String Xcolumn;
@@ -125,7 +125,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		//Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			SingleMolecule molecule = archive.get(UID);
+			Molecule molecule = archive.get(UID);
 			MarsResultsTable datatable = molecule.getDataTable();
 			
 			if (region.equals("defined below")) {

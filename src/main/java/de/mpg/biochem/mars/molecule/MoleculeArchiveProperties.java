@@ -54,4 +54,11 @@ public interface MoleculeArchiveProperties extends JsonConvertable {
 	void addComment(String comment);
 	
 	void setComments(String comments);
+	
+	/**
+	 * Set the parent {@link MoleculeArchive} that this record is stored in.
+	 * 
+	 * @param archive The {@link MoleculeArchive} holding this record.
+	 */
+	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive);
 }

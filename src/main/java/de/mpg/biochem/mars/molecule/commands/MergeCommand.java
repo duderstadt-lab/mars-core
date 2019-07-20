@@ -61,10 +61,7 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
-import de.mpg.biochem.mars.molecule.SDMMImageMetadata;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 @Plugin(type = Command.class, label = "Merge Archives", menu = {
@@ -95,7 +92,7 @@ public class MergeCommand extends DynamicCommand {
 	private boolean smileEncoding = true;
 	
 	ArrayList<MoleculeArchiveProperties> allArchiveProps;
-	ArrayList<ArrayList<SDMMImageMetadata>> allMetaDataItems;
+	ArrayList<ArrayList<MarsImageMetadata>> allMetaDataItems;
 	
 	ArrayList<String> metaUIDs;
 	
@@ -135,7 +132,7 @@ public class MergeCommand extends DynamicCommand {
 		File[] archiveFileList = directory.listFiles(fileNameFilter);
 		if (archiveFileList.length > 0) {
 			allArchiveProps = new ArrayList<MoleculeArchiveProperties>();
-			allMetaDataItems = new ArrayList<ArrayList<SDMMImageMetadata>>();
+			allMetaDataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
 			metaUIDs = new ArrayList<String>();
 			
 			for (File file: archiveFileList) {
@@ -148,7 +145,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			//No conflicts found so we start building and writing the merged file
 			//First we need to build the global MoleculeArchiveProperties
-			MoleculeArchiveProperties newArchiveProperties = new MoleculeArchiveProperties();
+			SingleMoleculeArchiveProperties newArchiveProperties = new SingleMoleculeArchiveProperties();
 			
 			int numMolecules = 0; 
 			int numImageMetaData = 0;
@@ -184,8 +181,8 @@ public class MergeCommand extends DynamicCommand {
 			log += LogBuilder.endBlock(true);
 			
 			//Check for duplicate ImageMetaData items
-			for (ArrayList<SDMMImageMetadata> archiveMetaList : allMetaDataItems) {
-				for (SDMMImageMetadata metaItem : archiveMetaList) {
+			for (ArrayList<MarsImageMetadata> archiveMetaList : allMetaDataItems) {
+				for (MarsImageMetadata metaItem : archiveMetaList) {
 					String metaUID = metaItem.getUID();
 					if (metaUIDs.contains(metaUID)) {
 						logService.info("Duplicate ImageMetaData record " + metaUID + " found.");
@@ -220,8 +217,8 @@ public class MergeCommand extends DynamicCommand {
 				newArchiveProperties.toJSON(jGenerator);
 				
 				jGenerator.writeArrayFieldStart("ImageMetaData");
-				for (ArrayList<SDMMImageMetadata> archiveMetaList : allMetaDataItems) {
-					for (SDMMImageMetadata metaItem : archiveMetaList) {
+				for (ArrayList<MarsImageMetadata> archiveMetaList : allMetaDataItems) {
+					for (MarsImageMetadata metaItem : archiveMetaList) {
 						metaItem.toJSON(jGenerator);
 					}
 				}	
@@ -276,13 +273,13 @@ public class MergeCommand extends DynamicCommand {
 		jParser.nextToken();
 		jParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			allArchiveProps.add(new MoleculeArchiveProperties(jParser, null));
+			allArchiveProps.add(new SingleMoleculeArchiveProperties(jParser));
 		} else {
 			logService.info("The file " + file.getName() + " have to MoleculeArchiveProperties. Is this a proper yama file?");
 			return;
 		}
 		
-		ArrayList<SDMMImageMetadata> metaArchiveList = new ArrayList<SDMMImageMetadata>();
+		ArrayList<MarsImageMetadata> metaArchiveList = new ArrayList<MarsImageMetadata>();
 		
 		//Next load ImageMetaData items
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -323,7 +320,7 @@ public class MergeCommand extends DynamicCommand {
 		jParser.nextToken();
 		jParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			new MoleculeArchiveProperties(jParser, null);
+			new SingleMoleculeArchiveProperties(jParser);
 		}
 		
 		//Next load ImageMetaData items

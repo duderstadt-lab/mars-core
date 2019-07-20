@@ -1,7 +1,9 @@
 package de.mpg.biochem.mars.molecule;
 
+import java.io.File;
 import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsResultsTable;
@@ -10,6 +12,18 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	
 	public SingleMoleculeArchive(String name) {
 		super(name);
+	}
+	
+	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
+		super(file);
+	}
+	
+	public SingleMoleculeArchive(String name, MarsResultsTable table, MoleculeArchiveService moleculeArchiveService) {
+		super(name, table, moleculeArchiveService);
+	}
+	
+	public SingleMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
+		super(name, file, moleculeArchiveService);
 	}
 	
 	protected SingleMoleculeArchiveProperties createProperties() {

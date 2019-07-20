@@ -45,6 +45,10 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SDMMImageMetadata;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
@@ -73,7 +77,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private AbstractMoleculeArchive archive;
+    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String header =
@@ -130,7 +134,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
 		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			SDMMImageMetadata meta = archive.getImageMetaData(metaUID);
+			MarsImageMetadata meta = archive.getImageMetaData(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
@@ -149,7 +153,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 		//Loop through each molecule and calculate drift corrected traces...
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			SingleMolecule molecule = archive.get(UID);
+			Molecule molecule = archive.get(UID);
 			
 			if (molecule == null) {
 				logService.error("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
@@ -217,7 +221,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private HashMap<Double, Double> getSliceToColumnMap(SDMMImageMetadata meta, String columnName) {
+	private HashMap<Double, Double> getSliceToColumnMap(MarsImageMetadata meta, String columnName) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
 		MarsResultsTable metaTable = meta.getDataTable();
@@ -242,11 +246,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("Output Y", output_y);
 	}
 	
-	public void setArchive(AbstractMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public AbstractMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

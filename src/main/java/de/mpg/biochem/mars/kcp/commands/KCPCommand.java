@@ -57,6 +57,10 @@ import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.kcp.KCP;
 import de.mpg.biochem.mars.kcp.Segment;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -86,7 +90,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     private UIService uiService;
     
     @Parameter(label="MoleculeArchive")
-  	private AbstractMoleculeArchive archive;
+  	private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="X Column", choices = {"a", "b", "c"})
 	private String Xcolumn;
@@ -216,7 +220,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        //and put the changepoint tables back into the same molecule record
 	        
 	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
-	        		SingleMolecule molecule = archive.get(i);
+	        		Molecule molecule = archive.get(i);
 	        		
 	        		findChangePoints(molecule);
 	        		
@@ -248,7 +252,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 
 	}
 	
-	private void findChangePoints(SingleMolecule molecule) {
+	private void findChangePoints(Molecule molecule) {
 		MarsResultsTable datatable = molecule.getDataTable();
 		
 		//START NaN FIX
@@ -372,11 +376,11 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
 	}
 	
-	public void setArchive(AbstractMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public AbstractMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

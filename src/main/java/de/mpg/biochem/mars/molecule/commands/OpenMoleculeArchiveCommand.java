@@ -57,12 +57,18 @@ import org.scijava.module.MutableModuleItem;
 import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
 import javax.swing.filechooser.FileSystemView;
+
+import de.mpg.biochem.mars.molecule.*;
 
 @Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -89,7 +95,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
     private File file;
     
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-	private AbstractMoleculeArchive archive;
+	private SingleMoleculeArchive archive;
     
     @Override
 	public void run() {				
@@ -114,7 +120,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 		logService.info(log);
 		
 		try {
-			archive = new AbstractMoleculeArchive(name,file,moleculeArchiveService);
+			archive = new SingleMoleculeArchive(name,file,moleculeArchiveService);
 			
 			getInfo().getOutput("archive", AbstractMoleculeArchive.class).setLabel(name);
 			
@@ -133,7 +139,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 	}
     
     //Getters and Setters
-    public AbstractMoleculeArchive getArchive() {
+    public SingleMoleculeArchive getArchive() {
     	return archive;
     }
     

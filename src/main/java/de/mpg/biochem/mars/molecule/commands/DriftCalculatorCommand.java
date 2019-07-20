@@ -44,6 +44,10 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SDMMImageMetadata;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsResultsTable;
@@ -73,7 +77,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private AbstractMoleculeArchive archive;
+    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="Background Tag")
     private String backgroundTag = "background";
@@ -121,7 +125,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
 		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			SDMMImageMetadata meta = archive.getImageMetaData(metaUID);
+			MarsImageMetadata meta = archive.getImageMetaData(metaUID);
 			//Let's find the last slice
 			MarsResultsTable metaDataTable = meta.getDataTable();
 			
@@ -233,7 +237,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("mode", mode);
 	}
 	
-	public void setArchive(AbstractMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
@@ -261,7 +265,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		this.backgroundTag = backgroundTag;
 	}
 	
-	public AbstractMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

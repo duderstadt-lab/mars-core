@@ -17,4 +17,5 @@ public interface JsonConvertable {
 	
 	/** Deserializes an instance of the implementing class from JSON using the JsonParser provided. */
 	void fromJSON(JsonParser jParser) throws IOException;
+
 }

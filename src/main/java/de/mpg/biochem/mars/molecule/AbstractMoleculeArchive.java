@@ -334,7 +334,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties = createProperties();
 	}
 	
-	private void loadVirtualStore(File file) throws JsonParseException, IOException {
+	protected void loadVirtualStore(File file) throws JsonParseException, IOException {
 		this.file = file;		
 		//Load in MoleculeArchive Properties.
 		File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json");
@@ -467,7 +467,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		updateProperties();
 	}
 	
-	private void load(File file) throws JsonParseException, IOException {
+	protected void load(File file) throws JsonParseException, IOException {
 		//The first object in the yama file has general information about the archive including
 		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
 		//if we are working virtual. So we load that information first

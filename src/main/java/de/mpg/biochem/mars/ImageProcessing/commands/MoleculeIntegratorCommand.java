@@ -184,7 +184,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	//OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-	private AbstractMoleculeArchive archive;
+	private SingleMoleculeArchive archive;
 	
 	//For each slice there will be a Map of UID to peak.. This slice maps are stored in a 
 	//larger map with keys corresponding to the slice numbers.
@@ -388,7 +388,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    	newName = "archive" + num;
 		    	num++;
 		    }
-	        archive = new AbstractMoleculeArchive(newName + ".yama");
+	        archive = new SingleMoleculeArchive(newName + ".yama");
 	        
 		    SDMMImageMetadata metaData = new SDMMImageMetadata(image, microscope, imageFormat, metaDataStack);
 			archive.putImageMetaData(metaData);

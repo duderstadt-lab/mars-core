@@ -66,10 +66,9 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.util.LogBuilder;
+
+import de.mpg.biochem.mars.molecule.*;
 
 @Plugin(type = Command.class, label = "Merge Virtual Stores", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -108,7 +107,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		log += builder.buildParameterList();
 		logService.info(log);
 	
-		ArrayList<AbstractMoleculeArchive> archives = new ArrayList<AbstractMoleculeArchive>();
+		ArrayList<MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties>> archives = new ArrayList<MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties>>();
 		
 		FilenameFilter fileNameFilter = new FilenameFilter() {
            @Override
@@ -129,9 +128,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		
 		if (archiveDirectoryList.length > 0) {
 			for (File virtualDirectory: archiveDirectoryList) {
-				AbstractMoleculeArchive archive;
+				MoleculeArchive archive;
 				try {
-					archive = new AbstractMoleculeArchive(virtualDirectory);
+					archive = new SingleMoleculeArchive(virtualDirectory);
 					
 					if (archive.isSMILEInputEncoding() && !smileEncoding) {
 						logService.error("IO encoding was set to JSON but " + virtualDirectory.getName() + " has Smile format. All virtual stores to be merged must have the format specified. Aborting...");
@@ -158,11 +157,11 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			//Build MoleculeArchiveProperties for merged virtual store.
-			MoleculeArchiveProperties mergedProperties = new MoleculeArchiveProperties();
+			SingleMoleculeArchiveProperties mergedProperties = new SingleMoleculeArchiveProperties();
 			int numMolecules = 0;
 			int numImageMetaData = 0;
 			String globalComments = "";
-			for (AbstractMoleculeArchive archive : archives) {
+			for (MoleculeArchive archive : archives) {
 				MoleculeArchiveProperties properties = archive.getProperties();
 				numMolecules += properties.getNumberOfMolecules();
 				numImageMetaData += properties.getNumImageMetaData();
@@ -204,7 +203,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ConcurrentMap<String, LinkedHashSet<String>> tagIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> imageMetaDataTagIndex = new ConcurrentHashMap<>();
 			
-			for (AbstractMoleculeArchive archive : archives) {
+			for (MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
 					if (virtualMoleculesSet.contains(UID)) {
 						logService.error("Duplicate molecule entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
@@ -353,7 +352,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
 			try {
-				AbstractMoleculeArchive newArchive = new AbstractMoleculeArchive(newVirtualDirectory);
+				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(newVirtualDirectory);
 				newArchive.addLogMessage(log);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
