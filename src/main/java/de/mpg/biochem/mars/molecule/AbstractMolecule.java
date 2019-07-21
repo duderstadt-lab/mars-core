@@ -174,8 +174,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Set the UID of the {@link SDMMImageMetadata} record associated with
-	 * this molecule. The {@link SDMMImageMetadata} contains information about
+	 * Set the UID of the {@link SdmmImageMetadata} record associated with
+	 * this molecule. The {@link SdmmImageMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
 	 * @param imageMetaDataUID The new ImageMetaData UID to set.
@@ -185,8 +185,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Get the UID of the {@link SDMMImageMetadata} record associated with
-	 * this molecule. The {@link SDMMImageMetadata} contains information about
+	 * Get the UID of the {@link SdmmImageMetadata} record associated with
+	 * this molecule. The {@link SdmmImageMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
 	 * @return Return a JSON string representation of the molecule.

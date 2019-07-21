@@ -88,9 +88,9 @@ import io.scif.services.FormatService;
  * 
  * @author Karl Duderstadt
  */
-public class SDMMImageMetadata extends AbstractMarsImageMetadata {
+public class SdmmImageMetadata extends AbstractMarsImageMetadata {
     
-    public SDMMImageMetadata(String UID) {
+    public SdmmImageMetadata(String UID) {
     	super(UID);
     	
 		//Create the table and add a slice column
@@ -100,11 +100,11 @@ public class SDMMImageMetadata extends AbstractMarsImageMetadata {
 		dataTable.add(sliceCol);
     }
     
-    public SDMMImageMetadata(String UID, MarsResultsTable dataTable) {
+    public SdmmImageMetadata(String UID, MarsResultsTable dataTable) {
     	super(UID, dataTable);
     }
 	
-	public SDMMImageMetadata(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
+	public SdmmImageMetadata(ImagePlus img, String Microscope, String imageFormat, ConcurrentMap<Integer, String> headerLabels) {
 		super();
 		this.Microscope = Microscope;
 		
@@ -128,7 +128,7 @@ public class SDMMImageMetadata extends AbstractMarsImageMetadata {
 		}
 	}
 	
-	public SDMMImageMetadata(JsonParser jParser) throws IOException {
+	public SdmmImageMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
 	

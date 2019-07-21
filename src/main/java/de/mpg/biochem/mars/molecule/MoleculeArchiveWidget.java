@@ -50,7 +50,7 @@ import org.scijava.ui.swing.widget.SwingInputWidget;
  * @author Karl Duderstadt
  */
 @Plugin(type = InputWidget.class)
-public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> implements InputWidget<MoleculeArchive, JPanel>, ActionListener {
+public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties>> implements InputWidget<MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties>, JPanel>, ActionListener {
 
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
@@ -68,7 +68,7 @@ public class MoleculeArchiveWidget extends SwingInputWidget<MoleculeArchive> imp
 	// -- InputWidget methods --
 
 	@Override
-	public MoleculeArchive getValue() {
+	public MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> getValue() {
 		return moleculeArchiveService.getArchive((String)comboBox.getSelectedItem());
 	}
 

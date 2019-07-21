@@ -8,14 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import org.scijava.Priority;
 import org.scijava.io.AbstractIOPlugin;
@@ -26,8 +18,6 @@ import org.scijava.io.location.Location;
 import org.scijava.io.location.LocationService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.util.FileUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -36,6 +26,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
+import de.mpg.biochem.mars.molecule.*;
 
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
@@ -64,7 +56,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	
 	//This needs cleaning up but lets see if it is working first...
 	@Override
-	public MoleculeArchive open(final String source) throws IOException {
+	public SingleMoleculeArchive open(final String source) throws IOException {
 		final Location sourceLocation;
 		try {
 			sourceLocation = locationService.resolve(source);
@@ -121,7 +113,10 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		
 		System.out.println(" " + archiveType);
 		
-		return (MoleculeArchive)instance;
+		System.out.println(" " + instance.getClass().getName());
+		System.out.println(" " + ((MoleculeArchive)instance).getNumberOfMolecules());
+		
+		return (SingleMoleculeArchive)instance;
 	}
 	
 	@Override

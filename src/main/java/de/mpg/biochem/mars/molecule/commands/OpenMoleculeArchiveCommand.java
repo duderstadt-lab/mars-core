@@ -122,7 +122,7 @@ public class OpenMoleculeArchiveCommand extends DynamicCommand {
 		try {
 			archive = new SingleMoleculeArchive(name,file,moleculeArchiveService);
 			
-			getInfo().getOutput("archive", AbstractMoleculeArchive.class).setLabel(name);
+			getInfo().getOutput("archive", SingleMoleculeArchive.class).setLabel(name);
 			
 		} catch (JsonParseException e) {
 			e.printStackTrace();

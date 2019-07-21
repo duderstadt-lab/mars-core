@@ -66,7 +66,7 @@ import com.fasterxml.jackson.core.JsonToken;
  * Molecule records are assigned a random UID string at the time of creation derived from 
  * a base58 encoded UUID for readability. This serves as their primary identifier within 
  * {@link AbstractMoleculeArchive}s and for a range of transformations and merging operations. 
- * Molecule records also have a UID string for corresponding {@link SDMMImageMetadata} records, 
+ * Molecule records also have a UID string for corresponding {@link SdmmImageMetadata} records, 
  * which contain information about the imaging settings, the timing of frames etc.. 
  * during data collection. 
  * </p>

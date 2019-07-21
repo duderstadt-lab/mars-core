@@ -286,7 +286,7 @@ public class MergeCommand extends DynamicCommand {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					metaArchiveList.add(new SDMMImageMetadata(jParser));
+					metaArchiveList.add(new SdmmImageMetadata(jParser));
 				}
 			}
 			
@@ -328,7 +328,7 @@ public class MergeCommand extends DynamicCommand {
 			String fieldName = jParser.getCurrentName();
 			if ("ImageMetaData".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					new SDMMImageMetadata(jParser);
+					new SdmmImageMetadata(jParser);
 				}
 			}
 			

@@ -451,7 +451,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    
 		    archive = new SingleMoleculeArchive(newName + ".yama");
 		    
-		    SDMMImageMetadata metaData = new SDMMImageMetadata(image, microscope, imageFormat, metaDataStack);
+		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
 			archive.putImageMetaData(metaData);
 		    
 		    tracker.track(PeakStack, archive);

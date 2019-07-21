@@ -44,14 +44,7 @@ import org.scijava.ui.UIService;
 
 import java.util.HashMap;
 
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
-import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.SDMMImageMetadata;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsResultsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
@@ -79,7 +72,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+    private SingleMoleculeArchive archive;
 	
 	@Override
 	public void run() {		
@@ -125,7 +118,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			Molecule molecule = archive.get(UID);
+			SingleMolecule molecule = archive.get(UID);
 			
 			HashMap<Double, Double> sliceToTimeMap = metaToMap.get(molecule.getImageMetaDataUID());
 			MarsResultsTable datatable = molecule.getDataTable();
@@ -169,11 +162,11 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		builder.addParameter("MoleculeArchive", archive.getName());
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(SingleMoleculeArchive archive) {
 		this.archive = archive;
 	}
 	
-	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
 }

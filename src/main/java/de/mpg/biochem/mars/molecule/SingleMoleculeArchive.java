@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsResultsTable;
 
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SDMMImageMetadata, SingleMoleculeArchiveProperties> {
+public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
 	public SingleMoleculeArchive(String name) {
 		super(name);
@@ -34,12 +34,12 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	protected SDMMImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
-		return new SDMMImageMetadata(jParser);
+	protected SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+		return new SdmmImageMetadata(jParser);
 	}
 	
-	protected SDMMImageMetadata createImageMetadata(String metaUID) {
-		return new SDMMImageMetadata(metaUID);
+	protected SdmmImageMetadata createImageMetadata(String metaUID) {
+		return new SdmmImageMetadata(metaUID);
 	}
 	
 	protected SingleMolecule createMolecule() {
