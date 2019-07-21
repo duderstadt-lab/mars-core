@@ -53,7 +53,7 @@ import de.mpg.biochem.mars.table.MarsResultsTable;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 
-public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchiveProperties {
+public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConvertibleRecord implements MoleculeArchiveProperties {
 	//Contains general information about the molecule archive
 	//Number of molecules, ImageMetadata, tags, average size in bytes.
 	//Any information we about to know without having to read the entire archive in directly.
@@ -72,11 +72,8 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 	//Reference to MoleculeArchive containing the record
 	protected MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> parent;
 	
-	protected LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
-	
-	protected HashMap<String, Predicate<JsonParser>> inputMap;
-	
 	public AbstractMoleculeArchiveProperties() {
+		super();
 		numberOfMolecules = 0;
 		numImageMetadata = 0;
 		comments = "";
@@ -85,10 +82,6 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 		parameterSet = ConcurrentHashMap.newKeySet();
 		moleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		moleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
-		
-		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
-		inputMap = new HashMap<String, Predicate<JsonParser>>();
-		createIOMaps();
 	}
 	
 	public AbstractMoleculeArchiveProperties(JsonParser jParser) throws IOException {
@@ -96,6 +89,7 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 		fromJSON(jParser);
 	}
 	
+	@Override
 	protected void createIOMaps() {
 		//Output Map
 		outputMap.put("ArchiveType", MarsUtil.catchConsumerException(jGenerator ->
@@ -210,43 +204,6 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 			jParser.nextToken();
 	    	comments = jParser.getText();
 		}, IOException.class));
-	}
-	
-	public void toJSON(JsonGenerator jGenerator) throws IOException {
-		jGenerator.writeObjectFieldStart("MoleculeArchiveProperties");
-		for (String field : outputMap.keySet()) {
-			if (!outputMap.get(field).test(jGenerator))
-				throw new IOException("IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
-		}
-		jGenerator.writeEndObject();
-	}
-	
-	public void fromJSON(JsonParser jParser) throws IOException {
-		jParser.nextToken();
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    String fieldname = jParser.getCurrentName();
-
-		    if (fieldname == null)
-		    	continue;
-		    	
-		    if (inputMap.containsKey(fieldname)) {
-			    if (!inputMap.get(fieldname).test(jParser))
-			    	throw new IOException("IOExcpetion: JsonParser encountered a problem reading from the input stream");
-			    continue;
-		    }
-		    
-		    //SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it
-		    //This ensure if extra fields are added in the future
-		    //old versions will be able to open the new files
-		    //However, the missing fields will not be saved properly
-		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
-		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object encountered in MoleculeArchiveProperties record ... skipping");
-		    	MarsUtil.passThroughUnknownObjects(jParser);
-		    }
-		}
 	}
 	
 	//Getters and Setters	

@@ -1,4 +1,4 @@
-package de.mpg.biochem.mars.util;
+package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
 
@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonParser;
  *
  * @author Karl Duderstadt
  */
-public interface JsonConvertable {
+public interface JsonConvertibleRecord {
 	
 	/** Serializes the implementing class to JSON using the JsonGenerator provided. */
 	void toJSON(JsonGenerator jGenerator) throws IOException;

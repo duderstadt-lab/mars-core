@@ -4,9 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import de.mpg.biochem.mars.table.MarsResultsTable;
-import de.mpg.biochem.mars.util.JsonConvertable;
 
-public interface MarsRecord extends JsonConvertable {
+public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the UID for this record.

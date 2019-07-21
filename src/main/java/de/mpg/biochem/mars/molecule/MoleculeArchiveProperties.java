@@ -3,9 +3,7 @@ package de.mpg.biochem.mars.molecule;
 import java.util.ArrayList;
 import java.util.Set;
 
-import de.mpg.biochem.mars.util.JsonConvertable;
-
-public interface MoleculeArchiveProperties extends JsonConvertable {
+public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void addTag(String tag);
 	

@@ -8,9 +8,8 @@ import java.util.LinkedHashSet;
 import org.scijava.Typed;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import de.mpg.biochem.mars.util.JsonConvertable;
 
-public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> extends JsonConvertable {
+public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> extends JsonConvertibleRecord {
 	
 	/**
 	 * Rebuild all indexes by inspecting the contents of store directories. 

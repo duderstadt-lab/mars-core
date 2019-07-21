@@ -5,9 +5,8 @@ import java.util.Set;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.table.MarsResultsTable;
-import de.mpg.biochem.mars.util.JsonConvertable;
 
-public interface Molecule extends JsonConvertable, MarsRecord {
+public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	
 	void setImageMetadataUID(String imageMetadataUID);
 	

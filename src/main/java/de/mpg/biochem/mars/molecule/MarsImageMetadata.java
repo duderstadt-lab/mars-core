@@ -1,8 +1,6 @@
 package de.mpg.biochem.mars.molecule;
 
-import de.mpg.biochem.mars.util.JsonConvertable;
-
-public interface MarsImageMetadata extends JsonConvertable, MarsRecord {
+public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	void setMicroscopeName(String Microscope);
 	
 	String getMicroscopeName();
