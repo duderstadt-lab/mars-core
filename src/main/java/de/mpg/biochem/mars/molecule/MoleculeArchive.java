@@ -56,54 +56,54 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	void put(M molecule);
 	
 	/**
-	 * Adds an ImageMetaData record to the archive. If an ImageMetaData record with 
+	 * Adds an ImageMetadata record to the archive. If an ImageMetadata record with 
 	 * the same UID is already in the archive, the record is updated.
 	 * 
-	 * All indexes are updated with the properties of the ImageMetaData record added.
+	 * All indexes are updated with the properties of the ImageMetadata record added.
 	 * 
-	 * @param metaData an ImageMetaData record to add or update.
+	 * @param Metadata an ImageMetadata record to add or update.
 	 */
-	void putImageMetaData(I metaData);
+	void putImageMetadata(I metadata);
 	
 	/**
-	 * The ImageMetaData record with the UID given is removed from the archive. 
+	 * The ImageMetadata record with the UID given is removed from the archive. 
 	 * All indexes are updated to reflect the change.
 	 * 
-	 * @param metaUID the UID of the ImageMetaData record to remove.
+	 * @param metaUID the UID of the ImageMetadata record to remove.
 	 */
-	void removeImageMetaData(String metaUID);
+	void removeImageMetadata(String metaUID);
 
 	/**
-	 * The ImageMetaData record given is removed from the archive. 
+	 * The ImageMetadata record given is removed from the archive. 
 	 * All indexes are updated to reflect the change.
 	 * 
-	 * @param meta ImageMetaData record to remove.
+	 * @param meta ImageMetadata record to remove.
 	 */
-	void removeImageMetaData(I meta);
+	void removeImageMetadata(I meta);
 	
 	/**
-	 * Retrieves an MARSImageMetaData record.
+	 * Retrieves an MARSImageMetadata record.
 	 * 
-	 * @param index The index of the MARSImageMetaData record to retrieve.
-	 * @return A MARSImageMetaData record.
+	 * @param index The index of the MARSImageMetadata record to retrieve.
+	 * @return A MARSImageMetadata record.
 	 */
-	I getImageMetaData(int index);
+	I getImageMetadata(int index);
 	
 	/**
-	 * Retrieves a MARSImageMetaData record.
+	 * Retrieves a MARSImageMetadata record.
 	 * 
-	 * @param metaUID The UID of the MARSImageMetaData record to retrieve.
-	 * @return A MARSImageMetaData record.
+	 * @param metaUID The UID of the MARSImageMetadata record to retrieve.
+	 * @return A MARSImageMetadata record.
 	 */
-	I getImageMetaData(String metaUID);
+	I getImageMetadata(String metaUID);
 	
 	/**
-	 * Retrieves the list of UIDs of all MARSImageMetaData records.
+	 * Retrieves the list of UIDs of all MARSImageMetadata records.
 	 * Useful for stream().forEach(...) operations.
 	 * 
-	 * @return The list of all MARImageMetaData UIDs.
+	 * @return The list of all MARImageMetadata UIDs.
 	 */
-	ArrayList<String> getImageMetaDataUIDs();
+	ArrayList<String> getImageMetadataUIDs();
 	
 	/**
 	 * Number of molecule records in the MoleculeArchive.
@@ -113,11 +113,11 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	int getNumberOfMolecules();
 	
 	/**
-	 * Number of MARSImageMetaData records in the MoleculeArchive.
+	 * Number of MARSImageMetadata records in the MoleculeArchive.
 	 * 
-	 * @return The integer number of MARSImageMetaData records.
+	 * @return The integer number of MARSImageMetadata records.
 	 */
-	int getNumberOfImageMetaDataRecords();
+	int getNumberOfImageMetadataRecords();
 	
 	/**
 	 * Location of the virtual store.
@@ -195,20 +195,20 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	LinkedHashSet<String> getTagSet(String UID);
 	
 	/**
-	 * Comma separated list of tags for the MARSImageMetaData record with the given UID.
+	 * Comma separated list of tags for the MARSImageMetadata record with the given UID.
 	 * 
-	 * @param UID The UID of the MARSImageMetaData record to retrieve the tag list for.
+	 * @param UID The UID of the MARSImageMetadata record to retrieve the tag list for.
 	 * @return A String containing a comma separated list of tags.
 	 */
-	String getImageMetaDataTagList(String UID);
+	String getImageMetadataTagList(String UID);
 	
 	/**
-	 * Tags for the MARSImageMetaData record with the given UID.
+	 * Tags for the MARSImageMetadata record with the given UID.
 	 * 
-	 * @param UID The UID of the MARSImageMetaData record to retrieve the tag list for.
-	 * @return The set of tags for the given MARSImageMetaData record.
+	 * @param UID The UID of the MARSImageMetadata record to retrieve the tag list for.
+	 * @return The set of tags for the given MARSImageMetadata record.
 	 */
-	LinkedHashSet<String> getImageMetaDataTagSet(String UID);
+	LinkedHashSet<String> getImageMetadataTagSet(String UID);
 	
 	/**
 	 * Saves a molecule record as a json file.
@@ -223,16 +223,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException;
 	
 	/**
-	 * Saves a MARSImageMetaData record as a json file.
+	 * Saves a MARSImageMetadata record as a json file.
 	 * 
 	 * @param directory The directory to save the file in.
-	 * @param imageMetaData The MARSImageMetaData record to save.
+	 * @param imageMetadata The MARSImageMetadata record to save.
 	 * @param jfactory the JsonFactory to use when saving. 
 	 * Determines if smile or text encoding is used.
 	 * 
-	 * @throws IOException if the MARSImageMetaData can't be saved to the file given.
+	 * @throws IOException if the MARSImageMetadata can't be saved to the file given.
 	 */
-	void saveImageMetaDataToFile(File directory, I imageMetaData, JsonFactory jfactory) throws IOException;
+	void saveImageMetadataToFile(File directory, I imageMetadata, JsonFactory jfactory) throws IOException;
 	
 	/**
 	 * Check if a molecule record has a tag. This offers optimal
@@ -246,15 +246,15 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	boolean moleculeHasTag(String UID, String tag);
 	
 	/**
-	 * Check if a MARSImageMetaData record has a tag. This offers optimal
+	 * Check if a MARSImageMetadata record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
 	 * 
-	 * @param UID The UID of the MARSImageMetaData record to check for the tag.
+	 * @param UID The UID of the MARSImageMetadata record to check for the tag.
 	 * @param tag The tag to check for.
-	 * @return Returns true if the MARSImageMetaData record has the tag and false if not.
+	 * @return Returns true if the MARSImageMetadata record has the tag and false if not.
 	 */
-	boolean imageMetaDataHasTag(String UID, String tag);
+	boolean imageMetadataHasTag(String UID, String tag);
 
 	/**
 	 * Removes all molecule records with the tag provided.
@@ -264,11 +264,11 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	void deleteMoleculesWithTag(String tag);
 	
 	/**
-	 * Removes all MARSImageMetaData records with the tag provided.
+	 * Removes all MARSImageMetadata records with the tag provided.
 	 * 
-	 * @param tag MARSImageMetaData records with this tag will be removed.
+	 * @param tag MARSImageMetadata records with this tag will be removed.
 	 */
-	void deleteImageMetaDataRecordsWithTag(String tag);
+	void deleteImageMetadataRecordsWithTag(String tag);
 	
 	/**
 	 * Used to check if there is a molecule record with the UID given.
@@ -280,13 +280,13 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	boolean contains(String UID);
 	
 	/**
-	 * Used to check if there is a MARSImageMetaData record with the UID given.
+	 * Used to check if there is a MARSImageMetadata record with the UID given.
 	 * 
-	 * @param UID Check for a MARSImageMetaData record with this UID.
-	 * @return True if the archive contains a MARSImageMetaData record 
+	 * @param UID Check for a MARSImageMetadata record with this UID.
+	 * @return True if the archive contains a MARSImageMetadata record 
 	 * with the provided UID and false if not.
 	 */
-	boolean containsImageMetaDataRecord(String UID);
+	boolean containsImageMetadataRecord(String UID);
 
 	/**
 	 * Get the molecule record with the given UID.
@@ -307,17 +307,17 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	int getIndex(String UID);
 	
 	/**
-	 * Get the UID of the MARSImageMetaData for a molecule record. If 
+	 * Get the UID of the MARSImageMetadata for a molecule record. If 
 	 * working from a virtual store, this will use an index providing
 	 * optimal performance. If working in memory this is the same as
-	 * retrieving the molecule record and the ImageMetaData UID from 
+	 * retrieving the molecule record and the ImageMetadata UID from 
 	 * it directly.
 	 * 
-	 * @param UID The UID of the molecule to get the MARSImageMetaData UID for.
-	 * @return The UID string of the MARSImageMetaData record corresponding to the
+	 * @param UID The UID of the molecule to get the MARSImageMetadata UID for.
+	 * @return The UID string of the MARSImageMetadata record corresponding to the
 	 * molecule record whose UID was provided.
 	 */
-	String getImageMetaDataUIDforMolecule(String UID);
+	String getImageMetadataUIDforMolecule(String UID);
 	
 	/**
 	 * Get the UID at the provided index location.
@@ -328,12 +328,12 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	String getUIDAtIndex(int index);
 	
 	/**
-	 * Get the ImageMetaData UID at the provided index location.
+	 * Get the ImageMetadata UID at the provided index location.
 	 * 
-	 * @param index Retrieve the ImageMetaData UID at this index location.
-	 * @return The ImageMetaData UID at the index location provided.
+	 * @param index Retrieve the ImageMetadata UID at this index location.
+	 * @return The ImageMetadata UID at the index location provided.
 	 */
-	String getImageMetaDataUIDAtIndex(int index);
+	String getImageMetadataUIDAtIndex(int index);
 	
 	/**
 	 * Returns the File from which the archive was opened.
@@ -412,10 +412,10 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	void naturalOrderSortMoleculeIndex();
 	
 	/**
-	 * Add a Log message to all MARSImageMetaData records. Used by all processing plugins 
+	 * Add a Log message to all MARSImageMetadata records. Used by all processing plugins 
 	 * so there is a record of the sequence of processing steps during analysis.
 	 * 
-	 * @param message The String message to add to all MARSImageMetaData logs.
+	 * @param message The String message to add to all MARSImageMetadata logs.
 	 */
 	void addLogMessage(String message);
 	

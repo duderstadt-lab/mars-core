@@ -29,9 +29,9 @@ public interface MoleculeArchiveProperties extends JsonConvertable {
 	
 	int getNumberOfMolecules();
 	
-	void setNumImageMetaData(int numImageMetaData);
+	void setNumImageMetadata(int numImageMetadata);
 	
-	int getNumImageMetaData();
+	int getNumImageMetadata();
 	
 	void addColumn(String column);
 	

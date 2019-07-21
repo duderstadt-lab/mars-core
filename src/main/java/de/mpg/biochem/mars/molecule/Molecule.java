@@ -9,7 +9,7 @@ import de.mpg.biochem.mars.util.JsonConvertable;
 
 public interface Molecule extends JsonConvertable, MarsRecord {
 	
-	void setImageMetaDataUID(String imageMetaDataUID);
+	void setImageMetadataUID(String imageMetadataUID);
 	
 	/**
 	 * Get the UID of the {@link MarsImageMetadata} record associated with
@@ -18,7 +18,7 @@ public interface Molecule extends JsonConvertable, MarsRecord {
 	 * 
 	 * @return Return a JSON string representation of the molecule.
 	 */
-	String getImageMetaDataUID();
+	String getImageMetadataUID();
 		
 	/**
 	 * Add or update a Segments table ({@link MarsResultsTable}) generated 

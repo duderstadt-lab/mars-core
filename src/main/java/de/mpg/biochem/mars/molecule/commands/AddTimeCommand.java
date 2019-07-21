@@ -99,14 +99,14 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//First let's generate lookup maps for slice to time for all metadata items in the archive
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
-		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetaData(metaUID);
+		for (String metaUID : archive.getImageMetadataUIDs()) {
+			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
 			} else {
-				logService.error("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+				logService.error("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
-				archive.addLogMessage("ImageMetaData " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+				archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
 				archive.addLogMessage(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
@@ -120,7 +120,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			SingleMolecule molecule = archive.get(UID);
 			
-			HashMap<Double, Double> sliceToTimeMap = metaToMap.get(molecule.getImageMetaDataUID());
+			HashMap<Double, Double> sliceToTimeMap = metaToMap.get(molecule.getImageMetadataUID());
 			MarsResultsTable datatable = molecule.getDataTable();
 			
 			//If the column already exists we don't need to add it
@@ -149,8 +149,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		HashMap<Double, Double> sliceToTime = new HashMap<Double, Double>();
 		
 		//First we retrieve columns from image metadata
-		DoubleColumn metaSlice = (DoubleColumn) archive.getImageMetaData(metaUID).getDataTable().get("slice"); 
-		DoubleColumn metaTime = (DoubleColumn) archive.getImageMetaData(metaUID).getDataTable().get("Time (s)"); 
+		DoubleColumn metaSlice = (DoubleColumn) archive.getImageMetadata(metaUID).getDataTable().get("slice"); 
+		DoubleColumn metaTime = (DoubleColumn) archive.getImageMetadata(metaUID).getDataTable().get("Time (s)"); 
 		
 		for (int i=0;i<metaSlice.size();i++) {
 			sliceToTime.put(metaSlice.get(i), metaTime.get(i));

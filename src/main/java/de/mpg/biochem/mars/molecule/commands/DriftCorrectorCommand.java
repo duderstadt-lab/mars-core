@@ -89,10 +89,10 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     @Parameter(label="to slice")
 	private int to = 100;
 			
-    @Parameter(label="MetaData Background X (x_drift)")
+    @Parameter(label="Metadata Background X (x_drift)")
     private String meta_x = "x_drift";
     
-    @Parameter(label="MetaData Background Y (y_drift)")
+    @Parameter(label="Metadata Background Y (y_drift)")
     private String meta_y = "y_drift";
     
     @Parameter(label="Input X (x)")
@@ -133,15 +133,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMapX = new HashMap<String, HashMap<Double, Double>>();
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
-		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetaData(metaUID);
+		for (String metaUID : archive.getImageMetadataUIDs()) {
+			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
 			} else {
-				logService.error("ImageMetaData " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+				logService.error("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
-				archive.addLogMessage("ImageMetaData " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+				archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 				archive.addLogMessage(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
@@ -161,8 +161,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				return;
 			}
 			
-			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetaDataUID());
-			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetaDataUID());
+			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetadataUID());
+			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetadataUID());
 			
 			MarsResultsTable datatable = molecule.getDataTable();
 			
@@ -238,8 +238,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("from slice", String.valueOf(from));
 		builder.addParameter("to slice", String.valueOf(to));
-		builder.addParameter("MetaData Background X", meta_x);
-		builder.addParameter("MetaData Background Y", meta_y);
+		builder.addParameter("Metadata Background X", meta_x);
+		builder.addParameter("Metadata Background Y", meta_y);
 		builder.addParameter("Input X", input_x);
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);

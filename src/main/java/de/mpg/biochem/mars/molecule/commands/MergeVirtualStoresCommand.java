@@ -159,12 +159,12 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			//Build MoleculeArchiveProperties for merged virtual store.
 			SingleMoleculeArchiveProperties mergedProperties = new SingleMoleculeArchiveProperties();
 			int numMolecules = 0;
-			int numImageMetaData = 0;
+			int numImageMetadata = 0;
 			String globalComments = "";
 			for (MoleculeArchive archive : archives) {
 				MoleculeArchiveProperties properties = archive.getProperties();
 				numMolecules += properties.getNumberOfMolecules();
-				numImageMetaData += properties.getNumImageMetaData();
+				numImageMetadata += properties.getNumImageMetadata();
 				globalComments += "Comments from Merged Archive " + archive.getName() + ":\n" + properties.getComments() + "\n";
 				
 				//update global indexes
@@ -174,7 +174,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 	
 			mergedProperties.setNumberOfMolecules(numMolecules);
-			mergedProperties.setNumImageMetaData(numImageMetaData);
+			mergedProperties.setNumImageMetadata(numImageMetadata);
 			mergedProperties.setComments(globalComments);
 			
 			try {
@@ -195,13 +195,13 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			
 			//Now we need to create the indexes file from all the archive records..
 			ArrayList<String> moleculeIndex = new ArrayList<String>();
-			ArrayList<String> imageMetaDataIndex = new ArrayList<String>();
+			ArrayList<String> imageMetadataIndex = new ArrayList<String>();
 			Set<String> virtualMoleculesSet = ConcurrentHashMap.newKeySet();
-			Set<String> virtualImageMetaDataSet = ConcurrentHashMap.newKeySet();
+			Set<String> virtualImageMetadataSet = ConcurrentHashMap.newKeySet();
 			
-			ConcurrentMap<String, String> moleculeImageMetaDataUIDIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, String> moleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> tagIndex = new ConcurrentHashMap<>();
-			ConcurrentMap<String, LinkedHashSet<String>> imageMetaDataTagIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, LinkedHashSet<String>> imageMetadataTagIndex = new ConcurrentHashMap<>();
 			
 			for (MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
@@ -211,19 +211,19 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					}
 					moleculeIndex.add(UID);
 					virtualMoleculesSet.add(UID);
-					moleculeImageMetaDataUIDIndex.put(UID, archive.getImageMetaDataUIDforMolecule(UID));
+					moleculeImageMetadataUIDIndex.put(UID, archive.getImageMetadataUIDforMolecule(UID));
 					tagIndex.put(UID, archive.getTagSet(UID));
 				}
 				
-				for (String metaUID : archive.getImageMetaDataUIDs()) {
-					if (virtualImageMetaDataSet.contains(metaUID)) {
-						logService.error("Duplicate MARSImageMetaData entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
+				for (String metaUID : archive.getImageMetadataUIDs()) {
+					if (virtualImageMetadataSet.contains(metaUID)) {
+						logService.error("Duplicate MarsImageMetadata entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
 						return;
 					}
-					imageMetaDataIndex.add(metaUID);
-					virtualImageMetaDataSet.add(metaUID);
-					if (archive.getImageMetaDataTagSet(metaUID) != null)
-						imageMetaDataTagIndex.put(metaUID, archive.getImageMetaDataTagSet(metaUID));
+					imageMetadataIndex.add(metaUID);
+					virtualImageMetadataSet.add(metaUID);
+					if (archive.getImageMetadataTagSet(metaUID) != null)
+						imageMetadataTagIndex.put(metaUID, archive.getImageMetadataTagSet(metaUID));
 				}
 			}
 			
@@ -232,7 +232,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			
 			//Before we write the new indexes file we should natural order sort the entries.
 			moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
-			imageMetaDataIndex = (ArrayList<String>)imageMetaDataIndex.stream().sorted().collect(toList());
+			imageMetadataIndex = (ArrayList<String>)imageMetadataIndex.stream().sorted().collect(toList());
 			
 			File indexFile = new File(newVirtualDirectory.getAbsolutePath() + "/indexes.json");
 			OutputStream stream;
@@ -243,16 +243,16 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				
 				jGenerator.writeStartObject();
 	
-				//Write imageMetaDataIndex
-				jGenerator.writeFieldName("imageMetaDataIndex");
+				//Write imageMetadataIndex
+				jGenerator.writeFieldName("ImageMetadataIndex");
 				jGenerator.writeStartArray();
-				for (String metaUID : imageMetaDataIndex) {
+				for (String metaUID : imageMetadataIndex) {
 					jGenerator.writeStartObject();
 					jGenerator.writeStringField("UID", metaUID);
 					
-					if (imageMetaDataTagIndex.containsKey(metaUID)) {
+					if (imageMetadataTagIndex.containsKey(metaUID)) {
 						jGenerator.writeArrayFieldStart("Tags");
-						for (String tag : imageMetaDataTagIndex.get(metaUID)) {
+						for (String tag : imageMetadataTagIndex.get(metaUID)) {
 							jGenerator.writeString(tag);
 						}
 						jGenerator.writeEndArray();
@@ -263,11 +263,11 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				jGenerator.writeEndArray();
 				
 				//Write moleculeIndex
-				jGenerator.writeArrayFieldStart("moleculeIndex");
+				jGenerator.writeArrayFieldStart("MoleculeIndex");
 				for (String UID : moleculeIndex) {
 					jGenerator.writeStartObject();
 					jGenerator.writeStringField("UID", UID);
-					jGenerator.writeStringField("ImageMetaDataUID", moleculeImageMetaDataUIDIndex.get(UID));
+					jGenerator.writeStringField("ImageMetadataUID", moleculeImageMetadataUIDIndex.get(UID));
 					
 					if (tagIndex.containsKey(UID)) {
 						jGenerator.writeArrayFieldStart("Tags");
@@ -291,9 +291,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			//Now that the MoleculeArchiveProperties is done and the indexes are done
-			//We need to copy all the MARSImageMetaData records and molecule records.
-			File newImageMetaDataDirectory = new File(newVirtualDirectory.getAbsolutePath() + "/ImageMetaData");
-            newImageMetaDataDirectory.mkdirs();
+			//We need to copy all the MARSImageMetadata records and molecule records.
+			File newImageMetadataDirectory = new File(newVirtualDirectory.getAbsolutePath() + "/ImageMetadata");
+            newImageMetadataDirectory.mkdirs();
             
             File newMoleculeDirectory = new File(newVirtualDirectory.getAbsolutePath() + "/Molecules");
             newMoleculeDirectory.mkdirs();
@@ -318,9 +318,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			try {
 		        forkJoinPool.submit(() -> virtualStoreDirectoryList.parallelStream().forEach(directory -> { 
 		        	try {
-			        	File[] metaDataRecords = new File(directory.getAbsolutePath() + "/ImageMetaData").listFiles(nameFilter);
+			        	File[] metaDataRecords = new File(directory.getAbsolutePath() + "/ImageMetadata").listFiles(nameFilter);
 			        	for (File metaDataRecord : metaDataRecords) {
-			        		FileUtils.copyFileToDirectory(metaDataRecord, newImageMetaDataDirectory);
+			        		FileUtils.copyFileToDirectory(metaDataRecord, newImageMetadataDirectory);
 			        	}
 			        	
 			        	File[] moleculeRecords = new File(directory.getAbsolutePath() + "/Molecules").listFiles(nameFilter);
@@ -345,10 +345,10 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			if (archiveDirectoryList.length > 0)
 				storeList = storeList.substring(0, storeList.length() - 2);
 			
-			//Now we just need to update the MARSImageMetaData logs.
+			//Now we just need to update the MARSImageMetadata logs.
 			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
 			log += "Including: " + storeList + "\n";
-			log += "In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.\n";
+			log += "In total " + mergedProperties.getNumImageMetadata() + " MARSImageMetadata records were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
 			try {
@@ -361,7 +361,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store");
 			log += "Including: " + storeList + "\n";
-			logService.info("In total " + mergedProperties.getNumImageMetaData() + " MARSImageMetaData records were merged.");
+			logService.info("In total " + mergedProperties.getNumImageMetadata() + " MARSImageMetadata records were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {

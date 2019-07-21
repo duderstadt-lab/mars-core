@@ -124,8 +124,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
-		for (String metaUID : archive.getImageMetaDataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetaData(metaUID);
+		for (String metaUID : archive.getImageMetadataUIDs()) {
+			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			//Let's find the last slice
 			MarsResultsTable metaDataTable = meta.getDataTable();
 			
@@ -144,7 +144,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (use_incomplete_traces) {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.getImageMetaDataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MarsResultsTable datatable = archive.get(UID).getDataTable();
@@ -162,7 +162,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				long[] num_full_traj = new long[1];
 				num_full_traj[0] = 0;
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.getImageMetaDataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MarsResultsTable datatable = archive.get(UID).getDataTable();
@@ -213,7 +213,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue);
 			}
 			
-			archive.putImageMetaData(meta);
+			archive.putImageMetadata(meta);
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");

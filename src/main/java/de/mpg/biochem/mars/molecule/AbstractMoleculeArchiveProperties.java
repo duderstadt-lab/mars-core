@@ -55,11 +55,11 @@ import de.mpg.biochem.mars.util.MarsUtil;
 
 public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchiveProperties {
 	//Contains general information about the molecule archive
-	//Number of molecules, ImageMetaData, tags, average size in bytes.
+	//Number of molecules, ImageMetadata, tags, average size in bytes.
 	//Any information we about to know without having to read the entire archive in directly.
 	
 	protected int numberOfMolecules;
-	protected int numImageMetaData;
+	protected int numImageMetadata;
 	protected String comments;
 	
 	//Not really used for anything at the moment...
@@ -78,7 +78,7 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 	
 	public AbstractMoleculeArchiveProperties() {
 		numberOfMolecules = 0;
-		numImageMetaData = 0;
+		numImageMetadata = 0;
 		comments = "";
 		
 		tagSet = ConcurrentHashMap.newKeySet();
@@ -104,8 +104,8 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 			jGenerator.writeStringField("ArchiveType", this.getClass().getName()), IOException.class));
 		outputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jGenerator ->
 			jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), IOException.class));
-		outputMap.put("numImageMetaData", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeNumberField("numImageMetaData", numImageMetaData), IOException.class));
+		outputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jGenerator ->
+			jGenerator.writeNumberField("numImageMetadata", numImageMetadata), IOException.class));
 		outputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jGenerator -> {
 				if (moleculeDataTableColumnSet.size() > 0) {
 					jGenerator.writeFieldName("MoleculeDataTableColumnSet");
@@ -167,7 +167,11 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 		}, IOException.class));
 		inputMap.put("numImageMetaData", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
-	        numImageMetaData = jParser.getIntValue();
+	        numImageMetadata = jParser.getIntValue();
+		}, IOException.class));
+		inputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	        numImageMetadata = jParser.getIntValue();
 		}, IOException.class));
 		inputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
@@ -290,12 +294,12 @@ public abstract class AbstractMoleculeArchiveProperties implements MoleculeArchi
 		return numberOfMolecules;
 	}
 	
-	public void setNumImageMetaData(int numImageMetaData) {
-		this.numImageMetaData = numImageMetaData;
+	public void setNumImageMetadata(int numImageMetadata) {
+		this.numImageMetadata = numImageMetadata;
 	}
 	
-	public int getNumImageMetaData() {
-		return numImageMetaData;
+	public int getNumImageMetadata() {
+		return numImageMetadata;
 	}
 	
 	public void addColumn(String column) {

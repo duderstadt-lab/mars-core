@@ -17,8 +17,8 @@ import de.mpg.biochem.mars.table.MarsResultsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
-	//UID of ImageMetaData associated wit this molecule.
-	protected String imageMetaDataUID;
+	//UID of ImageMetadata associated wit this molecule.
+	protected String imageMetadataUID;
 	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
@@ -79,8 +79,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		//Add to output map
 		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (imageMetaDataUID != null)
-				jGenerator.writeStringField("ImageMetaDataUID", imageMetaDataUID);
+			if (imageMetadataUID != null)
+				jGenerator.writeStringField("ImageMetadataUID", imageMetadataUID);
 	 	}, IOException.class));
 		outputMap.put("SegmentTables", MarsUtil.catchConsumerException(jGenerator -> {
 			if (segmentTables.size() > 0) {
@@ -103,9 +103,13 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 	}, IOException.class));
 		
 		//Add to input map
+		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	imageMetadataUID = jParser.getText();
+		}, IOException.class));
 		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
-	    	imageMetaDataUID = jParser.getText();
+	    	imageMetadataUID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
@@ -178,10 +182,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * this molecule. The {@link SdmmImageMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
-	 * @param imageMetaDataUID The new ImageMetaData UID to set.
+	 * @param imageMetadataUID The new ImageMetadata UID to set.
 	 */
-	public void setImageMetaDataUID(String imageMetaDataUID) {
-		this.imageMetaDataUID = imageMetaDataUID;
+	public void setImageMetadataUID(String imageMetadataUID) {
+		this.imageMetadataUID = imageMetadataUID;
 	}
 	
 	/**
@@ -191,8 +195,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * 
 	 * @return Return a JSON string representation of the molecule.
 	 */
-	public String getImageMetaDataUID() {
-		return imageMetaDataUID;
+	public String getImageMetadataUID() {
+		return imageMetadataUID;
 	}
 		
 	/**

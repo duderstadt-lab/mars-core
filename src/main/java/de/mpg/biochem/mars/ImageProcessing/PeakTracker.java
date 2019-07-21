@@ -94,7 +94,7 @@ public class PeakTracker {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
-		metaDataUID = archive.getImageMetaData(0).getUID();
+		metaDataUID = archive.getImageMetadata(0).getUID();
 		
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -325,7 +325,7 @@ public class PeakTracker {
 		}
 
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
-		mol.setImageMetaDataUID(metaDataUID);
+		mol.setImageMetadataUID(metaDataUID);
 		archive.put(mol);
 	}
 	

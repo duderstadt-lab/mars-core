@@ -92,7 +92,7 @@ public class MergeCommand extends DynamicCommand {
 	private boolean smileEncoding = true;
 	
 	ArrayList<MoleculeArchiveProperties> allArchiveProps;
-	ArrayList<ArrayList<MarsImageMetadata>> allMetaDataItems;
+	ArrayList<ArrayList<MarsImageMetadata>> allMetadataItems;
 	
 	ArrayList<String> metaUIDs;
 	
@@ -132,7 +132,7 @@ public class MergeCommand extends DynamicCommand {
 		File[] archiveFileList = directory.listFiles(fileNameFilter);
 		if (archiveFileList.length > 0) {
 			allArchiveProps = new ArrayList<MoleculeArchiveProperties>();
-			allMetaDataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
+			allMetadataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
 			metaUIDs = new ArrayList<String>();
 			
 			for (File file: archiveFileList) {
@@ -148,12 +148,12 @@ public class MergeCommand extends DynamicCommand {
 			SingleMoleculeArchiveProperties newArchiveProperties = new SingleMoleculeArchiveProperties();
 			
 			int numMolecules = 0; 
-			int numImageMetaData = 0;
+			int numImageMetadata = 0;
 			String globalComments = "";
 			int count = 0;
 			for (MoleculeArchiveProperties archiveProperties : allArchiveProps) {
 				numMolecules += archiveProperties.getNumberOfMolecules();
-				numImageMetaData += archiveProperties.getNumImageMetaData();
+				numImageMetadata += archiveProperties.getNumImageMetadata();
 				globalComments += "Comments from Merged Archive " + archiveFileList[count].getName() + ":\n" + archiveProperties.getComments() + "\n";
 				
 				//update global indexes
@@ -165,7 +165,7 @@ public class MergeCommand extends DynamicCommand {
 			}
 
 			newArchiveProperties.setNumberOfMolecules(numMolecules);
-			newArchiveProperties.setNumImageMetaData(numImageMetaData);
+			newArchiveProperties.setNumImageMetadata(numImageMetadata);
 			newArchiveProperties.setComments(globalComments);
 			
 			String archiveList = "";
@@ -176,16 +176,16 @@ public class MergeCommand extends DynamicCommand {
 			
 			log += "Merged " + archiveFileList.length + " yama files into the output archive merged.yama\n";
 			log += "Including: " + archiveList + "\n";
-			log += "In total " + newArchiveProperties.getNumImageMetaData() + " Datasets were merged.\n";
+			log += "In total " + newArchiveProperties.getNumImageMetadata() + " Datasets were merged.\n";
 			log += "In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true);
 			
-			//Check for duplicate ImageMetaData items
-			for (ArrayList<MarsImageMetadata> archiveMetaList : allMetaDataItems) {
+			//Check for duplicate ImageMetadata items
+			for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
 				for (MarsImageMetadata metaItem : archiveMetaList) {
 					String metaUID = metaItem.getUID();
 					if (metaUIDs.contains(metaUID)) {
-						logService.info("Duplicate ImageMetaData record " + metaUID + " found.");
+						logService.info("Duplicate ImageMetadata record " + metaUID + " found.");
 						logService.info("Are you trying to merge copies of the same dataset?");
 						logService.info("Please resolve the conflict and run the merge command again.");
 						logService.info(LogBuilder.endBlock(false));
@@ -216,8 +216,8 @@ public class MergeCommand extends DynamicCommand {
 				
 				newArchiveProperties.toJSON(jGenerator);
 				
-				jGenerator.writeArrayFieldStart("ImageMetaData");
-				for (ArrayList<MarsImageMetadata> archiveMetaList : allMetaDataItems) {
+				jGenerator.writeArrayFieldStart("ImageMetadata");
+				for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
 					for (MarsImageMetadata metaItem : archiveMetaList) {
 						metaItem.toJSON(jGenerator);
 					}
@@ -249,7 +249,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
 			logService.info("Including: " + archiveList);
-			logService.info("In total " + newArchiveProperties.getNumImageMetaData() + " Datasets were merged.");
+			logService.info("In total " + newArchiveProperties.getNumImageMetadata() + " Datasets were merged.");
 			logService.info("In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {
@@ -281,18 +281,18 @@ public class MergeCommand extends DynamicCommand {
 		
 		ArrayList<MarsImageMetadata> metaArchiveList = new ArrayList<MarsImageMetadata>();
 		
-		//Next load ImageMetaData items
+		//Next load ImageMetadata items
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			String fieldName = jParser.getCurrentName();
-			if ("ImageMetaData".equals(fieldName)) {
+			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					metaArchiveList.add(new SdmmImageMetadata(jParser));
 				}
 			}
 			
 			if ("Molecules".equals(fieldName)) {
-				allMetaDataItems.add(metaArchiveList);
-				//We first have to check all ImageMetaData items to ensure there are no duplicates...
+				allMetadataItems.add(metaArchiveList);
+				//We first have to check all ImageMetadata items to ensure there are no duplicates...
 				jParser.close();
 				inputStream.close();
 				return;
@@ -323,10 +323,10 @@ public class MergeCommand extends DynamicCommand {
 			new SingleMoleculeArchiveProperties(jParser);
 		}
 		
-		//Next load ImageMetaData items
+		//Next load ImageMetadata items
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			String fieldName = jParser.getCurrentName();
-			if ("ImageMetaData".equals(fieldName)) {
+			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					new SdmmImageMetadata(jParser);
 				}

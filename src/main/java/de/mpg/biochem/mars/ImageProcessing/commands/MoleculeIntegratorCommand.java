@@ -299,10 +299,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
-		//check in ImageMetaData information exists...
+		//check in ImageMetadata information exists...
 		String testLabel = image.getStack().getSliceLabel(1);
     	if (!imageFormat.equals("None") && testLabel == null) {
-			logService.info("No ImageMetaData found. Aborting. The image format setting must be changed to None.");
+			logService.info("No ImageMetadata found. Aborting. The image format setting must be changed to None.");
 			logService.info(builder.endBlock(false));
 			return;
 		}
@@ -328,7 +328,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	String label = image.getStack().getSliceLabel(slice);
 	        	if (!imageFormat.equals("None")) {
 	        		if (label == null) {
-	        			logService.info("No ImageMetaData found for frame " + slice + ". The image format setting must be changed.");
+	        			logService.info("No ImageMetadata found for frame " + slice + ". The image format setting must be changed.");
 	        			return;
 	        		}
 	        		
@@ -374,12 +374,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	statusService.showStatus(progressInteger.get(), image.getStackSize(), statusMessage);
 	        })).get();
 	        
-	        statusMessage = "Building ImageMetaData...";
+	        statusMessage = "Building ImageMetadata...";
 	        progressInteger.set(0);
 	        statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
 	        
 	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	        logService.info("Building ImageMetaData...");
+	        logService.info("Building ImageMetadata...");
 	        
 	        //Let's make sure we create a unique archive name...
 		    String newName = "archive";
@@ -391,7 +391,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        archive = new SingleMoleculeArchive(newName + ".yama");
 	        
 		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putImageMetaData(metaData);
+			archive.putImageMetadata(metaData);
 			
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
@@ -452,7 +452,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	}
 	        	
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
-	        	molecule.setImageMetaDataUID(metaData.getUID());
+	        	molecule.setImageMetadataUID(metaData.getUID());
 	        	
 	        	archive.put(molecule);
 	        	
@@ -502,7 +502,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		String LONGColor = null;
 		String SHORTColor = null;
 		
-		HashMap<String, String> params = getMetaData(headerLabel);
+		HashMap<String, String> params = getMetadata(headerLabel);
 		
 		int laserState = Integer.valueOf(params.get("DigitalIO-State"));
 		
@@ -602,7 +602,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    return (n >> k) & 1;
 	}
 	
-	private HashMap<String, String> getMetaData(String headerLabel) {
+	private HashMap<String, String> getMetadata(String headerLabel) {
 		HashMap<String, String> parameters = new HashMap<String, String>();
 		
         //Let's get the lasers and filters...

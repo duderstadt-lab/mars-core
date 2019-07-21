@@ -325,7 +325,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			String metaDataLogMessage = "";
 			String label = image.getStack().getSliceLabel(1);
 			if (label == null) {
-				metaDataLogMessage = "No ImageMetaData was found in image header so the format was switched to None.";
+				metaDataLogMessage = "No ImageMetadata was found in image header so the format was switched to None.";
     			imageFormat = "None";
     		} else if (imageFormat.equals("MicroManager") && label.indexOf("{") == -1) {
     			metaDataLogMessage = "Images did not appear to have a MicroManager image format so the format was switched to None.";
@@ -452,7 +452,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    archive = new SingleMoleculeArchive(newName + ".yama");
 		    
 		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putImageMetaData(metaData);
+			archive.putImageMetadata(metaData);
 		    
 		    tracker.track(PeakStack, archive);
 		    
