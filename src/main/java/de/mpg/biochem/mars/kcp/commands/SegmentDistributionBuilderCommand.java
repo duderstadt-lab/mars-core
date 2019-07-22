@@ -76,7 +76,7 @@ import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 import javax.swing.JCheckBox;
@@ -156,7 +156,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 	private String tags = "";
 	
     @Parameter(label="Distribution", type = ItemIO.OUTPUT)
-    private MarsResultsTable results;
+    private MarsTable results;
     
     private Map<String, ArrayList<String>> segmentTableNameToColumns;
 
@@ -257,7 +257,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 			results.setName("Processivity Distribution (region)");
 		}
 		
-		getInfo().getOutput("results", MarsResultsTable.class).setLabel(results.getName());
+		getInfo().getOutput("results", MarsTable.class).setLabel(results.getName());
 		
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));

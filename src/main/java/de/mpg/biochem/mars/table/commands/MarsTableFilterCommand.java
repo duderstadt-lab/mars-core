@@ -52,8 +52,8 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.FileWidget;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
-import de.mpg.biochem.mars.table.ResultsTableService;
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Results Filter", menu = {
@@ -64,10 +64,10 @@ import net.imagej.ops.Initializable;
 		@Menu(label = "Table Utils", weight = 10,
 			mnemonic = 't'),
 		@Menu(label = "Results Filter", weight = 30, mnemonic = 'f')})
-public class ResultsTableFilterCommand extends DynamicCommand implements Initializable {
+public class MarsTableFilterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 	
     @Parameter
     private UIService uiService;
@@ -76,7 +76,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
     private LogService logService;
 	
     @Parameter(label="Table", callback = "updateMinMax", choices = {"a", "b", "c"})
-    private MarsResultsTable table;
+    private MarsTable table;
 	
 	@Parameter(label="Column", callback = "updateMinMax", choices = {"a", "b", "c"})
 	private String columnName;
@@ -99,7 +99,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 	private double N_STD = 2;
 	
 	@Parameter(label="Filter Table", choices = {"a", "b", "c"})
-	private MarsResultsTable filterTable;
+	private MarsTable filterTable;
 	
 	private boolean TableFilter = false;
 	private boolean STDFilter = false;
@@ -215,11 +215,11 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 			table.getWindow().update();
 	}
 	
-    public void setTable(MarsResultsTable table) {
+    public void setTable(MarsTable table) {
     	this.table = table;
     }
     
-    public MarsResultsTable getTable() {
+    public MarsTable getTable() {
     	return table;
     }
     
@@ -267,7 +267,7 @@ public class ResultsTableFilterCommand extends DynamicCommand implements Initial
 		return N_STD;
 	}
 	
-	public void setFilterTable(MarsResultsTable filterTable) {
+	public void setFilterTable(MarsTable filterTable) {
 		this.filterTable = filterTable;
 	}
 }

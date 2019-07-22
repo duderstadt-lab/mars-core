@@ -164,7 +164,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetadataUID());
 			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetadataUID());
 			
-			MarsResultsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getDataTable();
 			
 			//If the column already exists we don't need to add it
 			//instead we will just be overwriting the values below..
@@ -224,7 +224,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private HashMap<Double, Double> getSliceToColumnMap(MarsImageMetadata meta, String columnName) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
-		MarsResultsTable metaTable = meta.getDataTable();
+		MarsTable metaTable = meta.getDataTable();
 		
 		double meanBG = metaTable.mean(columnName, "slice", from, to);
 		

@@ -54,7 +54,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
@@ -138,7 +138,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		//Loop through each molecule and add reversal difference value to parameters for each molecule
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			MarsResultsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getDataTable();
 			
 			double region1_mean = datatable.mean(Ycolumn, Xcolumn, r1_start, r1_end);
 			double region2_mean = datatable.mean(Ycolumn, Xcolumn, r2_start, r2_end);

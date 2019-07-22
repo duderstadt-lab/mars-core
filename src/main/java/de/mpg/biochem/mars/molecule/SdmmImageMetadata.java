@@ -100,7 +100,7 @@ public class SdmmImageMetadata extends AbstractMarsImageMetadata {
 		dataTable.add(sliceCol);
     }
     
-    public SdmmImageMetadata(String UID, MarsResultsTable dataTable) {
+    public SdmmImageMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	
@@ -177,7 +177,7 @@ public class SdmmImageMetadata extends AbstractMarsImageMetadata {
 		}
 		
 		//Create the table and add all the columns...
-		dataTable = new MarsResultsTable("MarsImageMetaData - " + UID);
+		dataTable = new MarsTable("MarsImageMetaData - " + UID);
 		dataTable.add(sliceCol);
 	}
 	
@@ -204,7 +204,7 @@ public class SdmmImageMetadata extends AbstractMarsImageMetadata {
 		}
 		
 		//Create the table and add all the columns...
-		dataTable = new MarsResultsTable("MarsImageMetaData - " + UID);
+		dataTable = new MarsTable("MarsImageMetaData - " + UID);
 		dataTable.add(sliceCol);
 		dataTable.add(timeCol);
 		dataTable.add(labelCol);
@@ -349,7 +349,7 @@ public class SdmmImageMetadata extends AbstractMarsImageMetadata {
 			//Get t0 in seconds...
 			double t0 = Double.valueOf(propertiesStack.get(1).get("ElapsedTime-ms"))/1000;
 			
-			dataTable = new MarsResultsTable("MarsImageMetaData - " + UID);
+			dataTable = new MarsTable("MarsImageMetaData - " + UID);
 			dataTable.add(new DoubleColumn("slice"));
 			dataTable.add(new DoubleColumn("Time (s)"));
 			

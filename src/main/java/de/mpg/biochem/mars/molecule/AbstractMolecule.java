@@ -13,7 +13,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
@@ -24,7 +24,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	//ArrayList has two items:
 	//XColumn is at index 0
 	//YColumn is at index 1
-	protected LinkedHashMap<ArrayList<String>, MarsResultsTable> segmentTables;
+	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables;
 	
 	/**
 	 * Constructor for creating an empty Molecule record. 
@@ -61,14 +61,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 
 	/**
 	 * Constructor for creating a new Molecule record with the
-	 * specified UID and the {@link MarsResultsTable} given
+	 * specified UID and the {@link MarsTable} given
 	 * as the DataTable. 
 	 * 
 	 * @param UID The unique identifier for this Molecule record.
-	 * @param datatable The {@link MarsResultsTable} to use for 
+	 * @param datatable The {@link MarsTable} to use for 
 	 * initialization.
 	 */
-	public AbstractMolecule(String UID, MarsResultsTable dataTable) {
+	public AbstractMolecule(String UID, MarsTable dataTable) {
 		super(UID, dataTable);
 		segmentTables = new LinkedHashMap<>();
 	}
@@ -142,7 +142,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 			    	tableColumnNames.add(xColumnName);
 			    	tableColumnNames.add(yColumnName);
 			    	
-			    	MarsResultsTable segmenttable = new MarsResultsTable(yColumnName + " vs " + xColumnName);
+			    	MarsTable segmenttable = new MarsTable(yColumnName + " vs " + xColumnName);
 			    	
 			    	//Move past Table
 			    	jParser.nextToken();
@@ -200,7 +200,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 		
 	/**
-	 * Add or update a Segments table ({@link MarsResultsTable}) generated 
+	 * Add or update a Segments table ({@link MarsTable}) generated 
 	 * using the yColumnName and xColumnName. The {@link KCPCommand} performs
 	 * kinetic change point analysis generating segments to fit regions
 	 * of a trace. The information about these segments is added using
@@ -208,10 +208,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * 
 	 * @param xColumnName The name of the column used for x for KCP analysis.
 	 * @param yColumnName The name of the column used for y for KCP analysis.
-	 * @param segs The {@link MarsResultsTable} to add that contains the 
+	 * @param segs The {@link MarsTable} to add that contains the 
 	 * segments.
 	 */
-	public void putSegmentsTable(String xColumnName, String yColumnName, MarsResultsTable segs) {
+	public void putSegmentsTable(String xColumnName, String yColumnName, MarsTable segs) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(xColumnName);
 		tableColumnNames.add(yColumnName);
@@ -224,14 +224,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Retrieve a Segments table ({@link MarsResultsTable}) generated 
+	 * Retrieve a Segments table ({@link MarsTable}) generated 
 	 * using xColumnName and yColumnName.
 	 * 
 	 * @param xColumnName The name of the x column used for analysis.
 	 * @param yColumnName The name of the y column used for analysis.
 	 * @return The MARSResultsTable generated using the columns specified.
 	 */	
-	public MarsResultsTable getSegmentsTable(String xColumnName, String yColumnName) {
+	public MarsTable getSegmentsTable(String xColumnName, String yColumnName) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(xColumnName);
 		tableColumnNames.add(yColumnName);
@@ -239,7 +239,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Check if record has a Segments table ({@link MarsResultsTable}) generated 
+	 * Check if record has a Segments table ({@link MarsTable}) generated 
 	 * using xColumnName and yColumnName.
 	 * 
 	 * @param xColumnName The name of the x column used for analysis.
@@ -254,7 +254,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Retrieve a Segments table ({@link MarsResultsTable}) generated 
+	 * Retrieve a Segments table ({@link MarsTable}) generated 
 	 * using yColumnName and xColumnName provided in index positions 0
 	 * and 1 of an ArrayList, respectively.
 	 * 
@@ -263,12 +263,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * ArrayList, respectively.
 	 * @return The MARSResultsTable generated using the columns specified.
 	 */	
-	public MarsResultsTable getSegmentsTable(ArrayList<String> tableColumnNames) {
+	public MarsTable getSegmentsTable(ArrayList<String> tableColumnNames) {
 		return segmentTables.get(tableColumnNames);
 	}
 	
 	/**
-	 * Remove the Segments table ({@link MarsResultsTable}) generated 
+	 * Remove the Segments table ({@link MarsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
 	 * @param xColumnName The name of the x column used for analysis.
@@ -282,7 +282,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Retrieve a Segments table ({@link MarsResultsTable}) generated 
+	 * Retrieve a Segments table ({@link MarsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
 	 * @return The Set of ArrayLists holding the x and y column names at

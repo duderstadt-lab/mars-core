@@ -68,7 +68,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
@@ -245,7 +245,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 					else 
 						mol_bps_per_um = global_bps_per_um;
 					
-					MarsResultsTable table = molecule.getDataTable();
+					MarsTable table = molecule.getDataTable();
 					
 					if (!table.hasColumn(distance_column_name))
 						table.appendColumn(distance_column_name);
@@ -274,7 +274,7 @@ public class GenerateBPSCommand extends DynamicCommand implements Command, Initi
 						tab_bg_end = (int)molecule.getParameter("bg_end");
 					}
 					
-					MarsResultsTable table = molecule.getDataTable();
+					MarsTable table = molecule.getDataTable();
 					
 					double mean_background = table.mean(Ycolumn, Xcolumn, tab_bg_start, tab_bg_end);
 					

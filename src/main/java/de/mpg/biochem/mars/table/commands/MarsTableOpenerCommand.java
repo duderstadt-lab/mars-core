@@ -30,109 +30,83 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.table.commands;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import org.scijava.ItemIO;
+import org.scijava.app.StatusService;
 import org.scijava.command.Command;
-import org.scijava.command.DynamicCommand;
-import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.FileWidget;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
-import de.mpg.biochem.mars.table.ResultsTableService;
-import net.imagej.ops.Initializable;
+import com.fasterxml.jackson.core.JsonParseException;
 
-@Plugin(type = Command.class, label = "Results Sorter", menu = {
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsTable;
+
+import org.scijava.command.DynamicCommand;
+import org.scijava.log.*;
+import org.scijava.menu.MenuConstants;
+
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
+
+@Plugin(type = Command.class, label = "Open ResultsTable", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Table Utils", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Results Sorter", weight = 20, mnemonic = 's')})
-public class ResultsTableSorterCommand extends DynamicCommand implements Initializable {
-	
-	@Parameter
-    private ResultsTableService resultsTableService;
-	
+		@Menu(label = "Open ResultsTable", weight = 1, mnemonic = 'o')})
+public class MarsTableOpenerCommand extends DynamicCommand {
     @Parameter
-    private UIService uiService;
-	
-    @Parameter(label="Table")
-    private MarsResultsTable table;
+    private StatusService statusService;
     
-    @Parameter(label="Column", choices = {"a", "b", "c"})
-	private String column;
+    @Parameter(label="MARSResultsTable (csv, tab or json) ")
+    private File file;
     
-	@Parameter(label="Group Column", choices = {"no group"})
-	private String group;
-
-	@Parameter(label="ascending")
-	private boolean ascending;
-	
-	// -- Initializable methods --
+    @Parameter(label="MARSResultsTable", type = ItemIO.OUTPUT)
+    private MarsTable results;
 
 	@Override
-	public void initialize() {
+	public void run() {				
+		if (file == null)
+			return;
 		
-		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
-		columnItems.setChoices(resultsTableService.getColumnNames());
-		
-		final MutableModuleItem<String> groupItems = getInfo().getMutableInput("group", String.class);
-		
-		ArrayList<String> colNames = resultsTableService.getColumnNames();
-		colNames.add(0, "no group");
-		groupItems.setChoices(colNames);
-	}
-	
-	// -- Runnable methods --
-	
-	@Override
-	public void run() {
-		if (group.equals("no group")) {
-			table.sort(ascending, column);
-		} else {
-			table.sort(ascending, group, column);
+		try {
+			results = new MarsTable(file, statusService);
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		if (table.getWindow() != null)
-			table.getWindow().update();
+		getInfo().getOutput("results", MarsTable.class).setLabel(results.getName());
 	}
 	
-	public void setTable(MarsResultsTable table) {
-		this.table = table;
+	public MarsTableOpenerCommand() {}
+	
+	//Utility methods to set Parameters not initialized...
+	public void setFile(File file) {
+		this.file = file;
 	}
 	
-	public MarsResultsTable getTable() {
-		return table;
+	public File getFile() {
+		return file;
 	}
 	
-	public void setColumn(String column) {
-		this.column = column;
-	}
-	
-	public String getColumn() {
-		return column;
-	}
-	
-	public void setGroupColumn(String group) {
-		this.group = group;
-	}
-	
-	public String getGroupColumn() {
-		return group;
-	}
-	
-	public void setAscending(boolean ascending) {
-		this.ascending = ascending;
-	}
-	
-	public boolean getAscending() {
-		return ascending;
+	public MarsTable getTable() {
+		return results;
 	}
 }

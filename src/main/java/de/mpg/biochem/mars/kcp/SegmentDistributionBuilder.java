@@ -53,7 +53,7 @@ import de.mpg.biochem.mars.molecule.MarsImageMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 
 import org.scijava.table.*;
 import org.scijava.ui.UIService;
@@ -146,12 +146,12 @@ public class SegmentDistributionBuilder {
 	}
 	
 	//METHODS FOR EACH DISTRIBUTION TYPE
-	public MarsResultsTable buildRateGaussian() {
-		MarsResultsTable table;
+	public MarsTable buildRateGaussian() {
+		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			table = new MarsResultsTable(7, bins);
+			table = new MarsTable(7, bins);
 		} else {
-			table = new MarsResultsTable(3, bins);
+			table = new MarsTable(3, bins);
 		}
 		
 		table.setColumnHeader(0,"Rate");
@@ -260,12 +260,12 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 
-	public MarsResultsTable buildRateHistogram() {
-		MarsResultsTable table;
+	public MarsTable buildRateHistogram() {
+		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			 table = new MarsResultsTable(7, bins);
+			 table = new MarsTable(7, bins);
 		} else {
-			table = new MarsResultsTable(3, bins);
+			table = new MarsTable(3, bins);
 		}
 		
 		table.setColumnHeader(0,"Rate");
@@ -372,24 +372,24 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 	
-	public MarsResultsTable buildDurationHistogram() {
+	public MarsTable buildDurationHistogram() {
 		return buildDurationHistogram(false, false);
 	}
 	
-	public MarsResultsTable buildProcessivityByMoleculeHistogram() {
+	public MarsTable buildProcessivityByMoleculeHistogram() {
 		return buildDurationHistogram(false, true);
 	}
 	
-	public MarsResultsTable buildProcessivityByRegionHistogram() {	
+	public MarsTable buildProcessivityByRegionHistogram() {	
 		return buildDurationHistogram(true, false);
 	}
 	
-	private MarsResultsTable buildDurationHistogram(boolean processivityPerRegion, boolean processivityPerMolecule) {
-		MarsResultsTable table;
+	private MarsTable buildDurationHistogram(boolean processivityPerRegion, boolean processivityPerMolecule) {
+		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
-			table = new MarsResultsTable(4, bins);
+			table = new MarsTable(4, bins);
 		} else {
-			table = new MarsResultsTable(2, bins);
+			table = new MarsTable(2, bins);
 		}
 		
 		table.setColumnHeader(0,"Duration");
@@ -589,7 +589,7 @@ public class SegmentDistributionBuilder {
 		UIDset.stream().forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MarsResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
+				MarsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)))
@@ -610,7 +610,7 @@ public class SegmentDistributionBuilder {
 		UIDset.stream().forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				//Get the segments table for the current molecule
-				MarsResultsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
+				MarsTable segments = archive.get(UID).getSegmentsTable(xColumnName, yColumnName);
 				
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2", row)) || Double.isNaN(segments.getValue("x1", row)))
@@ -626,7 +626,7 @@ public class SegmentDistributionBuilder {
 		return Gaussians;
 	}
 	
-	public void buildBootstrapRateColumns(MarsResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
+	public void buildBootstrapRateColumns(MarsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
 		//Now we build and add additional columns to the table.
 		double[] mean_distribution = new double[bins];
 		double[] std_distribution = new double[bins];
@@ -665,7 +665,7 @@ public class SegmentDistributionBuilder {
 	
 	//Kind of duplicated from above...
 	//should simplify
-	public void buildBootstrapDurationColumns(MarsResultsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
+	public void buildBootstrapDurationColumns(MarsTable table, ConcurrentMap<Integer, double[]> boot_distributions) {
 		//Now we build and add additional columns to the table.
 		double[] mean_distribution = new double[bins];
 		double[] std_distribution = new double[bins];

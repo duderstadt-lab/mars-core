@@ -45,7 +45,7 @@ import org.scijava.ui.UIService;
 import java.util.HashMap;
 
 import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 import org.scijava.table.DoubleColumn;
@@ -121,7 +121,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			SingleMolecule molecule = archive.get(UID);
 			
 			HashMap<Double, Double> sliceToTimeMap = metaToMap.get(molecule.getImageMetadataUID());
-			MarsResultsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getDataTable();
 			
 			//If the column already exists we don't need to add it
 			//instead we will just be overwriting the values below..

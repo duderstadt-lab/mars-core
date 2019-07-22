@@ -6,7 +6,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 
 public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
@@ -18,7 +18,7 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		super(file);
 	}
 	
-	public SingleMoleculeArchive(String name, MarsResultsTable table, MoleculeArchiveService moleculeArchiveService) {
+	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
 		super(name, table, moleculeArchiveService);
 	}
 	
@@ -54,7 +54,7 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		return new SingleMolecule(UID);
 	}
 	
-	protected SingleMolecule createMolecule(String UID, MarsResultsTable table) {
+	protected SingleMolecule createMolecule(String UID, MarsTable table) {
 		return new SingleMolecule(UID, table);
 	}
 	

@@ -69,7 +69,7 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 
 @Plugin(type = Service.class)
-public class ResultsTableService extends AbstractPTService<ResultsTableService> implements ImageJService {
+public class MarsTableService extends AbstractPTService<MarsTableService> implements ImageJService {
 	
     @Parameter
     private UIService uiService;
@@ -83,7 +83,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MarsResultsTable> tables;
+	private Map<String, MarsTable> tables;
 	
 	@Override
 	public void initialize() {
@@ -92,11 +92,11 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		
 		//This allow for just the class name as an input 
 		//in scripts. Otherwise the whole path would have to be given..
-		scriptService.addAlias(MarsResultsTable.class);
-		scriptService.addAlias(ResultsTableService.class);
+		scriptService.addAlias(MarsTable.class);
+		scriptService.addAlias(MarsTableService.class);
 	}
 	
-	public void addResultsTable(MarsResultsTable table) {
+	public void addResultsTable(MarsTable table) {
 		String name = table.getName();
 		int num = 1;	    
 	    while (tables.containsKey(name)) {
@@ -119,7 +119,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		}
 	}
 	
-	public void removeResultsTable(MarsResultsTable table) {
+	public void removeResultsTable(MarsTable table) {
 		if (tables.containsKey(table.getName())) {
 			tables.remove(table.getName());
 			displayService.getDisplay(table.getName()).close();
@@ -132,7 +132,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 			return false;
 		} else {
 			tables.get(oldName).setName(newName);
-			MarsResultsTable tab = tables.remove(oldName);
+			MarsTable tab = tables.remove(oldName);
 			tables.put(newName, tab);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -146,7 +146,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	public ArrayList<String> getColumnNames() {
 		ArrayList<String> columns = new ArrayList<String>();
 	
-		for (MarsResultsTable table: tables.values()) {
+		for (MarsTable table: tables.values()) {
 			for (int i=0;i<table.getColumnCount();i++) {
 				if(!columns.contains(table.getColumnHeader(i)))
 					columns.add(table.getColumnHeader(i));
@@ -171,7 +171,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	
 	//Utility method returning HashMap of molecule numbers and start and stop index positions.
 	//Here we are assuming the table is already sorted on the groupColumn..
-	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MarsResultsTable table, String groupColumn) {
+	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MarsTable table, String groupColumn) {
 		// make sure we sort on groupColumn
 		//ResultsTableSorter.sort(table, true, groupColumn);
 		
@@ -201,7 +201,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 		return map;
 	}
 	
-	public MarsResultsTable getResultsTable(String name) {
+	public MarsTable getResultsTable(String name) {
 		return tables.get(name);
 	}
 	
@@ -210,7 +210,7 @@ public class ResultsTableService extends AbstractPTService<ResultsTableService> 
 	}
 
 	@Override
-	public Class<ResultsTableService> getPluginType() {
-		return ResultsTableService.class;
+	public Class<MarsTableService> getPluginType() {
+		return MarsTableService.class;
 	}
 }

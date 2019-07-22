@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
@@ -32,13 +32,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	protected LinkedHashMap<String, Double> Parameters;
 	
 	//Table housing main record data.
-	protected MarsResultsTable dataTable;
+	protected MarsTable dataTable;
 	
 	public AbstractMarsRecord() {
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
-		dataTable = new MarsResultsTable();
+		dataTable = new MarsTable();
 	}
 	
 	public AbstractMarsRecord(String UID) {
@@ -53,14 +53,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	
 	/**
 	 * Constructor for creating a new Molecule record with the
-	 * specified UID and the {@link MarsResultsTable} given
+	 * specified UID and the {@link MarsTable} given
 	 * as the DataTable. 
 	 * 
 	 * @param UID The unique identifier for this Molecule record.
-	 * @param datatable The {@link MarsResultsTable} to use for 
+	 * @param datatable The {@link MarsTable} to use for 
 	 * initialization.
 	 */
-	public AbstractMarsRecord(String UID, MarsResultsTable dataTable) {
+	public AbstractMarsRecord(String UID, MarsTable dataTable) {
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
@@ -68,6 +68,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		this.dataTable = dataTable;
 	}
 	
+	@Override
 	protected void createIOMaps() {
 		//Output Map
 		outputMap.put("UID", MarsUtil.catchConsumerException(jGenerator ->
@@ -328,24 +329,24 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Get the {@link MarsResultsTable} DataTable holding the primary data for
+	 * Get the {@link MarsTable} DataTable holding the primary data for
 	 * this molecule record.
 	 * 
 	 * @return The primary DataTable for this molecule record.
 	 */
-	public MarsResultsTable getDataTable() {
+	public MarsTable getDataTable() {
 		return dataTable;
 	}
 	
 	/**
-	 * Set the {@link MarsResultsTable} holding the primary data for
+	 * Set the {@link MarsTable} holding the primary data for
 	 * this molecule record. Usually this is tracking or intensity 
 	 * as a function of time.
 	 * 
-	 * @param table The {@link MarsResultsTable} to add or update in the 
+	 * @param table The {@link MarsTable} to add or update in the 
 	 * molecule record.
 	 */
-	public void setDataTable(MarsResultsTable table) {
+	public void setDataTable(MarsTable table) {
 		//This means we are resetting all the data...
 		dataTable.clear();
 		

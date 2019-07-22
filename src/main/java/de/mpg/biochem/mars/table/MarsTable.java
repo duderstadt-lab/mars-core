@@ -81,7 +81,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * for saving and opening tables in csv or json format, and retrieval of values
  * in many formats. Throughout ({@link org.apache.commons.math3}) is used for common operations where possible.
  * <p>
- * GenericColumns containing Strings can also be added to MARSResultsTables. Their primary intended 
+ * GenericColumns containing Strings can also be added to MarsTables. Their primary intended 
  * use is for generating output tables that need to combine numbers and strings or static
  * data storage of tables composed entirely of strings (for example, with frame metadata information for time points as rows).
  * </p>
@@ -93,36 +93,36 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * <p>
  * All sorting and filtering operations are performed in place. This allows for processing of larger tables
  * in memory without requiring enough memory for a copy. If a copy is desired. For example, if several filtering and sorting
- * steps are performed from the same primary table, prior to each operation a copy can be made using the {@link de.mpg.biochem.mars.table.MarsResultsTable#clone()} method.
+ * steps are performed from the same primary table, prior to each operation a copy can be made using the {@link de.mpg.biochem.mars.table.MarsTable#clone()} method.
  * </p>
  * @author Karl Duderstadt
  */
-public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
+public class MarsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
 
 	private static final long serialVersionUID = 1L;
 	
-	private MarsResultsTableWindow win;
+	private MarsTableWindow win;
 	
 	private StringBuilder sb;
 	
-	private String name = "MARSResultsTable";
+	private String name = "MarsTable";
 	
     @Parameter
     private StatusService statusService;
 	
 	/** Creates an empty results table. */
-	public MarsResultsTable() {
+	public MarsTable() {
 		super();
 	}
 
 	/** Creates an empty results table with the name given. */
-	public MarsResultsTable(String name) {
+	public MarsTable(String name) {
 		super();
 		this.name = name;
 	}
 	
 	/** Creates a results table with the name given and column headers. */
-	public MarsResultsTable(String name, String... headers) {
+	public MarsTable(String name, String... headers) {
 		super();
 		this.name = name;
 		for (String header : headers)
@@ -134,7 +134,7 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * is found it is assumed the file has csv format.
 	 *  
 	 */
-	public MarsResultsTable(File file) throws JsonParseException, IOException {
+	public MarsTable(File file) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
 		if (file.getName().endsWith(".json"))
@@ -149,7 +149,7 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 *  
 	 *  If the StatusService is provided, then a progress bar is shown during loading of csv files.
 	 */
-	public MarsResultsTable(File file, StatusService statusService) throws JsonParseException, IOException {
+	public MarsTable(File file, StatusService statusService) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
 		
@@ -162,12 +162,12 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 	
 	/** Creates a results table with the given row and column dimensions. */
-	public MarsResultsTable(final int columnCount, final int rowCount) {
+	public MarsTable(final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 	}
 
 	/** Creates a results table with the given name and column and row dimensions. */
-	public MarsResultsTable(final String name, final int columnCount, final int rowCount) {
+	public MarsTable(final String name, final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 		this.name = name;
 	}
@@ -215,7 +215,7 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * This could be a swing or javafx window.
 	 * @return The window containing the table if working with a gui.
 	 */
-	public MarsResultsTableWindow getWindow() {
+	public MarsTableWindow getWindow() {
 		return win;
 	}
 	
@@ -223,7 +223,7 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	 * This could be a swing or javafx window.
 	 * @param win The window containing the table if working with a gui.
 	 */
-	public void setWindow(MarsResultsTableWindow win) {
+	public void setWindow(MarsTableWindow win) {
 		this.win = win;
 	}
 	
@@ -1270,7 +1270,7 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	public Stream<MarsTableRow> rowStream() {
 		Iterator<MarsTableRow> iterator = new Iterator<MarsTableRow>() {
 
-                final private MarsTableRow row = new MarsTableRow(MarsResultsTable.this);
+                final private MarsTableRow row = new MarsTableRow(MarsTable.this);
 
                 @Override
                 public MarsTableRow next() {
@@ -1411,12 +1411,12 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	}
 
 	/**
-	 * Create a copy of the MARSResultsTable. 
+	 * Create a copy of the MarsTable. 
 	 * 
-	 * @return A copy of the MARSResultsTable.
+	 * @return A copy of the MarsTable.
 	 */
-	public MarsResultsTable clone() {
-		MarsResultsTable table = new MarsResultsTable(this.getName());
+	public MarsTable clone() {
+		MarsTable table = new MarsTable(this.getName());
 		for (int col = 0; col < getColumnCount(); col++) {
 			if (get(col) instanceof DoubleColumn) {
 				DoubleColumn column = new DoubleColumn(get(col).getHeader());
@@ -1439,9 +1439,9 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 	//may be replaced with a different sort implementation in future releases.
 	//But the external API will not need to change.
 	private class ResultsTableList extends AbstractList<Row> {
-		private MarsResultsTable table;
+		private MarsTable table;
 		
-		public ResultsTableList(MarsResultsTable table) {
+		public ResultsTableList(MarsTable table) {
 			this.table = table;
 		}
 		
@@ -1479,9 +1479,9 @@ public class MarsResultsTable extends AbstractTable<Column<? extends Object>, Ob
 		private Map<String, Double> doubleValues = new HashMap<>();
 		private Map<String, String> stringValues = new HashMap<>();
 		
-		private MarsResultsTable table;
+		private MarsTable table;
 		
-		Row(int row, MarsResultsTable table) {
+		Row(int row, MarsTable table) {
 			this.table = table;
 			
 			for (int colIndex=0;colIndex < table.getColumnCount(); colIndex++) {

@@ -146,7 +146,7 @@ public class BuildROIsfromMoleculeArchiveCommand extends DynamicCommand implemen
 		//Loop through each molecule and add a Time (s) column using the metadata information...
 		moleculeUIDs.stream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			MarsResultsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getDataTable();
 			
 			int x_value = (int)(datatable.mean("x") + 0.5);
 			int y_value = (int)(datatable.mean("y") + 0.5);

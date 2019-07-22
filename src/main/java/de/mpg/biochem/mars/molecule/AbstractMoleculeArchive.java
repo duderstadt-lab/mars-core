@@ -71,8 +71,8 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.*;
 
 import de.mpg.biochem.mars.table.GroupIndices;
-import de.mpg.biochem.mars.table.ResultsTableService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.*;
 
 import static java.util.stream.Collectors.toList;
@@ -285,7 +285,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public AbstractMoleculeArchive(String name, MarsResultsTable table, MoleculeArchiveService moleculeArchiveService) {
+	public AbstractMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
 		this.name = name;
 		this.virtual = false;
 		this.moleculeArchiveService = moleculeArchiveService;
@@ -306,7 +306,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param name The name of the archive.
 	 * @param table A MARSResultsTable to build the archive from.
 	 */
-	public AbstractMoleculeArchive(String name, MarsResultsTable table) {
+	public AbstractMoleculeArchive(String name, MarsTable table) {
 		this.name = name;
 		this.virtual = false;
 		
@@ -501,6 +501,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		jParser.nextToken();
 		jParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+			jParser.nextToken();
 			archiveProperties = createProperties(jParser);
 		} else {
 			if (moleculeArchiveService != null)
@@ -536,10 +537,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		rebuildIndexes();	
 	}
 	
-	private void buildFromTable(MarsResultsTable results) {
+	private void buildFromTable(MarsTable results) {
 		//First we have to index the groups in the table to determine the number of Molecules and their average size...
 		//Here we assume their is a molecule column that defines which data is related to which molecule.
-		LinkedHashMap<Integer, GroupIndices> groups = ResultsTableService.find_group_indices(results, "molecule");
+		LinkedHashMap<Integer, GroupIndices> groups = MarsTableService.find_group_indices(results, "molecule");
 		
 		//We need to generate and add an ImageMetadata entry for the molecules from the the table
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
@@ -559,7 +560,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		//Now we need to build the archive from the table, molecule by molecule
 		for (int mol: groups.keySet()) {
-			MarsResultsTable molTable = new MarsResultsTable();
+			MarsTable molTable = new MarsTable();
 			for (String header: headers) {
 				molTable.add(new DoubleColumn(header));
 			}
@@ -1771,7 +1772,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	protected abstract M createMolecule(String UID);
 	
-	protected abstract M createMolecule(String UID, MarsResultsTable table);
+	protected abstract M createMolecule(String UID, MarsTable table);
 	
 	@Override
 	public String toString() {

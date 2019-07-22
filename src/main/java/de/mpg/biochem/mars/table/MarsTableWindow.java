@@ -30,6 +30,6 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.table;
 
-public interface MarsResultsTableWindow {
+public interface MarsTableWindow {
 	public void update();
 }

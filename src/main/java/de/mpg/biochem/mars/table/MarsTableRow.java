@@ -9,7 +9,7 @@ import org.scijava.table.*;
 
 public class MarsTableRow implements Iterator<MarsTableRow> {
 	
-	private final MarsResultsTable table;
+	private final MarsTable table;
 	private final String[] columnNames;
 	private int rowNumber;
 	
@@ -17,7 +17,7 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 	private final Map<String, GenericColumn> genericColumnMap = new TreeMap<>();
 	private final Map<String, Column<?>> columnMap = new TreeMap<>();
 	
-	public MarsTableRow(MarsResultsTable table) {
+	public MarsTableRow(MarsTable table) {
         this.table = table;
         columnNames = table.getColumnHeadings();
         rowNumber = -1;

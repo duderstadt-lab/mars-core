@@ -49,7 +49,7 @@ import org.scijava.log.LogService;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
 import ij.IJ;
 import org.scijava.table.DoubleColumn;
@@ -315,7 +315,7 @@ public class PeakTracker {
 		
 		//Now loop through all peaks connected to this starting peak and
 		//add them to a DataTable as we go
-		MarsResultsTable table = buildResultsTable();
+		MarsTable table = buildResultsTable();
 		Peak peak = startingPeak;
 		addPeakToTable(table, peak, peak.getSlice());
 		
@@ -329,8 +329,8 @@ public class PeakTracker {
 		archive.put(mol);
 	}
 	
-	private MarsResultsTable buildResultsTable() {
-		MarsResultsTable molTable = new MarsResultsTable();
+	private MarsTable buildResultsTable() {
+		MarsTable molTable = new MarsTable();
 		
 		ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 		
@@ -348,7 +348,7 @@ public class PeakTracker {
 		
 		return molTable;
 	}
-	private void addPeakToTable(MarsResultsTable table, Peak peak, int slice) {
+	private void addPeakToTable(MarsTable table, Peak peak, int slice) {
 		table.appendRow();
 		int row = table.getRowCount() - 1;
 		if (PeakFitter_writeEverything) {

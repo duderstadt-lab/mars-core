@@ -3,7 +3,7 @@ package de.mpg.biochem.mars.molecule;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 
 public interface MarsRecord extends JsonConvertibleRecord {
 	
@@ -135,22 +135,22 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	LinkedHashMap<String, Double> getParameters();
 	
 	/**
-	 * Get the {@link MarsResultsTable} DataTable holding the primary data for
+	 * Get the {@link MarsTable} DataTable holding the primary data for
 	 * this molecule record.
 	 * 
 	 * @return The primary DataTable for this molecule record.
 	 */
-	MarsResultsTable getDataTable();
+	MarsTable getDataTable();
 	
 	/**
-	 * Set the {@link MarsResultsTable} holding the primary data for
+	 * Set the {@link MarsTable} holding the primary data for
 	 * this molecule record. Usually this is tracking or intensity 
 	 * as a function of time.
 	 * 
-	 * @param table The {@link MarsResultsTable} to add or update in the 
+	 * @param table The {@link MarsTable} to add or update in the 
 	 * molecule record.
 	 */
-	void setDataTable(MarsResultsTable table);
+	void setDataTable(MarsTable table);
 	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.

@@ -70,7 +70,8 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		    //However, the missing fields will not be saved properly
 		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
 		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object encountered in the record ... skipping");
+		    	
+		    	System.out.println("unknown object " + fieldname + "encountered in the record ... skipping");
 		    	MarsUtil.passThroughUnknownObjects(jParser);
 		    }
 		}

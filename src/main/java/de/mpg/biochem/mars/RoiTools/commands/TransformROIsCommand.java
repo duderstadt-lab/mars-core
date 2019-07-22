@@ -55,8 +55,8 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.ImageProcessing.DiscoidalAveragingFilter;
 import de.mpg.biochem.mars.ImageProcessing.Peak;
-import de.mpg.biochem.mars.table.ResultsTableService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LevenbergMarquardt;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
@@ -104,7 +104,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command, Pre
     private StatusService statusService;
     
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 
 	//INPUT IMAGE
 	@Parameter(label = "Image")

@@ -54,7 +54,7 @@ import org.scijava.widget.FileWidget;
 
 import com.fasterxml.jackson.core.JsonParseException;
 
-import de.mpg.biochem.mars.table.ResultsTableService;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MarsImageMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
@@ -62,7 +62,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
@@ -81,7 +81,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     private MoleculeArchiveService moleculeArchiveService;
 	
 	@Parameter
-	private ResultsTableService resultsTableService;
+	private MarsTableService resultsTableService;
 	
     @Parameter
     private UIService uiService;
@@ -93,7 +93,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     private LogService logService;
     
     @Parameter(label="Table with molecule column")
-	private MarsResultsTable table;
+	private MarsTable table;
     
     //OUTPUT PARAMETERS
 	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
@@ -139,11 +139,11 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     	return archive;
     }
     
-    public void setTable(MarsResultsTable table) {
+    public void setTable(MarsTable table) {
     	this.table = table;
     }
     
-    public MarsResultsTable getTable() {
+    public MarsTable getTable() {
     	return table;
     }
 }

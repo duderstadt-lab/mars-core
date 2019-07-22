@@ -57,8 +57,8 @@ import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.ImageProcessing.PeakFinder;
 import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
 import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.table.ResultsTableService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.config.SCIFIOConfig;
@@ -126,7 +126,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
     private StatusService statusService;
     
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 	
 	//INPUT IMAGE
 	@Parameter(label = "Image to search for Peaks")
@@ -242,10 +242,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	//OUTPUT PARAMETERS
 	@Parameter(label="Peak Count", type = ItemIO.OUTPUT)
-	private MarsResultsTable peakCount;
+	private MarsTable peakCount;
 	
 	@Parameter(label="Peaks", type = ItemIO.OUTPUT)
-	private MarsResultsTable peakTable;
+	private MarsTable peakTable;
 	
 	//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
 	private PeakFinder finder;
@@ -387,7 +387,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		if (generatePeakCountTable) {
 			logService.info("Generating peak count table..");
-			peakCount = new MarsResultsTable("Peak Count - " + image.getTitle());
+			peakCount = new MarsTable("Peak Count - " + image.getTitle());
 			DoubleColumn sliceColumn = new DoubleColumn("slice");
 			DoubleColumn countColumn = new DoubleColumn("peaks");
 			
@@ -404,13 +404,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			peakCount.add(sliceColumn);
 			
 			//Make sure the output table has the correct name
-			getInfo().getMutableOutput("peakCount", MarsResultsTable.class).setLabel(peakCount.getName());
+			getInfo().getMutableOutput("peakCount", MarsTable.class).setLabel(peakCount.getName());
 		}
 		
 		if (generatePeakTable) {
 			logService.info("Generating peak table..");
 			//build a table with all peaks
-			peakTable = new MarsResultsTable("Peaks - " + image.getTitle());
+			peakTable = new MarsTable("Peaks - " + image.getTitle());
 			
 			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 			
@@ -451,7 +451,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				peakTable.add(column);	
 			
 			//Make sure the output table has the correct name
-			getInfo().getMutableOutput("peakTable", MarsResultsTable.class).setLabel(peakTable.getName());
+			getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable.getName());
 		}
 		
 		if (addToRoiManger) {
@@ -707,11 +707,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
 	}
 	
-	public MarsResultsTable getPeakCountTable() {
+	public MarsTable getPeakCountTable() {
 		return peakCount;
 	}
 	
-	public MarsResultsTable getPeakTable() {
+	public MarsTable getPeakTable() {
 		return peakTable;
 	}
 	

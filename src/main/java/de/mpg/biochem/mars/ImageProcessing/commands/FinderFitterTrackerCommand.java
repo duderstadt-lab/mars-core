@@ -54,7 +54,7 @@ import de.mpg.biochem.mars.ImageProcessing.PeakFinder;
 import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
 import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
 import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.table.ResultsTableService;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
@@ -122,7 +122,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 	    private StatusService statusService;
 	    
 		@Parameter
-	    private ResultsTableService resultsTableService;
+	    private MarsTableService resultsTableService;
 		
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;

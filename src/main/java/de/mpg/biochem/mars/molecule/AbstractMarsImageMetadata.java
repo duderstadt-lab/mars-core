@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 public class AbstractMarsImageMetadata extends AbstractMarsRecord implements MarsImageMetadata {
@@ -40,7 +40,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
     	super(UID);
     }
     
-    public AbstractMarsImageMetadata(String UID, MarsResultsTable dataTable) {
+    public AbstractMarsImageMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	

@@ -44,15 +44,15 @@ import org.scijava.widget.WidgetModel;
 import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**
- * Swing implementation of multiple choice selector widget for SDMMResutlsTable.
+ * Swing implementation of multiple choice selector widget for MarsTable.
  * 
  * @author Karl Duderstadt
  */
 @Plugin(type = InputWidget.class)
-public class MarsTableWidget extends SwingInputWidget<MarsResultsTable> implements InputWidget<MarsResultsTable, JPanel>, ActionListener {
+public class MarsTableWidget extends SwingInputWidget<MarsTable> implements InputWidget<MarsTable, JPanel>, ActionListener {
 
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 		
 	private JComboBox<Object> comboBox;
 
@@ -64,7 +64,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsResultsTable> implemen
 	// -- InputWidget methods --
 
 	@Override
-	public MarsResultsTable getValue() {
+	public MarsTable getValue() {
 		return resultsTableService.getResultsTable((String)comboBox.getSelectedItem());
 	}
 
@@ -91,7 +91,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsResultsTable> implemen
 
 	@Override
 	public boolean supports(final WidgetModel model) {
-		return super.supports(model) && model.isType(MarsResultsTable.class) && resultsTableService.getTableNames().size() > 0;
+		return super.supports(model) && model.isType(MarsTable.class) && resultsTableService.getTableNames().size() > 0;
 	}
 
 	@Override

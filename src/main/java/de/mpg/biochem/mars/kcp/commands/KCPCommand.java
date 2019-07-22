@@ -253,7 +253,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	}
 	
 	private void findChangePoints(Molecule molecule) {
-		MarsResultsTable datatable = molecule.getDataTable();
+		MarsTable datatable = molecule.getDataTable();
 		
 		//START NaN FIX
 		ArrayList<Double> xDataSafe = new ArrayList<Double>();
@@ -338,8 +338,8 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		numFinished.incrementAndGet();
 	}
 	
-	private MarsResultsTable buildSegmentTable(ArrayList<Segment> segments) {
-		MarsResultsTable output = new MarsResultsTable();
+	private MarsTable buildSegmentTable(ArrayList<Segment> segments) {
+		MarsTable output = new MarsTable();
 		
 		//Do i need to add these columns first? I can't remember...
 		output.add(new DoubleColumn("x1"));

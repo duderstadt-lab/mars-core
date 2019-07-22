@@ -50,7 +50,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SdmmImageMetadata;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 import org.scijava.table.*;
@@ -127,7 +127,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getImageMetadataUIDs()) {
 			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			//Let's find the last slice
-			MarsResultsTable metaDataTable = meta.getDataTable();
+			MarsTable metaDataTable = meta.getDataTable();
 			
 			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
 			
@@ -147,7 +147,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
-						MarsResultsTable datatable = archive.get(UID).getDataTable();
+						MarsTable datatable = archive.get(UID).getDataTable();
 						double x_mean = datatable.mean(input_x);
 						double y_mean = datatable.mean(input_y);
 						
@@ -165,7 +165,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
-						MarsResultsTable datatable = archive.get(UID).getDataTable();
+						MarsTable datatable = archive.get(UID).getDataTable();
 						if (archive.get(UID).getDataTable().getRowCount() == slices) {
 							double x_mean = datatable.mean(input_x);
 							double y_mean = datatable.mean(input_y);
@@ -195,10 +195,10 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				double xSliceFinalValue = Double.NaN;
 				double ySliceFinalValue = Double.NaN;
 
-				MarsResultsTable xTempTable = new MarsResultsTable();
+				MarsTable xTempTable = new MarsTable();
 				xTempTable.add(xValuesColumns.get(slice - 1));
 				
-				MarsResultsTable yTempTable = new MarsResultsTable();
+				MarsTable yTempTable = new MarsTable();
 				yTempTable.add(yValuesColumns.get(slice - 1));
 				
 				if (mode.equals("mean")) {

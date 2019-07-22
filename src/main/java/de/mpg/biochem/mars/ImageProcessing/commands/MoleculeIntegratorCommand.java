@@ -105,7 +105,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
     private StatusService statusService;
     
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
@@ -399,7 +399,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 			
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
 	        forkJoinPool.submit(() -> IntensitiesStack.get(1).keySet().parallelStream().forEach(UID -> {
-	        	MarsResultsTable table = new MarsResultsTable();
+	        	MarsTable table = new MarsTable();
 	        	ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 	    		
 	        	if (useLongWavelength) {

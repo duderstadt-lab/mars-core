@@ -45,7 +45,7 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.table.MarsResultsTable;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 
@@ -126,7 +126,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		//Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			MarsResultsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getDataTable();
 			
 			if (region.equals("defined below")) {
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));

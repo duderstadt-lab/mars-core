@@ -40,8 +40,8 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
-import de.mpg.biochem.mars.table.MarsResultsTable;
-import de.mpg.biochem.mars.table.ResultsTableService;
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Histogram Builder", menu = {
@@ -55,13 +55,13 @@ import net.imagej.ops.Initializable;
 public class HistogramBuilderCommand extends DynamicCommand implements Initializable {
 
 	@Parameter
-    private ResultsTableService resultsTableService;
+    private MarsTableService resultsTableService;
 	
     @Parameter
     private UIService uiService;
 	
     @Parameter(label="Table")
-    private MarsResultsTable table;
+    private MarsTable table;
     
     @Parameter(label="Column", choices = {"a", "b", "c"})
 	private String column;
@@ -70,7 +70,7 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
     private int bins = 100;
     
     @Parameter(label="Histogram Table", type = ItemIO.OUTPUT)
-    private MarsResultsTable outputHist;
+    private MarsTable outputHist;
     
 	// -- Initializable methods --
 
@@ -92,7 +92,7 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
 				min = table.getValue(column, i);
 		}
 		
-		outputHist = new MarsResultsTable(2, bins);
+		outputHist = new MarsTable(2, bins);
 		outputHist.setColumnHeader(0, column);
 		outputHist.setColumnHeader(1, "Events");
 
@@ -112,11 +112,11 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
 		}
 	}
 	
-	public void setInputTable(MarsResultsTable table) {
+	public void setInputTable(MarsTable table) {
 		this.table = table;
 	}
 	
-	public MarsResultsTable getInputTable() {
+	public MarsTable getInputTable() {
 		return table;
 	}
 	
@@ -136,7 +136,7 @@ public class HistogramBuilderCommand extends DynamicCommand implements Initializ
 		return bins;
 	}
 	
-	public MarsResultsTable getHistogramTable() {
+	public MarsTable getHistogramTable() {
 		return outputHist;
 	}
 }
