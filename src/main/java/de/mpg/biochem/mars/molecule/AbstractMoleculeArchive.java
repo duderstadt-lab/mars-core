@@ -58,6 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.scijava.ui.DialogPrompt.MessageType;
 
@@ -1120,7 +1122,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return The list of all MARImageMetadata UIDs.
 	 */
-	public ArrayList<String> getImageMetadataUIDs() {
+	public final ArrayList<String> getImageMetadataUIDs() {
 		return imageMetadataIndex;
 	}
 	
@@ -1223,7 +1225,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return The list with all Molecule UIDs.
 	 */
-	public ArrayList<String> getMoleculeUIDs() {
+	public final ArrayList<String> getMoleculeUIDs() {
 		return moleculeIndex;
 	}
 	
@@ -1548,6 +1550,19 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public int getIndex(String UID) {
 		return moleculeIndex.indexOf(UID);
+	}
+	
+	public Stream<M> stream() {
+		return this.moleculeIndex.stream().map(UID -> get(UID));
+	}
+	
+	public Stream<M> parallelStream() {
+		return this.moleculeIndex.parallelStream().map(UID -> get(UID));
+	}
+	
+	//Should we add a put statement at the end to enforce proper saving even in the case of a virtual archive.
+	public void forEach(Consumer<? super Molecule> action) {
+		this.moleculeIndex.stream().map(UID -> get(UID)).forEach(action);
 	}
 	
 	/**

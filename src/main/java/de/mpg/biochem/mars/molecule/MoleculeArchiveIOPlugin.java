@@ -9,15 +9,20 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import org.scijava.ItemIO;
 import org.scijava.Priority;
+import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
+import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.io.handle.DataHandle;
 import org.scijava.io.handle.DataHandleService;
 import org.scijava.io.location.Location;
 import org.scijava.io.location.LocationService;
+import org.scijava.object.event.ObjectCreatedEvent;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.UIService;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -26,8 +31,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
-import de.mpg.biochem.mars.molecule.*;
 
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
@@ -38,6 +41,15 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 	@Parameter
 	private DataHandleService dataHandleService;
+	
+	@Parameter
+    private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+    private EventService eventService;
+	
+	@Parameter
+    private UIService uiService;
 	
 	@Override
 	public Class<MoleculeArchive> getDataType() {
@@ -56,15 +68,10 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	
 	//This needs cleaning up but lets see if it is working first...
 	@Override
-	public SingleMoleculeArchive open(final String source) throws IOException {
-		final Location sourceLocation;
-		try {
-			sourceLocation = locationService.resolve(source);
-		} catch (final URISyntaxException exc) {
-			throw new IOException("Unresolvable source: " + source, exc);
-		}
-		
+	public MoleculeArchive open(final String source) throws IOException {
 		File file = new File(source);
+		if (!file.exists())
+			System.out.println("File not found.");
 		String archiveType;
 		
 		if (file.isDirectory())
@@ -72,66 +79,36 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		else 
 			archiveType = getArchiveType(file);
 		
-		Object instance = new Object();
+		MoleculeArchive archive = null;
 		
 		try {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(File.class);
-			instance = constructor.newInstance(file);
+			archive = (MoleculeArchive)constructor.newInstance(file);
 		} catch (ClassNotFoundException e) {
 			System.err.println("MoleculeArchive class not found.");
 			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		/*
-		try (final DataHandle<? extends Location> handle = dataHandleService.create(sourceLocation)) {
-			if (!handle.exists()) {
-				throw new IOException("Cannot open source");
-			}
-			long length = handle.length();
 		
-		}
-			*/
+		//Seems like this should be called by DefaultIOService, but it isn't.
+		eventService.publish(new DataOpenedEvent(source, archive));
 		
-		System.out.println(" " + archiveType);
+		//Why doesn't this happen somewhere else. How if ij.io().open is used in a script. It will also open the archive window.
+		uiService.show(archive.getName(), archive);
 		
-		System.out.println(" " + instance.getClass().getName());
-		System.out.println(" " + ((MoleculeArchive)instance).getNumberOfMolecules());
-		
-		return (SingleMoleculeArchive)instance;
+		return archive;
 	}
 	
 	@Override
 	public void save(final MoleculeArchive archive, final String destination) throws IOException {
-		final Location dstLocation;
-		try {
-			dstLocation = locationService.resolve(destination);
-		}
-		catch (final URISyntaxException exc) {
-			throw new IOException("Unresolvable destination: " + destination, exc);
-		}
-
-		try (final DataHandle<Location> handle = dataHandleService.create(dstLocation)) {
-
-		}
+		File file = new File(destination);
+		if (file.isDirectory())
+			archive.saveAsVirtualStore(file);
+		else
+			archive.saveAs(file);
 	}
 
 	private String getArchiveType(File file) throws JsonParseException, IOException {

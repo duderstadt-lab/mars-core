@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
-class MARSResultsTableTest {
+class MarsTableTest {
 
 	/*
 	 * TEST max()

@@ -66,6 +66,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.util.MarsMath;
 
@@ -335,7 +338,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 */
 	public boolean saveAs(File file) {
         try {
-            saveAs(file.getAbsolutePath());
+            saveAsYAMT(file.getAbsolutePath());
             return true;
         } catch (IOException e) {
             return false;
@@ -347,7 +350,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param path The string path for saving.
 	 * @throws IOException
 	 */
-    public void saveAs(String path) throws IOException {
+    public void saveAsCSV(String path) throws IOException {
         if (getRowCount() == 0) return;
         PrintWriter pw = null;
         FileOutputStream fos = new FileOutputStream(path);
@@ -503,30 +506,49 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * 
 	 * @param path String path for writing.
 	 */
-	public boolean saveAsJSON(String path) {
-		try {
-			if (!path.endsWith(".json")) {
-				path += ".json";
-			}
-			
-			OutputStream stream = new BufferedOutputStream(new FileOutputStream(new File(path)));
-			
-			JsonGenerator jGenerator;
-			JsonFactory jfactory = new JsonFactory();
-			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-			
-			toJSON(jGenerator);
-			
-			jGenerator.close();
-			
-			//flush and close streams...
-			stream.flush();
-			stream.close();		
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+	public void saveAsJSON(String path) throws IOException {
+		if (!path.endsWith(".json")) {
+			path += ".json";
 		}
-		return true;
+		
+		OutputStream stream = new BufferedOutputStream(new FileOutputStream(new File(path)));
+		
+		JsonGenerator jGenerator;
+		JsonFactory jfactory = new JsonFactory();
+		jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+		
+		toJSON(jGenerator);
+		
+		jGenerator.close();
+		
+		//flush and close streams...
+		stream.flush();
+		stream.close();		
+	}
+	
+	/** Saves the table to the file path specified in
+	 * yamt format. This is a smile encoded json file.
+	 * 
+	 * @param path String path for writing.
+	 */
+	public void saveAsYAMT(String path) throws IOException {
+		if (!path.endsWith(".yamt")) {
+			path += ".yamt";
+		}
+		
+		OutputStream stream = new BufferedOutputStream(new FileOutputStream(new File(path)));
+		
+		JsonGenerator jGenerator;
+		JsonFactory jfactory = new SmileFactory();
+		jGenerator = jfactory.createGenerator(stream);
+		
+		toJSON(jGenerator);
+		
+		jGenerator.close();
+		
+		//flush and close streams...
+		stream.flush();
+		stream.close();		
 	}
 	
 	private void loadCSV(File file) {
@@ -622,9 +644,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		
 		this.name = file.getName();
 
-		JsonParser jParser;
-		JsonFactory jfactory = new JsonFactory();
-		jParser = jfactory.createParser(inputStream);
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
 		
 		fromJSON(jParser);
 		

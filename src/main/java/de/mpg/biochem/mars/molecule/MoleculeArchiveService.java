@@ -40,7 +40,10 @@ import io.scif.services.FormatService;
 
 import org.scijava.app.StatusService;
 import org.scijava.display.DisplayService;
+import org.scijava.event.EventService;
+import org.scijava.event.SciJavaEvent;
 import org.scijava.log.LogService;
+import org.scijava.object.ObjectService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -48,7 +51,15 @@ import org.scijava.prefs.PrefService;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
+
+import de.mpg.biochem.mars.molecule.event.MoleculeArchiveCreatedEvent;
+import de.mpg.biochem.mars.molecule.event.MoleculeArchiveDeletedEvent;
 import net.imagej.ImageJService;
+import org.scijava.event.EventHandler;
+import org.scijava.io.event.DataOpenedEvent;
+import org.scijava.io.event.IOEvent;
+import org.scijava.object.event.ObjectCreatedEvent;
+import org.scijava.object.event.ObjectEvent;
 
 @Plugin(type = Service.class)
 public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
@@ -58,6 +69,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     
     @Parameter
     private LogService logService;
+    
+    @Parameter
+    private EventService eventService;
     
     @Parameter
     private PrefService prefService;
@@ -74,18 +88,23 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties>> archives;
+    @Parameter
+	private ObjectService objectService;
+    
+	private Map<String, MoleculeArchive<?,?,?>> archives;
 	
 	@Override
 	public void initialize() {
 		// This Service method is called when the service is first created.
 		archives = new LinkedHashMap<>();
 		
+		eventService.subscribe(this);
+		
 		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 	
-	public void addArchive(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
+	public void addArchive(MoleculeArchive<?,?,?> archive) {
 		String name = archive.getName();
 		int num = 1;	    
 	    while (archives.containsKey(name)) {
@@ -110,7 +129,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		}
 	}
 	
-	public void removeArchive(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
+	public void removeArchive(MoleculeArchive<?,?,?> archive) {
 		if (archives.containsKey(archive.getName())) {
 			removeArchive(archive.getName());
 			displayService.getDisplay(archive.getName()).close();
@@ -123,7 +142,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			return false;
 		} else {
 			archives.get(oldName).setName(newName);
-			MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> arch = archives.remove(oldName);
+			MoleculeArchive<?,?,?> arch = archives.remove(oldName);
 			archives.put(newName, arch);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -132,7 +151,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		for (MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive: archives.values()) {
+		for (MoleculeArchive<?,?,?> archive: archives.values()) {
 			columnSet.addAll(archive.getProperties().getColumnSet());
 		}
 		
@@ -145,7 +164,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 	
-		for (MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive: archives.values()) {
+		for (MoleculeArchive<?,?,?> archive: archives.values()) {
 			for (ArrayList<String> segTableName : archive.getProperties().getSegmnetTableNames()) {
 				segTableNames.add(segTableName);
 			}
@@ -162,7 +181,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return archives.containsKey(key);
 	}
 	
-	public MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> getArchive(String name) {
+	public MoleculeArchive<?,?,?> getArchive(String name) {
 		return archives.get(name);
 	}
 	
@@ -184,6 +203,18 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public FormatService getFormatService() {
 		return formatService;
+	}
+	
+	// -- Event handlers --
+	
+	@EventHandler
+	protected void onEvent(final MoleculeArchiveCreatedEvent event) {
+		this.addArchive((MoleculeArchive<?,?,?>)event.getObject());
+	}
+	
+	@EventHandler
+	protected void onEvent(final MoleculeArchiveDeletedEvent event) {
+		this.removeArchive((MoleculeArchive<?,?,?>)event.getObject());
 	}
 	
 	@Override

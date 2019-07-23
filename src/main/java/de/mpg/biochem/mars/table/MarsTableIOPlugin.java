@@ -57,13 +57,14 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	//This needs cleaning up but lets see if it is working first...
 	@Override
 	public MarsTable open(final String source) throws IOException {
+		/*
 		final Location sourceLocation;
 		try {
 			sourceLocation = locationService.resolve(source);
 		} catch (final URISyntaxException exc) {
 			throw new IOException("Unresolvable source: " + source, exc);
 		}
-		
+		*/
 		MarsTable table = new MarsTable(new File(source));
 		
 		return table;
@@ -71,6 +72,7 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	
 	@Override
 	public void save(final MarsTable table, final String destination) throws IOException {
+		/*
 		final Location dstLocation;
 		try {
 			dstLocation = locationService.resolve(destination);
@@ -78,9 +80,13 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 		catch (final URISyntaxException exc) {
 			throw new IOException("Unresolvable destination: " + destination, exc);
 		}
-
+		*/
+		table.saveAsYAMT(destination);
+		
+		/*
 		try (final DataHandle<Location> handle = dataHandleService.create(dstLocation)) {
 
 		}
+		*/
 	}
 }

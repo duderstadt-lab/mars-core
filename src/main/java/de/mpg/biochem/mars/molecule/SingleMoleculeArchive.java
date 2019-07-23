@@ -58,4 +58,7 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		return new SingleMolecule(UID, table);
 	}
 	
+	public String getSingleMolecule() {
+		return "I am a SingleMolecule Archive";
+	}
 }
