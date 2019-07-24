@@ -28,47 +28,85 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.RoiTools.commands;
+package de.mpg.biochem.mars.table.commands;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import org.scijava.ItemIO;
+import org.scijava.app.StatusService;
 import org.scijava.command.Command;
-import org.scijava.command.DynamicCommand;
-import org.scijava.log.LogService;
-import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.FileWidget;
 
-import de.mpg.biochem.mars.RoiTools.ROITilesWindow;
+import com.fasterxml.jackson.core.JsonParseException;
 
-@Plugin(type = Command.class, label = "Open ROIs", menu = {
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsTable;
+
+import org.scijava.command.DynamicCommand;
+import org.scijava.log.*;
+import org.scijava.menu.MenuConstants;
+
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
+
+@Plugin(type = Command.class, label = "Open ResultsTable", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "ROI Tools", weight = 30,
-			mnemonic = 'r'),
-		@Menu(label = "Open ROIs", weight = 1, mnemonic = 'o')})
-public class OpenROIsCommand extends DynamicCommand implements Command {
-	@Parameter
-	private LogService logService;
-	
-	@Parameter
-	private UIService uiService;
-	
-	@Parameter(label="Choose input directory", style="directory")
-	private File directory;
-	
-	@Parameter(label="Vertical Tiles")
-	private int vertical_tiles = 2;
-	
-	@Parameter(label="Horizontal Tiles")
-	private int horizontal_tiles = 2;
+		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 't'),
+		@Menu(label = "Open ResultsTable", weight = 1, mnemonic = 'o')})
+public class MarsTableImporterCommand extends DynamicCommand {
+    @Parameter
+    private StatusService statusService;
+    
+    @Parameter(label="MARSResultsTable (csv, tab or json) ")
+    private File file;
+    
+    @Parameter(label="MARSResultsTable", type = ItemIO.OUTPUT)
+    private MarsTable results;
 
 	@Override
-	public void run() {
-		ROITilesWindow tilewindow = new ROITilesWindow(directory.getAbsolutePath(), vertical_tiles, horizontal_tiles);
+	public void run() {				
+		if (file == null)
+			return;
+		
+		try {
+			results = new MarsTable(file, statusService);
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		getInfo().getOutput("results", MarsTable.class).setLabel(results.getName());
+	}
+	
+	public MarsTableImporterCommand() {}
+	
+	//Utility methods to set Parameters not initialized...
+	public void setFile(File file) {
+		this.file = file;
+	}
+	
+	public File getFile() {
+		return file;
+	}
+	
+	public MarsTable getTable() {
+		return results;
 	}
 }

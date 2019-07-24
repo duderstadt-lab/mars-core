@@ -1,25 +1,17 @@
 package de.mpg.biochem.mars.molecule;
 
-import java.net.URISyntaxException;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
-import org.scijava.ItemIO;
 import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
 import org.scijava.io.event.DataOpenedEvent;
-import org.scijava.io.handle.DataHandle;
-import org.scijava.io.handle.DataHandleService;
-import org.scijava.io.location.Location;
-import org.scijava.io.location.LocationService;
-import org.scijava.object.event.ObjectCreatedEvent;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -35,12 +27,6 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
 public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
-
-	@Parameter
-	private LocationService locationService;
-
-	@Parameter
-	private DataHandleService dataHandleService;
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
