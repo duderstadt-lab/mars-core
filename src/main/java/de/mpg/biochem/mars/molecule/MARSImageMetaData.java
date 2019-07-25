@@ -231,14 +231,18 @@ public class MARSImageMetaData {
         
 		try {
 			//Set Global Collection Date for the dataset
-			CollectionDate = getNorPixDate(headerLabels.get(1).substring(10));
+			int DateTimeIndex = headerLabels.get(1).indexOf("DateTime: ");
+			String dateTimeString = headerLabels.get(1).substring(DateTimeIndex + 10);
+			CollectionDate = getNorPixDate(dateTimeString);
 			
 			//Extract the exact time of collection of all frames..
-			long t0 = getNorPixMillisecondTime(headerLabels.get(1).substring(10));
+			long t0 = getNorPixMillisecondTime(dateTimeString);
 			for (int i=1;i<=headerLabels.size();i++) {
 				labelCol.add(headerLabels.get(i));
 				sliceCol.add((double)i);
-				timeCol.add((double)(getNorPixMillisecondTime(headerLabels.get(i).substring(10)) - t0)/1000);
+				DateTimeIndex = headerLabels.get(i).indexOf("DateTime: ");
+				dateTimeString = headerLabels.get(i).substring(DateTimeIndex + 10);
+				timeCol.add((double)(getNorPixMillisecondTime(dateTimeString) - t0)/1000);
 			}
 		} catch (ParseException e) {
 			//moleculeArchiveService.getLogService().error("There seems to be a problem with the Image header Labels. Are you sure they are the correction Norpix format?");
