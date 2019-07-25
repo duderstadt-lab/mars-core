@@ -50,14 +50,14 @@ import de.mpg.biochem.mars.util.LogBuilder;
 
 import org.scijava.table.DoubleColumn;
 
-@Plugin(type = Command.class, label = "Add Time", menu = {
+@Plugin(type = Command.class, label = "Add time", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Add Time", weight = 40, mnemonic = 'a')})
+		@Menu(label = "Add time", weight = 40, mnemonic = 'a')})
 public class AddTimeCommand extends DynamicCommand implements Command {
 	@Parameter
 	private LogService logService;

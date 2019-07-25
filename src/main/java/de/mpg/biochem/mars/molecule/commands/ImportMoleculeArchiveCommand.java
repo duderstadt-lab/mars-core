@@ -30,18 +30,17 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule.commands;
 
-import java.awt.Rectangle;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Properties;
-
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileFilter;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 
 import org.scijava.ItemIO;
-import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
@@ -49,105 +48,139 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
-import org.scijava.widget.FileWidget;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
+import de.mpg.biochem.mars.util.LogBuilder;
 
 import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
+import org.scijava.object.ObjectService;
 
-import com.fasterxml.jackson.core.JsonParseException;
+import net.imagej.ImageJ;
 
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
-import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.LogBuilder;
-import net.imagej.ops.Initializable;
-
-import javax.swing.filechooser.FileSystemView;
-
-import de.mpg.biochem.mars.molecule.*;
-
-@Plugin(type = Command.class, label = "Open MoleculeArchive", menu = {
+@SuppressWarnings("rawtypes")
+@Plugin(type = Command.class, label = "Import archive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Open MoleculeArchive", weight = 1, mnemonic = 'o')})
-public class OpenMoleculeArchiveCommand extends DynamicCommand {
-	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+		@Menu(label = "Import archive", weight = 1, mnemonic = 'o')})
+public class ImportMoleculeArchiveCommand extends DynamicCommand {
     @Parameter
-    private UIService uiService;
+    private ImageJ ij;
     
     @Parameter
-    private StatusService statusService;
+    private MoleculeArchiveService moleculeArchiveService;
     
     @Parameter
     private LogService logService;
     
-    @Parameter(label="MoleculeArchive (.yama file)")
+    @Parameter
+    private ObjectService objectService;
+    
+    @Parameter
+    private UIService uiService;
+    
+    @Parameter(label="MoleculeArchive (.yama file or .yama.store folder)", style="both")
     private File file;
     
-	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
-	private SingleMoleculeArchive archive;
+    @Parameter(label="archive.yama", type = ItemIO.OUTPUT)
+	private MoleculeArchive archive;
     
-    @Override
+	@Override
 	public void run() {				
-		if (file == null)
-			return;
+		if (!file.exists())
+			System.out.println("File not found.");
 		
 		String name = file.getName();
+		String archiveType = "";
 		
+		try {
+			if (file.isDirectory())
+				archiveType = getArchiveType(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
+			else 
+				archiveType = getArchiveType(file);
+		} catch (IOException e1) {
+			System.out.println("IOException:");
+			e1.printStackTrace();
+		}
+		
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(File.class);
+			archive = (MoleculeArchive)constructor.newInstance(file);
+			getInfo().getOutput("archive", MoleculeArchive.class).setLabel(archive.getName());
+		} catch (ClassNotFoundException e) {
+			System.err.println("MoleculeArchive class not found.");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
 		}
 		
+		objectService.addObject(archive);
+
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Opening MoleculeArchive");
+		String log = builder.buildTitleBlock("Importing MoleculeArchive");
 		builder.addParameter("Loading File", file.getAbsolutePath());
 		builder.addParameter("Archive Name", name);
 		
 		log += builder.buildParameterList();
-		
 		logService.info(log);
-		
-		try {
-			archive = new SingleMoleculeArchive(name,file,moleculeArchiveService);
-			
-			getInfo().getOutput("archive", SingleMoleculeArchive.class).setLabel(name);
-			
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-			logService.error("JsonParseExcpetion - are you sure this is a properly formatted yama file?");
-			logService.error(LogBuilder.endBlock(false));
-			return;
-		} catch (IOException e) {
-			e.printStackTrace();
-			logService.error("IOException - does the yama file exist?");
-			logService.error(LogBuilder.endBlock(false));
-			return;
-		}
 		logService.info(LogBuilder.endBlock(true));
 	}
     
-    //Getters and Setters
-    public SingleMoleculeArchive getArchive() {
-    	return archive;
-    }
-    
-    public void setFile(File file) {
-    	this.file = file;
-    }
-    
-    public File getFile() {
-    	return file;
-    }
+	private String getArchiveType(File file) throws JsonParseException, IOException {
+		//The first object in the yama file has general information about the archive including
+		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
+		//if we are working virtual. So we load that information first
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
+	    
+	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+	    
+		jParser.nextToken();
+		jParser.nextToken();
+		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+			jParser.nextToken();
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    String fieldname = jParser.getCurrentName();
+			    	
+			    if ("ArchiveType".equals(fieldname)) {
+			    	jParser.nextToken();
+			    	archiveType = jParser.getText();
+			    	break;
+			    }
+			}
+		}
+		
+		jParser.close();
+		inputStream.close();
+		
+		return archiveType;
+	}
 }

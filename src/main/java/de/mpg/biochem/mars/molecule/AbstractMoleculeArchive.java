@@ -30,16 +30,6 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
-import de.mpg.biochem.mars.ImageProcessing.*;
-import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
-import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
-import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
-import de.mpg.biochem.mars.molecule.commands.GenerateBPSCommand;
-import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
-import de.mpg.biochem.mars.molecule.commands.OpenMoleculeArchiveCommand;
-import de.mpg.biochem.mars.molecule.commands.OpenVirtualStoreCommand;
-import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -128,7 +118,7 @@ import org.scijava.table.*;
  * <p>
  * MoleculeArchives can be loaded using the constructors {@link #MoleculeArchive(File)} or 
  * {@link #MoleculeArchive(String, File, MoleculeArchiveService)}. Otherwise, MoleculeArchives can be loaded
- * using the MARS commands {@link OpenMoleculeArchiveCommand} or {@link OpenVirtualStoreCommand} through the 
+ * using the MARS commands {@link ImportMoleculeArchiveCommand} or {@link OpenVirtualStoreCommand} through the 
  * GUI or in scripts.
  * </p>
  * @author Karl Duderstadt

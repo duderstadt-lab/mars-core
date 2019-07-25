@@ -12,9 +12,13 @@ import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
 import org.scijava.io.event.DataOpenedEvent;
+import org.scijava.log.LogService;
+import org.scijava.object.ObjectService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -24,15 +28,23 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.util.LogBuilder;
+
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
 public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
+	
+	@Parameter
+    private LogService logService;
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
 	
 	@Parameter
     private EventService eventService;
+	
+	@Parameter
+    private ObjectService objectService;
 	
 	@Parameter
     private UIService uiService;
@@ -79,11 +91,30 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 			e.printStackTrace();
 		}
 		
+		String name = file.getName();
+		
+		if (moleculeArchiveService.contains(name)) {
+			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			return null;
+		}
+		
 		//Seems like this should be called by DefaultIOService, but it isn't.
 		eventService.publish(new DataOpenedEvent(source, archive));
 		
+		objectService.addObject(archive);
+		
 		//Why doesn't this happen somewhere else. How if ij.io().open is used in a script. It will also open the archive window.
 		uiService.show(archive.getName(), archive);
+
+		LogBuilder builder = new LogBuilder();
+		
+		String log = builder.buildTitleBlock("Opening MoleculeArchive");
+		builder.addParameter("Loading File", file.getAbsolutePath());
+		builder.addParameter("Archive Name", name);
+		
+		log += builder.buildParameterList();
+		logService.info(log);
+		logService.info(LogBuilder.endBlock(true));
 		
 		return archive;
 	}

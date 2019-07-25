@@ -206,7 +206,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	// -- Event handlers --
-	
+	/*
 	@EventHandler
 	protected void onEvent(final MoleculeArchiveCreatedEvent event) {
 		this.addArchive((MoleculeArchive<?,?,?>)event.getObject());
@@ -217,6 +217,11 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		this.removeArchive((MoleculeArchive<?,?,?>)event.getObject());
 	}
 	
+	@EventHandler
+	protected void onEvent(final SciJavaEvent event) {
+		System.out.println("SciJavaEvent " + event.getClass().getName());
+	}
+	*/
 	@Override
 	public Class<MoleculeArchiveService> getPluginType() {
 		return MoleculeArchiveService.class;

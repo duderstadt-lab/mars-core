@@ -80,7 +80,7 @@ import javax.swing.JLabel;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Generate bps", weight = 30, mnemonic = 'g')})
 public class GenerateBPSCommand extends DynamicCommand implements Command, Initializable {

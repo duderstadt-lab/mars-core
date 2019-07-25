@@ -44,14 +44,14 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, label = "Histogram Builder", menu = {
+@Plugin(type = Command.class, label = "Build histogram", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Table Utils", weight = 10,
+			mnemonic = 'm'),
+		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Histogram Builder", weight = 50, mnemonic = 's')})
+		@Menu(label = "Build histogram", weight = 50, mnemonic = 'b')})
 public class HistogramBuilderCommand extends DynamicCommand implements Initializable {
 
 	@Parameter

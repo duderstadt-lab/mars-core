@@ -48,6 +48,8 @@ import java.util.Random;
 import org.scijava.command.Command;
 import org.scijava.display.DisplayService;
 import org.scijava.event.EventHandler;
+import org.scijava.event.EventService;
+import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
 //import org.scijava.object.ObjectService;
 import org.scijava.object.event.ObjectCreatedEvent;
@@ -56,6 +58,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.table.event.MarsTableDeletedEvent;
 
 import org.scijava.table.*;
 import net.imglib2.type.numeric.RealType;
@@ -81,6 +84,9 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
     private ScriptService scriptService;
     
     @Parameter
+    private EventService eventService;
+    
+    @Parameter
     private DisplayService displayService;
     
 	private Map<String, MarsTable> tables;
@@ -96,7 +102,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		scriptService.addAlias(MarsTableService.class);
 	}
 	
-	public void addResultsTable(MarsTable table) {
+	public void addTable(MarsTable table) {
 		String name = table.getName();
 		int num = 1;	    
 	    while (tables.containsKey(name)) {
@@ -112,15 +118,17 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		tables.put(table.getName(), table);
 	}
 	
-	public void removeResultsTable(String name) {
+	public void removeTable(String name) {
 		if (tables.containsKey(name)) {
+			//eventService.publish(new MarsTableDeletedEvent(tables.get(name)));
 			tables.remove(name);
 			displayService.getDisplay(name).close();
 		}
 	}
 	
-	public void removeResultsTable(MarsTable table) {
+	public void removeTable(MarsTable table) {
 		if (tables.containsKey(table.getName())) {
+			//eventService.publish(new MarsTableDeletedEvent(tables));
 			tables.remove(table.getName());
 			displayService.getDisplay(table.getName()).close();
 		}
@@ -173,7 +181,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 	//Here we are assuming the table is already sorted on the groupColumn..
 	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MarsTable table, String groupColumn) {
 		// make sure we sort on groupColumn
-		//ResultsTableSorter.sort(table, true, groupColumn);
+		//MarsTableSorter.sort(table, true, groupColumn);
 		
 		LinkedHashMap<Integer, GroupIndices> map = new LinkedHashMap<Integer, GroupIndices>();
 		
@@ -201,7 +209,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		return map;
 	}
 	
-	public MarsTable getResultsTable(String name) {
+	public MarsTable getTable(String name) {
 		return tables.get(name);
 	}
 	

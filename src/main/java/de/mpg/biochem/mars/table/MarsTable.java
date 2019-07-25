@@ -140,7 +140,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	public MarsTable(File file) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
-		if (file.getName().endsWith(".json"))
+		if (file.getName().endsWith(".json") || file.getName().endsWith(".yamt"))
 			loadJSON(file);
 		else
 			loadCSV(file);
@@ -158,7 +158,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		
 		this.statusService = statusService;
 		
-		if (file.getName().endsWith(".json"))
+		if (file.getName().endsWith(".json") || file.getName().endsWith(".yamt"))
 			loadJSON(file);
 		else
 			loadCSV(file);
@@ -330,14 +330,15 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * IMPORT AND EXPORT
 	 */
 	
-	/** Saves the table to the file path specified in
-	 * csv format.
+	/** Saves the table to the file path in smile encoded json format.
 	 * 
 	 * @param file File where the table is written.
 	 * @return Return true if no IO error is encountered.
 	 */
 	public boolean saveAs(File file) {
         try {
+        	if (!file.getAbsolutePath().toLowerCase().endsWith(".yamt"))
+        		file = new File(file.getAbsolutePath() + ".yamt");
             saveAsYAMT(file.getAbsolutePath());
             return true;
         } catch (IOException e) {

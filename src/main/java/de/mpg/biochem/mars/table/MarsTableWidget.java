@@ -65,7 +65,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements Inpu
 
 	@Override
 	public MarsTable getValue() {
-		return resultsTableService.getResultsTable((String)comboBox.getSelectedItem());
+		return resultsTableService.getTable((String)comboBox.getSelectedItem());
 	}
 
 	// -- WrapperPlugin methods --

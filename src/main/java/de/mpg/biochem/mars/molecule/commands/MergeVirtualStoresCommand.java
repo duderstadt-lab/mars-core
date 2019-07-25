@@ -75,7 +75,7 @@ import de.mpg.biochem.mars.molecule.*;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Merge Virtual Stores", weight = 100, mnemonic = 'm')})
 public class MergeVirtualStoresCommand extends DynamicCommand {

@@ -73,7 +73,7 @@ import javax.swing.filechooser.FileSystemView;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
 public class BuildArchiveFromTableCommand extends DynamicCommand {

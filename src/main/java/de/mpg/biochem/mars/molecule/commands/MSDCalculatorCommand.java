@@ -64,7 +64,7 @@ import org.scijava.table.DoubleColumn;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Mean Squared Displacement Calculator", weight = 70, mnemonic = 'm')})
 public class MSDCalculatorCommand extends DynamicCommand implements Command, Initializable {

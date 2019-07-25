@@ -59,22 +59,22 @@ import org.scijava.menu.MenuConstants;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
-@Plugin(type = Command.class, label = "Open ResultsTable", menu = {
+@Plugin(type = Command.class, label = "Import table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Table Utils", weight = 10,
+		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Open ResultsTable", weight = 1, mnemonic = 'o')})
+		@Menu(label = "Import table", weight = 1, mnemonic = 'o')})
 public class MarsTableImporterCommand extends DynamicCommand {
     @Parameter
     private StatusService statusService;
     
-    @Parameter(label="MARSResultsTable (csv, tab or json) ")
+    @Parameter(label="MarsTable (csv, tab or json) ")
     private File file;
     
-    @Parameter(label="MARSResultsTable", type = ItemIO.OUTPUT)
+    @Parameter(label="MarsTable", type = ItemIO.OUTPUT)
     private MarsTable results;
 
 	@Override
@@ -96,17 +96,4 @@ public class MarsTableImporterCommand extends DynamicCommand {
 	}
 	
 	public MarsTableImporterCommand() {}
-	
-	//Utility methods to set Parameters not initialized...
-	public void setFile(File file) {
-		this.file = file;
-	}
-	
-	public File getFile() {
-		return file;
-	}
-	
-	public MarsTable getTable() {
-		return results;
-	}
 }

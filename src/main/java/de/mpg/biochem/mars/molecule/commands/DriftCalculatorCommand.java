@@ -60,7 +60,7 @@ import org.scijava.table.*;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Drift Calculator", weight = 50, mnemonic = 'd')})
 public class DriftCalculatorCommand extends DynamicCommand implements Command {

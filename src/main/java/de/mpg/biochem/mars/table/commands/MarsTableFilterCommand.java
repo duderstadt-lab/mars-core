@@ -56,14 +56,14 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, label = "Results Filter", menu = {
+@Plugin(type = Command.class, label = "Filter", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 'm'),
-		@Menu(label = "Table Utils", weight = 10,
+		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Results Filter", weight = 30, mnemonic = 'f')})
+		@Menu(label = "Filter", weight = 30, mnemonic = 'f')})
 public class MarsTableFilterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter

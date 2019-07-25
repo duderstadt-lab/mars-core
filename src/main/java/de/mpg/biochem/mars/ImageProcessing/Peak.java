@@ -54,7 +54,7 @@ public class Peak implements RealLocalizable {
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue;
 	boolean valid = true;
-	Peak(double[] values, double[] errors) {
+	public Peak(double[] values, double[] errors) {
 		baseline = values[0];
 		height = values[1];
 		x = values[2];
@@ -67,25 +67,25 @@ public class Peak implements RealLocalizable {
 		yError = errors[3];
 		sigmaError = errors[4];
 	}
-	Peak(double x, double y, double height, double baseline, double sigma) {
+	public Peak(double x, double y, double height, double baseline, double sigma) {
 		this.x = x;
 		this.y = y;
 		this.height = height;
 		this.baseline = baseline;
 		this.sigma = sigma;
 	}
-	Peak(double x, double y, double pixelValue) {
+	public Peak(double x, double y, double pixelValue) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
 	}
-	Peak(double x, double y, double pixelValue, int slice) {
+	public Peak(double x, double y, double pixelValue, int slice) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
 		this.slice = slice;
 	}
-	Peak(Peak peak) {
+	public Peak(Peak peak) {
 		this.x = peak.x;
 		this.y = peak.y;
 		this.baseline = peak.baseline;

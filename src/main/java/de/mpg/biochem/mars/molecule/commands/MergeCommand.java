@@ -69,7 +69,7 @@ import de.mpg.biochem.mars.util.LogBuilder;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Merge Archives", weight = 90, mnemonic = 'm')})
 public class MergeCommand extends DynamicCommand {

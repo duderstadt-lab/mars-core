@@ -47,18 +47,18 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, label = "Results Sorter", menu = {
+@Plugin(type = Command.class, label = "Sort", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Table Utils", weight = 10,
+		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Results Sorter", weight = 20, mnemonic = 's')})
+		@Menu(label = "Sort", weight = 20, mnemonic = 's')})
 public class MarsTableSorterCommand extends DynamicCommand implements Initializable {
 	
 	@Parameter
-    private MarsTableService resultsTableService;
+    private MarsTableService marsTableService;
 	
     @Parameter
     private UIService uiService;
@@ -81,11 +81,11 @@ public class MarsTableSorterCommand extends DynamicCommand implements Initializa
 	public void initialize() {
 		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
-		columnItems.setChoices(resultsTableService.getColumnNames());
+		columnItems.setChoices(marsTableService.getColumnNames());
 		
 		final MutableModuleItem<String> groupItems = getInfo().getMutableInput("group", String.class);
 		
-		ArrayList<String> colNames = resultsTableService.getColumnNames();
+		ArrayList<String> colNames = marsTableService.getColumnNames();
 		colNames.add(0, "no group");
 		groupItems.setChoices(colNames);
 	}

@@ -60,7 +60,7 @@ import de.mpg.biochem.mars.util.LogBuilder;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Molecule Utils", weight = 1,
+		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Drift Corrector", weight = 60, mnemonic = 'd')})
 public class DriftCorrectorCommand extends DynamicCommand implements Command {
