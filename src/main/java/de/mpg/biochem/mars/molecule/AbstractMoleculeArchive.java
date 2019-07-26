@@ -814,13 +814,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		updateProperties();
 		
+		//Should ObjectFieldStart and end move into archiveProperties?
+		jGenerator.writeObjectFieldStart("MoleculeArchiveProperties");
+		
 		archiveProperties.toJSON(jGenerator);
+		
+		jGenerator.writeEndObject();
 		
 		if (imageMetadataIndex.size() > 0) {
 			jGenerator.writeArrayFieldStart("ImageMetadata");
 			Iterator<String> iter = imageMetadataIndex.iterator();
 			while (iter.hasNext()) {
+				jGenerator.writeStartObject();
 				getImageMetadata(iter.next()).toJSON(jGenerator);
+				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
 		}
@@ -830,7 +837,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//loop through all molecules in ChronicleMap and save the data...
 		Iterator<String> iterator = moleculeIndex.iterator();
 		while (iterator.hasNext()) {
+			jGenerator.writeStartObject();
 			get(iterator.next()).toJSON(jGenerator);
+			jGenerator.writeEndObject();
 		}
 		
 		jGenerator.writeEndArray();

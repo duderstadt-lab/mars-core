@@ -92,10 +92,12 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	@Override
 	protected void createIOMaps() {
 		//Output Map
-		outputMap.put("ArchiveType", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("ArchiveType", parent.getClass().getName()), IOException.class));
+		outputMap.put("ArchiveType", MarsUtil.catchConsumerException(jGenerator -> {
+			if (parent != null)
+				jGenerator.writeStringField("ArchiveType", parent.getClass().getName());
+		}, IOException.class));
 		outputMap.put("Type", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("ArchiveType", this.getClass().getName()), IOException.class));
+			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
 		outputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jGenerator ->
 			jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), IOException.class));
 		outputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jGenerator ->

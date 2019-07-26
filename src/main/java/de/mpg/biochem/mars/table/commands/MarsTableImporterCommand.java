@@ -55,7 +55,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.*;
 import org.scijava.menu.MenuConstants;
-
+import org.scijava.object.ObjectService;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
@@ -71,6 +71,9 @@ public class MarsTableImporterCommand extends DynamicCommand {
     @Parameter
     private StatusService statusService;
     
+    @Parameter
+    private ObjectService objectService;
+    
     @Parameter(label="MarsTable (csv, tab or json) ")
     private File file;
     
@@ -84,6 +87,7 @@ public class MarsTableImporterCommand extends DynamicCommand {
 		
 		try {
 			results = new MarsTable(file, statusService);
+			objectService.addObject(results);
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
