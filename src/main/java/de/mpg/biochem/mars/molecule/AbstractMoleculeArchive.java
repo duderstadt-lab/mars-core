@@ -809,42 +809,29 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if there is a problem writing to the file.
 	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
-		//We have to have a starting { for the json...
 		jGenerator.writeStartObject();
 		
 		updateProperties();
 		
-		//Should ObjectFieldStart and end move into archiveProperties?
-		jGenerator.writeObjectFieldStart("MoleculeArchiveProperties");
-		
+		jGenerator.writeFieldName("MoleculeArchiveProperties");
 		archiveProperties.toJSON(jGenerator);
-		
-		jGenerator.writeEndObject();
 		
 		if (imageMetadataIndex.size() > 0) {
 			jGenerator.writeArrayFieldStart("ImageMetadata");
 			Iterator<String> iter = imageMetadataIndex.iterator();
 			while (iter.hasNext()) {
-				jGenerator.writeStartObject();
 				getImageMetadata(iter.next()).toJSON(jGenerator);
-				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
 		}
 		
 		jGenerator.writeArrayFieldStart("Molecules");
-		
-		//loop through all molecules in ChronicleMap and save the data...
 		Iterator<String> iterator = moleculeIndex.iterator();
 		while (iterator.hasNext()) {
-			jGenerator.writeStartObject();
 			get(iterator.next()).toJSON(jGenerator);
-			jGenerator.writeEndObject();
 		}
-		
 		jGenerator.writeEndArray();
 		
-		//Now we need to add the corresponding global closing bracket } for the json format...
 		jGenerator.writeEndObject();
 	}
 	
@@ -897,7 +884,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		try {
-			//Generate all MARSImageMetadata record files...
 			forkJoinPool.submit(() -> imageMetadataIndex.parallelStream().forEach(metaUID -> { 
 	        	try {
 	        		I metaData = getImageMetadata(metaUID);
@@ -949,9 +935,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		jGenerator.writeStartObject();
+		//jGenerator.writeStartObject();
+		//jGenerator.writeFieldName("MoleculeArchiveProperties");
 		archiveProperties.toJSON(jGenerator);
-		jGenerator.writeEndObject();
+		//jGenerator.writeEndObject();
 		jGenerator.close();
 		
 		stream.flush();

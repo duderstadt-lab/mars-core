@@ -24,10 +24,12 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	}
 	
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
+		jGenerator.writeStartObject();
 		for (String field : outputMap.keySet()) {
 			if (!outputMap.get(field).test(jGenerator))
 				throw new IOException("IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
 		}
+		jGenerator.writeEndObject();
 	}
 	
 	/**
