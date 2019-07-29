@@ -98,13 +98,11 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 			return null;
 		}
 		
-		//Seems like this should be called by DefaultIOService, but it isn't.
-		eventService.publish(new DataOpenedEvent(source, archive));
-		
 		objectService.addObject(archive);
 		
 		//Why doesn't this happen somewhere else. How if ij.io().open is used in a script. It will also open the archive window.
-		uiService.show(archive.getName(), archive);
+		if (!uiService.isHeadless())
+			uiService.show(archive.getName(), archive);
 
 		LogBuilder builder = new LogBuilder();
 		

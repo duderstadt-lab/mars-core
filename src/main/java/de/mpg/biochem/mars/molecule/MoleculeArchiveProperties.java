@@ -45,7 +45,7 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames);
 	
-	Set<ArrayList<String>> getSegmnetTableNames();
+	Set<ArrayList<String>> getSegmentTableNames();
 	
 	String getComments();
 	

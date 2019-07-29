@@ -48,12 +48,11 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 
 		MarsTable table = new MarsTable(new File(source));
 		
-		//Seems like this should be called by DefaultIOService, but it isn't.
-		eventService.publish(new DataOpenedEvent(source, table));
-		
 		objectService.addObject(table);
 		
-		uiService.show(table.getName(), table);
+		//There must be a better way...
+		if (!uiService.isHeadless())
+			uiService.show(table.getName(), table);
 		
 		return table;
 	}

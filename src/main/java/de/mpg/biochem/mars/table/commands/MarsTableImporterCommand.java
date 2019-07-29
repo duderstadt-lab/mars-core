@@ -30,35 +30,19 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.table.commands;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
-import org.scijava.ItemIO;
-import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.widget.FileWidget;
 
-import com.fasterxml.jackson.core.JsonParseException;
-
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableIOPlugin;
+import net.imagej.ImageJ;
 
 import org.scijava.command.DynamicCommand;
-import org.scijava.log.*;
 import org.scijava.menu.MenuConstants;
-import org.scijava.object.ObjectService;
-import org.scijava.table.DoubleColumn;
-import org.scijava.table.GenericColumn;
-
 @Plugin(type = Command.class, label = "Import table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
@@ -68,36 +52,22 @@ import org.scijava.table.GenericColumn;
 			mnemonic = 't'),
 		@Menu(label = "Import table", weight = 1, mnemonic = 'o')})
 public class MarsTableImporterCommand extends DynamicCommand {
+	
     @Parameter
-    private StatusService statusService;
-    
-    @Parameter
-    private ObjectService objectService;
+    private ImageJ ij;
     
     @Parameter(label="MarsTable (csv, tab or json) ")
     private File file;
     
-    @Parameter(label="MarsTable", type = ItemIO.OUTPUT)
-    private MarsTable results;
-
 	@Override
 	public void run() {				
-		if (file == null)
-			return;
+		final MarsTableIOPlugin marsTableIOPlugin = new MarsTableIOPlugin();
+		marsTableIOPlugin.setContext(ij.getContext());
 		
 		try {
-			results = new MarsTable(file, statusService);
-			objectService.addObject(results);
-		} catch (JsonParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			marsTableIOPlugin.open(file.getAbsolutePath());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		getInfo().getOutput("results", MarsTable.class).setLabel(results.getName());
 	}
-	
-	public MarsTableImporterCommand() {}
 }

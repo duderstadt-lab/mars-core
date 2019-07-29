@@ -41,9 +41,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.scijava.command.Command;
 import org.scijava.display.DisplayService;
@@ -51,12 +54,14 @@ import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
 import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
+import org.scijava.object.ObjectService;
 //import org.scijava.object.ObjectService;
 import org.scijava.object.event.ObjectCreatedEvent;
 import org.scijava.service.*;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.event.MarsTableDeletedEvent;
 
@@ -71,6 +76,7 @@ import org.scijava.plugin.PluginInfo;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
 public class MarsTableService extends AbstractPTService<MarsTableService> implements ImageJService {
 	
@@ -89,88 +95,62 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MarsTable> tables;
+    @Parameter
+    private ObjectService objectService;
 	
 	@Override
 	public void initialize() {
-		// This Service method is called when the service is first created.
-		tables = new LinkedHashMap<>();
-		
-		//This allow for just the class name as an input 
-		//in scripts. Otherwise the whole path would have to be given..
 		scriptService.addAlias(MarsTable.class);
 		scriptService.addAlias(MarsTableService.class);
 	}
 	
 	public void addTable(MarsTable table) {
-		String name = table.getName();
-		int num = 1;	    
-	    while (tables.containsKey(name)) {
-	    	if (num == 1) {
-	    		name = name + num;
-	    	} else  {
-	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num;
-	    	}
-	    	num++;
-	    }
-	    
-	    table.setName(name);
-		tables.put(table.getName(), table);
+		objectService.addObject(table);
 	}
 	
-	public void removeTable(String name) {
-		if (tables.containsKey(name)) {
-			//eventService.publish(new MarsTableDeletedEvent(tables.get(name)));
-			tables.remove(name);
-			displayService.getDisplay(name).close();
-		}
+	public void removeTable(String title) {
+		objectService.removeObject(getTable(title));
 	}
 	
 	public void removeTable(MarsTable table) {
-		if (tables.containsKey(table.getName())) {
-			//eventService.publish(new MarsTableDeletedEvent(tables));
-			tables.remove(table.getName());
-			displayService.getDisplay(table.getName()).close();
-		}
+		objectService.removeObject(table);
 	}
 	
 	public boolean rename(String oldName, String newName) {
-		if (tables.containsKey(newName)) {
-			logService.error("A Table is already open with that name. Choose another name.");
+		List<MarsTable> tables = getTables();
+		
+		if (tables.stream().anyMatch(archive -> archive.getName().equals(oldName))) {
+			logService.error("No MarsTables exists with the name " + oldName + ".");
+			return false;
+		}
+		
+		if (tables.stream().anyMatch(archive -> archive.getName().equals(newName))) {
+			logService.error("A MarsTable is already open with the name " + newName + ". Choose another name.");
 			return false;
 		} else {
-			tables.get(oldName).setName(newName);
-			MarsTable tab = tables.remove(oldName);
-			tables.put(newName, tab);
+			MarsTable table = tables.stream().filter(t -> t.getName().equals(oldName)).findFirst().get();
+			table.setName(newName);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
 		}
 	}
 	
 	public ArrayList<String> getTableNames() {
-		return new ArrayList<String>(tables.keySet());
+		List<MarsTable> archives = getTables();
+		
+		return (ArrayList<String>) archives.stream().map(table -> table.getName()).collect(Collectors.toList());
 	}
 	
 	public ArrayList<String> getColumnNames() {
+		Set<String> columnSet = new LinkedHashSet<String>();
+		List<MarsTable> tables = getTables();
+		
+		tables.forEach(table -> columnSet.addAll(table.getColumnHeadingList()));
+		
 		ArrayList<String> columns = new ArrayList<String>();
-	
-		for (MarsTable table: tables.values()) {
-			for (int i=0;i<table.getColumnCount();i++) {
-				if(!columns.contains(table.getColumnHeader(i)))
-					columns.add(table.getColumnHeader(i));
-			}
-		}
+		columns.addAll(columnSet);
 		
 		return columns;
-	}
-	
-	public boolean isUniqueName(final String name) {
-		for (final String tableName : tables.keySet()) {
-			if (name.equalsIgnoreCase(tableName)) {
-				return false;
-			}
-		}
-		return true;
 	}
 	
 	public UIService getUIService() {
@@ -209,12 +189,16 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		return map;
 	}
 	
-	public MarsTable getTable(String name) {
-		return tables.get(name);
+	public boolean contains(String key) {
+		return getTables().stream().anyMatch(archive -> archive.getName().equals(key));
 	}
 	
-	public boolean contains(String key) {
-		return tables.containsKey(key);
+	public MarsTable getTable(String name) {
+		return getTables().stream().filter(a -> a.getName().equals(name)).findFirst().get();
+	}
+	
+	public List<MarsTable> getTables() { 
+		return (List) objectService.getObjects(MarsTable.class);
 	}
 
 	@Override

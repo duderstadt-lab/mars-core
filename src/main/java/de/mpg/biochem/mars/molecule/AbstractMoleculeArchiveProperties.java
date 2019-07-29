@@ -289,7 +289,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		this.moleculeSegmentTableNames = moleculeSegmentTableNames;
 	}
 	
-	public Set<ArrayList<String>> getSegmnetTableNames() {
+	public Set<ArrayList<String>> getSegmentTableNames() {
 		return moleculeSegmentTableNames;
 	}
 	
