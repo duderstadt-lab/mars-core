@@ -8,21 +8,21 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class DNAMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
-	public SingleMoleculeArchive(String name) {
+	public DNAMoleculeArchive(String name) {
 		super(name);
 	}
 	
-	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
+	public DNAMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
 	
-	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
+	public DNAMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
 		super(name, table, moleculeArchiveService);
 	}
 	
-	public SingleMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
+	public DNAMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
 		super(name, file, moleculeArchiveService);
 	}
 	

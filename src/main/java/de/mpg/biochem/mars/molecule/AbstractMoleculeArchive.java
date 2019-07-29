@@ -324,6 +324,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		
 		archiveProperties = createProperties();
+		archiveProperties.setParent(this);
 	}
 	
 	protected void loadVirtualStore(File file) throws JsonParseException, IOException {
@@ -361,7 +362,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	    propertiesJParser.nextToken();
 	    propertiesJParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(propertiesJParser.getCurrentName())) {
-			archiveProperties = createProperties(propertiesJParser);
+			archiveProperties.fromJSON(propertiesJParser);
 		}
 		propertiesJParser.close();
 		propertiesInputStream.close();
@@ -494,7 +495,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		jParser.nextToken();
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			jParser.nextToken();
-			archiveProperties = createProperties(jParser);
+			archiveProperties.fromJSON(jParser);
 		} else {
 			if (moleculeArchiveService != null)
 				moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
@@ -557,7 +558,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				molTable.add(new DoubleColumn(header));
 			}
 			int row = 0;
-			for (int j=groups.get(mol).start;j<=groups.get(mol).end;j++) {
+			for (int j=groups.get(mol).getStart();j<=groups.get(mol).getEnd();j++) {
 				molTable.appendRow();
 				col = 0;
 				for (int i=0;i<results.getColumnCount();i++) {
@@ -1746,9 +1747,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
-				jGenerator.writeStartObject();
 				archiveProperties.toJSON(jGenerator);
-				jGenerator.writeEndObject();
 				jGenerator.close();
 				
 				stream.flush();

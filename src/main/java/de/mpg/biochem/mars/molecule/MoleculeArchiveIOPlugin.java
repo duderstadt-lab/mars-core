@@ -16,6 +16,7 @@ import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.script.ScriptService;
 import org.scijava.ui.UIService;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
@@ -42,6 +43,9 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	
 	@Parameter
     private EventService eventService;
+	
+    @Parameter
+    private ScriptService scriptService;
 	
 	@Parameter
     private ObjectService objectService;
@@ -73,9 +77,9 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		String archiveType;
 		
 		if (file.isDirectory())
-			archiveType = getArchiveType(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
+			archiveType = getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
 		else 
-			archiveType = getArchiveType(file);
+			archiveType = getArchiveTypeFromFile(file);
 		
 		MoleculeArchive archive = null;
 		
@@ -99,6 +103,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		}
 		
 		objectService.addObject(archive);
+		scriptService.addAlias(archive.getClass());
 		
 		//Why doesn't this happen somewhere else. How if ij.io().open is used in a script. It will also open the archive window.
 		if (!uiService.isHeadless())
@@ -126,7 +131,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 			archive.saveAs(file);
 	}
 
-	private String getArchiveType(File file) throws JsonParseException, IOException {
+	private String getArchiveTypeFromFile(File file) throws JsonParseException, IOException {
 		//The first object in the yama file has general information about the archive including
 		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
 		//if we are working virtual. So we load that information first
@@ -155,6 +160,38 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 			    	break;
 			    }
 			}
+		}
+		
+		jParser.close();
+		inputStream.close();
+		
+		return archiveType;
+	}
+	
+	private String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
+		//The first object in the yama file has general information about the archive including
+		//number of Molecules and their averageSize, which we can use to initialize the ChronicleMap
+		//if we are working virtual. So we load that information first
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
+	    
+	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+	    
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    String fieldname = jParser.getCurrentName();
+		    	
+		    if ("ArchiveType".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	archiveType = jParser.getText();
+		    	break;
+		    }
 		}
 		
 		jParser.close();
