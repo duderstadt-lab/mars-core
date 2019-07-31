@@ -53,6 +53,8 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setComments(String comments);
 	
+	void merge(MoleculeArchiveProperties properties, String archiveName);
+	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.
 	 * 

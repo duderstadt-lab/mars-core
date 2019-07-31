@@ -34,11 +34,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import org.scijava.app.StatusService;
@@ -50,6 +52,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -63,6 +66,7 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 @Plugin(type = Command.class, label = "Merge Archives", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -91,11 +95,6 @@ public class MergeCommand extends DynamicCommand {
 	@Parameter(label="Use smile encoding")
 	private boolean smileEncoding = true;
 	
-	ArrayList<MoleculeArchiveProperties> allArchiveProps;
-	ArrayList<ArrayList<MarsImageMetadata>> allMetadataItems;
-	
-	ArrayList<String> metaUIDs;
-	
 	@Override
 	public void run() {				
 		LogBuilder builder = new LogBuilder();
@@ -111,7 +110,7 @@ public class MergeCommand extends DynamicCommand {
   
            @Override
            public boolean accept(File dir, String name) {
-              if(name.lastIndexOf('.')>0) {
+              if(name.lastIndexOf('.') > 0) {
               
                  // get last index for '.' char
                  int lastIndex = name.lastIndexOf('.');
@@ -131,42 +130,62 @@ public class MergeCommand extends DynamicCommand {
 		
 		File[] archiveFileList = directory.listFiles(fileNameFilter);
 		if (archiveFileList.length > 0) {
-			allArchiveProps = new ArrayList<MoleculeArchiveProperties>();
-			allMetadataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
-			metaUIDs = new ArrayList<String>();
-			
+			//retrieve the types of all archives.
+			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveFileList) {
 				try {
-					loadArchiveDetails(file);
+					archiveTypes.add(MarsUtil.getArchiveTypeFromYama(file));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 			
-			//No conflicts found so we start building and writing the merged file
-			//First we need to build the global MoleculeArchiveProperties
-			SingleMoleculeArchiveProperties newArchiveProperties = new SingleMoleculeArchiveProperties();
-			
-			int numMolecules = 0; 
-			int numImageMetadata = 0;
-			String globalComments = "";
-			int count = 0;
-			for (MoleculeArchiveProperties archiveProperties : allArchiveProps) {
-				numMolecules += archiveProperties.getNumberOfMolecules();
-				numImageMetadata += archiveProperties.getNumImageMetadata();
-				globalComments += "Comments from Merged Archive " + archiveFileList[count].getName() + ":\n" + archiveProperties.getComments() + "\n";
-				
-				//update global indexes
-				newArchiveProperties.addAllTags(archiveProperties.getTagSet());
-				newArchiveProperties.addAllParameters(archiveProperties.getParameterSet());
-				newArchiveProperties.addAllColumns(archiveProperties.getColumnSet());
-				
-				count++;
+			//Check that all have the same type
+			String archiveType = archiveTypes.get(0);
+			for (String type : archiveTypes) {
+				if (!archiveType.equals(type)) {
+					logService.info("Not all archives are of the same type. Aborting merge.");
+					for (int i=0;i< archiveTypes.size();i++)
+						logService.info(archiveFileList[i].getName() + " is type " + archiveTypes.get(i));
+					return;
+				}
 			}
+			
+			//No conflicts found so we start building and writing the merged file
+			MoleculeArchive mergedArchiveType = createMoleculeArchive(archiveType);
+			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
+			
+			//Initialize all file streams and parsers
+			ArrayList<InputStream> fileInputStreams = new ArrayList<InputStream>();
+			ArrayList<JsonParser> jParsers = new ArrayList<JsonParser>();
+			
+			try {
+				for (File file : archiveFileList) {
+					InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-			newArchiveProperties.setNumberOfMolecules(numMolecules);
-			newArchiveProperties.setNumImageMetadata(numImageMetadata);
-			newArchiveProperties.setComments(globalComments);
+					JsonFactory jsonF = new JsonFactory();
+					SmileFactory smileF = new SmileFactory(); 
+					DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+				    DataFormatMatcher match = det.findFormat(inputStream);
+				    JsonParser jParser = match.createParserWithMatch();
+				    
+					jParser.nextToken();
+					jParser.nextToken();
+					if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+						jParser.nextToken();
+						mergedProperties.merge(mergedArchiveType.createProperties(jParser), file.getName());
+					} else {
+						logService.error("Can't find MoleculeArchiveProperties field in file " + file.getName() + ". Aborting.");
+						return;
+					}
+					fileInputStreams.add(inputStream);
+					jParsers.add(jParser);
+				}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			
 			String archiveList = "";
 			for (int i=0; i<archiveFileList.length; i++) 
@@ -176,9 +195,36 @@ public class MergeCommand extends DynamicCommand {
 			
 			log += "Merged " + archiveFileList.length + " yama files into the output archive merged.yama\n";
 			log += "Including: " + archiveList + "\n";
-			log += "In total " + newArchiveProperties.getNumImageMetadata() + " Datasets were merged.\n";
-			log += "In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.\n";
+			log += "In total " + mergedProperties.getNumImageMetadata() + " Datasets were merged.\n";
+			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true);
+			
+			
+			//read in all MarsImageMetadata items from all archives - I hope they fit in memory :)
+			ArrayList<ArrayList<MarsImageMetadata>> allMetadataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
+			ArrayList<String> metaUIDs = new ArrayList<String>();
+			
+			for (JsonParser jParser :jParsers) {
+				ArrayList<MarsImageMetadata> imageMetaDataList = new ArrayList<MarsImageMetadata>();
+				try {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+						String fieldName = jParser.getCurrentName();
+						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
+							while (jParser.nextToken() != JsonToken.END_ARRAY) {
+								imageMetaDataList.add(mergedArchiveType.createImageMetadata(jParser));
+							}
+						}
+						
+						if ("Molecules".equals(fieldName))
+							break;
+					}
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				allMetadataItems.add(imageMetaDataList);
+			}
 			
 			//Check for duplicate ImageMetadata items
 			for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
@@ -214,7 +260,8 @@ public class MergeCommand extends DynamicCommand {
 				//We have to have a starting { for the json...
 				jGenerator.writeStartObject();
 				
-				newArchiveProperties.toJSON(jGenerator);
+				jGenerator.writeFieldName("MoleculeArchiveProperties");
+				mergedProperties.toJSON(jGenerator);
 				
 				jGenerator.writeArrayFieldStart("ImageMetadata");
 				for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
@@ -226,12 +273,11 @@ public class MergeCommand extends DynamicCommand {
 				
 				//Now we need to loop through all molecules in all archives and save them to the merged archive.
 				jGenerator.writeArrayFieldStart("Molecules");
-				for (File file: archiveFileList) {
-					try {
-						mergeMolecules(file, jGenerator);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+				for (JsonParser jParser :jParsers) {
+					while (jParser.nextToken() != JsonToken.END_ARRAY)
+						mergedArchiveType.createMolecule(jParser).toJSON(jGenerator);
+					
+					jParser.close();
 				}
 				jGenerator.writeEndArray();
 				
@@ -242,6 +288,10 @@ public class MergeCommand extends DynamicCommand {
 				//flush and close streams...
 				stream.flush();
 				stream.close();
+				
+				for (InputStream inputStream : fileInputStreams) 
+					inputStream.close();
+				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -249,8 +299,8 @@ public class MergeCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
 			logService.info("Including: " + archiveList);
-			logService.info("In total " + newArchiveProperties.getNumImageMetadata() + " Datasets were merged.");
-			logService.info("In total " + newArchiveProperties.getNumberOfMolecules() + " molecules were merged.");
+			logService.info("In total " + mergedProperties.getNumImageMetadata() + " Datasets were merged.");
+			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {
 			logService.info("No .yama files in this directory.");
@@ -258,94 +308,21 @@ public class MergeCommand extends DynamicCommand {
 		}
 	}
 	
-	public void loadArchiveDetails(File file) throws JsonParseException, IOException {
-		//First load MoleculeArchiveProperties
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
-		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-		
-		jParser.nextToken();
-		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			allArchiveProps.add(new SingleMoleculeArchiveProperties(jParser));
-		} else {
-			logService.info("The file " + file.getName() + " have to MoleculeArchiveProperties. Is this a proper yama file?");
-			return;
+	public MoleculeArchive createMoleculeArchive(String archiveType) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(String.class);
+			return (MoleculeArchive)constructor.newInstance("merged");
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		
-		ArrayList<MarsImageMetadata> metaArchiveList = new ArrayList<MarsImageMetadata>();
-		
-		//Next load ImageMetadata items
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldName = jParser.getCurrentName();
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					metaArchiveList.add(new SdmmImageMetadata(jParser));
-				}
-			}
-			
-			if ("Molecules".equals(fieldName)) {
-				allMetadataItems.add(metaArchiveList);
-				//We first have to check all ImageMetadata items to ensure there are no duplicates...
-				jParser.close();
-				inputStream.close();
-				return;
-			}
-		}
+		return null;
 	}
-	
-	//Method which takes all molecule records from a single archive and adds them together by directly streaming 
-	//them to the merged.yama file through jGenerator...
-	public void mergeMolecules(File file, JsonGenerator jGenerator) throws JsonParseException, IOException {
-		//First load MoleculeArchiveProperties
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
-		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-		
-	    //We need to parse all the way to the molecule records since we already added everything else...
-	    //For the moment I just parse again all the first parts and do nothing with them
-	    //I guess it would be better to save an index of all the open files..
-		jParser.nextToken();
-		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			new SingleMoleculeArchiveProperties(jParser);
-		}
-		
-		//Next load ImageMetadata items
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldName = jParser.getCurrentName();
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					new SdmmImageMetadata(jParser);
-				}
-			}
-			
-			if ("Molecules".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					//Read in molecule record
-					SingleMolecule molecule = new SingleMolecule(jParser);
-					
-					//write out molecule record
-					molecule.toJSON(jGenerator);
-				}
-			}
-		}
-		jParser.close();
-		inputStream.close();
-	}
-	
+
 	//Getters and Setters
 	public void setDirectory(String dir) {
 		directory = new File(dir);

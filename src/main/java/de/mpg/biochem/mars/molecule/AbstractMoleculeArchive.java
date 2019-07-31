@@ -1758,21 +1758,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 	}
 	
-	protected abstract P createProperties();
+	public abstract P createProperties();
 	
-	protected abstract P createProperties(JsonParser jParser) throws IOException;
+	public abstract P createProperties(JsonParser jParser) throws IOException;
 	
-	protected abstract I createImageMetadata(JsonParser jParser) throws IOException;
+	public abstract I createImageMetadata(JsonParser jParser) throws IOException;
 	
-	protected abstract I createImageMetadata(String metaUID);
+	public abstract I createImageMetadata(String metaUID);
 	
-	protected abstract M createMolecule();
+	public abstract M createMolecule();
 	
-	protected abstract M createMolecule(JsonParser jParser) throws IOException;
+	public abstract M createMolecule(JsonParser jParser) throws IOException;
 	
-	protected abstract M createMolecule(String UID);
+	public abstract M createMolecule(String UID);
 	
-	protected abstract M createMolecule(String UID, MarsTable table);
+	public abstract M createMolecule(String UID, MarsTable table);
 	
 	@Override
 	public String toString() {

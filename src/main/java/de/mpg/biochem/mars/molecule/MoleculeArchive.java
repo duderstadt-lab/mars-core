@@ -5,9 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
-import org.scijava.Typed;
-
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+
+import de.mpg.biochem.mars.table.MarsTable;
 
 public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> extends JsonConvertibleRecord {
 	
@@ -421,4 +422,20 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	MoleculeArchiveProperties getProperties();
 	
 	void updateProperties();
+	
+	P createProperties();
+	
+	P createProperties(JsonParser jParser) throws IOException;
+	
+	I createImageMetadata(JsonParser jParser) throws IOException;
+	
+	I createImageMetadata(String metaUID);
+	
+	M createMolecule();
+	
+	M createMolecule(JsonParser jParser) throws IOException;
+	
+	M createMolecule(String UID);
+	
+	M createMolecule(String UID, MarsTable table);
 }

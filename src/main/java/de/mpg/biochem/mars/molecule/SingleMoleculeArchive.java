@@ -26,35 +26,35 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		super(name, file, moleculeArchiveService);
 	}
 	
-	protected SingleMoleculeArchiveProperties createProperties() {
+	public SingleMoleculeArchiveProperties createProperties() {
 		return new SingleMoleculeArchiveProperties();
 	}
 	
-	protected SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	protected SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	public SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new SdmmImageMetadata(jParser);
 	}
 	
-	protected SdmmImageMetadata createImageMetadata(String metaUID) {
+	public SdmmImageMetadata createImageMetadata(String metaUID) {
 		return new SdmmImageMetadata(metaUID);
 	}
 	
-	protected SingleMolecule createMolecule() {
+	public SingleMolecule createMolecule() {
 		return new SingleMolecule();
 	}
 	
-	protected SingleMolecule createMolecule(JsonParser jParser) throws IOException {
+	public SingleMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new SingleMolecule(jParser);
 	}
 	
-	protected SingleMolecule createMolecule(String UID) {
+	public SingleMolecule createMolecule(String UID) {
 		return new SingleMolecule(UID);
 	}
 	
-	protected SingleMolecule createMolecule(String UID, MarsTable table) {
+	public SingleMolecule createMolecule(String UID, MarsTable table) {
 		return new SingleMolecule(UID, table);
 	}
 }

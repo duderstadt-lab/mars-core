@@ -208,6 +208,16 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		}, IOException.class));
 	}
 	
+	public void merge(MoleculeArchiveProperties properties, String archiveName) {
+		this.numberOfMolecules += properties.getNumberOfMolecules();
+		this.numImageMetadata += properties.getNumImageMetadata();
+		this.addComment("Comments from Merged Archive " + archiveName + ":\n" + properties.getComments() + "\n");
+		
+		addAllTags(properties.getTagSet());
+		addAllParameters(properties.getParameterSet());
+		addAllColumns(properties.getColumnSet());
+	}
+	
 	//Getters and Setters	
 	public void addTag(String tag) {
 		tagSet.add(tag);

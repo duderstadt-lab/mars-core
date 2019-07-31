@@ -13,4 +13,9 @@ public class DefaultMoleculeArchiveProperties extends AbstractMoleculeArchivePro
 	public DefaultMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
+	
+	@Override
+	public void merge(MoleculeArchiveProperties properties, String archiveName) {
+		super.merge(properties, archiveName);
+	}
 }

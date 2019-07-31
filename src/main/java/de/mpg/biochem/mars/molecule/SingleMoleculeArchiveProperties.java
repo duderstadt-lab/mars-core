@@ -13,4 +13,9 @@ public class SingleMoleculeArchiveProperties extends AbstractMoleculeArchiveProp
 	public SingleMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
+
+	@Override
+	public void merge(MoleculeArchiveProperties properties, String archiveName) {
+		super.merge(properties, archiveName);
+	}
 }

@@ -26,35 +26,35 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 		super(name, file, moleculeArchiveService);
 	}
 	
-	protected DefaultMoleculeArchiveProperties createProperties() {
+	public DefaultMoleculeArchiveProperties createProperties() {
 		return new DefaultMoleculeArchiveProperties();
 	}
 	
-	protected DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	public DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new DefaultMoleculeArchiveProperties(jParser);
 	}
 	
-	protected DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	public DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new DefaultMarsImageMetadata(jParser);
 	}
 	
-	protected DefaultMarsImageMetadata createImageMetadata(String metaUID) {
+	public DefaultMarsImageMetadata createImageMetadata(String metaUID) {
 		return new DefaultMarsImageMetadata(metaUID);
 	}
 	
-	protected DefaultMolecule createMolecule() {
+	public DefaultMolecule createMolecule() {
 		return new DefaultMolecule();
 	}
 	
-	protected DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
+	public DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new DefaultMolecule(jParser);
 	}
 	
-	protected DefaultMolecule createMolecule(String UID) {
+	public DefaultMolecule createMolecule(String UID) {
 		return new DefaultMolecule(UID);
 	}
 	
-	protected DefaultMolecule createMolecule(String UID, MarsTable table) {
+	public DefaultMolecule createMolecule(String UID, MarsTable table) {
 		return new DefaultMolecule(UID, table);
 	}
 
