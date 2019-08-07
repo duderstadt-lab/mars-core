@@ -150,12 +150,17 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return (ArrayList<String>) archives.stream().map(archive -> archive.getName()).collect(Collectors.toList());
 	}
 	
-	public boolean contains(String key) {
-		return getArchives().stream().anyMatch(archive -> archive.getName().equals(key));
+	public boolean contains(String name) {
+		return getArchives().stream().anyMatch(archive -> archive.getName().equals(name));
 	}
 	
 	public MoleculeArchive<?,?,?> getArchive(String name) {
-		return getArchives().stream().filter(a -> a.getName().equals(name)).findFirst().get();
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		for (MoleculeArchive<?,?,?> archive : archives)
+			if (archive.getName().equals(name))
+				return archive;
+		
+		return null;
 	}
 	
 	public List<MoleculeArchive<?,?,?>> getArchives() { 

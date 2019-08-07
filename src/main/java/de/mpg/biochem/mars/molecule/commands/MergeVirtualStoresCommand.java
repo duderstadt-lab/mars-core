@@ -64,10 +64,13 @@ import org.scijava.ui.UIService;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.util.LogBuilder;
-
+import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.molecule.*;
 
 @Plugin(type = Command.class, label = "Merge Virtual Stores", menu = {
@@ -107,7 +110,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		log += builder.buildParameterList();
 		logService.info(log);
 	
-		ArrayList<MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties>> archives = new ArrayList<MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties>>();
+		ArrayList<MoleculeArchive<?,?,?>> archives = new ArrayList<MoleculeArchive<?,?,?>>();
 		
 		FilenameFilter fileNameFilter = new FilenameFilter() {
            @Override
@@ -127,41 +130,60 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		newVirtualDirectory.mkdirs();
 		
 		if (archiveDirectoryList.length > 0) {
-			for (File virtualDirectory: archiveDirectoryList) {
-				MoleculeArchive archive;
+			//retrieve the types of all archives.
+			ArrayList<String> archiveTypes = new ArrayList<String>();
+			for (File file: archiveDirectoryList) {
 				try {
-					archive = new SingleMoleculeArchive(virtualDirectory);
-					
-					if (archive.isSMILEInputEncoding() && !smileEncoding) {
-						logService.error("IO encoding was set to JSON but " + virtualDirectory.getName() + " has Smile format. All virtual stores to be merged must have the format specified. Aborting...");
-				    	logService.error(LogBuilder.endBlock(false));
-				    	return;
-					} else if (!archive.isSMILEInputEncoding() && smileEncoding) {
-						logService.error("IO encoding was set to Smile but " + virtualDirectory.getName() + " has JSON format. All virtual stores to be merged must have the format specified. Aborting...");
-				    	logService.error(LogBuilder.endBlock(false));
-				    	return;
-					}
-					archives.add(archive);
+					archiveTypes.add(MarsUtil.getArchiveTypeFromStore(file));
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+			
+			//Check that all have the same type
+			String archiveType = archiveTypes.get(0);
+			for (String type : archiveTypes) {
+				if (!archiveType.equals(type)) {
+					logService.info("Not all archives are of the same type. Aborting merge.");
+					for (int i=0;i< archiveTypes.size();i++)
+						logService.info(archiveDirectoryList[i].getName() + " is type " + archiveTypes.get(i));
+					return;
+				}
+			}
+			
+			for (File virtualDirectory: archiveDirectoryList) {
+				MoleculeArchive<?,?,?> archive = MarsUtil.createMoleculeArchive(archiveType, virtualDirectory);
+				
+				if (archive.isSMILEInputEncoding() && !smileEncoding) {
+					logService.error("IO encoding was set to JSON but " + virtualDirectory.getName() + " has Smile format. All virtual stores to be merged must have the format specified. Aborting...");
+			    	logService.error(LogBuilder.endBlock(false));
+			    	return;
+				} else if (!archive.isSMILEInputEncoding() && smileEncoding) {
+					logService.error("IO encoding was set to Smile but " + virtualDirectory.getName() + " has JSON format. All virtual stores to be merged must have the format specified. Aborting...");
+			    	logService.error(LogBuilder.endBlock(false));
+			    	return;
+				}
+				archives.add(archive);
+			}
+			
+			//No conflicts found so we start building and writing the merged file
+			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
+			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();			
 		
 			//Build JSON factory with specified encoding.
 			JsonFactory jfactory;
 			if (smileEncoding) {
+				mergedArchiveType.setSMILEOutputEncoding();
 				jfactory = new SmileFactory();
 			} else {
+				mergedArchiveType.unsetSMILEOutputEncoding();
 				jfactory = new JsonFactory();
 			}
 			
-			//Build MoleculeArchiveProperties for merged virtual store.
-			SingleMoleculeArchiveProperties mergedProperties = new SingleMoleculeArchiveProperties();
 			int numMolecules = 0;
 			int numImageMetadata = 0;
 			String globalComments = "";
-			for (MoleculeArchive archive : archives) {
+			for (MoleculeArchive<?,?,?> archive : archives) {
 				MoleculeArchiveProperties properties = archive.getProperties();
 				numMolecules += properties.getNumberOfMolecules();
 				numImageMetadata += properties.getNumImageMetadata();
@@ -203,7 +225,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ConcurrentMap<String, LinkedHashSet<String>> tagIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> imageMetadataTagIndex = new ConcurrentHashMap<>();
 			
-			for (MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive : archives) {
+			for (MoleculeArchive<?, ?, ?> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
 					if (virtualMoleculesSet.contains(UID)) {
 						logService.error("Duplicate molecule entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");

@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Consumer;
+import java.lang.reflect.Constructor;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -15,6 +15,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 
 public class MarsUtil {
   	
@@ -95,6 +97,36 @@ public class MarsUtil {
 		inputStream.close();
 		
 		return archiveType;
+	}
+	
+	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(String.class);
+			return (MoleculeArchive<?,?,?>)constructor.newInstance("archive");
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType, File file) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(File.class);
+			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
   	
   	public static <T, E extends Exception> Predicate<T> catchConsumerException(

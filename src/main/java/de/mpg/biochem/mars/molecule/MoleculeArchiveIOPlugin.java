@@ -82,19 +82,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		else 
 			archiveType = MarsUtil.getArchiveTypeFromYama(file);
 		
-		MoleculeArchive archive = null;
-		
-		try {
-			Class<?> clazz = Class.forName(archiveType);
-			Constructor<?> constructor = clazz.getConstructor(File.class);
-			archive = (MoleculeArchive)constructor.newInstance(file);
-		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		MoleculeArchive archive = MarsUtil.createMoleculeArchive(archiveType, file);
 		
 		String name = file.getName();
 		

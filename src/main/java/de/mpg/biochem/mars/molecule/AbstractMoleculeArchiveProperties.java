@@ -112,9 +112,9 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 					jGenerator.writeEndArray();
 				}
 			}, IOException.class));
-		outputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jGenerator -> {
+		outputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jGenerator -> {
 				if (moleculeSegmentTableNames.size() > 0) {
-					jGenerator.writeFieldName("moleculeSegmentTableNames");
+					jGenerator.writeFieldName("MoleculeSegmentTableNames");
 					jGenerator.writeStartArray();
 					Iterator<ArrayList<String>> iterator = moleculeSegmentTableNames.iterator();
 					while(iterator.hasNext()) {
@@ -174,7 +174,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	    		moleculeDataTableColumnSet.add(jParser.getText());
 		}, IOException.class));
-		inputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
+		inputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	ArrayList<String> segemntTableName = new ArrayList<String>();
@@ -216,6 +216,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		addAllTags(properties.getTagSet());
 		addAllParameters(properties.getParameterSet());
 		addAllColumns(properties.getColumnSet());
+		addAllSegmentTableNames(properties.getSegmentTableNames());
 	}
 	
 	//Getters and Setters	
@@ -291,7 +292,11 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		return moleculeDataTableColumnSet;
 	}
 	
-	public void addSegmentTableNames(Set<ArrayList<String>> segmentTableNames) {
+	public void addSegmentTableName(ArrayList<String> segmentTableName) {
+		this.moleculeSegmentTableNames.add(segmentTableName);
+	}
+	
+	public void addAllSegmentTableNames(Set<ArrayList<String>> segmentTableNames) {
 		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
 	

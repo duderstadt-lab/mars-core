@@ -57,8 +57,9 @@ public class ImportMoleculeArchiveCommand extends DynamicCommand {
     @Parameter
     private ImageJ ij;
     
+    //This should only open a single file or folder, but has to be File[] otherwise folders are not recognized.
     @Parameter(label="MoleculeArchive (.yama file or .yama.store folder)", style="both")
-    private File file;
+    private File[] file;
     
 	@Override
 	public void run() {				
@@ -66,7 +67,7 @@ public class ImportMoleculeArchiveCommand extends DynamicCommand {
 		moleculeArchiveIOPlugin.setContext(ij.getContext());
 		
 		try {
-			moleculeArchiveIOPlugin.open(file.getAbsolutePath());
+			moleculeArchiveIOPlugin.open(file[0].getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

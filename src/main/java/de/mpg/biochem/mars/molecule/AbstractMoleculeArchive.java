@@ -359,11 +359,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	    	jfactory = smileF;
 	    }
 		
-	    propertiesJParser.nextToken();
-	    propertiesJParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(propertiesJParser.getCurrentName())) {
-			archiveProperties.fromJSON(propertiesJParser);
-		}
+		archiveProperties.fromJSON(propertiesJParser);
 		propertiesJParser.close();
 		propertiesInputStream.close();
 		
@@ -457,7 +453,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			System.out.println("No indexes.json file found. Rebuilding indexes... This might take a while...");
 			rebuildIndexes();
 		}
-		updateProperties();
+		//updateProperties();
 	}
 	
 	protected void load(File file) throws JsonParseException, IOException {
@@ -996,7 +992,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
 		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
-		archiveProperties.addSegmentTableNames(molecule.getSegmentTableNames());
+		archiveProperties.addAllSegmentTableNames(molecule.getSegmentTableNames());
 	}
 	
 	/**
@@ -1756,6 +1752,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public MoleculeArchiveService getMoleculeArchiveService() {
+		return moleculeArchiveService;
 	}
 	
 	public abstract P createProperties();

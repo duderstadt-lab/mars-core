@@ -26,7 +26,6 @@ public class MarsCommandRecorder extends AbstractPostprocessorPlugin {
 			module.getInfo().inputs().forEach(item -> {
 				final String sValue = item.getValue(module) == null ? "" : convertService.convert(item.getValue(module), String.class);
 	
-				// do not persist if object cannot be converted back from a string
 				if (!convertService.supports(sValue, item.getType())) return;
 	
 				try {
@@ -39,7 +38,5 @@ public class MarsCommandRecorder extends AbstractPostprocessorPlugin {
 				System.out.println(sValue);
 			});
 		}
-		
-		//NEED TO retreive the archive and add to commands for all MarsImageMetadata items.
 	}
 }

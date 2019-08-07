@@ -159,7 +159,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private int DS_outerRadius;
 	
 	@Parameter(label="Detection threshold (mean + N * STD)")
-	private int threshold;
+	private double threshold;
 	
 	@Parameter(label="Minimum distance between peaks (in pixels)")
 	private int minimumDistance;
@@ -791,7 +791,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		this.threshold = threshold;
 	}
 	
-	public int getThreshold() {
+	public double getThreshold() {
 		return threshold;
 	}
 	

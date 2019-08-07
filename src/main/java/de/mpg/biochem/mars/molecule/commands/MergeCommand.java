@@ -152,7 +152,7 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive mergedArchiveType = createMoleculeArchive(archiveType);
+			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
 			
 			//Initialize all file streams and parsers
@@ -306,21 +306,6 @@ public class MergeCommand extends DynamicCommand {
 			logService.info("No .yama files in this directory.");
 			logService.info(LogBuilder.endBlock(false));
 		}
-	}
-	
-	public MoleculeArchive createMoleculeArchive(String archiveType) {
-		try {
-			Class<?> clazz = Class.forName(archiveType);
-			Constructor<?> constructor = clazz.getConstructor(String.class);
-			return (MoleculeArchive)constructor.newInstance("merged");
-		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 	//Getters and Setters

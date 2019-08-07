@@ -421,6 +421,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	
 	MoleculeArchiveProperties getProperties();
 	
+	MoleculeArchiveService getMoleculeArchiveService();
+	
 	void updateProperties();
 	
 	P createProperties();

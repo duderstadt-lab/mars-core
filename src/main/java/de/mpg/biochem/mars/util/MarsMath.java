@@ -33,7 +33,6 @@ package de.mpg.biochem.mars.util;
 import java.math.BigInteger;
 import java.util.UUID;
 
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.decimal4j.util.DoubleRounder;
 
 import com.chrylis.codec.base58.Base58Codec;

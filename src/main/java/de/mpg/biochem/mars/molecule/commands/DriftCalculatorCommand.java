@@ -191,6 +191,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (!metaDataTable.hasColumn(output_y))
 				metaDataTable.appendColumn(output_y);
 			
+			double xStart = 0;
+			double yStart = 0;
+			
 			for (int slice = 1; slice <= slices ; slice++) {
 				double xSliceFinalValue = Double.NaN;
 				double ySliceFinalValue = Double.NaN;
@@ -209,8 +212,13 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					ySliceFinalValue = yTempTable.median("Y " + slice);
 				}
 				
-				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue);
-				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue);
+				if (slice == 1) {
+					xStart = xSliceFinalValue;
+					yStart = ySliceFinalValue;
+				}
+				
+				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue - xStart);
+				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue - yStart);
 			}
 			
 			archive.putImageMetadata(meta);

@@ -8,21 +8,21 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class DNAMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
-	public DNAMoleculeArchive(String name) {
+	public DnaMoleculeArchive(String name) {
 		super(name);
 	}
 	
-	public DNAMoleculeArchive(File file) throws IOException, JsonParseException {
+	public DnaMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
 	
-	public DNAMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
+	public DnaMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
 		super(name, table, moleculeArchiveService);
 	}
 	
-	public DNAMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
+	public DnaMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
 		super(name, file, moleculeArchiveService);
 	}
 	
@@ -42,19 +42,19 @@ public class DNAMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, 
 		return new SdmmImageMetadata(metaUID);
 	}
 	
-	public SingleMolecule createMolecule() {
-		return new SingleMolecule();
+	public DnaMolecule createMolecule() {
+		return new DnaMolecule();
 	}
 	
-	public SingleMolecule createMolecule(JsonParser jParser) throws IOException {
-		return new SingleMolecule(jParser);
+	public DnaMolecule createMolecule(JsonParser jParser) throws IOException {
+		return new DnaMolecule(jParser);
 	}
 	
-	public SingleMolecule createMolecule(String UID) {
-		return new SingleMolecule(UID);
+	public DnaMolecule createMolecule(String UID) {
+		return new DnaMolecule(UID);
 	}
 	
-	public SingleMolecule createMolecule(String UID, MarsTable table) {
-		return new SingleMolecule(UID, table);
+	public DnaMolecule createMolecule(String UID, MarsTable table) {
+		return new DnaMolecule(UID, table);
 	}
 }

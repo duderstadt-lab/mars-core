@@ -158,7 +158,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		private int DS_outerRadius;
 		
 		@Parameter(label="Detection threshold (mean + N * STD)")
-		private int threshold;
+		private double threshold;
 		
 		@Parameter(label="Minimum distance between peaks (in pixels)")
 		private int minimumDistance;
@@ -461,7 +461,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		    archive.naturalOrderSortMoleculeIndex();
 		    
 		    //Make sure the output archive has the correct name
-			getInfo().getMutableOutput("archive", AbstractMoleculeArchive.class).setLabel(archive.getName());
+			getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
 		    
 			image.setRoi(startingRoi);
 	        
@@ -758,7 +758,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			this.threshold = threshold;
 		}
 		
-		public int getThreshold() {
+		public double getThreshold() {
 			return threshold;
 		}
 		

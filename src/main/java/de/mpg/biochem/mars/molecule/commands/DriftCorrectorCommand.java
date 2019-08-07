@@ -107,6 +107,9 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     @Parameter(label="Output Y (y_drift_corr)")
     private String output_y = "y_drift_corr";
     
+    @Parameter(label="correct original coordinates")
+    private boolean retainCoordinates = false;
+    
 	@Override
 	public void run() {		
 		//Let's keep track of the time it takes
@@ -174,8 +177,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			if (!datatable.hasColumn(output_y))
 				molecule.getDataTable().appendColumn(output_y);
 			
-			double meanX = datatable.mean(input_x,"slice",from, to);
-			double meanY = datatable.mean(input_y,"slice",from, to);
+			//If we want to retain the original coordinates then 
+			//we don't subtract anything except the drift.
+			double meanX = 0;
+			double meanY = 0;
+			
+			if (!retainCoordinates) {
+				meanX = datatable.mean(input_x,"slice",from, to);
+				meanY = datatable.mean(input_y,"slice",from, to);
+			}
 			
 			//We use the mappings because many molecules are missing slices.
 			//by always using the maps we ensure the correct background slice is 
