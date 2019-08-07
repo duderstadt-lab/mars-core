@@ -192,8 +192,8 @@ public class KCP {
 		
 	}
 		
-	public MARSResultsTable generate_segments(double[] xData, double[] yData, ArrayList<Integer> cp_positions) {
-		MARSResultsTable segmentTable = new MARSResultsTable();
+	public MarsTable generate_segments(double[] xData, double[] yData, ArrayList<Integer> cp_positions) {
+		MarsTable segmentTable = new MarsTable();
 		for (int q = 0; q < cp_positions.size() - 1 ; q++) {
 			double[] segment = linearRegression(xData, yData, cp_positions.get(q), cp_positions.get(q+1) - cp_positions.get(q));
 			// First I add the end points of the linear fit for each pair of consecutive change points...

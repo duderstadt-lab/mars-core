@@ -116,8 +116,13 @@ public class LogBuilder {
 		
 		String output = "";
 		//Now we build the parameter list text...
-		for (String[] str: parameters) {
+		for (int i=0; i < parameters.size() - 1; i++) {
+			String[] str = parameters.get(i);
 			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1] + "\n";
+		}
+		if (parameters.size() > 0) {
+			String[] str = parameters.get(parameters.size() - 1);
+			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1];
 		}
 		
 		return output;

@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import de.mpg.biochem.mars.molecule.MARSImageMetaData;
+import de.mpg.biochem.mars.molecule.SdmmImageMetadata;
 import ij.util.StringSorter;
 
 // Has some small parts of imagej1 FolderOpener.java

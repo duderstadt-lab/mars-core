@@ -46,11 +46,11 @@ import java.util.stream.IntStream;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
-import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.MARSResultsTable;
-import de.mpg.biochem.mars.util.MARSMath;
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsMath;
 import ij.IJ;
 import org.scijava.table.DoubleColumn;
 import net.imglib2.KDTree;
@@ -90,11 +90,11 @@ public class PeakTracker {
 			searchRadius = maxDifference[3];
 	}
 	
-	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, MoleculeArchive archive) {
+	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, AbstractMoleculeArchive archive) {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
-		metaDataUID = archive.getImageMetaData(0).getUID();
+		metaDataUID = archive.getImageMetadata(0).getUID();
 		
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -205,7 +205,7 @@ public class PeakTracker {
 						
 					} else if (!regionAlreadyLinked) { 
 						//Generate a new UID
-						String UID = MARSMath.getUUID58();
+						String UID = MarsMath.getUUID58();
 						from.setUID(UID);
 						to.setUID(UID);
 						trajectoryLengths.put(UID, 2);
@@ -308,14 +308,14 @@ public class PeakTracker {
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
 	
-	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, MoleculeArchive archive) {
+	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, AbstractMoleculeArchive archive) {
 		//don't add the molecule if the trajectory length is below minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
 			return;
 		
 		//Now loop through all peaks connected to this starting peak and
 		//add them to a DataTable as we go
-		MARSResultsTable table = buildResultsTable();
+		MarsTable table = buildResultsTable();
 		Peak peak = startingPeak;
 		addPeakToTable(table, peak, peak.getSlice());
 		
@@ -324,13 +324,13 @@ public class PeakTracker {
 			addPeakToTable(table, peak, peak.getSlice());
 		}
 
-		Molecule mol = new Molecule(startingPeak.getUID(), table);
-		mol.setImageMetaDataUID(metaDataUID);
+		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
+		mol.setImageMetadataUID(metaDataUID);
 		archive.put(mol);
 	}
 	
-	private MARSResultsTable buildResultsTable() {
-		MARSResultsTable molTable = new MARSResultsTable();
+	private MarsTable buildResultsTable() {
+		MarsTable molTable = new MarsTable();
 		
 		ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 		
@@ -348,7 +348,7 @@ public class PeakTracker {
 		
 		return molTable;
 	}
-	private void addPeakToTable(MARSResultsTable table, Peak peak, int slice) {
+	private void addPeakToTable(MarsTable table, Peak peak, int slice) {
 		table.appendRow();
 		int row = table.getRowCount() - 1;
 		if (PeakFitter_writeEverything) {

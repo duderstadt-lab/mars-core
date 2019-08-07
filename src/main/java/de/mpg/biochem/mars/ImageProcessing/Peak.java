@@ -54,7 +54,7 @@ public class Peak implements RealLocalizable {
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue;
 	boolean valid = true;
-	Peak(double[] values, double[] errors) {
+	public Peak(double[] values, double[] errors) {
 		baseline = values[0];
 		height = values[1];
 		x = values[2];
@@ -67,25 +67,25 @@ public class Peak implements RealLocalizable {
 		yError = errors[3];
 		sigmaError = errors[4];
 	}
-	Peak(double x, double y, double height, double baseline, double sigma) {
+	public Peak(double x, double y, double height, double baseline, double sigma) {
 		this.x = x;
 		this.y = y;
 		this.height = height;
 		this.baseline = baseline;
 		this.sigma = sigma;
 	}
-	Peak(double x, double y, double pixelValue) {
+	public Peak(double x, double y, double pixelValue) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
 	}
-	Peak(double x, double y, double pixelValue, int slice) {
+	public Peak(double x, double y, double pixelValue, int slice) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
 		this.slice = slice;
 	}
-	Peak(Peak peak) {
+	public Peak(Peak peak) {
 		this.x = peak.x;
 		this.y = peak.y;
 		this.baseline = peak.baseline;
@@ -102,40 +102,40 @@ public class Peak implements RealLocalizable {
 	}
 	
 	//Getters
-	double getX() {
+	public double getX() {
 		return x;
 	}
-	double getXError() {
+	public double getXError() {
 		return xError;
 	}
-	double getY() {
+	public double getY() {
 		return y;
 	}
-	double getYError() {
+	public double getYError() {
 		return yError;
 	}
-	double getHeight() {
+	public double getHeight() {
 		return height;
 	}
-	double getHeightError() {
+	public double getHeightError() {
 		return heightError;
 	}
-	double getBaseline() {
+	public double getBaseline() {
 		return baseline;
 	}
-	double getBaselineError() {
+	public double getBaselineError() {
 		return baselineError;
 	}
-	double getSigma() {
+	public double getSigma() {
 		return sigma;
 	}
-	double getSigmaError() {
+	public double getSigmaError() {
 		return sigmaError;
 	}
-	double getPixelValue() {
+	public double getPixelValue() {
 		return pixelValue;
 	}
-	boolean isValid() {
+	public boolean isValid() {
 		return valid;
 	}
 	public String getUID() {

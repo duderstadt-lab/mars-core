@@ -28,56 +28,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.kcp;
+package de.mpg.biochem.mars.molecule.commands;
 
-import de.mpg.biochem.mars.table.MarsTable;
+import java.io.File;
+import java.io.IOException;
 
-public class Segment {
-	public double x1, y1, x2, y2, A, A_sigma, B, B_sigma;
-	public String UID;
-	public Segment(MarsTable table, int index, String UID) {
-		x1 = table.getValue("x1", index);
-		y1 = table.getValue("y1", index);
-		x2 = table.getValue("x2", index);
-		y2 = table.getValue("y2", index);
-		A = table.getValue("A", index);
-		A_sigma = table.getValue("sigma_A", index);
-		B = table.getValue("B", index);
-		B_sigma = table.getValue("sigma_B", index);
-		this.UID = UID;
-	}
-	public Segment(MarsTable table, int index) {
-		x1 = table.getValue("x1", index);
-		y1 = table.getValue("y1", index);
-		x2 = table.getValue("x2", index);
-		y2 = table.getValue("y2", index);
-		A = table.getValue("A", index);
-		A_sigma = table.getValue("sigma_A", index);
-		B = table.getValue("B", index);
-		B_sigma = table.getValue("sigma_B", index);
-	}
-	public Segment(double X1, double Y1, double X2, double Y2, double A, double A_sigma, double B, double B_sigma) {
-		x1 = X1;
-		y1 = Y1;
-		x2 = X2;
-		y2 = Y2;
-		this.A = A;
-		this.A_sigma = A_sigma;
-		this.B = B;
-		this.B_sigma = B_sigma;
-	}
-	public Segment(double X1, double Y1, double X2, double Y2, double A, double A_sigma, double B, double B_sigma, String UID) {
-		x1 = X1;
-		y1 = Y1;
-		x2 = X2;
-		y2 = Y2;
-		this.A = A;
-		this.A_sigma = A_sigma;
-		this.B = B;
-		this.B_sigma = B_sigma;
-		this.UID = UID;
-	}
-	public String getUID() {
-		return UID;
+import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
+import org.scijava.plugin.Menu;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
+
+import org.scijava.menu.MenuConstants;
+
+import net.imagej.ImageJ;
+
+@Plugin(type = Command.class, label = "Import archive", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Molecule", weight = 1,
+			mnemonic = 'm'),
+		@Menu(label = "Import archive", weight = 1, mnemonic = 'o')})
+public class ImportMoleculeArchiveCommand extends DynamicCommand {
+    @Parameter
+    private ImageJ ij;
+    
+    //This should only open a single file or folder, but has to be File[] otherwise folders are not recognized.
+    @Parameter(label="MoleculeArchive (.yama file or .yama.store folder)", style="both")
+    private File[] file;
+    
+	@Override
+	public void run() {				
+		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
+		moleculeArchiveIOPlugin.setContext(ij.getContext());
+		
+		try {
+			moleculeArchiveIOPlugin.open(file[0].getAbsolutePath());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

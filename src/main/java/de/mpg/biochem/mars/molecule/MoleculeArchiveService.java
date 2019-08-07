@@ -31,16 +31,20 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.scif.services.FormatService;
 
 import org.scijava.app.StatusService;
 import org.scijava.display.DisplayService;
+import org.scijava.event.EventHandler;
+import org.scijava.event.EventService;
+import org.scijava.event.SciJavaEvent;
 import org.scijava.log.LogService;
+import org.scijava.object.ObjectService;
 import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -49,9 +53,9 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
-import ij.plugin.frame.RoiManager;
 import net.imagej.ImageJService;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
 public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
 		
@@ -60,6 +64,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     
     @Parameter
     private LogService logService;
+    
+    @Parameter
+    private EventService eventService;
     
     @Parameter
     private PrefService prefService;
@@ -76,57 +83,41 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     @Parameter
     private DisplayService displayService;
     
-	private Map<String, MoleculeArchive> archives;
+    @Parameter
+	private ObjectService objectService;
 	
 	@Override
-	public void initialize() {
-		// This Service method is called when the service is first created.
-		archives = new LinkedHashMap<>();
-		
+	public void initialize() {				
 		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 	
 	public void addArchive(MoleculeArchive archive) {
-		String name = archive.getName();
-		int num = 1;	    
-	    while (archives.containsKey(name)) {
-	    	if (name.endsWith(".yama"))
-	    		name = name.substring(0, name.length() - 5);
-	    	if (num == 1) {
-	    		name = name + num + ".yama";
-	    	} else  {
-	    		name = name.substring(0, name.length() - String.valueOf(num-1).length()) + num + ".yama";
-	    	}
-	    	num++;
-	    }
-	    
-	    archive.setName(name);
-		archives.put(archive.getName(), archive);
+		objectService.addObject(archive);
 	}
 	
 	public void removeArchive(String title) {
-		if (archives.containsKey(title)) {
-			archives.remove(title);		
-			displayService.getDisplay(title).close();
-		}
+		objectService.removeObject(getArchive(title));
 	}
 	
 	public void removeArchive(MoleculeArchive archive) {
-		if (archives.containsKey(archive.getName())) {
-			removeArchive(archive.getName());
-			displayService.getDisplay(archive.getName()).close();
-		}
+		objectService.removeObject(archive);
 	}
 	
 	public boolean rename(String oldName, String newName) {
-		if (archives.containsKey(newName)) {
-			logService.error("A MoleculeArchive is already open with that name. Choose another name.");
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		
+		if (archives.stream().anyMatch(archive -> archive.getName().equals(oldName))) {
+			logService.error("No MoleculeArchive exists with the name " + oldName + ".");
+			return false;
+		}
+		
+		if (archives.stream().anyMatch(archive -> archive.getName().equals(newName))) {
+			logService.error("A MoleculeArchive is already open with the name " + newName + ". Choose another name.");
 			return false;
 		} else {
-			archives.get(oldName).setName(newName);
-			MoleculeArchive arch = archives.remove(oldName);
-			archives.put(newName, arch);
+			MoleculeArchive<?,?,?> archive = archives.stream().filter(a -> a.getName().equals(oldName)).findFirst().get();
+			archive.setName(newName);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
 		}
@@ -134,9 +125,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		for (MoleculeArchive archive: archives.values()) {
-			columnSet.addAll(archive.getProperties().getColumnSet());
-		}
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		
+		archives.forEach(archive -> columnSet.addAll(archive.getProperties().getColumnSet()));
 		
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
@@ -146,26 +137,34 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
 	
-		for (MoleculeArchive archive: archives.values()) {
-			for (ArrayList<String> segTableName : archive.getProperties().getSegmnetTableNames()) {
-				segTableNames.add(segTableName);
-			}
-		}
+		archives.forEach(archive -> segTableNames.addAll(archive.getProperties().getSegmentTableNames()));
 		
 		return segTableNames;
 	}
 	
 	public ArrayList<String> getArchiveNames() {
-		return new ArrayList<String>(archives.keySet());
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		
+		return (ArrayList<String>) archives.stream().map(archive -> archive.getName()).collect(Collectors.toList());
 	}
 	
-	public boolean contains(String key) {
-		return archives.containsKey(key);
+	public boolean contains(String name) {
+		return getArchives().stream().anyMatch(archive -> archive.getName().equals(name));
 	}
 	
-	public MoleculeArchive getArchive(String name) {
-		return archives.get(name);
+	public MoleculeArchive<?,?,?> getArchive(String name) {
+		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		for (MoleculeArchive<?,?,?> archive : archives)
+			if (archive.getName().equals(name))
+				return archive;
+		
+		return null;
+	}
+	
+	public List<MoleculeArchive<?,?,?>> getArchives() { 
+		return (List) objectService.getObjects(MoleculeArchive.class);
 	}
 	
 	public UIService getUIService() {
