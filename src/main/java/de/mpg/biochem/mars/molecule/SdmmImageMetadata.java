@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.swing.JTable;
@@ -89,6 +90,9 @@ import io.scif.services.FormatService;
  * @author Karl Duderstadt
  */
 public class SdmmImageMetadata extends AbstractMarsImageMetadata {
+	
+	//BDV views
+	protected LinkedHashMap<String, String> bdvViews = new LinkedHashMap<String, String>();
     
     public SdmmImageMetadata(String UID) {
     	super(UID);
@@ -130,6 +134,42 @@ public class SdmmImageMetadata extends AbstractMarsImageMetadata {
 	
 	public SdmmImageMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
+	}
+	
+	@Override
+	protected void createIOMaps() {
+		super.createIOMaps();
+
+		outputMap.put("BdvViews", MarsUtil.catchConsumerException(jGenerator -> {
+			if (bdvViews.size() > 0) {
+				jGenerator.writeObjectFieldStart("BdvViews");
+				for (String name:bdvViews.keySet())
+					jGenerator.writeStringField(name, bdvViews.get(name));
+				jGenerator.writeEndObject();
+			}
+	 	}, IOException.class));
+		
+		inputMap.put("BdvViews", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	
+	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+	    		String viewName = jParser.getCurrentName();
+	    		jParser.nextToken();
+	    		bdvViews.put(viewName, jParser.getText());
+	    	}
+		}, IOException.class));
+	}
+	
+	public String getBdvView(String viewName) {
+		return bdvViews.get(viewName);
+	}
+	
+	public void putBdvView(String viewName, String filePath) {
+		bdvViews.put(viewName, filePath);
+	}
+	
+	public Set<String> getBdvViewList() {
+		return bdvViews.keySet();
 	}
 	
 	//Generate a unique ID using a hash of all headerlabel information...
