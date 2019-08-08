@@ -150,6 +150,8 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
 		
+		columns.sort(String::compareToIgnoreCase);
+		
 		return columns;
 	}
 	

@@ -47,6 +47,7 @@ import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
 import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -63,6 +64,7 @@ public class PeakTracker {
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
 	double searchRadius;
 	boolean PeakFitter_writeEverything = false;
+	boolean writeIntegration = false;
 	int minimumDistance;
 	
 	String metaDataUID;
@@ -76,9 +78,10 @@ public class PeakTracker {
 	
 	LogService logService;
 	
-	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean PeakFitter_writeEverything, LogService logService) {
+	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, LogService logService) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+		this.writeIntegration = writeIntegration;
 		this.maxDifference = maxDifference;
 		this.ckMaxDifference = ckMaxDifference;
 		this.minimumDistance = minimumDistance;
@@ -90,7 +93,7 @@ public class PeakTracker {
 			searchRadius = maxDifference[3];
 	}
 	
-	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, AbstractMoleculeArchive archive) {
+	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, SingleMoleculeArchive archive) {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
@@ -308,7 +311,7 @@ public class PeakTracker {
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
 	
-	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, AbstractMoleculeArchive archive) {
+	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, SingleMoleculeArchive archive) {
 		//don't add the molecule if the trajectory length is below minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
 			return;
@@ -341,6 +344,9 @@ public class PeakTracker {
 			columns.add(new DoubleColumn("x"));
 			columns.add(new DoubleColumn("y"));
 		}
+		if (writeIntegration) 
+			columns.add(new DoubleColumn("Intensity"));
+			
 		columns.add(new DoubleColumn("slice"));
 		
 		for(DoubleColumn column : columns)
@@ -362,11 +368,21 @@ public class PeakTracker {
 			table.set(7, row, peak.getYError());
 			table.set(8, row, peak.getSigma());
 			table.set(9, row, peak.getSigmaError());
-			table.set(10, row, (double)slice);
+			if (writeIntegration) {
+				table.set(10, row, peak.getIntensity());
+				table.set(11, row, (double)slice);
+			} else {
+				table.set(10, row, (double)slice);
+			}
 		} else {
 			table.set(0, row, peak.getX());
 			table.set(1, row, peak.getY());
-			table.set(2, row, (double)slice);
+			if (writeIntegration) {
+				table.set(2, row, peak.getIntensity());
+				table.set(3, row, (double)slice);
+			} else {
+				table.set(2, row, (double)slice);
+			}
 		}
 	}
 }

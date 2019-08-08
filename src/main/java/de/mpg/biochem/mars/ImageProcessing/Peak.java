@@ -53,6 +53,8 @@ public class Peak implements RealLocalizable {
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue;
+	
+	double intensity;
 	boolean valid = true;
 	public Peak(double[] values, double[] errors) {
 		baseline = values[0];
@@ -213,6 +215,14 @@ public class Peak implements RealLocalizable {
 	//Gets the reference to the previous peak in the trajectory
 	public Peak getBackwardLink() {
 		return backwardLink;
+	}
+	
+	public void setIntensity(double intensity) {
+		this.intensity = intensity;
+	}
+	
+	public double getIntensity() {
+		return intensity;
 	}
 	
 	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.

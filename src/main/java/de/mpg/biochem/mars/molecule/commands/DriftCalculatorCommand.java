@@ -42,6 +42,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MarsImageMetadata;
@@ -100,6 +101,10 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     @Parameter(label="mode", choices = {"mean", "median"})
 	private String mode;
     
+    @Parameter(label = "Zero:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning", "end" })
+	private String zeroPoint = "end";
+    
 	@Override
 	public void run() {	
 		//Let's keep track of the time it takes
@@ -139,7 +144,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				xValuesColumns.add(new DoubleColumn("X " + slice));
 				yValuesColumns.add(new DoubleColumn("Y " + slice));
 			}
-
 			
 			if (use_incomplete_traces) {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
@@ -191,9 +195,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (!metaDataTable.hasColumn(output_y))
 				metaDataTable.appendColumn(output_y);
 			
-			double xStart = 0;
-			double yStart = 0;
-			
 			for (int slice = 1; slice <= slices ; slice++) {
 				double xSliceFinalValue = Double.NaN;
 				double ySliceFinalValue = Double.NaN;
@@ -212,13 +213,24 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					ySliceFinalValue = yTempTable.median("Y " + slice);
 				}
 				
-				if (slice == 1) {
-					xStart = xSliceFinalValue;
-					yStart = ySliceFinalValue;
-				}
-				
-				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue - xStart);
-				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue - yStart);
+				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue);
+				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue);
+			}
+			
+			double xZeroPoint = 0;
+			double yZeroPoint = 0;
+			
+			if (zeroPoint.equals("beginning")) {
+				xZeroPoint = metaDataTable.getValue(output_x, 0);
+				yZeroPoint = metaDataTable.getValue(output_y, 0);
+			} else if (zeroPoint.equals("end")) {
+				xZeroPoint = metaDataTable.getValue(output_x, metaDataTable.getRowCount() - 1);
+				yZeroPoint = metaDataTable.getValue(output_y, metaDataTable.getRowCount() - 1);
+			}
+			
+			for (int row=0; row < metaDataTable.getRowCount(); row++) {
+				metaDataTable.setValue(output_x, row, metaDataTable.getValue(output_x, row) - xZeroPoint);
+				metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
 			}
 			
 			archive.putImageMetadata(meta);
@@ -241,6 +253,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("Output X", output_x);
 		builder.addParameter("Output Y", output_y);
 		builder.addParameter("Use incomplete traces", String.valueOf(use_incomplete_traces));
+		builder.addParameter("Zero", zeroPoint);
 		builder.addParameter("Background Tag", backgroundTag);
 		builder.addParameter("mode", mode);
 	}

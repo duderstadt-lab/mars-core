@@ -253,6 +253,19 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		@Parameter(label="Min trajectory length")
 		private int PeakTracker_minTrajectoryLength = 100;
 		
+		@Parameter(visibility = ItemVisibility.MESSAGE)
+		private final String integrationTitle =
+			"Peak integration settings:";
+		
+		@Parameter(label="Integrate")
+		private boolean integrate = false;
+		
+		@Parameter(label="Inner radius")
+		private int integrationInnerRadius = 1;
+		
+		@Parameter(label="Outer radius")
+		private int integrationOuterRadius = 3;
+		
 		@Parameter(label="Microscope")
 		private String microscope;
 		
@@ -292,6 +305,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		private double[] maxError;
 		private boolean[] ckMaxDifference;
 		private boolean[] vary;
+		
+		//For peak integration
+		private ArrayList<int[]> innerOffsets;
+		private ArrayList<int[]> outerOffsets;
 		
 		@Override
 		public void initialize() {
@@ -349,6 +366,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			vary[4] = PeakFitter_varySigma;
 			
 			fitter = new PeakFitter(vary);
+			
+			if (integrate)
+				BuildOffsets();
 			
 			maxError = new double[5];
 			maxError[0] = PeakFitter_maxErrorBaseline;
@@ -437,7 +457,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, PeakFitter_writeEverything, logService);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, logService);
 		    
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -484,6 +504,29 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 				log += builder.endBlock(true);
 				archive.addLogMessage(log);
 				archive.addLogMessage("   ");			
+			}
+		}
+
+		private void BuildOffsets() {
+			innerOffsets = new ArrayList<int[]>();
+			outerOffsets = new ArrayList<int[]>();
+			
+			for (int y = -integrationOuterRadius; y <= integrationOuterRadius; y++) {
+				for (int x = -integrationOuterRadius; x <= integrationOuterRadius; x++) {
+					double d = Math.round(Math.sqrt(x * x + y * y));
+		
+					if (d <= integrationInnerRadius) {
+						int[] pos = new int[2];
+						pos[0] = x;
+						pos[1] = y;
+						innerOffsets.add(pos);
+					} else if (d <= integrationOuterRadius) {
+						int[] pos = new int[2];
+						pos[0] = x;
+						pos[1] = y;
+						outerOffsets.add(pos);
+					}
+				}
 			}
 		}
 		
@@ -569,17 +612,95 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 					peak.setNotValid();
 				}
 				
-				//Force all peaks to be valid...
+				//Force all peaks to be valid... If we are not checking error
 				if (!PeakFitter_maxErrorFilter)
 					peak.setValid();
 				
 				if (peak.isValid()) {
 					peak.setValues(p);
 					peak.setErrorValues(e);
+					
+					//Integrate intensity
+					if (integrate) {
+						//I think they need to be shifted for just the integration step. Otherwise, leave them.
+						double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
+						peak.setIntensity(intensity[0]);
+					}
+					
 					newList.add(peak);
 				}
 			}
 			return newList;
+		}
+		
+		private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
+			if (x == Double.NaN || y == Double.NaN) {
+				double[] NULLinten = new double[2];
+				NULLinten[0] = Double.NaN;
+				NULLinten[1] = Double.NaN;
+				return NULLinten;
+			}
+			
+			double Intensity = 0;
+			int innerPixels = 0;
+			
+			ArrayList<Float> outerPixelValues = new ArrayList<Float>();
+			
+			for (int[] circleOffset: innerOffsets) {
+				Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
+				innerPixels++;
+			}
+			
+			for (int[] circleOffset: outerOffsets) {
+				outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
+			}
+			
+			//Find the Median background value...
+			Collections.sort(outerPixelValues);
+			double outerMedian;
+			if (outerPixelValues.size() % 2 == 0)
+			    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
+			else
+			    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
+			
+			Intensity -= outerMedian*innerPixels;
+			
+			double[] inten = new double[2];
+			inten[0] = Intensity;
+			inten[1] = outerMedian;
+
+			return inten;
+		}
+		
+		//Infinite Mirror images to prevent out of bounds issues
+		private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
+			//First for x if needed
+			if (x < subregion.x) {
+				int before = subregion.x - x;
+				if (before > subregion.width)
+					before = subregion.width - before % subregion.width;
+				x = subregion.x + before - 1;
+			} else if (x > subregion.x + subregion.width - 1) {
+				int beyond = x - (subregion.x + subregion.width - 1);
+				if (beyond > subregion.width)
+					beyond = subregion.width - beyond % subregion.width;
+				x = subregion.x + subregion.width - beyond; 
+			}
+				
+			//Then for y
+			if (y < subregion.y) {
+				int before = subregion.y - y;
+				if (before > subregion.height)
+					before = subregion.height - before % subregion.height;
+				y = subregion.y + before - 1;
+			} else if (y > subregion.y + subregion.height - 1) {
+				int beyond = y - (subregion.y + subregion.height - 1);
+				if (beyond > subregion.height)
+					beyond = subregion.height - beyond % subregion.height;
+				y = subregion.y + subregion.height - beyond;  
+			}
+			
+			return proc.getf(x, y);
 		}
 		
 		public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
@@ -678,7 +799,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		}
 		
 		//Getters and Setters
-	    public AbstractMoleculeArchive getArchive() {
+	    public MoleculeArchive<?,?,?> getArchive() {
 	    	return archive;
 	    }
 		

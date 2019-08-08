@@ -132,6 +132,8 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
 		
+		columns.sort(String::compareToIgnoreCase);
+		
 		return columns;
 	}
 	
