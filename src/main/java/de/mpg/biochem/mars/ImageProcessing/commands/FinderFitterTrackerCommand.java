@@ -501,7 +501,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			} else {
 				logService.info(builder.endBlock(true));
 	
-				log += builder.endBlock(true);
+				log += "\n" + builder.endBlock(true);
 				archive.addLogMessage(log);
 				archive.addLogMessage("   ");			
 			}

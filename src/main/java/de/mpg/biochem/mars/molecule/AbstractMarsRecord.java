@@ -97,14 +97,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 				jGenerator.writeEndObject();
 			}
 		}, IOException.class));
-		outputMap.put("Parameters", MarsUtil.catchConsumerException(jGenerator -> {
-			if (Parameters.size() > 0) {
-				jGenerator.writeObjectFieldStart("Parameters");
-				for (String name:Parameters.keySet())
-					jGenerator.writeNumberField(name, Parameters.get(name));
-				jGenerator.writeEndObject();
-			}
-		}, IOException.class));
 		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
 			if (dataTable.getColumnCount() > 0) {
 				jGenerator.writeFieldName("DataTable");
@@ -148,7 +140,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
     			}
 	    	}
 		}, IOException.class));
-		    
 		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
 			dataTable.fromJSON(jParser);
 		}, IOException.class));		

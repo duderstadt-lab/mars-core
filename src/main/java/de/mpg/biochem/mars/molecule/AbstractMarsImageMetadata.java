@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -17,15 +19,18 @@ import de.mpg.biochem.mars.util.MarsUtil;
 
 public class AbstractMarsImageMetadata extends AbstractMarsRecord implements MarsImageMetadata {
 	//Processing log for the record
-	protected String log = "";
+	protected String log;
 	
-	protected String Microscope = "unknown";
+	protected String Microscope;
 	
 	//Directory where the images are stored..
-	protected String SourceDirectory = "unknown";
+	protected String SourceDirectory;
 	
 	//Date and time when the data was collected...
-	protected String CollectionDate = "unknown";
+	protected String CollectionDate;
+	
+	//BDV views
+	protected LinkedHashMap<String, String> bdvViews;
     
     //Used for making JsonParser instances...
     //We make it static because we just need to it make parsers so we don't need multiple copies..
@@ -46,11 +51,22 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	
 	public AbstractMarsImageMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
+		
+		System.out.println("SourceDirectory " + SourceDirectory);
+		System.out.println("Log " + log);
 	}
 	
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
+		
+		bdvViews = new LinkedHashMap<String, String>();
+		
+		//Set defaults in case these don't exist.
+		log = "";
+		Microscope = "unknown";
+		SourceDirectory = "unknown";
+		CollectionDate = "unknown";
 
 		//Add to output map
 		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {
@@ -66,8 +82,18 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	  			jGenerator.writeStringField("CollectionDate", CollectionDate);
 	 	}, IOException.class));
 		outputMap.put("Log", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (!log.equals(""))
+	  		if (!log.equals("")) {
 	  			jGenerator.writeStringField("Log", log);
+	  			System.out.println("Wrting Log " + log);
+	  		}
+	 	}, IOException.class));
+		outputMap.put("BdvViews", MarsUtil.catchConsumerException(jGenerator -> {
+			if (bdvViews.size() > 0) {
+				jGenerator.writeObjectFieldStart("BdvViews");
+				for (String name:bdvViews.keySet())
+					jGenerator.writeStringField(name, bdvViews.get(name));
+				jGenerator.writeEndObject();
+			}
 	 	}, IOException.class));
 		
 		//Add to input map
@@ -78,6 +104,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		inputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
 	    	SourceDirectory = jParser.getText();
+	    	System.out.println("SourceDirectory " + SourceDirectory);
 		}, IOException.class));
 		inputMap.put("CollectionDate", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
@@ -86,7 +113,33 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		inputMap.put("Log", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
 	    	log = jParser.getText();
+	    	System.out.println("Log " + log);
 		}, IOException.class));
+		inputMap.put("BdvViews", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	
+	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+	    		String viewName = jParser.getCurrentName();
+	    		jParser.nextToken();
+	    		bdvViews.put(viewName, jParser.getText());
+	    	}
+		}, IOException.class));
+	}
+	
+	public String getBdvView(String viewName) {
+		return bdvViews.get(viewName);
+	}
+	
+	public void putBdvView(String viewName, String filePath) {
+		bdvViews.put(viewName, filePath);
+	}
+	
+	public void removeBdvView(String viewName) {
+		bdvViews.remove(viewName);
+	}
+	
+	public Set<String> getBdvViewList() {
+		return bdvViews.keySet();
 	}
   	
   	public String toJSONString() {
