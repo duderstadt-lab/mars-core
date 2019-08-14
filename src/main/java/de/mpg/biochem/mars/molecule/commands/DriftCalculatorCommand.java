@@ -31,8 +31,10 @@
 package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.decimal4j.util.DoubleRounder;
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -50,6 +52,7 @@ import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SdmmImageMetadata;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -105,6 +108,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning", "end" })
 	private String zeroPoint = "end";
     
+    @Parameter(label="tableOUT", type = ItemIO.OUTPUT)
+	private MarsTable driftTable;
+    
 	@Override
 	public void run() {	
 		//Let's keep track of the time it takes
@@ -136,13 +142,12 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			
 			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
 			
-			//First calculator global background
-			ArrayList<DoubleColumn> xValuesColumns = new ArrayList<DoubleColumn>();
-			ArrayList<DoubleColumn> yValuesColumns = new ArrayList<DoubleColumn>();
+			HashMap<Integer, DoubleColumn> xValuesColumns = new HashMap<Integer, DoubleColumn>();
+			HashMap<Integer, DoubleColumn> yValuesColumns = new HashMap<Integer, DoubleColumn>();
 			
 			for (int slice=1;slice<=slices;slice++) {
-				xValuesColumns.add(new DoubleColumn("X " + slice));
-				yValuesColumns.add(new DoubleColumn("Y " + slice));
+				xValuesColumns.put(slice, new DoubleColumn("X " + slice));
+				yValuesColumns.put(slice, new DoubleColumn("Y " + slice));
 			}
 			
 			if (use_incomplete_traces) {
@@ -156,8 +161,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						double y_mean = datatable.mean(input_y);
 						
 						for (int row = 0; row < datatable.getRowCount(); row++) {
-							xValuesColumns.get(row).add(datatable.getValue(input_x, row) - x_mean);
-							yValuesColumns.get(row).add(datatable.getValue(input_y, row) - y_mean);
+							int slice = (int)datatable.getValue("slice", row);
+							xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
+							yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
 						}
 				});
 			} else {
@@ -175,8 +181,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 							double y_mean = datatable.mean(input_y);
 							
 							for (int row = 0; row < datatable.getRowCount(); row++) {
-								xValuesColumns.get(row).add(datatable.getValue(input_x, row) - x_mean);
-								yValuesColumns.get(row).add(datatable.getValue(input_y, row) - y_mean);
+								int slice = (int)datatable.getValue("slice", row);
+								xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
+								yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
 							}
 							num_full_traj[0]++;
 						}
@@ -189,21 +196,24 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				}
 			}
 			
-			if (!metaDataTable.hasColumn(output_x))
-				metaDataTable.appendColumn(output_x);
+			driftTable = new MarsTable();
+			driftTable.appendColumn("slice");
+			driftTable.appendColumn("x");
+			driftTable.appendColumn("y");
 			
-			if (!metaDataTable.hasColumn(output_y))
-				metaDataTable.appendColumn(output_y);
-			
+			int gRow = 0;
 			for (int slice = 1; slice <= slices ; slice++) {
+				if (xValuesColumns.get(slice).size() == 0 || yValuesColumns.get(slice).size() == 0)
+					continue;
+				
 				double xSliceFinalValue = Double.NaN;
 				double ySliceFinalValue = Double.NaN;
-
+					
 				MarsTable xTempTable = new MarsTable();
-				xTempTable.add(xValuesColumns.get(slice - 1));
+				xTempTable.add(xValuesColumns.get(slice));
 				
 				MarsTable yTempTable = new MarsTable();
-				yTempTable.add(yValuesColumns.get(slice - 1));
+				yTempTable.add(yValuesColumns.get(slice));
 				
 				if (mode.equals("mean")) {
 					xSliceFinalValue = xTempTable.mean("X " + slice);
@@ -213,8 +223,25 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					ySliceFinalValue = yTempTable.median("Y " + slice);
 				}
 				
-				metaDataTable.setValue(output_x, slice - 1, xSliceFinalValue);
-				metaDataTable.setValue(output_y, slice - 1, ySliceFinalValue);
+				driftTable.appendRow();
+				driftTable.setValue("slice", gRow, slice);
+				driftTable.setValue("x", gRow, xSliceFinalValue);
+				driftTable.setValue("y", gRow, ySliceFinalValue);
+				gRow++;
+			}
+			
+			if (driftTable.getRowCount() != slices)	
+				linearInterpolateGaps(driftTable, slices);
+			
+			if (!metaDataTable.hasColumn(output_x))
+				metaDataTable.appendColumn(output_x);
+			
+			if (!metaDataTable.hasColumn(output_y))
+				metaDataTable.appendColumn(output_y);
+			
+			for (int row = 0; row < metaDataTable.getRowCount() ; row++) {
+				metaDataTable.setValue(output_x, row, driftTable.getValue("x", row));
+				metaDataTable.setValue(output_y, row, driftTable.getValue("y", row));
 			}
 			
 			double xZeroPoint = 0;
@@ -244,6 +271,46 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
 			archive.unlock();
+	}
+	
+	private void linearInterpolateGaps(MarsTable table, int slices) {
+		int rows = table.getRowCount();
+
+		for (int i=1;i<rows;i++) {
+			//Check whether there is a gap in the slice number...
+			int previous_slice = (int)table.getValue("slice", i-1);
+			int current_slice = (int)table.getValue("slice", i);
+			if (previous_slice != current_slice - 1) {
+				for (int w=1; w < current_slice - previous_slice ; w++) {
+					table.appendRow();
+					table.setValue("slice", table.getRowCount() - 1, previous_slice + w);
+					table.setValue("x", table.getRowCount() - 1, table.getValue("x", i-1) + w*(table.getValue("x", i) - table.getValue("x", i-1))/(current_slice - previous_slice));
+					table.setValue("y", table.getRowCount() - 1, table.getValue("y", i-1) + w*(table.getValue("y", i) - table.getValue("y", i-1))/(current_slice - previous_slice));
+				}
+			}
+		}
+		
+		//fill ends if points are missing there...
+		if (table.getValue("slice", 0) > 1) {
+			for (int slice=1;slice < table.getValue("slice", 0); slice++) {
+				table.appendRow();
+				table.setValue("slice", table.getRowCount() - 1, slice);
+				table.setValue("x", table.getRowCount() - 1, table.getValue("x", 0));
+				table.setValue("y", table.getRowCount() - 1, table.getValue("y", 0));
+			}
+		}
+		
+		if (table.getValue("slice", rows - 1) != slices) {
+			for (int slice = (int)table.getValue("slice", rows - 1) + 1;slice <= slices; slice++) {
+				table.appendRow();
+				table.setValue("slice", table.getRowCount() - 1, slice);
+				table.setValue("x", table.getRowCount() - 1, table.getValue("x", rows - 1));
+				table.setValue("y", table.getRowCount() - 1, table.getValue("y", rows - 1));
+			}
+		}
+		
+		//now that we have added all the new rows we need to resort the table by slice.
+		table.sort(true, "slice");
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {
