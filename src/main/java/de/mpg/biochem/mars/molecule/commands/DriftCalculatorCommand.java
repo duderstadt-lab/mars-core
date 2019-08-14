@@ -108,9 +108,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning", "end" })
 	private String zeroPoint = "end";
     
-    @Parameter(label="tableOUT", type = ItemIO.OUTPUT)
-	private MarsTable driftTable;
-    
 	@Override
 	public void run() {	
 		//Let's keep track of the time it takes
@@ -196,7 +193,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				}
 			}
 			
-			driftTable = new MarsTable();
+			MarsTable driftTable = new MarsTable();
 			driftTable.appendColumn("slice");
 			driftTable.appendColumn("x");
 			driftTable.appendColumn("y");
