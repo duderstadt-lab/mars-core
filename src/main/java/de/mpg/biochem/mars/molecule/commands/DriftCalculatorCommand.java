@@ -238,7 +238,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage(LogBuilder.endBlock(true));
+	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
 	    archive.addLogMessage("  ");
 	    
 		//Unlock the window so it can be changed

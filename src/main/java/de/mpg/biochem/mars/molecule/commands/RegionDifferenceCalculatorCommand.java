@@ -149,8 +149,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
 	    archive.addLogMessage("   ");
 	    
 		//Unlock the window so it can be changed

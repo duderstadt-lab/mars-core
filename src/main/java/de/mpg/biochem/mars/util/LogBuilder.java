@@ -52,7 +52,7 @@ public class LogBuilder {
 			artifactId = properties.getProperty("artifactId");
 			gitBuild = properties.getProperty("buildNumber");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 		parameters = new ArrayList<String[]>();

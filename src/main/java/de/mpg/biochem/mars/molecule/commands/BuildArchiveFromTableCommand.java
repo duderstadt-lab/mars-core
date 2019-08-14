@@ -125,14 +125,14 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
-		log += LogBuilder.endBlock(true);
 		
 		//Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", AbstractMoleculeArchive.class).setLabel(archive.getName());
-        
-        archive.addLogMessage(log);
-        
         logService.info(log);
+        logService.info(LogBuilder.endBlock(true));
+        
+        log += "\n" + LogBuilder.endBlock(true);
+        archive.addLogMessage(log);
 	}
     
     public AbstractMoleculeArchive getArchive() {

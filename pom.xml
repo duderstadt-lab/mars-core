@@ -13,7 +13,7 @@
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars-core</artifactId>
-	<version>1.0.0-SNAPSHOT-beta119</version>
+	<version>1.0.0-SNAPSHOT-beta122</version>
 
 	<name>mars-core</name>
 	<url>http://biochem.mpg.de/duderstadt/</url>
@@ -103,7 +103,6 @@
 	    </resource>
 	  </resources>
 	  </build>
-
 
 	<dependencies>
 		<dependency>
