@@ -1,6 +1,6 @@
 package de.mpg.biochem.mars.molecule;
 
-import java.util.Set;
+import java.util.Collection;
 
 public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	void setMicroscopeName(String Microscope);
@@ -17,11 +17,11 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	String getLog();
 	
-	String getBdvView(String viewName);
+	BdvSource getBdvSource(String name);
 	
-	void putBdvView(String viewName, String filePath);
+	void putBdvSource(BdvSource source);
 	
-	Set<String> getBdvViewList();
+	void removeBdvSource(String name);
 	
-	void removeBdvView(String viewName);
+	Collection<BdvSource> getBdvSources();
 }
