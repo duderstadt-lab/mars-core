@@ -135,6 +135,10 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	public Collection<BdvSource> getBdvSources() {
 		return bdvSources.values();
 	}
+	
+	public Set<String> getBdvSourceNames() {
+		return bdvSources.keySet();
+	}
   	
   	public String toJSONString() {
   		ByteArrayOutputStream stream = new ByteArrayOutputStream();

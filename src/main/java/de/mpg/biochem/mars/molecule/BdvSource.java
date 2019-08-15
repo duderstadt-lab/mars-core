@@ -49,9 +49,8 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 			jGenerator.writeStringField("pathToXml", pathToXml);
 	 	}, IOException.class));
 		outputMap.put("AffineTransform3D", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeArrayFieldStart("AffineTransform3D");
+			jGenerator.writeFieldName("AffineTransform3D");
 			jGenerator.writeArray(getTransformAsArray(), 0, 12);
-			jGenerator.writeEndArray();
 	 	}, IOException.class));
 		
 		//Add to input map
@@ -79,6 +78,7 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 	    		trans[index] = jParser.getDoubleValue();
 	    		index++;
 	    	}
+	    	affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5], trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
 		}, IOException.class));
 	}
 	
@@ -90,8 +90,16 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 		this.name = name;
 	}
 	
+	public String getPathToXml() {
+		return pathToXml;
+	}
+	
+	public void setPathToXml(String pathToXml) {
+		this.pathToXml = pathToXml;
+	}
+	
 	public String getXDriftColumn() {
-		return name;
+		return xDriftColumn;
 	}
 	
 	public void setXDriftColumn(String xDriftColumn) {
@@ -99,7 +107,7 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 	}
 	
 	public String getYDriftColumn() {
-		return name;
+		return yDriftColumn;
 	}
 	
 	public void setYDriftColumn(String yDriftColumn) {
@@ -113,7 +121,7 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 	}
 	
 	public AffineTransform3D getAffineTransform3D() {
-		return getAffineTransform3D(0, 0);
+		return affine3D;
 	}
 	
 	public AffineTransform3D getAffineTransform3D(double dX, double dY) {
@@ -128,7 +136,7 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 		double[] trans = new double[12];
 		for (int row = 0; row < 3; row++)
 			for (int column = 0; column < 4; column++)
-				trans[row+column] = affine3D.get(row, column);
+				trans[row*4 + column] = affine3D.get(row, column);
 				
 		return trans;
 	}
