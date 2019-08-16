@@ -3,13 +3,10 @@ package de.mpg.biochem.mars.molecule;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
-import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.AffineTransform3D;
 
 public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
@@ -113,10 +110,10 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 	public void setYDriftColumn(String yDriftColumn) {
 		this.yDriftColumn = yDriftColumn;
 	}
-	
+	//See https://forum.image.sc/t/applying-affine-matrix-result-from-2d-3d-registration-to-images/22298/8 for mapping info
 	public void setAffineTransform2D(double m00, double m01, double m02, double m10, double m11, double m12) {
 		AffineTransform3D affine = new AffineTransform3D();
-		affine.set(m00, m01, m02, m10, m11, m12);
+		affine.set(m00, m01, 0, m02, m10, m11, 0, m12, 0, 0, 1, 0, 0, 0, 0, 1);
 		affine3D = affine;
 	}
 	
@@ -126,13 +123,12 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 	
 	public AffineTransform3D getAffineTransform3D(double dX, double dY) {
 		AffineTransform3D affine = affine3D.copy();
-		affine.set( affine.get( 0, 3 ) + dX, 0, 3 );
-		affine.set( affine.get( 1, 3 ) + dY, 1, 3 );
+		affine.set( affine.get( 0, 3 ) - dX, 0, 3 );
+		affine.set( affine.get( 1, 3 ) - dY, 1, 3 );
 		return affine;
 	}
 	
 	private double[] getTransformAsArray() {
-		//m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23
 		double[] trans = new double[12];
 		for (int row = 0; row < 3; row++)
 			for (int column = 0; column < 4; column++)
