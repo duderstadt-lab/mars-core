@@ -174,6 +174,24 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	    		moleculeDataTableColumnSet.add(jParser.getText());
 		}, IOException.class));
+		inputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
+			jParser.nextToken();
+	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		    	ArrayList<String> segemntTableName = new ArrayList<String>();
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    	//Then move past field Name - yColumnName...
+			    	jParser.nextToken();
+			    	
+			    	segemntTableName.add(jParser.getText());
+			    	
+			    	//Then move past the field and next field Name - xColumnName...
+			    	jParser.nextToken();
+			    	jParser.nextToken();
+			    	segemntTableName.add(jParser.getText());
+		    	}
+		    	moleculeSegmentTableNames.add(segemntTableName);
+	    	}
+		}, IOException.class));
 		inputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
 			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
