@@ -33,6 +33,19 @@ public class MarsUtil {
       	}
   	}
   	
+  	/**
+	 * Used to bypass unknown Json Arrays with JacksonJson streaming interface.
+	 * 
+	 * @param jParser
+	 * @throws IOException
+	 */
+  	public static void passThroughUnknownArrays(JsonParser jParser) throws IOException {
+      	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+      		if (jParser.getCurrentToken() == JsonToken.START_ARRAY)
+      			passThroughUnknownArrays(jParser);
+      	}
+  	}
+  	
 	public static String getArchiveTypeFromYama(File file) throws JsonParseException, IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		

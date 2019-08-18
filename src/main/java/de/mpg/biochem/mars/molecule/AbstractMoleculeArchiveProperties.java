@@ -158,24 +158,20 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		
 		//Input Map
 		inputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	        numberOfMolecules = jParser.getValueAsInt();
 		}, IOException.class));
 		inputMap.put("numImageMetaData", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	        numImageMetadata = jParser.getIntValue();
 		}, IOException.class));
 		inputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	        numImageMetadata = jParser.getIntValue();
 		}, IOException.class));
 		inputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	    		moleculeDataTableColumnSet.add(jParser.getText());
 		}, IOException.class));
+		/*
 		inputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	ArrayList<String> segemntTableName = new ArrayList<String>();
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -192,8 +188,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		    	moleculeSegmentTableNames.add(segemntTableName);
 	    	}
 		}, IOException.class));
+		*/
 		inputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	ArrayList<String> segemntTableName = new ArrayList<String>();
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -211,17 +207,14 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	    	}
 		}, IOException.class));
 		inputMap.put("MoleculeTagSet", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	            tagSet.add(jParser.getText());
 		}, IOException.class));
 		inputMap.put("MoleculeParameterSet", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	            parameterSet.add(jParser.getText());
 		}, IOException.class));
 		inputMap.put("Comments", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	comments = jParser.getText();
 		}, IOException.class));
 	}

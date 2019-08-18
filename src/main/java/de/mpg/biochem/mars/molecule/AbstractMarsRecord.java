@@ -106,23 +106,17 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		
 		//Input Map
 		inputMap.put("UID", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	        UID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("Notes", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	        Notes = jParser.getText();
 		}, IOException.class));
 		inputMap.put("Tags", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
-	    	
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 	            Tags.add(jParser.getText());
 	        }
 		}, IOException.class));
 		inputMap.put("Parameters", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
-	    	
 	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 	    		String subfieldname = jParser.getCurrentName();
 	    		jParser.nextToken();

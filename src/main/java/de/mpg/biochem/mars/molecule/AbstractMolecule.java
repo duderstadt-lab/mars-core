@@ -104,15 +104,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		//Add to input map
 		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	imageMetadataUID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	imageMetadataUID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    		String xColumnName = "";

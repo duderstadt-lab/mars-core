@@ -96,23 +96,18 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		
 		//Add to input map
 		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
-	    	jParser.nextToken();
 	    	Microscope = jParser.getText();
 		}, IOException.class));
 		inputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	SourceDirectory = jParser.getText();
 		}, IOException.class));
 		inputMap.put("CollectionDate", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	CollectionDate = jParser.getText();
 		}, IOException.class));
 		inputMap.put("Log", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	log = jParser.getText();
 		}, IOException.class));
 		inputMap.put("BdvSources", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				BdvSource source = new BdvSource(jParser);
 				bdvSources.put(source.getName(), source);

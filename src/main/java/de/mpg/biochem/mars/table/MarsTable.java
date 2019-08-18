@@ -424,9 +424,6 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @throws IOException 
 	 */
 	public boolean fromJSON(JsonParser jParser) throws IOException {			
-		//First we move past object start
-    	jParser.nextToken();
-    	
     	//Then we move through fields
     	while (jParser.nextToken() != JsonToken.END_OBJECT) {
     		String fieldname_L1 = jParser.getCurrentName();

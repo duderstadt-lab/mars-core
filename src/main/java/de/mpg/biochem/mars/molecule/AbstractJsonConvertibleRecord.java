@@ -43,11 +43,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {
 		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
+		String fieldBlockName = "";
 		while (nextToken != JsonToken.END_OBJECT) {
 			nextToken = jParser.nextToken(); 
 			if (nextToken == null) {
 				System.out.println("JsonParser encountered an incomplete record.");
-				//this.addNote("JsonParser encountered a problem. This record is incomplete.");
 				break;
 			}
 			
@@ -55,8 +55,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 
 		    if (fieldname == null)
 		    	continue;
-		    
+		    else 
+		    	fieldBlockName = fieldname;
+		    	
 		    if (inputMap.containsKey(fieldname)) {
+		    	jParser.nextToken();
 			    if (!inputMap.get(fieldname).test(jParser))
 			    	throw new IOException("IOExcpetion: JsonParser encountered a problem reading from the input stream");
 			    continue;
@@ -64,15 +67,15 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		    
 		    //SHOULD BE UNREACHABLE
 		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it
-		    //This ensures if extra fields are added in the future
-		    //old versions will be able to open the new files
-		    //However, the missing fields will not be saved properly
-		    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+		    //In that case we simply pass through it and all substructures that contain arrays or objects
 		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	
-		    	System.out.println("unknown object " + fieldname + " encountered in the record ... skipping");
+		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
 		    	MarsUtil.passThroughUnknownObjects(jParser);
+		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
+		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
+		    	MarsUtil.passThroughUnknownArrays(jParser);
+		    } else {
+		    	//Must just be a normal field... so it won't escape the loop prematurely.
 		    }
 		}
 	}
