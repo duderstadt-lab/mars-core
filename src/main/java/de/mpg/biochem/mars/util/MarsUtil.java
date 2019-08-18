@@ -45,7 +45,7 @@ public class MarsUtil {
       			passThroughUnknownArrays(jParser);
       	}
   	}
-  	
+	
 	public static String getArchiveTypeFromYama(File file) throws JsonParseException, IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		

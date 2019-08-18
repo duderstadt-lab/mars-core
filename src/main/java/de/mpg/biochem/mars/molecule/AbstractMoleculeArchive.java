@@ -371,11 +371,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    JsonParser indexJParser = jfactory.createParser(indexInputStream);
 			
 		    indexJParser.nextToken();
+		    String fieldBlockName = "";
 		    while (indexJParser.nextToken() != JsonToken.END_OBJECT) {
 		    	String fieldname = indexJParser.getCurrentName();
 			    
-			    if (fieldname == null)
+		    	if (fieldname == null)
 			    	continue;
+			    else 
+			    	fieldBlockName = fieldname;
 		    	
 			    if ("imageMetaDataIndex".equals(fieldname) || "ImageMetadataIndex".equals(fieldname)) {
 			    	indexJParser.nextToken();
@@ -436,14 +439,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    
 			    //SHOULD BE UNREACHABLE
 			    //This is only reached if there is an unexpected field added to the json record
-			    //In that case we simply pass through it
-			    //This ensure if extra fields are added in the future
-			    //old versions will be able to open the new files
-			    //However, the missing fields will not be saved properly
-			    //In the case of a virtual archive new fields will be systematically removed as records are opened and saved...
+			    //In that case we simply pass through it and all substructures that contain arrays or objects
 			    if (indexJParser.getCurrentToken() == JsonToken.START_OBJECT) {
-			    	System.out.println("unknown object encountered in indexes ... skipping");
+			    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
 			    	MarsUtil.passThroughUnknownObjects(indexJParser);
+			    } else if (indexJParser.getCurrentToken() == JsonToken.START_ARRAY) {
+			    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
+			    	MarsUtil.passThroughUnknownArrays(indexJParser);
+			    } else {
+			    	//Must just be a normal field... so it won't escape the loop prematurely.
 			    }
 		    }
 		    
@@ -500,8 +504,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		int numMolecules = archiveProperties.getNumberOfMolecules();
 		
+		String fieldBlockName = "";
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			String fieldName = jParser.getCurrentName();
+			
+			if (fieldName == null)
+		    	continue;
+		    else 
+		    	fieldBlockName = fieldName;
+			
 			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					putImageMetadata(createImageMetadata(jParser));
@@ -517,6 +528,19 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 				}
 			}
+			
+			//SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it and all substructures that contain arrays or objects
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
+		    	MarsUtil.passThroughUnknownObjects(jParser);
+		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
+		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
+		    	MarsUtil.passThroughUnknownArrays(jParser);
+		    } else {
+		    	//Must just be a normal field... so it won't escape the loop prematurely.
+		    }
 		}
 		
 		jParser.close();

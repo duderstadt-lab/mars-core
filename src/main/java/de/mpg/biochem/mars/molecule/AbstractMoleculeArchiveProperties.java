@@ -170,7 +170,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 	    		moleculeDataTableColumnSet.add(jParser.getText());
 		}, IOException.class));
-		/*
+		
+		//Added for backward compatibility...
 		inputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	ArrayList<String> segemntTableName = new ArrayList<String>();
@@ -188,7 +189,6 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		    	moleculeSegmentTableNames.add(segemntTableName);
 	    	}
 		}, IOException.class));
-		*/
 		inputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    	ArrayList<String> segemntTableName = new ArrayList<String>();
