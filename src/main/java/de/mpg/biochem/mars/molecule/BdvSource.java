@@ -52,23 +52,18 @@ public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConv
 		
 		//Add to input map
 		inputMap.put("Name", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	name = jParser.getText();
 		}, IOException.class));
 		inputMap.put("xDriftColumn", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	xDriftColumn = jParser.getText();
 		}, IOException.class));
 		inputMap.put("yDriftColumn", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	yDriftColumn = jParser.getText();
 		}, IOException.class));
 		inputMap.put("pathToXml", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 	    	pathToXml = jParser.getText();
 		}, IOException.class));
 		inputMap.put("AffineTransform3D", MarsUtil.catchConsumerException(jParser -> {
-			jParser.nextToken();
 			double[] trans = new double[12];
 			int index = 0;
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
