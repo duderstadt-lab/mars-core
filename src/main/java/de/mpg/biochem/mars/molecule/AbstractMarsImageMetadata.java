@@ -31,7 +31,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	protected String CollectionDate;
 	
 	//BDV views
-	protected LinkedHashMap<String, BdvSource> bdvSources;
+	protected LinkedHashMap<String, MarsBdvSource> bdvSources;
     
     //Used for making JsonParser instances...
     //We make it static because we just need to it make parsers so we don't need multiple copies..
@@ -58,7 +58,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		bdvSources = new LinkedHashMap<String, BdvSource>();
+		bdvSources = new LinkedHashMap<String, MarsBdvSource>();
 		
 		//Set defaults in case these don't exist.
 		log = "";
@@ -87,7 +87,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		outputMap.put("BdvSources", MarsUtil.catchConsumerException(jGenerator -> {
 			if (bdvSources.size() > 0) {
 				jGenerator.writeArrayFieldStart("BdvSources");
-				for (BdvSource source : bdvSources.values()) {
+				for (MarsBdvSource source : bdvSources.values()) {
 					source.toJSON(jGenerator);
 				}
 				jGenerator.writeEndArray();
@@ -109,17 +109,17 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		}, IOException.class));
 		inputMap.put("BdvSources", MarsUtil.catchConsumerException(jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				BdvSource source = new BdvSource(jParser);
+				MarsBdvSource source = new MarsBdvSource(jParser);
 				bdvSources.put(source.getName(), source);
 			}
 		}, IOException.class));
 	}
 	
-	public void putBdvSource(BdvSource source) {
+	public void putBdvSource(MarsBdvSource source) {
 		bdvSources.put(source.getName(), source);
 	}
 	
-	public BdvSource getBdvSource(String name) {
+	public MarsBdvSource getBdvSource(String name) {
 		return bdvSources.get(name);
 	}
 	
@@ -127,7 +127,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		bdvSources.remove(name);
 	}
 	
-	public Collection<BdvSource> getBdvSources() {
+	public Collection<MarsBdvSource> getBdvSources() {
 		return bdvSources.values();
 	}
 	

@@ -180,8 +180,6 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 
 	        progressThread.start();
 	        
-	        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-	        //peaks with the slice number as a key in the map for each list...
 	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMe.getStackSize()).parallel().forEach(slice -> { 
 	        	ImagePlus sliceImage = new ImagePlus("slice "+slice, oldStack.getProcessor(slice));
 	        	

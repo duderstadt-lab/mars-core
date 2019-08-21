@@ -222,9 +222,10 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 	        		Molecule molecule = archive.get(i);
 	        		
-	        		findChangePoints(molecule);
-	        		
-	        		archive.put(molecule);
+	        		if (molecule.getDataTable().hasColumn(Xcolumn) && molecule.getDataTable().hasColumn(Ycolumn)) {
+	        			findChangePoints(molecule);
+	        			archive.put(molecule);
+	        		}
 	        })).get();
 	        
 	        progressUpdating.set(false);

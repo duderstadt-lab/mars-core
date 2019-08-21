@@ -18,13 +18,13 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	String getLog();
 	
-	BdvSource getBdvSource(String name);
+	MarsBdvSource getBdvSource(String name);
 	
-	void putBdvSource(BdvSource source);
+	void putBdvSource(MarsBdvSource source);
 	
 	void removeBdvSource(String name);
 	
-	Collection<BdvSource> getBdvSources();
+	Collection<MarsBdvSource> getBdvSources();
 	
 	Set<String> getBdvSourceNames();
 }

@@ -9,16 +9,16 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.util.MarsUtil;
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class BdvSource extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
+public class MarsBdvSource extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	private String name, xDriftColumn, yDriftColumn, pathToXml;
 	private AffineTransform3D affine3D;
 	
-	public BdvSource(String name) {
+	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
 	}
 	
-	public BdvSource(JsonParser jParser) throws IOException {
+	public MarsBdvSource(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
 	}
