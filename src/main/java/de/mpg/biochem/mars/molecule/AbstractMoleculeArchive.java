@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -11,10 +11,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -491,57 +487,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	    	jfactory = smileF;
 	    }
 		
-		jParser.nextToken();
-		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			jParser.nextToken();
-			archiveProperties.fromJSON(jParser);
-		} else {
-			if (moleculeArchiveService != null)
-				moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
-			return;
-		}
-
-		int numMolecules = archiveProperties.getNumberOfMolecules();
-		
-		String fieldBlockName = "";
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldName = jParser.getCurrentName();
-			
-			if (fieldName == null)
-		    	continue;
-		    else 
-		    	fieldBlockName = fieldName;
-			
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					putImageMetadata(createImageMetadata(jParser));
-				}
-			}
-			
-			if ("Molecules".equals(fieldName)) {
-				int molNum = 0;
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					put(createMolecule(jParser));
-					molNum++;
-					if (moleculeArchiveService != null)
-						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
-				}
-			}
-			
-			//SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it and all substructures that contain arrays or objects
-		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownObjects(jParser);
-		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
-		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownArrays(jParser);
-		    } else {
-		    	//Must just be a normal field... so it won't escape the loop prematurely.
-		    }
-		}
+	    fromJSON(jParser);
 		
 		jParser.close();
 		inputStream.close();
@@ -858,15 +804,67 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	/**
 	 * Read a MoleculeArchive from JSON. Load a MoleculeArchive record
-	 * using the JsonParser stream provided.
+	 * using the JsonParser stream provided. Only for non-virtual archives.
+	 * If the archive is virtual, different archive objects are stored in 
+	 * individual files whereas this excepts a JsonParser streaming from 
+	 * a single complete MoleculeArchive yama file.
 	 * 
-	 * @param jParser A JsonParser for loading the MoleculeArchive
-	 * record.
+	 * @param jParser A JsonParser for loading MoleculeArchives.
 	 * 
      * @throws IOException if there is a problem reading from the stream.
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {
+		jParser.nextToken();
+		jParser.nextToken();
+		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+			jParser.nextToken();
+			archiveProperties.fromJSON(jParser);
+		} else {
+			if (moleculeArchiveService != null)
+				moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
+			return;
+		}
+
+		int numMolecules = archiveProperties.getNumberOfMolecules();
 		
+		String fieldBlockName = "";
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			String fieldName = jParser.getCurrentName();
+			
+			if (fieldName == null)
+		    	continue;
+		    else 
+		    	fieldBlockName = fieldName;
+			
+			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					putImageMetadata(createImageMetadata(jParser));
+				}
+			}
+			
+			if ("Molecules".equals(fieldName)) {
+				int molNum = 0;
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					put(createMolecule(jParser));
+					molNum++;
+					if (moleculeArchiveService != null)
+						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
+				}
+			}
+			
+			//SHOULD BE UNREACHABLE
+		    //This is only reached if there is an unexpected field added to the json record
+		    //In that case we simply pass through it and all substructures that contain arrays or objects
+		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
+		    	MarsUtil.passThroughUnknownObjects(jParser);
+		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
+		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
+		    	MarsUtil.passThroughUnknownArrays(jParser);
+		    } else {
+		    	//Must just be a normal field... so it won't escape the loop prematurely.
+		    }
+		}
 	}
 	
 	/**

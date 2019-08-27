@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, Karl Duderstadt
+ * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -11,10 +11,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -55,6 +51,14 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
 
+/**
+ * Image filter that enhances peak intensity over background. The innerRadius will determine the 
+ * size of the peaks that are enhanced. Large regions of high intensity are dramatically reduced by this filter.
+ * This can be applied before peak detection to reduce false positives. 
+ * 
+ * @author Karl Duderstadt
+ * 
+ */
 @Plugin(type = Op.class, name = "DiscoidalAveragingFilter")
 public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractOp {
 	
@@ -69,8 +73,6 @@ public class DiscoidalAveragingFilter<T extends RealType< T >> extends AbstractO
 
 	@Parameter(label = "Filtered Image", type = ItemIO.OUTPUT)
 	private ImagePlus output;
-	
-	private static TextWindow log_window;
 
 	@Override
 	public void run() {
