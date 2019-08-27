@@ -24,7 +24,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>BSD-3</name>
+			<name>BSD-2</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -81,7 +81,7 @@
 
 	<properties>
 		<package-name>de.mpg.biochem.mars</package-name>
-		<license.licenseName>BSD-3</license.licenseName>
+		<license.licenseName>BSD-2</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 	</properties>
 	
