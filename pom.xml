@@ -66,8 +66,8 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://github.com/duderstadt-lab/mars-core.git</connection>
-		<developerConnection>scm:git:git@github.com:duderstadt-lab/mars-core.git</developerConnection>
+		<connection>scm:git:git://github.com/duderstadt-lab/mars-core</connection>
+		<developerConnection>scm:git:git@github.com:duderstadt-lab/mars-core</developerConnection>
 		<tag>HEAD</tag>
 		<url>https://github.com/duderstadt-lab/mars-core</url>
 	</scm>
@@ -76,13 +76,17 @@
 		<url>https://github.com/duderstadt-lab/mars-core/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+		<system>Travis CI</system>
+		<url>https://travis-ci.com/duderstadt-lab/mars-core</url>
 	</ciManagement>
 
 	<properties>
 		<package-name>de.mpg.biochem.mars</package-name>
 		<license.licenseName>BSD-2</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
+
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
 	
 	<repositories>
