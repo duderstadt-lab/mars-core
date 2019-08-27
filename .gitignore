@@ -1,6 +1,6 @@
 /.classpath
 /.project
-/.settings/
+.settings
 /target/
 /doc/
-/.DS_Store
+.DS_Store
