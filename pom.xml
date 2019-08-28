@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>26.0.0</version>
+		<version>27.0.1</version>
 		<relativePath />
 	</parent>
 
@@ -94,6 +94,7 @@
 		<decimal4j.version>1.0.3</decimal4j.version>
 		<junit-jupiter.version>5.2.0</junit-jupiter.version>
 		<junit-jupiter-api.version>${junit-jupiter.version}</junit-jupiter-api.version>
+		<junit-jupiter-engine.version>${junit-jupiter.version}</junit-jupiter-engine.version>
 	</properties>
 
 	<dependencies>
@@ -178,6 +179,12 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
 			<version>${junit-jupiter-api.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>${junit-jupiter-engine.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
