@@ -55,6 +55,11 @@
 		<contributor>
 			<name>Matthias Scherr</name>
 		</contributor>
+		<contributor>
+			<name>Curtis Rueden</name>
+			<url>https://imagej.net/User:Rueden</url>
+			<properties><id>ctrueden</id></properties>
+		</contributor>
 	</contributors>
 
 	<mailingLists>
