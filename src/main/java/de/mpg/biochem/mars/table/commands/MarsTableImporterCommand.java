@@ -35,10 +35,11 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.mars.table.MarsTableIOPlugin;
-import net.imagej.ImageJ;
 
+import org.scijava.Context;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
+
 @Plugin(type = Command.class, label = "Import table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
@@ -50,7 +51,7 @@ import org.scijava.menu.MenuConstants;
 public class MarsTableImporterCommand extends DynamicCommand {
 	
     @Parameter
-    private ImageJ ij;
+    private Context context;
     
     @Parameter(label="MarsTable (csv, tab or json) ")
     private File file;
@@ -58,7 +59,7 @@ public class MarsTableImporterCommand extends DynamicCommand {
 	@Override
 	public void run() {				
 		final MarsTableIOPlugin marsTableIOPlugin = new MarsTableIOPlugin();
-		marsTableIOPlugin.setContext(ij.getContext());
+		marsTableIOPlugin.setContext(context);
 		
 		try {
 			marsTableIOPlugin.open(file.getAbsolutePath());

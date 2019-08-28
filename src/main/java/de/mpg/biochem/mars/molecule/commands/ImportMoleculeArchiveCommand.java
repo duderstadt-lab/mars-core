@@ -29,17 +29,15 @@ package de.mpg.biochem.mars.molecule.commands;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
-
-import org.scijava.menu.MenuConstants;
-
-import net.imagej.ImageJ;
 
 @Plugin(type = Command.class, label = "Import archive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -51,7 +49,7 @@ import net.imagej.ImageJ;
 		@Menu(label = "Import archive", weight = 1, mnemonic = 'o')})
 public class ImportMoleculeArchiveCommand extends DynamicCommand {
     @Parameter
-    private ImageJ ij;
+    private Context context;
     
     //This should only open a single file or folder, but has to be File[] otherwise folders are not recognized.
     @Parameter(label="MoleculeArchive (.yama file or .yama.store folder)", style="both")
@@ -60,7 +58,7 @@ public class ImportMoleculeArchiveCommand extends DynamicCommand {
 	@Override
 	public void run() {				
 		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
-		moleculeArchiveIOPlugin.setContext(ij.getContext());
+		moleculeArchiveIOPlugin.setContext(context);
 		
 		try {
 			moleculeArchiveIOPlugin.open(file[0].getAbsolutePath());
