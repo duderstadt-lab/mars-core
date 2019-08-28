@@ -1,21 +1,20 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>26.0.0</version>
+		<version>27.0.1</version>
 		<relativePath />
 	</parent>
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars-core</artifactId>
-	<version>1.0.0-SNAPSHOT-beta149</version>
+	<version>1.0.0-beta-1-SNAPSHOT</version>
 
 	<name>mars-core</name>
+	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
 	<url>http://biochem.mpg.de/duderstadt/</url>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
@@ -56,9 +55,14 @@
 		<contributor>
 			<name>Matthias Scherr</name>
 		</contributor>
+		<contributor>
+			<name>Curtis Rueden</name>
+			<url>https://imagej.net/User:Rueden</url>
+			<properties><id>ctrueden</id></properties>
+		</contributor>
 	</contributors>
 
-    <mailingLists>
+	<mailingLists>
 		<mailingList>
 			<name>Duderstadt Lab</name>
 			<archive>https://wiki-laue.biochem.mpg.de</archive>
@@ -87,93 +91,121 @@
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
-	</properties>
-	
-	<repositories>
-		<repository>
-			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
-		</repository>
-	</repositories>
 
-	<build>
-	    <resources>
-	    <resource>
-	      <directory>src/main/resources</directory>
-	      <includes>
-	        <include>project.properties</include>
-	      </includes>
-	      <filtering>true</filtering>
-	    </resource>
-	  </resources>
-	  </build>
+		<jackson.version>2.9.9</jackson.version>
+		<jackson-core.version>${jackson.version}</jackson-core.version>
+		<jackson-dataformat-smile.version>${jackson.version}</jackson-dataformat-smile.version>
+		<base58-codec.version>1.2.0</base58-codec.version>
+		<decimal4j.version>1.0.3</decimal4j.version>
+		<junit-jupiter.version>5.2.0</junit-jupiter.version>
+		<junit-jupiter-api.version>${junit-jupiter.version}</junit-jupiter-api.version>
+		<junit-jupiter-engine.version>${junit-jupiter.version}</junit-jupiter-engine.version>
+	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>io.scif</groupId>
+			<artifactId>scifio</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-realtransform</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>net.imagej</groupId>
-			<artifactId>imagej</artifactId>
+			<artifactId>ij</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>sc.fiji</groupId>
-			<artifactId>fiji-lib</artifactId>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-common</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.9.9.2</version>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-ops</artifactId>
 		</dependency>
 		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-    		<artifactId>jackson-annotations</artifactId>
-   			<version>2.9.9</version>
-  		</dependency>
-  		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-    		<artifactId>jackson-core</artifactId>
-   			 <version>2.9.9</version>
-  		</dependency>
-  		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-smile</artifactId>
-			<version>2.9.9</version>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-common</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.directory.studio</groupId>
-			<artifactId>org.apache.commons.codec</artifactId>
-			<version>1.8</version>
-		</dependency>
-		<dependency>
-			<groupId>com.chrylis</groupId>
-			<artifactId>base58-codec</artifactId>
-			<version>1.2.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.decimal4j</groupId>
-			<artifactId>decimal4j</artifactId>
-			<version>1.0.3</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-table</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-ui-swing</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson-core.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-smile</artifactId>
+			<version>${jackson-dataformat-smile.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.chrylis</groupId>
+			<artifactId>base58-codec</artifactId>
+			<version>${base58-codec.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.decimal4j</groupId>
+			<artifactId>decimal4j</artifactId>
+			<version>${decimal4j.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.2.0</version>
+			<version>${junit-jupiter-api.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.2.0</version>
+			<version>${junit-jupiter-engine.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
+
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>project.properties</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	</build>
 </project>
