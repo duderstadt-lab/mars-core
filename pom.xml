@@ -86,6 +86,14 @@
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
+
+		<jackson.version>2.9.9</jackson.version>
+		<jackson-core.version>${jackson.version}</jackson-core.version>
+		<jackson-dataformat-smile.version>${jackson.version}</jackson-dataformat-smile.version>
+		<base58-codec.version>1.2.0</base58-codec.version>
+		<decimal4j.version>1.0.3</decimal4j.version>
+		<junit-jupiter.version>5.2.0</junit-jupiter.version>
+		<junit-jupiter-api.version>${junit-jupiter.version}</junit-jupiter-api.version>
 	</properties>
 
 	<dependencies>
@@ -100,22 +108,22 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.9.9</version>
+			<version>${jackson-core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-smile</artifactId>
-			<version>2.9.9</version>
+			<version>${jackson-dataformat-smile.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.chrylis</groupId>
 			<artifactId>base58-codec</artifactId>
-			<version>1.2.0</version>
+			<version>${base58-codec.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.decimal4j</groupId>
 			<artifactId>decimal4j</artifactId>
-			<version>1.0.3</version>
+			<version>${decimal4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -128,7 +136,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.2.0</version>
+			<version>${junit-jupiter-api.version}</version>
 		</dependency>
 	</dependencies>
 
