@@ -1,7 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -16,6 +14,7 @@
 	<version>1.0.0-beta-1-SNAPSHOT</version>
 
 	<name>mars-core</name>
+	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
 	<url>http://biochem.mpg.de/duderstadt/</url>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
@@ -58,7 +57,7 @@
 		</contributor>
 	</contributors>
 
-    <mailingLists>
+	<mailingLists>
 		<mailingList>
 			<name>Duderstadt Lab</name>
 			<archive>https://wiki-laue.biochem.mpg.de</archive>
@@ -88,25 +87,6 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
-	
-	<repositories>
-		<repository>
-			<id>scijava.public</id>
-			<url>https://maven.scijava.org/content/groups/public</url>
-		</repository>
-	</repositories>
-
-	<build>
-	    <resources>
-	    <resource>
-	      <directory>src/main/resources</directory>
-	      <includes>
-	        <include>project.properties</include>
-	      </includes>
-	      <filtering>true</filtering>
-	    </resource>
-	  </resources>
-	  </build>
 
 	<dependencies>
 		<dependency>
@@ -127,16 +107,16 @@
 			<version>2.9.9.2</version>
 		</dependency>
 		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-    		<artifactId>jackson-annotations</artifactId>
-   			<version>2.9.9</version>
-  		</dependency>
-  		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-    		<artifactId>jackson-core</artifactId>
-   			 <version>2.9.9</version>
-  		</dependency>
-  		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.9.9</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.9.9</version>
+		</dependency>
+		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-smile</artifactId>
 			<version>2.9.9</version>
@@ -175,5 +155,23 @@
 			<version>5.2.0</version>
 		</dependency>
 	</dependencies>
-	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
+
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>project.properties</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	</build>
 </project>
