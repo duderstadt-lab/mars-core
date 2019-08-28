@@ -111,7 +111,7 @@ public class SingleMolecule extends AbstractMolecule {
 	 * as the DataTable. 
 	 * 
 	 * @param UID The unique identifier for this Molecule record.
-	 * @param datatable The {@link MarsTable} to use for 
+	 * @param dataTable The {@link MarsTable} to use for 
 	 * initialization.
 	 */
 	public SingleMolecule(String UID, MarsTable dataTable) {

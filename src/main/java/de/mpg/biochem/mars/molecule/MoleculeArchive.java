@@ -87,7 +87,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	 * 
 	 * All indexes are updated with the properties of the ImageMetadata record added.
 	 * 
-	 * @param Metadata an ImageMetadata record to add or update.
+	 * @param metadata an ImageMetadata record to add or update.
 	 */
 	void putImageMetadata(I metadata);
 	

@@ -86,8 +86,8 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * </p>
  * <p>
  * More complex row filtering operations can be accomplished using the rowStream method and java 8 stream framework. The
- * optimal implementation would return an ArrayList<Integer> with a set of rows to remove or keep. This list can then be used
- * with the deleteRows or keepRows methods.
+ * optimal implementation would return an {@code ArrayList<Integer>} with a set of rows to remove or keep. This list can then
+ * be used with the deleteRows or keepRows methods.
  * </p>
  * <p>
  * All sorting and filtering operations are performed in place. This allows for processing of larger tables
@@ -1091,7 +1091,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * Calculates the median absolute deviation of the values for the madColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
 	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
-	 * @param  medianColumn  Name of the column used to calculate the median absolute deviation.
+	 * @param  madColumn  Name of the column used to calculate the median absolute deviation.
 	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
 	 * @param  lowerBound  smallest value included in the row selection range.
 	 * @param  upperBound  largest value included in the row selection range.
