@@ -47,10 +47,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
 		@Menu(label = "Import archive", weight = 1, mnemonic = 'o')})
-public class ImportMoleculeArchiveCommand extends DynamicCommand {
-    @Parameter
-    private Context context;
-    
+public class ImportMoleculeArchiveCommand extends DynamicCommand {    
     //This should only open a single file or folder, but has to be File[] otherwise folders are not recognized.
     @Parameter(label="MoleculeArchive (.yama file or .yama.store folder)", style="both")
     private File[] file;
@@ -58,7 +55,7 @@ public class ImportMoleculeArchiveCommand extends DynamicCommand {
 	@Override
 	public void run() {				
 		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
-		moleculeArchiveIOPlugin.setContext(context);
+		moleculeArchiveIOPlugin.setContext(getContext());
 		
 		try {
 			moleculeArchiveIOPlugin.open(file[0].getAbsolutePath());

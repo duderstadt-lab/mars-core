@@ -50,16 +50,13 @@ import org.scijava.menu.MenuConstants;
 		@Menu(label = "Import table", weight = 1, mnemonic = 'o')})
 public class MarsTableImporterCommand extends DynamicCommand {
 	
-    @Parameter
-    private Context context;
-    
     @Parameter(label="MarsTable (csv, tab or json) ")
     private File file;
     
 	@Override
 	public void run() {				
 		final MarsTableIOPlugin marsTableIOPlugin = new MarsTableIOPlugin();
-		marsTableIOPlugin.setContext(context);
+		marsTableIOPlugin.setContext(getContext());
 		
 		try {
 			marsTableIOPlugin.open(file.getAbsolutePath());

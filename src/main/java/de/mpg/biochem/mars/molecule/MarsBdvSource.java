@@ -72,8 +72,16 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 			jGenerator.writeStringField("pathToXml", pathToXml);
 	 	}, IOException.class));
 		outputMap.put("AffineTransform3D", MarsUtil.catchConsumerException(jGenerator -> {
+			//Jackson 2.9.9 compatible stuff
+			//jGenerator.writeFieldName("AffineTransform3D");
+			//jGenerator.writeArray(getTransformAsArray(), 0, 12);
+			
+			//Jackson 2.6.5 version of above
 			jGenerator.writeFieldName("AffineTransform3D");
-			jGenerator.writeArray(getTransformAsArray(), 0, 12);
+			jGenerator.writeStartArray();
+			for (double num : getTransformAsArray())
+				jGenerator.writeNumber(num);
+			jGenerator.writeEndArray();
 	 	}, IOException.class));
 		
 		//Add to input map
