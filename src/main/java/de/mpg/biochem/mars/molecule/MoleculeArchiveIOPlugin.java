@@ -108,9 +108,9 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		else 
 			archiveType = MarsUtil.getArchiveTypeFromYama(file);
 		
-		MoleculeArchive archive = MarsUtil.createMoleculeArchive(archiveType, file);
-		
 		String name = file.getName();
+		
+		MoleculeArchive archive = MarsUtil.createMoleculeArchive(archiveType, file, moleculeArchiveService);
 		
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);

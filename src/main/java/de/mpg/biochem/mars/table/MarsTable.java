@@ -349,6 +349,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 */
     public void saveAsCSV(String path) throws IOException {
         if (getRowCount() == 0) return;
+        
+        if (!path.endsWith(".csv")) {
+			path += ".csv";
+		}
+        
         PrintWriter pw = null;
         FileOutputStream fos = new FileOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -501,6 +506,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param path String path for writing.
 	 */
 	public void saveAsJSON(String path) throws IOException {
+		if (getRowCount() == 0) return;
+		
 		if (!path.endsWith(".json")) {
 			path += ".json";
 		}
@@ -526,6 +533,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param path String path for writing.
 	 */
 	public void saveAsYAMT(String path) throws IOException {
+		if (getRowCount() == 0) return;
+		
 		if (!path.endsWith(".yamt")) {
 			path += ".yamt";
 		}

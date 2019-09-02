@@ -43,6 +43,7 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 
 public class MarsUtil {
   	
@@ -158,6 +159,21 @@ public class MarsUtil {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(File.class);
 			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType, File file, MoleculeArchiveService moleculeArchiveService) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(String.class, File.class, MoleculeArchiveService.class);
+			return (MoleculeArchive<?,?,?>)constructor.newInstance(file.getName(), file, moleculeArchiveService);
 		} catch (ClassNotFoundException e) {
 			System.err.println(archiveType + " type not found. Is the class in the classpath?");
 			e.printStackTrace();
