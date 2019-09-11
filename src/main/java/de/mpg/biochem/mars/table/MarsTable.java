@@ -66,6 +66,7 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;
 
 import org.apache.commons.lang3.StringUtils;
@@ -96,7 +97,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * </p>
  * @author Karl Duderstadt
  */
-public class MarsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable {
+public class MarsTable extends AbstractTable<Column<? extends Object>, Object> implements GenericTable, JsonConvertibleRecord {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -424,7 +425,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param jParser JsonParser stream to read objects and fields from.
 	 * @throws IOException 
 	 */
-	public boolean fromJSON(JsonParser jParser) throws IOException {			
+	public void fromJSON(JsonParser jParser) throws IOException {			
     	//Then we move through fields
     	while (jParser.nextToken() != JsonToken.END_OBJECT) {
     		String fieldname_L1 = jParser.getCurrentName();
@@ -497,7 +498,6 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	    		}
     		}
     	}
-    	return true;
 	}
 	
 	/** Saves the table to the file path specified in
