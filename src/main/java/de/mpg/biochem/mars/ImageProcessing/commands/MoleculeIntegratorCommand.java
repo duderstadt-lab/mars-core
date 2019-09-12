@@ -461,7 +461,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    } catch (InterruptedException | ExecutionException e) {
 	    	// handle exceptions
 	    	e.printStackTrace();
-			logService.info(builder.endBlock(false));
+			logService.info(LogBuilder.endBlock(false));
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
@@ -471,7 +471,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    archive.naturalOrderSortMoleculeIndex();
 	    
 	    //Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", AbstractMoleculeArchive.class).setLabel(archive.getName());
+		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
         
 		statusService.clearStatus();
 		
@@ -479,11 +479,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		if (archive.getNumberOfMolecules() == 0) {
 			logService.info("No molecules integrated. There must be a problem with your settings or RIOs");
 			archive = null;
-			logService.info(builder.endBlock(false));
+			logService.info(LogBuilder.endBlock(false));
 		} else {
-			logService.info(builder.endBlock(true));
+			logService.info(LogBuilder.endBlock(true));
 
-			log += builder.endBlock(true);
+			log += LogBuilder.endBlock(true);
 			archive.addLogMessage(log);
 			archive.addLogMessage("   ");			
 		}
@@ -658,7 +658,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	}
 	
 	//Getters and Setters
-    public AbstractMoleculeArchive getArchive() {
+    public SingleMoleculeArchive getArchive() {
     	return archive;
     }
 	
