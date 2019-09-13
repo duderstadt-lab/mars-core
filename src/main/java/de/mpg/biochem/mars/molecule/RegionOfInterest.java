@@ -11,15 +11,18 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 		String color;
 		double start, end;
 		
-		RegionOfInterest() {
-			
+		public RegionOfInterest(String name) {
+			this.name = name;
+			this.start = 0;
+			this.end = 0;
+			this.color = "rgba(50,50,50,0.2)";
 		}
 		
-		RegionOfInterest(JsonParser jParser) throws IOException {
+		public RegionOfInterest(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
 		}
 		
-		RegionOfInterest(String name, String column, double start, double end, String color) {
+		public RegionOfInterest(String name, String column, double start, double end, String color) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
@@ -43,16 +46,27 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 			//Then we move through fields
 	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 	    		String fieldname = jParser.getCurrentName();
-	    		if ("name".equals(fieldname))
+	    		if ("name".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			name = jParser.getText();
-	    		if ("column".equals(fieldname))
+	    		} 
+	    		if ("column".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			column = jParser.getText();
-	    		if ("start".equals(fieldname))
+	    		}
+	    			
+	    		if ("start".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			start = jParser.getDoubleValue();
-	    		if ("end".equals(fieldname))
+	    		}
+	    		if ("end".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			end = jParser.getDoubleValue();
-	    		if ("color".equals(fieldname))
+	    		}
+	    		if ("color".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			color = jParser.getText();
+	    		}
 	    	}
 		}
 		

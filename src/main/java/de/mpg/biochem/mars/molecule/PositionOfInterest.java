@@ -11,15 +11,17 @@ public class PositionOfInterest implements JsonConvertibleRecord {
 		String color;
 		double position;
 		
-		PositionOfInterest() {
-			
+		public PositionOfInterest(String name) {
+			this.name = name;
+			this.position = 0;
+			this.color = "rgba(50,50,50,0.2)";
 		}
 		
-		PositionOfInterest(JsonParser jParser) throws IOException {
+		public PositionOfInterest(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
 		}
 		
-		PositionOfInterest(String name, String column, double position, String color) {
+		public PositionOfInterest(String name, String column, double position, String color) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
@@ -41,14 +43,22 @@ public class PositionOfInterest implements JsonConvertibleRecord {
 			//Then we move through fields
 	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 	    		String fieldname = jParser.getCurrentName();
-	    		if ("name".equals(fieldname))
+	    		if ("name".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			name = jParser.getText();
-	    		if ("column".equals(fieldname))
+	    		}
+	    		if ("column".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			column = jParser.getText();
-	    		if ("position".equals(fieldname))
+	    		}
+	    		if ("position".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			position = jParser.getDoubleValue();
-	    		if ("color".equals(fieldname))
+	    		}
+	    		if ("color".equals(fieldname)) {
+	    			jParser.nextToken();
 	    			color = jParser.getText();
+	    		}
 	    	}
 		}
 		

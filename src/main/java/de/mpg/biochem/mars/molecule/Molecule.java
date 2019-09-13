@@ -108,4 +108,24 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * index positions 0 and 1, respectively.
 	 */
 	Set<ArrayList<String>> getSegmentTableNames();
+	
+	public void putRegion(RegionOfInterest regionOfInterest);
+	
+	public RegionOfInterest getRegion(String name);
+	
+	public boolean hasRegion(String name);
+	
+	public void removeRegion(String name);
+	
+	public Set<String> getRegionNames();
+	
+	public void putPosition(PositionOfInterest positionOfInterest);
+	
+	public PositionOfInterest getPosition(String name);
+	
+	public boolean hasPosition(String name);
+	
+	public void removePosition(String name);
+	
+	public Set<String> getPositionNames();
 }
