@@ -15,6 +15,7 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 			this.name = name;
 			this.start = 0;
 			this.end = 0;
+			this.column = "Time (s)";
 			this.color = "rgba(50,50,50,0.2)";
 		}
 		

@@ -250,6 +250,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);
 		builder.addParameter("Output Y", output_y);
+		builder.addParameter("correct original coordinates", String.valueOf(retainCoordinates));
 	}
 	
 	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
@@ -322,6 +323,10 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     
 	public String getOutputY() {
 		return output_y;
+	}
+	
+	public void setCorrectOriginalCoordinates(boolean retainCoordinates) {
+		this.retainCoordinates = retainCoordinates;
 	}
 }
 

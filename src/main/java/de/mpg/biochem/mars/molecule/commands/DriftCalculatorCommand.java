@@ -342,8 +342,16 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		this.use_incomplete_traces = use_incomplete_traces;
 	}
 	
+	public void setMode(String mode) {
+		this.mode = mode;
+	}
+	
 	public void setBackgroundTag(String backgroundTag) {
 		this.backgroundTag = backgroundTag;
+	}
+	
+	public void setZeroPoint(String zeroPoint) {
+		this.zeroPoint = zeroPoint;
 	}
 	
 	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
@@ -369,8 +377,16 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 	public boolean getUseIncompleteTraces() {
 		return use_incomplete_traces;
 	}
+	
+	public String getMode() {
+		return mode;
+	}
     
 	public String getBackgroundTag() {
 		return backgroundTag;
+	}
+	
+	public String getZeroPoint() {
+		return zeroPoint;
 	}
 }
