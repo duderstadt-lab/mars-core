@@ -1414,8 +1414,14 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param rows An ArrayList containing the rows to keep.
 	 */
 	public void keepRows(ArrayList<Integer> rows) {
-		if (rows.size() == 0)
+		if (rows.size() == 0) {
+			//Then we remove all rows...
+			//Maybe we just need to change size...
+			//This will work for now...
+			for (int row = getRowCount() - 1; row > rows.size()-1; row--)
+				removeRow(row);
 			return;
+		}
 		
 		int rowsIndex = 0;
 		for (int row = 0; row < getRowCount(); row++) {

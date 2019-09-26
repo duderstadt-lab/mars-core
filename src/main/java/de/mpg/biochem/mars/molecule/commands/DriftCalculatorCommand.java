@@ -98,7 +98,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     private boolean use_incomplete_traces = false;
 
     @Parameter(label="mode", choices = {"mean", "median"})
-	private String mode;
+	private String mode = "mean";
     
     @Parameter(label = "Zero:",
 			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning", "end" })
