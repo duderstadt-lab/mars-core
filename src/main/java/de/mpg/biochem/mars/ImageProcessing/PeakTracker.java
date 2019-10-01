@@ -222,6 +222,8 @@ public class PeakTracker {
 		
 		logService.info("Building molecule archive...");
 		
+		logService.info("trajectoryFirstSlice size" + trajectoryFirstSlice.size());
+		
 		starttime = System.currentTimeMillis();
 		
 		//I think I need to reinitialize this pool since I shut it down above.
@@ -318,9 +320,15 @@ public class PeakTracker {
 		Peak peak = startingPeak;
 		addPeakToTable(table, peak, peak.getSlice());
 		
-		while (peak.getForwardLink() != null) {
+		//fail-safe in case somehow a peak is linked to itself?
+		//Fixes some kind of bug observed very very rarely that 
+		//prevents creation of an archive...
+		int slices = archive.getImageMetadata(0).getDataTable().getRowCount();
+		int count = 0;
+		while (peak.getForwardLink() != null && count < slices) {
 			peak = peak.getForwardLink();
 			addPeakToTable(table, peak, peak.getSlice());
+			count++;
 		}
 
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);

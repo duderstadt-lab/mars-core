@@ -493,11 +493,11 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");
 				archive = null;
-				logService.info(builder.endBlock(false));
+				logService.info(LogBuilder.endBlock(false));
 			} else {
-				logService.info(builder.endBlock(true));
+				logService.info(LogBuilder.endBlock(true));
 	
-				log += "\n" + builder.endBlock(true);
+				log += "\n" + LogBuilder.endBlock(true);
 				archive.addLogMessage(log);
 				archive.addLogMessage("   ");			
 			}
