@@ -229,7 +229,8 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
 		builder.addParameter("Save to Disk", String.valueOf(saveToDisk));
-		builder.addParameter("Directory", directory.getAbsolutePath());
+		if (saveToDisk)
+			builder.addParameter("Directory", directory.getAbsolutePath());
 	}
 	
 	public void setImage(ImagePlus image) {
