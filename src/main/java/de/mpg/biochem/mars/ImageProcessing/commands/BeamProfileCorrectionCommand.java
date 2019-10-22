@@ -98,7 +98,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	@Parameter(label="Save sequence to directory")
 	private boolean saveToDisk = true;
 	
-	@Parameter(label="Output Directory", style="directory")
+	@Parameter(label="Output Directory", style="directory", required=false)
     private File directory;
 	
 	//For the progress thread
