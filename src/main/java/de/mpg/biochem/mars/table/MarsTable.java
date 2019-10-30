@@ -68,6 +68,7 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
@@ -373,6 +374,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
         for (int i=0; i<getRowCount(); i++)
             pw.println(getRowAsString(i));
         pw.close();
+        
+        File file = new File(path);
+        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
     }
 	
 	/** JSON serialization of table values. Includes schema with column type definitions of either string or number.
@@ -525,6 +529,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		//flush and close streams...
 		stream.flush();
 		stream.close();		
+		
+		File file = new File(path);
+        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/** Saves the table to the file path specified in
@@ -551,7 +558,10 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		
 		//flush and close streams...
 		stream.flush();
-		stream.close();		
+		stream.close();	
+		
+		File file = new File(path);
+        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	private void loadCSV(File file) {

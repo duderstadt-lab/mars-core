@@ -45,7 +45,21 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 
+import java.nio.file.attribute.PosixFilePermission;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
+
+import java.util.EnumSet;
+import java.util.Set;
+
 public class MarsUtil {
+	
+	public static Set<PosixFilePermission> ownerGroupPermissions = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_WRITE, GROUP_EXECUTE);
+  	
   	
 	/**
 	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
