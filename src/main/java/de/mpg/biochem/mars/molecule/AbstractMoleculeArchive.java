@@ -977,10 +977,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		//jGenerator.writeStartObject();
-		//jGenerator.writeFieldName("MoleculeArchiveProperties");
 		archiveProperties.toJSON(jGenerator);
-		//jGenerator.writeEndObject();
 		jGenerator.close();
 		
 		stream.flush();

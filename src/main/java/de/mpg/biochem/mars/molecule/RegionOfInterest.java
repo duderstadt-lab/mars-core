@@ -9,26 +9,28 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 		String name;
 		String column;
 		String color;
-		double start, end;
+		double start, end, opacity;
 		
 		public RegionOfInterest(String name) {
 			this.name = name;
 			this.start = 0;
 			this.end = 0;
 			this.column = "Time (s)";
-			this.color = "rgba(50,50,50,0.2)";
+			this.color = "#416ef468";
+			this.opacity = 0.2;
 		}
 		
 		public RegionOfInterest(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
 		}
 		
-		public RegionOfInterest(String name, String column, double start, double end, String color) {
+		public RegionOfInterest(String name, String column, double start, double end, String color, double opacity) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
 			this.start = start;
 			this.end = end;
+			this.opacity = opacity;
 		}
 
 		@Override
@@ -39,6 +41,7 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 			jGenerator.writeNumberField("start",start);
 			jGenerator.writeNumberField("end",end);
 			jGenerator.writeStringField("color", color);
+			jGenerator.writeNumberField("opacity", opacity);
 			jGenerator.writeEndObject();
 		}
 
@@ -67,6 +70,10 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 	    		if ("color".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			color = jParser.getText();
+	    		}
+	    		if ("opacity".equals(fieldname)) {
+	    			jParser.nextToken();
+	    			opacity = jParser.getDoubleValue();
 	    		}
 	    	}
 		}
@@ -110,5 +117,13 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 		
 		public void setEnd(double end) {
 			this.end = end;
+		}
+		
+		public void setOpacity(double opacity) {
+			this.opacity = opacity;
+		}
+		
+		public double getOpacity() {
+			return opacity;
 		}
 	}
