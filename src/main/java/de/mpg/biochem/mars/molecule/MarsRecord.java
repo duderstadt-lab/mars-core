@@ -28,8 +28,11 @@ package de.mpg.biochem.mars.molecule;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.PositionOfInterest;
+import de.mpg.biochem.mars.util.RegionOfInterest;
 
 public interface MarsRecord extends JsonConvertibleRecord {
 	
@@ -177,6 +180,26 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * molecule record.
 	 */
 	void setDataTable(MarsTable table);
+	
+	public void putRegion(RegionOfInterest regionOfInterest);
+	
+	public RegionOfInterest getRegion(String name);
+	
+	public boolean hasRegion(String name);
+	
+	public void removeRegion(String name);
+	
+	public Set<String> getRegionNames();
+	
+	public void putPosition(PositionOfInterest positionOfInterest);
+	
+	public PositionOfInterest getPosition(String name);
+	
+	public boolean hasPosition(String name);
+	
+	public void removePosition(String name);
+	
+	public Set<String> getPositionNames();
 	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.

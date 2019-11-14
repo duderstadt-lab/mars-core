@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -40,6 +41,8 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.PositionOfInterest;
+import de.mpg.biochem.mars.util.RegionOfInterest;
 
 public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
 	//Unique ID for storage in maps and universal identification.
@@ -60,11 +63,19 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	//Table housing main record data.
 	protected MarsTable dataTable;
 	
+	//Regions of interest map
+	protected LinkedHashMap<String, RegionOfInterest> regionsOfInterest;
+	
+	//Positions of interest map
+	protected LinkedHashMap<String, PositionOfInterest> positionsOfInterest;
+	
 	public AbstractMarsRecord() {
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		dataTable = new MarsTable();
+		regionsOfInterest = new LinkedHashMap<>();
+		positionsOfInterest = new LinkedHashMap<>();
 	}
 	
 	public AbstractMarsRecord(String UID) {
@@ -90,6 +101,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
+		regionsOfInterest = new LinkedHashMap<>();
+		positionsOfInterest = new LinkedHashMap<>();
 		this.UID = UID;
 		this.dataTable = dataTable;
 	}
@@ -129,6 +142,22 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 				dataTable.toJSON(jGenerator);
 			}
 		}, IOException.class));
+		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
+			if (regionsOfInterest.size() > 0) {
+				jGenerator.writeArrayFieldStart("RegionsOfInterest");
+				for (String region :regionsOfInterest.keySet()) 
+					regionsOfInterest.get(region).toJSON(jGenerator);
+				jGenerator.writeEndArray();
+			}
+	 	}, IOException.class));
+		outputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
+			if (positionsOfInterest.size() > 0) {
+				jGenerator.writeArrayFieldStart("PositionsOfInterest");
+				for (String position :positionsOfInterest.keySet()) 
+					positionsOfInterest.get(position).toJSON(jGenerator);
+				jGenerator.writeEndArray();
+			}
+	 	}, IOException.class));
 		
 		//Input Map
 		inputMap.put("UID", MarsUtil.catchConsumerException(jParser -> {
@@ -163,6 +192,18 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
 			dataTable.fromJSON(jParser);
 		}, IOException.class));		
+		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				RegionOfInterest regionOfInterest = new RegionOfInterest(jParser);
+		    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+	    	}
+	 	}, IOException.class));
+		inputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				PositionOfInterest positionOfInterest = new PositionOfInterest(jParser);
+		    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+	    	}
+	 	}, IOException.class));
 	}
 	
 	/**
@@ -363,6 +404,47 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		
 		//Now set to new table
 		dataTable = table;
+	}
+	
+	
+	public void putRegion(RegionOfInterest regionOfInterest) {
+		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+	}
+	
+	public RegionOfInterest getRegion(String name) {
+		return regionsOfInterest.get(name);
+	}
+	
+	public boolean hasRegion(String name) {
+		return regionsOfInterest.containsKey(name);
+	}
+	
+	public void removeRegion(String name) {
+		regionsOfInterest.remove(name);
+	}
+	
+	public Set<String> getRegionNames() {
+		return regionsOfInterest.keySet();
+	}
+	
+	public void putPosition(PositionOfInterest positionOfInterest) {
+		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+	}
+	
+	public PositionOfInterest getPosition(String name) {
+		return positionsOfInterest.get(name);
+	}
+	
+	public boolean hasPosition(String name) {
+		return positionsOfInterest.containsKey(name);
+	}
+	
+	public void removePosition(String name) {
+		positionsOfInterest.remove(name);
+	}
+	
+	public Set<String> getPositionNames() {
+		return positionsOfInterest.keySet();
 	}
 	
 	/**

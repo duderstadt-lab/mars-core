@@ -41,6 +41,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.PositionOfInterest;
+import de.mpg.biochem.mars.util.RegionOfInterest;
 
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
 	//UID of ImageMetadata associated wit this molecule.
@@ -52,20 +54,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	//YColumn is at index 1
 	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables;
 	
-	//Regions of interest map
-	protected LinkedHashMap<String, RegionOfInterest> regionsOfInterest;
-	
-	//Positions of interest map
-	protected LinkedHashMap<String, PositionOfInterest> positionsOfInterest;
-	
 	/**
 	 * Constructor for creating an empty Molecule record. 
 	 */
 	public AbstractMolecule() {
 		super();
 		segmentTables = new LinkedHashMap<>();
-		regionsOfInterest = new LinkedHashMap<>();
-		positionsOfInterest = new LinkedHashMap<>();
 	}
 	
 	/**
@@ -79,8 +73,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	public AbstractMolecule(JsonParser jParser) throws IOException {
 		super();
 		segmentTables = new LinkedHashMap<>();
-		regionsOfInterest = new LinkedHashMap<>();
-		positionsOfInterest = new LinkedHashMap<>();
 		fromJSON(jParser);
 	}
 	
@@ -93,8 +85,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	public AbstractMolecule(String UID) {
 		super(UID);
 		segmentTables = new LinkedHashMap<>();
-		regionsOfInterest = new LinkedHashMap<>();
-		positionsOfInterest = new LinkedHashMap<>();
 	}
 
 	/**
@@ -109,8 +99,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	public AbstractMolecule(String UID, MarsTable dataTable) {
 		super(UID, dataTable);
 		segmentTables = new LinkedHashMap<>();
-		regionsOfInterest = new LinkedHashMap<>();
-		positionsOfInterest = new LinkedHashMap<>();
 	}
 	
 	@Override
@@ -138,22 +126,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 						jGenerator.writeEndObject();
 					}
 				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (regionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("RegionsOfInterest");
-				for (String region :regionsOfInterest.keySet()) 
-					regionsOfInterest.get(region).toJSON(jGenerator);
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		outputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (positionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("PositionsOfInterest");
-				for (String position :positionsOfInterest.keySet()) 
-					positionsOfInterest.get(position).toJSON(jGenerator);
 				jGenerator.writeEndArray();
 			}
 	 	}, IOException.class));
@@ -206,18 +178,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		    	}
 	    	}
 		}, IOException.class));
-		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				RegionOfInterest regionOfInterest = new RegionOfInterest(jParser);
-		    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-	    	}
-	 	}, IOException.class));
-		inputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				PositionOfInterest positionOfInterest = new PositionOfInterest(jParser);
-		    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-	    	}
-	 	}, IOException.class));
 	}
 	
 	/**
@@ -354,45 +314,5 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		return segmentTables.keySet();
-	}
-	
-	public void putRegion(RegionOfInterest regionOfInterest) {
-		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-	}
-	
-	public RegionOfInterest getRegion(String name) {
-		return regionsOfInterest.get(name);
-	}
-	
-	public boolean hasRegion(String name) {
-		return regionsOfInterest.containsKey(name);
-	}
-	
-	public void removeRegion(String name) {
-		regionsOfInterest.remove(name);
-	}
-	
-	public Set<String> getRegionNames() {
-		return regionsOfInterest.keySet();
-	}
-	
-	public void putPosition(PositionOfInterest positionOfInterest) {
-		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-	}
-	
-	public PositionOfInterest getPosition(String name) {
-		return positionsOfInterest.get(name);
-	}
-	
-	public boolean hasPosition(String name) {
-		return positionsOfInterest.containsKey(name);
-	}
-	
-	public void removePosition(String name) {
-		positionsOfInterest.remove(name);
-	}
-	
-	public Set<String> getPositionNames() {
-		return positionsOfInterest.keySet();
 	}
 }

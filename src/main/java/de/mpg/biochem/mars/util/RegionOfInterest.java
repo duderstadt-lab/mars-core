@@ -1,31 +1,38 @@
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.util;
 
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-public class PositionOfInterest implements JsonConvertibleRecord {
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+
+public class RegionOfInterest implements JsonConvertibleRecord {
 		String name;
 		String column;
 		String color;
-		double position;
+		double start, end, opacity;
 		
-		public PositionOfInterest(String name) {
+		public RegionOfInterest(String name) {
 			this.name = name;
-			this.position = 0;
-			this.color = "rgba(50,50,50,0.2)";
+			this.start = 0;
+			this.end = 0;
+			this.column = "Time (s)";
+			this.color = "#416ef468";
+			this.opacity = 0.2;
 		}
 		
-		public PositionOfInterest(JsonParser jParser) throws IOException {
+		public RegionOfInterest(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
 		}
 		
-		public PositionOfInterest(String name, String column, double position, String color) {
+		public RegionOfInterest(String name, String column, double start, double end, String color, double opacity) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
-			this.position = position;
+			this.start = start;
+			this.end = end;
+			this.opacity = opacity;
 		}
 
 		@Override
@@ -33,8 +40,10 @@ public class PositionOfInterest implements JsonConvertibleRecord {
 			jGenerator.writeStartObject();
 			jGenerator.writeStringField("name", name);
 			jGenerator.writeStringField("column", column);
-			jGenerator.writeNumberField("position",position);
+			jGenerator.writeNumberField("start",start);
+			jGenerator.writeNumberField("end",end);
 			jGenerator.writeStringField("color", color);
+			jGenerator.writeNumberField("opacity", opacity);
 			jGenerator.writeEndObject();
 		}
 
@@ -46,18 +55,27 @@ public class PositionOfInterest implements JsonConvertibleRecord {
 	    		if ("name".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			name = jParser.getText();
-	    		}
+	    		} 
 	    		if ("column".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			column = jParser.getText();
 	    		}
-	    		if ("position".equals(fieldname)) {
+	    			
+	    		if ("start".equals(fieldname)) {
 	    			jParser.nextToken();
-	    			position = jParser.getDoubleValue();
+	    			start = jParser.getDoubleValue();
+	    		}
+	    		if ("end".equals(fieldname)) {
+	    			jParser.nextToken();
+	    			end = jParser.getDoubleValue();
 	    		}
 	    		if ("color".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			color = jParser.getText();
+	    		}
+	    		if ("opacity".equals(fieldname)) {
+	    			jParser.nextToken();
+	    			opacity = jParser.getDoubleValue();
 	    		}
 	    	}
 		}
@@ -87,11 +105,27 @@ public class PositionOfInterest implements JsonConvertibleRecord {
 			this.color = color;
 		}
 		
-		public double getPosition() {
-			return position;
+		public double getStart() {
+			return start;
 		}
 		
-		public void setPosition(double position) {
-			this.position = position;
+		public void setStart(double start) {
+			this.start = start;
+		}
+		
+		public double getEnd() {
+			return end;
+		}
+		
+		public void setEnd(double end) {
+			this.end = end;
+		}
+		
+		public void setOpacity(double opacity) {
+			this.opacity = opacity;
+		}
+		
+		public double getOpacity() {
+			return opacity;
 		}
 	}
