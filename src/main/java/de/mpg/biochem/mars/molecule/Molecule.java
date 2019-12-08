@@ -62,6 +62,21 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	void putSegmentsTable(String xColumnName, String yColumnName, MarsTable segs);
 	
 	/**
+	 * Add or update a Segments table ({@link MarsTable}) generated 
+	 * using the yColumnName and xColumnName. The {@link KCPCommand} performs
+	 * kinetic change point analysis generating segments to fit regions
+	 * of a trace. The information about these segments is added using
+	 * this method.
+	 * 
+	 * @param xColumnName The name of the column used for x for KCP analysis.
+	 * @param yColumnName The name of the column used for y for KCP analysis.
+	 * @param regionName The name of the region used for analysis.
+	 * @param segs The {@link MarsTable} to add that contains the 
+	 * segments.
+	 */
+	void putSegmentsTable(String xColumnName, String yColumnName, String regionName, MarsTable segs);
+	
+	/**
 	 * Retrieve a Segments table ({@link MarsTable}) generated 
 	 * using xColumnName and yColumnName.
 	 * 
@@ -72,6 +87,17 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	MarsTable getSegmentsTable(String xColumnName, String yColumnName);
 	
 	/**
+	 * Retrieve a Segments table ({@link MarsTable}) generated 
+	 * using xColumnName, yColumnName and region.
+	 * 
+	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @param regionName The name of the region used for analysis.
+	 * @return The MARSResultsTable generated using the columns specified.
+	 */	
+	MarsTable getSegmentsTable(String xColumnName, String yColumnName, String regionName);
+	
+	/**
 	 * Check if record has a Segments table ({@link MarsTable}) generated 
 	 * using xColumnName and yColumnName.
 	 * 
@@ -80,6 +106,17 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @return Boolean whether the segment table exists.
 	 */	
 	boolean hasSegmentsTable(String xColumnName, String yColumnName);
+	
+	/**
+	 * Check if record has a Segments table ({@link MarsTable}) generated 
+	 * using xColumnName, yColumnName and region.
+	 * 
+	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @param regionName The name of the region used for analysis.
+	 * @return Boolean whether the segment table exists.
+	 */	
+	boolean hasSegmentsTable(String xColumnName, String yColumnName, String regionName);
 	
 	/**
 	 * Retrieve a Segments table ({@link MarsTable}) generated 
@@ -101,6 +138,16 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @param yColumnName The name of the y column used for analysis.
 	 */
 	void removeSegmentsTable(String xColumnName, String yColumnName);
+	
+	/**
+	 * Remove the Segments table ({@link MarsTable}) generated 
+	 * using yColumnName, xColumnName and region.
+	 * 
+	 * @param xColumnName The name of the x column used for analysis.
+	 * @param yColumnName The name of the y column used for analysis.
+	 * @param regionName the name of the region used for analysis.
+	 */
+	void removeSegmentsTable(String xColumnName, String yColumnName, String regionName);
 	
 	/**
 	 * Retrieve a Segments table ({@link MarsTable}) generated 

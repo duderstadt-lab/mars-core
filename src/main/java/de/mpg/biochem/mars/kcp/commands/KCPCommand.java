@@ -54,6 +54,7 @@ import de.mpg.biochem.mars.kcp.KCP;
 import de.mpg.biochem.mars.kcp.Segment;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -100,23 +101,22 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     @Parameter(label="Global sigma")
 	private double global_sigma = 1;
     
+    @Parameter(label = "Region source:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
+					"Metadata" })
+	private String regionSource;
+    
     @Parameter(label="Calculate from background")
     private boolean calcBackgroundSigma = true;
     
-    @Parameter(label="Background start")
-	private String bg_start_name = "bg_start";
+    @Parameter(label="Background region")
+	private String backgroundRegion;
     
-    @Parameter(label="Background end")
-	private String bg_end_name = "bg_end";
-    
-    @Parameter(label="region")
+    @Parameter(label="Analyze region")
     private boolean region = true;
     
-    @Parameter(label="Region start")
-	private String start_name = "start";
-    
-    @Parameter(label="Region end")
-	private String end_name = "end";
+    @Parameter(label="Region")
+	private String regionName;
     
     @Parameter(label="Fit steps (zero slope)")
 	private boolean step_analysis = false;
@@ -194,6 +194,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Change Points...");
+		archive.getWindow().updateLockMessage("Finding Change Points...");
 	    try {
 	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
 	    	//Waiting call back to update the progress bar!!
@@ -203,6 +204,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
         		        while(progressUpdating.get()) {
         		        	Thread.sleep(100);
         		        	statusService.showStatus(numFinished.intValue(), UIDs.size(), "Finding Change Points for " + archive.getName());
+        		        	archive.getWindow().progress(numFinished.intValue()/UIDs.size());
         		        }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -227,6 +229,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        progressUpdating.set(false);
 	        
 	        statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
+	        archive.getWindow().progress(1);
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
@@ -278,19 +281,26 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		}
 		//END FIX
 		
+		MarsRecord regionRecord;
+		if (regionSource.equals("Molecules")) {
+			regionRecord = molecule;
+		} else {
+			regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+		}
+		
 		for (int j=0;j<rowCount;j++) {
 			if (region) {
-				if (molecule.hasParameter(start_name) && xData[j] <= molecule.getParameter(start_name)) {
+				if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getStart()) {
 					offset = j;
-				} else if (molecule.hasParameter(end_name) && xData[j] <= molecule.getParameter(end_name)) {
+				} else if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getEnd()) {
 					length = j - offset;
 				}
 			}
 				
 			if (calcBackgroundSigma) {
-				if (molecule.hasParameter(bg_start_name) && xData[j] <= molecule.getParameter(bg_start_name)) {
+				if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getStart()) {
 					SigXstart = j;
-				} else if (molecule.hasParameter(bg_end_name) && xData[j] <= molecule.getParameter(bg_end_name)) {
+				} else if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getEnd()) {
 					SigXend = j;
 				}
 			}
@@ -312,7 +322,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		double sigma = global_sigma;
 		if (molecule.hasParameter(Ycolumn + "_sigma")) {
 			sigma = molecule.getParameter(Ycolumn + "_sigma");
-		} else if (molecule.hasParameter(bg_start_name) || molecule.hasParameter(bg_end_name)) {
+		} else if (molecule.hasRegion(backgroundRegion)) {
 			if (calcBackgroundSigma)
 				sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
 		}
@@ -322,7 +332,11 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		
 		KCP change = new KCP(sigma, confidenceLevel, xRegion, yRegion, step_analysis);
 		try {
-			molecule.putSegmentsTable(Xcolumn, Ycolumn, buildSegmentTable(change.generate_segments()));
+			MarsTable segmentsTable = buildSegmentTable(change.generate_segments());
+			if (region)
+				molecule.putSegmentsTable(Xcolumn, Ycolumn, regionName, segmentsTable);
+			else
+				molecule.putSegmentsTable(Xcolumn, Ycolumn, segmentsTable);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			logService.error("Out of Bounds Exception");
 			logService.error("UID " + molecule.getUID() + " gave an error ");
