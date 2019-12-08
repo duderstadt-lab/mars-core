@@ -139,6 +139,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 	public void setYDriftColumn(String yDriftColumn) {
 		this.yDriftColumn = yDriftColumn;
 	}
+	
 	//See https://forum.image.sc/t/applying-affine-matrix-result-from-2d-3d-registration-to-images/22298/8 for mapping info
 	public void setAffineTransform2D(double m00, double m01, double m02, double m10, double m11, double m12) {
 		AffineTransform3D affine = new AffineTransform3D();

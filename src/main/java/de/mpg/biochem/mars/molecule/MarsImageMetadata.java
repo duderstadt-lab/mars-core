@@ -53,4 +53,6 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	Collection<MarsBdvSource> getBdvSources();
 	
 	Set<String> getBdvSourceNames();
+	
+	boolean hasBdvSource(String name);
 }
