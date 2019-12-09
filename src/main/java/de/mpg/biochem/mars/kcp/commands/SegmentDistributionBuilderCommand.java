@@ -164,11 +164,15 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		
 		ArrayList<String> names = new ArrayList<String>();
 		
-		for (ArrayList<String> tableName : segTableNames) {
-			String name = tableName.get(0) + " vs " + tableName.get(1);
-			names.add(name);
+		for (ArrayList<String> segmentTableName : segTableNames) {
+			String tabName;
+			if (segmentTableName.get(2).equals(""))
+				tabName = segmentTableName.get(1) + " vs " + segmentTableName.get(0);
+			else 
+				tabName = segmentTableName.get(1) + " vs " + segmentTableName.get(0) + " - " + segmentTableName.get(2);
+			names.add(tabName);
 			
-			segmentTableNameToColumns.put(name, tableName);
+			segmentTableNameToColumns.put(tabName, segmentTableName);
 		}
 		SegmentTableNames.setChoices(names);
 	}

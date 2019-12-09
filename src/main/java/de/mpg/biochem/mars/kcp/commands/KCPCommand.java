@@ -212,7 +212,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        };
 
 	        progressThread.start();
-	        
+	    	
 	        //This will spawn a bunch of threads that will analyze molecules individually in parallel 
 	        //and put the changepoint tables back into the same molecule record
 	        
@@ -253,6 +253,16 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	private void findChangePoints(Molecule molecule) {
 		MarsTable datatable = molecule.getDataTable();
 		
+		MarsRecord regionRecord;
+		if (regionSource.equals("Molecules")) {
+			regionRecord = molecule;
+		} else {
+			regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+		}
+		
+		if (!regionRecord.hasRegion(regionName))
+			return;
+		
 		//START NaN FIX
 		ArrayList<Double> xDataSafe = new ArrayList<Double>();
 		ArrayList<Double> yDataSafe = new ArrayList<Double>();
@@ -278,16 +288,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 			yData[i] = yDataSafe.get(i);
 		}
 		//END FIX
-		
-		MarsRecord regionRecord;
-		if (regionSource.equals("Molecules")) {
-			regionRecord = molecule;
-		} else {
-			regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
-		}
-		
-		if (!regionRecord.hasRegion(regionName))
-			return;
 		
 		for (int j=0;j<rowCount;j++) {
 			if (region) {
