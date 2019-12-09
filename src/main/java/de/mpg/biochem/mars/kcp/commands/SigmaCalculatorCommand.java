@@ -26,6 +26,9 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.kcp.commands;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.decimal4j.util.DoubleRounder;
 
 import org.scijava.app.StatusService;
@@ -43,6 +46,7 @@ import org.scijava.widget.ChoiceWidget;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.RegionOfInterest;
 import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator", menu = {
@@ -76,8 +80,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 	private String Ycolumn;
     
 	@Parameter(label = "Region:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "all slices",
-					"defined below", "bg_start to bg_end" })
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All slices",
+					"Defined below", "Defined in Molecules", "Defined in Metadata" })
 	private String region;
 	
 	@Parameter(label="from")
@@ -85,6 +89,9 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 	
 	@Parameter(label="to")
 	private double to = 500;
+	
+    @Parameter(label="Region from MarsRecord")
+	private String regionName;
     
     @Override
 	public void initialize() {
@@ -119,17 +126,29 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		final String paramName = Ycolumn + "_sigma";
 		
+		ConcurrentMap<String, RegionOfInterest> regionMap = new ConcurrentHashMap<String, RegionOfInterest>();
+		
+		if (region.equals("Defined in Metadata")) {
+			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
+				MarsImageMetadata metadata = archive.getImageMetadata(metaUID);
+				if (metadata.hasRegion(regionName))
+					regionMap.put(metaUID, metadata.getRegion(regionName));
+			});
+		}
+		
 		//Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			MarsTable datatable = molecule.getDataTable();
 			
-			if (region.equals("defined below")) {
+			if (region.equals("Defined below")) {
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
-			} else if (region.equals("bg_start to bg_end")) {
-				double start = molecule.getParameter("bg_start");
-				double end = molecule.getParameter("bg_end");
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, start, end));
+			} else if (region.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
+				RegionOfInterest regionOfInterest = molecule.getRegion(regionName);
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));				
+			} else if (region.equals("Defined in Metadata") && regionMap.containsKey(molecule.getImageMetadataUID())) {
+				RegionOfInterest regionOfInterest = regionMap.get(molecule.getImageMetadataUID());
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			} else {
 				//WE assume this mean sigma for whole trace.
 				molecule.setParameter(paramName, datatable.std(Ycolumn));
@@ -139,8 +158,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(builder.endBlock(true));
-	    archive.addLogMessage(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
+	    archive.addLogMessage(LogBuilder.endBlock(true));
 	    archive.addLogMessage("   ");
 	    
 		//Unlock the window so it can be changed
@@ -155,6 +174,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		builder.addParameter("Region", region);
 		builder.addParameter("from", String.valueOf(from));
 		builder.addParameter("to", String.valueOf(to));
+		builder.addParameter("Region", regionName);
 		builder.addParameter("New parameter added", Ycolumn + "_sigma");
 	}
 }
