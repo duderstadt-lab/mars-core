@@ -272,6 +272,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	boolean moleculeHasTag(String UID, String tag);
 	
 	/**
+	 * Check if a molecule record has tags. This offers optimal
+	 * performance for virtual mode because only the tag index
+	 * is checked without retrieving all virtual records.
+	 * 
+	 * @param UID The UID of the molecule to check.
+	 * @return Returns true if the molecule has tags and false if not.
+	 */
+	boolean moleculeHasTags(String UID);
+	
+	/**
 	 * Check if a MARSImageMetadata record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
