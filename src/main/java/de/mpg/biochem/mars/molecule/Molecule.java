@@ -132,6 +132,14 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	
 	/**
 	 * Remove the Segments table ({@link MarsTable}) generated 
+	 * using X column, Y column, and region provided as a list.
+	 * 
+	 * @param tableColumnNames List of xColumn, yColumn, and Region of the segment table to remove.
+	 */
+	void removeSegmentsTable(ArrayList<String> tableColumnNames);
+	
+	/**
+	 * Remove the Segments table ({@link MarsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
 	 * @param xColumnName The name of the x column used for analysis.

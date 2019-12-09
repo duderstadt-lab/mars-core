@@ -364,6 +364,16 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	
 	/**
 	 * Remove the Segments table ({@link MarsTable}) generated 
+	 * using X Column, Y Column and region.
+	 * 
+	 * @param tableColumnNames List of the X Column, Y Column, and region of the segment table to remove.
+	 */
+	public void removeSegmentsTable(ArrayList<String> tableColumnNames) {
+		segmentTables.remove(tableColumnNames);
+	}
+	
+	/**
+	 * Remove the Segments table ({@link MarsTable}) generated 
 	 * using yColumnName and xColumnName.
 	 * 
 	 * @param xColumnName The name of the x column used for analysis.
