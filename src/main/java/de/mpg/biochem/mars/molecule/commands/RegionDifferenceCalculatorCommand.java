@@ -40,11 +40,14 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -54,6 +57,9 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
+
+import java.util.concurrent.ConcurrentHashMap;
+import de.mpg.biochem.mars.util.*;
 
 @Plugin(type = Command.class, label = "Region Difference Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -84,18 +90,17 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
     
     @Parameter(label="Y Column", choices = {"a", "b", "c"})
 	private String Ycolumn;
+    
+    @Parameter(label = "Region source:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
+					"Metadata" })
+	private String regionSource;
 	
-    @Parameter(label="Region 1 start")
-	private int r1_start = 0;
+    @Parameter(label="Region 1 name")
+   	private String regionOneName;
     
-    @Parameter(label="Region 1 end")
-	private int r1_end = 100;
-    
-    @Parameter(label="Region 2 start")
-	private int r2_start = 150;
-    
-    @Parameter(label="Region 2 end")
-	private int r2_end = 250;
+    @Parameter(label="Region 2 name")
+   	private String regionTwoName;
     
     @Parameter(label="Parameter Name")
     private String ParameterName;
@@ -131,18 +136,60 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		archive.addLogMessage(log);
 		
-		//Loop through each molecule and add reversal difference value to parameters for each molecule
-		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			Molecule molecule = archive.get(UID);
-			MarsTable datatable = molecule.getDataTable();
+		if (regionSource.equals("Molecules")) {
+			//Loop through each molecule and add reversal difference value to parameters for each molecule
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				Molecule molecule = archive.get(UID);
+				
+				if (!molecule.hasRegion(regionOneName) && !molecule.hasRegion(regionTwoName))
+					return;
+				
+				MarsTable datatable = molecule.getDataTable();
+				
+				double region1_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionOneName).getStart(), molecule.getRegion(regionOneName).getEnd());
+				double region2_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionTwoName).getStart(), molecule.getRegion(regionTwoName).getEnd());
+				
+				molecule.setParameter(ParameterName, region1_mean - region2_mean);
+				
+				archive.put(molecule);
+			});
+		} else {
+			//Before we start we should build a Map of region information from the image metadata records
+			//then we can use the map as we go through the molecules.
+			//This will be most efficient.
+			ConcurrentMap<String, RegionOfInterest> metadataRegionOneMap = new ConcurrentHashMap<String, RegionOfInterest>();
+			ConcurrentMap<String, RegionOfInterest> metadataRegionTwoMap = new ConcurrentHashMap<String, RegionOfInterest>();
 			
-			double region1_mean = datatable.mean(Ycolumn, Xcolumn, r1_start, r1_end);
-			double region2_mean = datatable.mean(Ycolumn, Xcolumn, r2_start, r2_end);
+			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
+				MarsImageMetadata metadata = archive.getImageMetadata(metaUID);
+				if (metadata.hasRegion(regionOneName))
+					metadataRegionOneMap.put(metaUID, metadata.getRegion(regionOneName));
+				
+				if (metadata.hasRegion(regionTwoName))
+					metadataRegionTwoMap.put(metaUID, metadata.getRegion(regionTwoName));
+			});
 			
-			molecule.setParameter(ParameterName, region1_mean - region2_mean);
-			
-			archive.put(molecule);
-		});
+			//Loop through each molecule and add reversal difference value to parameters for each molecule
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				String metaUID = archive.getImageMetadataUIDforMolecule(UID);
+				if (!metadataRegionOneMap.containsKey(metaUID) && !metadataRegionTwoMap.containsKey(metaUID))
+					return;
+				
+				RegionOfInterest regionOne = metadataRegionOneMap.get(metaUID);
+				RegionOfInterest regionTwo = metadataRegionTwoMap.get(metaUID);
+				
+				Molecule molecule = archive.get(UID);
+				MarsTable datatable = molecule.getDataTable();
+				
+				double region1_mean = datatable.mean(Ycolumn, Xcolumn, regionOne.getStart(), regionOne.getEnd());
+				double region2_mean = datatable.mean(Ycolumn, Xcolumn, regionTwo.getStart(), regionTwo.getEnd());
+				
+				molecule.setParameter(ParameterName, region1_mean - region2_mean);
+				
+				archive.put(molecule);
+			});
+		}
+		
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
@@ -158,10 +205,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("X Column", Xcolumn);
 		builder.addParameter("Y Column", Ycolumn);
-		builder.addParameter("Region 1 start", String.valueOf(r1_start));
-		builder.addParameter("Region 1 end", String.valueOf(r1_end));
-		builder.addParameter("Region 2 start", String.valueOf(r2_start));
-		builder.addParameter("Region 2 end", String.valueOf(r2_end));
+		builder.addParameter("Region 1 name", regionOneName);
+		builder.addParameter("Region 2 name", regionTwoName);
 		builder.addParameter("Parameter Name", ParameterName);
 	}
 	
@@ -190,38 +235,22 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		return Ycolumn;
 	}
 	
-    public void setRegion1Start(int r1_start) {
-    	this.r1_start = r1_start;
-    }
-    
-    public int getRegion1Start() {
-    	return r1_start;
-    }
-    
-    public void setRegion1End(int r1_end) {
-    	this.r1_end = r1_end;
-    }
-    
-    public int getRegion1End() {
-    	return r1_end;
-    }
-    
-    public void setRegion2Start(int r2_start) {
-    	this.r2_start = r2_start;
-    }
-    
-    public int getRegion2Start() {
-    	return r2_start;
-    }
-    
-    public void setRegion2End(int r2_end) {
-    	this.r2_end = r2_end;
-    }
-    
-    public int getRegion2End() {
-    	return r2_end;
-    }
-    
+	public void setRegionOne(String regionOneName) {
+		this.regionOneName = regionOneName;
+	}
+	
+	public String getRegionOne() {
+		return this.regionOneName;
+	}
+	
+	public void setRegionTwo(String regionTwoName) {
+		this.regionTwoName = regionTwoName;
+	}
+	
+	public String getRegionTwo() {
+		return this.regionTwoName;
+	}
+	
     public void setParameterName(String ParameterName) {
     	this.ParameterName = ParameterName;
     }
