@@ -1422,6 +1422,27 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
+	 * Check if a molecule record has tags. This offers optimal
+	 * performance for virtual mode because only the tag index
+	 * is checked without retrieving all virtual records.
+	 * 
+	 * @param UID The UID of the molecule to check.
+	 * @return Returns true if the molecule has tags and false if not.
+	 */
+	public boolean moleculeHasTags(String UID) {
+		if (UID != null) {
+			if (virtual) {
+				if (tagIndex.containsKey(UID) && tagIndex.get(UID).size() > 0)
+					return true;
+				else
+					return false;
+			} else
+				return get(UID).getTags().size() > 0;
+		}
+		return false;
+	}
+	
+	/**
 	 * Check if a MARSImageMetadata record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.

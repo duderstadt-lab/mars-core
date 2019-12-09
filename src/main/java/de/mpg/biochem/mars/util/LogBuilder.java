@@ -131,6 +131,10 @@ public class LogBuilder {
 			return "********************************* Failure *********************************";
 	}
 	
+	public static String endBlock() {
+		return "***************************************************************************";
+	}
+	
 	public String getVersion() {
 		return version;
 	}
