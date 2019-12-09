@@ -204,7 +204,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
         		        while(progressUpdating.get()) {
         		        	Thread.sleep(100);
         		        	statusService.showStatus(numFinished.intValue(), UIDs.size(), "Finding Change Points for " + archive.getName());
-        		        	archive.getWindow().progress(numFinished.intValue()/UIDs.size());
         		        }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -229,7 +228,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        progressUpdating.set(false);
 	        
 	        statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
-	        archive.getWindow().progress(1);
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
@@ -287,6 +285,9 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		} else {
 			regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
 		}
+		
+		if (!regionRecord.hasRegion(regionName))
+			return;
 		
 		for (int j=0;j<rowCount;j++) {
 			if (region) {
