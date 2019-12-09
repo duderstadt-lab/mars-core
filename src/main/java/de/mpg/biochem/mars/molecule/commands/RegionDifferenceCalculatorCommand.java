@@ -130,6 +130,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		//Output first part of log message...
 		logService.info(log);
 		
+		archive.getWindow().updateLockMessage("Calculating Region Differences...");
+		
 		//Lock the window so it can't be changed while processing
 		if (!uiService.isHeadless())
 			archive.lock();
@@ -141,7 +143,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 				Molecule molecule = archive.get(UID);
 				
-				if (!molecule.hasRegion(regionOneName) && !molecule.hasRegion(regionTwoName))
+				if (!molecule.hasRegion(regionOneName) || !molecule.hasRegion(regionTwoName))
 					return;
 				
 				MarsTable datatable = molecule.getDataTable();
