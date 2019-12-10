@@ -87,14 +87,16 @@ public class LogBuilder {
 		addParameter("Git Build", getBuild());
 	}
 	
+	public void addParameter(String parameter, boolean value) {
+		addParameter(parameter, String.valueOf(value));
+	}
+	
+	public void addParameter(String parameter, int value) {
+		addParameter(parameter, String.valueOf(value));
+	}
+	
 	public void addParameter(String parameter, double value) {
-		if (parameters == null) {
-			parameters = new ArrayList<String[]>();
-		}
-		String[] param = new String[2];
-		param[0] = parameter;
-		param[1] = String.valueOf(value);
-		parameters.add(param);
+		addParameter(parameter, String.valueOf(value));
 	}
 	
 	public void addParameter(String parameter, String value) {
