@@ -158,8 +158,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 			//Before we start we should build a Map of region information from the image metadata records
 			//then we can use the map as we go through the molecules.
 			//This will be most efficient.
-			ConcurrentMap<String, RegionOfInterest> metadataRegionOneMap = new ConcurrentHashMap<String, RegionOfInterest>();
-			ConcurrentMap<String, RegionOfInterest> metadataRegionTwoMap = new ConcurrentHashMap<String, RegionOfInterest>();
+			ConcurrentMap<String, MarsRegion> metadataRegionOneMap = new ConcurrentHashMap<String, MarsRegion>();
+			ConcurrentMap<String, MarsRegion> metadataRegionTwoMap = new ConcurrentHashMap<String, MarsRegion>();
 			
 			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
 				MarsImageMetadata metadata = archive.getImageMetadata(metaUID);
@@ -176,8 +176,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 				if (!metadataRegionOneMap.containsKey(metaUID) && !metadataRegionTwoMap.containsKey(metaUID))
 					return;
 				
-				RegionOfInterest regionOne = metadataRegionOneMap.get(metaUID);
-				RegionOfInterest regionTwo = metadataRegionTwoMap.get(metaUID);
+				MarsRegion regionOne = metadataRegionOneMap.get(metaUID);
+				MarsRegion regionTwo = metadataRegionTwoMap.get(metaUID);
 				
 				Molecule molecule = archive.get(UID);
 				MarsTable datatable = molecule.getDataTable();
@@ -210,7 +210,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("Parameter Name", ParameterName);
 	}
 	
-	public static double calcRegionDifference(Molecule molecule, String xColumn, String yColumn, RegionOfInterest regionOne, RegionOfInterest regionTwo, String parameterName) {
+	public static double calcRegionDifference(Molecule molecule, String xColumn, String yColumn, MarsRegion regionOne, MarsRegion regionTwo, String parameterName) {
 		MarsTable datatable = molecule.getDataTable();
 		
 		double region1_mean = datatable.mean(yColumn, xColumn, regionOne.getStart(), regionOne.getEnd());

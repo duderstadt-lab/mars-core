@@ -7,32 +7,27 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 
-public class RegionOfInterest implements JsonConvertibleRecord {
+public class MarsPosition implements JsonConvertibleRecord {
 		String name;
 		String column;
 		String color;
-		double start, end, opacity;
+		double position;
 		
-		public RegionOfInterest(String name) {
+		public MarsPosition(String name) {
 			this.name = name;
-			this.start = 0;
-			this.end = 0;
-			this.column = "Time (s)";
-			this.color = "#416ef468";
-			this.opacity = 0.2;
+			this.position = 0;
+			this.color = "rgba(0,0,0,1.0)";
 		}
 		
-		public RegionOfInterest(JsonParser jParser) throws IOException {
+		public MarsPosition(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
 		}
 		
-		public RegionOfInterest(String name, String column, double start, double end, String color, double opacity) {
+		public MarsPosition(String name, String column, double position, String color) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
-			this.start = start;
-			this.end = end;
-			this.opacity = opacity;
+			this.position = position;
 		}
 
 		@Override
@@ -40,10 +35,8 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 			jGenerator.writeStartObject();
 			jGenerator.writeStringField("name", name);
 			jGenerator.writeStringField("column", column);
-			jGenerator.writeNumberField("start",start);
-			jGenerator.writeNumberField("end",end);
+			jGenerator.writeNumberField("position",position);
 			jGenerator.writeStringField("color", color);
-			jGenerator.writeNumberField("opacity", opacity);
 			jGenerator.writeEndObject();
 		}
 
@@ -55,27 +48,18 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 	    		if ("name".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			name = jParser.getText();
-	    		} 
+	    		}
 	    		if ("column".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			column = jParser.getText();
 	    		}
-	    			
-	    		if ("start".equals(fieldname)) {
+	    		if ("position".equals(fieldname)) {
 	    			jParser.nextToken();
-	    			start = jParser.getDoubleValue();
-	    		}
-	    		if ("end".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			end = jParser.getDoubleValue();
+	    			position = jParser.getDoubleValue();
 	    		}
 	    		if ("color".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			color = jParser.getText();
-	    		}
-	    		if ("opacity".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			opacity = jParser.getDoubleValue();
 	    		}
 	    	}
 		}
@@ -105,27 +89,11 @@ public class RegionOfInterest implements JsonConvertibleRecord {
 			this.color = color;
 		}
 		
-		public double getStart() {
-			return start;
+		public double getPosition() {
+			return position;
 		}
 		
-		public void setStart(double start) {
-			this.start = start;
-		}
-		
-		public double getEnd() {
-			return end;
-		}
-		
-		public void setEnd(double end) {
-			this.end = end;
-		}
-		
-		public void setOpacity(double opacity) {
-			this.opacity = opacity;
-		}
-		
-		public double getOpacity() {
-			return opacity;
+		public void setPosition(double position) {
+			this.position = position;
 		}
 	}

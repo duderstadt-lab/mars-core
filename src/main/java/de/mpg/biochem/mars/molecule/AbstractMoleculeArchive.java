@@ -1566,14 +1566,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				
 				if (!moleculeFile.exists()) {
 					addLogMessage("Molecule record " + UID + " cannot be found.");
-					molecule = createMolecule(UID);
-					molecule.setNotes("This record cannot be found.");
-					return molecule;
+					//molecule = createMolecule(UID);
+					//molecule.setNotes("This record cannot be found.");
+					return null;
 				} else if (moleculeFile.length() == 0) {
 					addLogMessage("Molecule record " + UID + " has been corrupted.");
-					molecule = createMolecule(UID);
-					molecule.setNotes("There is no data available for this record.");
-					return molecule;
+					//molecule = createMolecule(UID);
+					//molecule.setNotes("There is no data available for this record.");
+					return null;
 				}
 				
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(moleculeFile));

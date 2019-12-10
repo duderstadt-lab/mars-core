@@ -41,8 +41,8 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
-import de.mpg.biochem.mars.util.PositionOfInterest;
-import de.mpg.biochem.mars.util.RegionOfInterest;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
 	//Unique ID for storage in maps and universal identification.
@@ -64,10 +64,10 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	protected MarsTable dataTable;
 	
 	//Regions of interest map
-	protected LinkedHashMap<String, RegionOfInterest> regionsOfInterest;
+	protected LinkedHashMap<String, MarsRegion> regionsOfInterest;
 	
 	//Positions of interest map
-	protected LinkedHashMap<String, PositionOfInterest> positionsOfInterest;
+	protected LinkedHashMap<String, MarsPosition> positionsOfInterest;
 	
 	public AbstractMarsRecord() {
 		super();
@@ -194,13 +194,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		}, IOException.class));		
 		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				RegionOfInterest regionOfInterest = new RegionOfInterest(jParser);
+				MarsRegion regionOfInterest = new MarsRegion(jParser);
 		    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
 	    	}
 	 	}, IOException.class));
 		inputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				PositionOfInterest positionOfInterest = new PositionOfInterest(jParser);
+				MarsPosition positionOfInterest = new MarsPosition(jParser);
 		    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
 	    	}
 	 	}, IOException.class));
@@ -407,11 +407,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	
-	public void putRegion(RegionOfInterest regionOfInterest) {
+	public void putRegion(MarsRegion regionOfInterest) {
 		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
 	}
 	
-	public RegionOfInterest getRegion(String name) {
+	public MarsRegion getRegion(String name) {
 		return regionsOfInterest.get(name);
 	}
 	
@@ -427,11 +427,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		return regionsOfInterest.keySet();
 	}
 	
-	public void putPosition(PositionOfInterest positionOfInterest) {
+	public void putPosition(MarsPosition positionOfInterest) {
 		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
 	}
 	
-	public PositionOfInterest getPosition(String name) {
+	public MarsPosition getPosition(String name) {
 		return positionsOfInterest.get(name);
 	}
 	

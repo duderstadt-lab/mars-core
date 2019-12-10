@@ -31,8 +31,8 @@ import java.util.Set;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.PositionOfInterest;
-import de.mpg.biochem.mars.util.RegionOfInterest;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	

@@ -41,8 +41,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
-import de.mpg.biochem.mars.util.PositionOfInterest;
-import de.mpg.biochem.mars.util.RegionOfInterest;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
 	//UID of ImageMetadata associated wit this molecule.

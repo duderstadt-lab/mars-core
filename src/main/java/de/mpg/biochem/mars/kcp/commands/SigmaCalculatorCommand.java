@@ -46,7 +46,7 @@ import org.scijava.widget.ChoiceWidget;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
-import de.mpg.biochem.mars.util.RegionOfInterest;
+import de.mpg.biochem.mars.util.MarsRegion;
 import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator", menu = {
@@ -126,7 +126,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		final String paramName = Ycolumn + "_sigma";
 		
-		ConcurrentMap<String, RegionOfInterest> regionMap = new ConcurrentHashMap<String, RegionOfInterest>();
+		ConcurrentMap<String, MarsRegion> regionMap = new ConcurrentHashMap<String, MarsRegion>();
 		
 		if (region.equals("Defined in Metadata")) {
 			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
@@ -144,10 +144,10 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 			if (region.equals("Defined below")) {
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
 			} else if (region.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
-				RegionOfInterest regionOfInterest = molecule.getRegion(regionName);
+				MarsRegion regionOfInterest = molecule.getRegion(regionName);
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));				
 			} else if (region.equals("Defined in Metadata") && regionMap.containsKey(molecule.getImageMetadataUID())) {
-				RegionOfInterest regionOfInterest = regionMap.get(molecule.getImageMetadataUID());
+				MarsRegion regionOfInterest = regionMap.get(molecule.getImageMetadataUID());
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			} else {
 				//WE assume this mean sigma for whole trace.

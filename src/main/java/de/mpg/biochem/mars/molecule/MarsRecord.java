@@ -31,8 +31,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.PositionOfInterest;
-import de.mpg.biochem.mars.util.RegionOfInterest;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 public interface MarsRecord extends JsonConvertibleRecord {
 	
@@ -181,9 +181,9 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 */
 	void setDataTable(MarsTable table);
 	
-	public void putRegion(RegionOfInterest regionOfInterest);
+	public void putRegion(MarsRegion regionOfInterest);
 	
-	public RegionOfInterest getRegion(String name);
+	public MarsRegion getRegion(String name);
 	
 	public boolean hasRegion(String name);
 	
@@ -191,9 +191,9 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	
 	public Set<String> getRegionNames();
 	
-	public void putPosition(PositionOfInterest positionOfInterest);
+	public void putPosition(MarsPosition positionOfInterest);
 	
-	public PositionOfInterest getPosition(String name);
+	public MarsPosition getPosition(String name);
 	
 	public boolean hasPosition(String name);
 	
