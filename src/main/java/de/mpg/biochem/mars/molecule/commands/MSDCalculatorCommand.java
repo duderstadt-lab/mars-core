@@ -138,6 +138,14 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		builder.addParameter("Parameter Name", ParameterName);
 	}
 	
+	public static double calcMSD(Molecule molecule, String column, String parameterName) {
+		double msd = molecule.getDataTable().msd(column);
+		
+		molecule.setParameter(parameterName, msd);
+		
+		return msd;
+	}
+	
 	//Getters and Setters
 	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;

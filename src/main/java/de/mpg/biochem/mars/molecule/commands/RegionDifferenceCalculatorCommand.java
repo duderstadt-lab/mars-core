@@ -54,7 +54,6 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
 
@@ -210,6 +209,19 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("Region 1 name", regionOneName);
 		builder.addParameter("Region 2 name", regionTwoName);
 		builder.addParameter("Parameter Name", ParameterName);
+	}
+	
+	public static double calcRegionDifference(Molecule molecule, String xColumn, String yColumn, RegionOfInterest regionOne, RegionOfInterest regionTwo, String parameterName) {
+		MarsTable datatable = molecule.getDataTable();
+		
+		double region1_mean = datatable.mean(yColumn, xColumn, regionOne.getStart(), regionOne.getEnd());
+		double region2_mean = datatable.mean(yColumn, xColumn, regionTwo.getStart(), regionTwo.getEnd());
+		
+		double parameterValue = region1_mean - region2_mean;
+		
+		molecule.setParameter(parameterName, parameterValue);
+		
+		return parameterValue;
 	}
 	
 	//Getters and Setters
