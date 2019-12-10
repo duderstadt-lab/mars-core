@@ -95,8 +95,16 @@ public class LogBuilder {
 		addParameter(parameter, String.valueOf(value));
 	}
 	
+	public void addParameter(String parameter, Integer value) {
+		addParameter(parameter, value.toString());
+	}
+	
 	public void addParameter(String parameter, double value) {
 		addParameter(parameter, String.valueOf(value));
+	}
+	
+	public void addParameter(String parameter, Double value) {
+		addParameter(parameter, value.toString());
 	}
 	
 	public void addParameter(String parameter, String value) {
