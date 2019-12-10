@@ -55,7 +55,7 @@ public class LogBuilder {
 		addRunParameters();
 	}
 	
-	public String buildTitleBlock(String pluginName) {
+	public static String buildTitleBlock(String pluginName) {
 		String titleBlock = "";
 		int charLength = 75;
 		int eachHalf = (charLength - pluginName.length() - 2)/2;
@@ -85,6 +85,16 @@ public class LogBuilder {
 		addParameter("Time", new java.util.Date() + "");
 		addParameter("Version", getVersion());
 		addParameter("Git Build", getBuild());
+	}
+	
+	public void addParameter(String parameter, double value) {
+		if (parameters == null) {
+			parameters = new ArrayList<String[]>();
+		}
+		String[] param = new String[2];
+		param[0] = parameter;
+		param[1] = String.valueOf(value);
+		parameters.add(param);
 	}
 	
 	public void addParameter(String parameter, String value) {
