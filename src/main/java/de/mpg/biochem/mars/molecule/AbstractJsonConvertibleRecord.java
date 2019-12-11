@@ -49,6 +49,15 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		createIOMaps();
 	}
 	
+	/**
+	 * Stream a record to JSON. Stream a record
+	 * from to a file using the JsonGenerator stream provided.
+	 * 
+	 * @param jGenerator A JsonGenerator for streaming a
+	 * record to a file.
+	 * 
+     * @throws IOException if there is a problem reading from the file.
+	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
 		for (String field : outputMap.keySet()) {
@@ -59,10 +68,10 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	}
 	
 	/**
-	 * Read a molecule record from JSON. Load a molecule record
+	 * Read a record from JSON. Load a record
 	 * from a file using the JsonParser stream provided.
 	 * 
-	 * @param jParser A JsonParser for loading the molecule
+	 * @param jParser A JsonParser for loading the 
 	 * record from a file.
 	 * 
      * @throws IOException if there is a problem reading from the file.
