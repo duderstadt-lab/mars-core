@@ -729,7 +729,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 		
-        Files.setPosixFilePermissions(indexFile.toPath(), MarsUtil.ownerGroupPermissions);
+        //Files.setPosixFilePermissions(indexFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -777,7 +777,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 		
-        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
+        //Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -899,9 +899,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		moleculesDir.mkdirs();
 		
 		//Set directory permissions
-		Files.setPosixFilePermissions(virtualDirectory.toPath(), MarsUtil.ownerGroupPermissions);
-		Files.setPosixFilePermissions(imageMetaDataDir.toPath(), MarsUtil.ownerGroupPermissions);
-		Files.setPosixFilePermissions(moleculesDir.toPath(), MarsUtil.ownerGroupPermissions);
+		//Files.setPosixFilePermissions(virtualDirectory.toPath(), MarsUtil.ownerGroupPermissions);
+		//Files.setPosixFilePermissions(imageMetaDataDir.toPath(), MarsUtil.ownerGroupPermissions);
+		//Files.setPosixFilePermissions(moleculesDir.toPath(), MarsUtil.ownerGroupPermissions);
 
 		//We will generate the index as we save records...
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
@@ -983,7 +983,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 		
-        Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
+        //Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
 			
 		//Generate indexes file using moleculeIndex and imageMetadataIndex of current archive
 		//If the current archive is not virtual.. then tagIndex and moleculeImageMetadataUIDIndex
@@ -1351,7 +1351,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 		
-		Files.setPosixFilePermissions(moleculeFile.toPath(), MarsUtil.ownerGroupPermissions);
+		//Files.setPosixFilePermissions(moleculeFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -1375,7 +1375,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 		
-		Files.setPosixFilePermissions(imageMetadataFile.toPath(), MarsUtil.ownerGroupPermissions);
+		//Files.setPosixFilePermissions(imageMetadataFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	private void updateImageMetadataTagIndex(I metaData) {
@@ -1818,7 +1818,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				stream.flush();
 				stream.close();
 				
-				Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
+				//Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

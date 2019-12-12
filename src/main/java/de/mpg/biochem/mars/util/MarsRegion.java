@@ -31,7 +31,7 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
  * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link MSDCalculatorCommand}.
  * <p>
  * Region definitions include start, end, column (Time (s) or slice or otherwise), color (in hex), and 
- * opacity (range 0 to 1). These values are used by marsfx to draw regions on plots based on the start, end
+ * opacity (range 0 to 1). These values are used by mars-fx to draw regions on plots based on the start, end
  * color and opacity.
  * <p>
  * Opacity specified in the hex code is ignored. The opacity setting overrides the value in the hex string.
