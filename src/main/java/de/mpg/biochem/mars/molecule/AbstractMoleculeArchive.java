@@ -1663,6 +1663,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public File getFile() {
 		return file;
 	}
+	
+	/**
+	 * Set the file the archive should save to.
+	 * 
+	 * @return The File the archive was opened from.
+	 */
+	public void setFile(File file) {
+		this.file = file;
+	}
 
 	/**
 	 * Set the name of the archive.
