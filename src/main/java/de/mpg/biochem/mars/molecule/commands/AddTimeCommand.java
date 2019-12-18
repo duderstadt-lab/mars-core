@@ -80,7 +80,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		
 		String log = builder.buildTitleBlock("Add Time (s)");
 		
-		addInputParameterLog(builder);
+		builder.addParameter("MoleculeArchive", archive.getName());
 		log += builder.buildParameterList();
 		
 		//Output first part of log message...
@@ -98,7 +98,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getImageMetadataUIDs()) {
 			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
-				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta.getUID()));
+				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
 			} else {
 				logService.error("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
@@ -142,21 +142,65 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private HashMap<Double, Double> getSliceToTimeMap(String metaUID) {
+	public static void addTime(SingleMoleculeArchive archive) {
+		//Build log message
+		LogBuilder builder = new LogBuilder();
+		
+		String log = LogBuilder.buildTitleBlock("Add Time (s)");
+		
+		builder.addParameter("MoleculeArchive", archive.getName());
+		log += builder.buildParameterList();
+		
+		archive.addLogMessage(log);
+		
+		//First let's generate lookup maps for slice to time for all metadata items in the archive
+		//Could just use a list of maps, but I guess this is simplier below...
+		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
+		for (String metaUID : archive.getImageMetadataUIDs()) {
+			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
+				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
+			} else {
+				archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+				archive.addLogMessage(LogBuilder.endBlock(false));
+				return;
+			}
+		}
+		
+		//Loop through each molecule and add a Time (s) column using the metadata information...
+		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+			SingleMolecule molecule = archive.get(UID);
+			
+			HashMap<Double, Double> sliceToTimeMap = metaToMap.get(molecule.getImageMetadataUID());
+			MarsTable datatable = molecule.getDataTable();
+			
+			//If the column already exists we don't need to add it
+			//instead we will just be overwriting the values below..
+			if (!datatable.hasColumn("Time (s)"))
+				molecule.getDataTable().appendColumn("Time (s)");
+			
+			for (int i=0;i<datatable.getRowCount();i++) {
+				molecule.getDataTable().set("Time (s)", i, sliceToTimeMap.get(datatable.get("slice", i)));
+			}
+			
+			archive.put(molecule);
+		});
+		
+	    archive.addLogMessage(LogBuilder.endBlock(true));
+	    archive.addLogMessage("  ");
+	}
+	
+	private static HashMap<Double, Double> getSliceToTimeMap(MarsImageMetadata metadata) {
 		HashMap<Double, Double> sliceToTime = new HashMap<Double, Double>();
 		
 		//First we retrieve columns from image metadata
-		DoubleColumn metaSlice = (DoubleColumn) archive.getImageMetadata(metaUID).getDataTable().get("slice"); 
-		DoubleColumn metaTime = (DoubleColumn) archive.getImageMetadata(metaUID).getDataTable().get("Time (s)"); 
+		DoubleColumn metaSlice = (DoubleColumn) metadata.getDataTable().get("slice"); 
+		DoubleColumn metaTime = (DoubleColumn) metadata.getDataTable().get("Time (s)"); 
 		
 		for (int i=0;i<metaSlice.size();i++) {
 			sliceToTime.put(metaSlice.get(i), metaTime.get(i));
 		}
 		return sliceToTime;
-	}
-
-	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("MoleculeArchive", archive.getName());
 	}
 	
 	public void setArchive(SingleMoleculeArchive archive) {
