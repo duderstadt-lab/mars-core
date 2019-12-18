@@ -240,7 +240,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return sliceToColumn;
 	}
 	
-	public static void calcDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
+	public static void correctDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
 			String meta_y, String input_x, String input_y, String output_x, String output_y, boolean retainCoordinates) {
 			//Build log message
 			LogBuilder builder = new LogBuilder();
