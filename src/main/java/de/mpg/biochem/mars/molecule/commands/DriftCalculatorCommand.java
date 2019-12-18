@@ -112,7 +112,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Drift Calculator");
+		String log = LogBuilder.buildTitleBlock("Drift Calculator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -161,7 +161,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				});
 			} else {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
-				//Throws and error for a non array... So strange...
 				long[] num_full_traj = new long[1];
 				num_full_traj[0] = 0;
 				archive.getMoleculeUIDs().stream()
@@ -266,7 +265,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			archive.unlock();
 	}
 	
-	private void linearInterpolateGaps(MarsTable table, int slices) {
+	private static void linearInterpolateGaps(MarsTable table, int slices) {
 		int rows = table.getRowCount();
 
 		for (int i=1;i<rows;i++) {
@@ -306,6 +305,159 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		table.sort(true, "slice");
 	}
 	
+	public static void calcDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
+			String output_x, String output_y, boolean use_incomplete_traces, String mode, String zeroPoint) {
+			//Build log message
+			LogBuilder builder = new LogBuilder();
+			
+			String log = LogBuilder.buildTitleBlock("Drift Calculator");
+			
+			builder.addParameter("MoleculeArchive", archive.getName());
+			builder.addParameter("Input X", input_x);
+			builder.addParameter("Input Y", input_y);
+			builder.addParameter("Output X", output_x);
+			builder.addParameter("Output Y", output_y);
+			builder.addParameter("Use incomplete traces", String.valueOf(use_incomplete_traces));
+			builder.addParameter("Zero Point", zeroPoint);
+			builder.addParameter("Background Tag", backgroundTag);
+			builder.addParameter("mode", mode);
+			log += builder.buildParameterList();
+			
+			archive.addLogMessage(log);
+			
+			//We will want to calculate the background for each dataset 
+			//in the archive separately
+			for (String metaUID : archive.getImageMetadataUIDs()) {
+				MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+				//Let's find the last slice
+				MarsTable metaDataTable = meta.getDataTable();
+				
+				int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
+				
+				HashMap<Integer, DoubleColumn> xValuesColumns = new HashMap<Integer, DoubleColumn>();
+				HashMap<Integer, DoubleColumn> yValuesColumns = new HashMap<Integer, DoubleColumn>();
+				
+				for (int slice=1;slice<=slices;slice++) {
+					xValuesColumns.put(slice, new DoubleColumn("X " + slice));
+					yValuesColumns.put(slice, new DoubleColumn("Y " + slice));
+				}
+				
+				if (use_incomplete_traces) {
+					//For all molecules in this dataset that are marked with the background tag and have all slices
+					archive.getMoleculeUIDs().stream()
+						.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
+						.forEach(UID -> {
+							MarsTable datatable = archive.get(UID).getDataTable();
+							double x_mean = datatable.mean(input_x);
+							double y_mean = datatable.mean(input_y);
+							
+							for (int row = 0; row < datatable.getRowCount(); row++) {
+								int slice = (int)datatable.getValue("slice", row);
+								xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
+								yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+							}
+					});
+				} else {
+					//For all molecules in this dataset that are marked with the background tag and have all slices
+					//Throws and error for a non array... So strange...
+					long[] num_full_traj = new long[1];
+					num_full_traj[0] = 0;
+					archive.getMoleculeUIDs().stream()
+						.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
+						.forEach(UID -> {
+							MarsTable datatable = archive.get(UID).getDataTable();
+							if (archive.get(UID).getDataTable().getRowCount() == slices) {
+								double x_mean = datatable.mean(input_x);
+								double y_mean = datatable.mean(input_y);
+								
+								for (int row = 0; row < datatable.getRowCount(); row++) {
+									int slice = (int)datatable.getValue("slice", row);
+									xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
+									yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+								}
+								num_full_traj[0]++;
+							}
+					});
+					
+					if (num_full_traj[0] == 0) {
+					    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+					    continue;
+					}
+				}
+				
+				MarsTable driftTable = new MarsTable();
+				driftTable.appendColumn("slice");
+				driftTable.appendColumn("x");
+				driftTable.appendColumn("y");
+				
+				int gRow = 0;
+				for (int slice = 1; slice <= slices ; slice++) {
+					if (xValuesColumns.get(slice).size() == 0 || yValuesColumns.get(slice).size() == 0)
+						continue;
+					
+					double xSliceFinalValue = Double.NaN;
+					double ySliceFinalValue = Double.NaN;
+						
+					MarsTable xTempTable = new MarsTable();
+					xTempTable.add(xValuesColumns.get(slice));
+					
+					MarsTable yTempTable = new MarsTable();
+					yTempTable.add(yValuesColumns.get(slice));
+					
+					if (mode.equals("mean")) {
+						xSliceFinalValue = xTempTable.mean("X " + slice);
+						ySliceFinalValue = yTempTable.mean("Y " + slice);
+					} else {
+						xSliceFinalValue = xTempTable.median("X " + slice);
+						ySliceFinalValue = yTempTable.median("Y " + slice);
+					}
+					
+					driftTable.appendRow();
+					driftTable.setValue("slice", gRow, slice);
+					driftTable.setValue("x", gRow, xSliceFinalValue);
+					driftTable.setValue("y", gRow, ySliceFinalValue);
+					gRow++;
+				}
+				
+				if (driftTable.getRowCount() != slices)	
+					linearInterpolateGaps(driftTable, slices);
+				
+				if (!metaDataTable.hasColumn(output_x))
+					metaDataTable.appendColumn(output_x);
+				
+				if (!metaDataTable.hasColumn(output_y))
+					metaDataTable.appendColumn(output_y);
+				
+				for (int row = 0; row < metaDataTable.getRowCount() ; row++) {
+					metaDataTable.setValue(output_x, row, driftTable.getValue("x", row));
+					metaDataTable.setValue(output_y, row, driftTable.getValue("y", row));
+				}
+				
+				double xZeroPoint = 0;
+				double yZeroPoint = 0;
+				
+				if (zeroPoint.equals("beginning")) {
+					xZeroPoint = metaDataTable.getValue(output_x, 0);
+					yZeroPoint = metaDataTable.getValue(output_y, 0);
+				} else if (zeroPoint.equals("end")) {
+					xZeroPoint = metaDataTable.getValue(output_x, metaDataTable.getRowCount() - 1);
+					yZeroPoint = metaDataTable.getValue(output_y, metaDataTable.getRowCount() - 1);
+				}
+				
+				for (int row=0; row < metaDataTable.getRowCount(); row++) {
+					metaDataTable.setValue(output_x, row, metaDataTable.getValue(output_x, row) - xZeroPoint);
+					metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
+				}
+				
+				archive.putImageMetadata(meta);
+			}
+			
+		    archive.addLogMessage(LogBuilder.endBlock(true));
+		    archive.addLogMessage("  ");
+	}
+	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Input X", input_x);
@@ -313,7 +465,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("Output X", output_x);
 		builder.addParameter("Output Y", output_y);
 		builder.addParameter("Use incomplete traces", String.valueOf(use_incomplete_traces));
-		builder.addParameter("Zero", zeroPoint);
+		builder.addParameter("Zero Point", zeroPoint);
 		builder.addParameter("Background Tag", backgroundTag);
 		builder.addParameter("mode", mode);
 	}
