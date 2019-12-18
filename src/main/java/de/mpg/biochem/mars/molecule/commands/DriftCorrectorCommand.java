@@ -135,8 +135,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getImageMetadataUIDs()) {
 			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
-				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
-				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
+				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
+				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
 			} else {
 				logService.error("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
@@ -227,7 +227,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private HashMap<Double, Double> getSliceToColumnMap(MarsImageMetadata meta, String columnName) {
+	private static HashMap<Double, Double> getSliceToColumnMap(MarsImageMetadata meta, String columnName, int from, int to) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
 		MarsTable metaTable = meta.getDataTable();
@@ -238,6 +238,114 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			sliceToColumn.put(metaTable.getValue("slice", i), metaTable.getValue(columnName, i) - meanBG);
 		}
 		return sliceToColumn;
+	}
+	
+	public static void calcDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
+			String meta_y, String input_x, String input_y, String output_x, String output_y, boolean retainCoordinates) {
+			//Build log message
+			LogBuilder builder = new LogBuilder();
+			
+			String log = LogBuilder.buildTitleBlock("Drift Corrector");
+			
+			builder.addParameter("MoleculeArchive", archive.getName());
+			builder.addParameter("from slice", String.valueOf(from));
+			builder.addParameter("to slice", String.valueOf(to));
+			builder.addParameter("Metadata Background X", meta_x);
+			builder.addParameter("Metadata Background Y", meta_y);
+			builder.addParameter("Input X", input_x);
+			builder.addParameter("Input Y", input_y);
+			builder.addParameter("Output X", output_x);
+			builder.addParameter("Output Y", output_y);
+			builder.addParameter("correct original coordinates", String.valueOf(retainCoordinates));
+			log += builder.buildParameterList();
+			
+			archive.addLogMessage(log);
+			
+			//Build maps from slice to x and slice to y for each metadataset
+			HashMap<String, HashMap<Double, Double>> metaToMapX = new HashMap<String, HashMap<Double, Double>>();
+			HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
+			
+			for (String metaUID : archive.getImageMetadataUIDs()) {
+				MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+				if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
+					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
+					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
+				} else {
+					archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+					archive.addLogMessage(LogBuilder.endBlock(false));
+
+					return;
+				}
+			}
+
+			//Loop through each molecule and calculate drift corrected traces...
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				Molecule molecule = archive.get(UID);
+				
+				if (molecule == null) {
+					archive.addLogMessage("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
+					return;
+				}
+				
+				HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetadataUID());
+				HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetadataUID());
+				
+				MarsTable datatable = molecule.getDataTable();
+				
+				//If the column already exists we don't need to add it
+				//instead we will just be overwriting the values below..
+				if (!datatable.hasColumn(output_x))
+					molecule.getDataTable().appendColumn(output_x);
+				
+				if (!datatable.hasColumn(output_y))
+					molecule.getDataTable().appendColumn(output_y);
+				
+				//If we want to retain the original coordinates then 
+				//we don't subtract anything except the drift.
+				double meanX = 0;
+				double meanY = 0;
+				
+				if (!retainCoordinates) {
+					meanX = datatable.mean(input_x,"slice",from, to);
+					meanY = datatable.mean(input_y,"slice",from, to);
+				}
+				
+				//We use the mappings because many molecules are missing slices.
+				//by always using the maps we ensure the correct background slice is 
+				//taken that matches the molecules slice at the given index.
+				for (int i=0;i<datatable.getRowCount();i++) {
+					double slice = datatable.getValue("slice", i);
+					
+					//First calculate corrected value for current slice x
+					double molX = datatable.getValue(input_x, i) - meanX;
+					double backgroundX = Double.NaN;
+					
+					//If using incomplete traces for building the background
+					//sometimes there are missing slices..
+					if (sliceToXMap.containsKey(slice))
+						backgroundX = sliceToXMap.get(slice);
+					
+					double x_drift_corr_value = molX - backgroundX;
+					datatable.set(output_x, i, x_drift_corr_value);
+			
+					//Then calculate corrected value for current slice y
+					double molY = datatable.getValue(input_y, i) - meanY;
+					double backgroundY = Double.NaN;
+					
+					//If using incomplete traces for building the background
+					//sometimes there are missing slices..
+					if (sliceToYMap.containsKey(slice))
+						backgroundY = sliceToYMap.get(slice);
+					
+					double y_drift_corr_value = molY - backgroundY;
+					datatable.set(output_y, i, y_drift_corr_value);
+				}
+				
+				archive.put(molecule);
+			});
+			
+		    archive.addLogMessage(LogBuilder.endBlock(true));
+		    archive.addLogMessage("  ");
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
