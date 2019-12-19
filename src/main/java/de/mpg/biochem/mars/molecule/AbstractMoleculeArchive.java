@@ -35,6 +35,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -1126,14 +1129,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			I metaData = null;
 			try {
 				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
-				InputStream inputStream = new BufferedInputStream(new FileInputStream(metaDataFile));
-		
+				FileInputStream inputStream = new FileInputStream(metaDataFile);
+		       
 				JsonParser jParser = jfactory.createParser(inputStream);
 
 				metaData = createImageMetadata(jParser);
 				
 				jParser.close();
-				inputStream.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -1342,16 +1344,22 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException {
 		File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(moleculeFile));
 		
+		FileOutputStream stream = new FileOutputStream(moleculeFile);
+		FileChannel channel = stream.getChannel();
+
+		// Use the file channel to create a lock on the file.
+        // This method blocks until it can retrieve the lock.
+        FileLock lock = channel.lock();
+
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 		molecule.toJSON(jGenerator);
+		
+        if( lock != null ) {
+            lock.release();
+        }
+        
 		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
-		
-		//Files.setPosixFilePermissions(moleculeFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -1366,16 +1374,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void saveImageMetadataToFile(File directory, I imageMetadata, JsonFactory jfactory) throws IOException {
 		File imageMetadataFile = new File(directory.getAbsolutePath() + "/" + imageMetadata.getUID() + ".json");
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(imageMetadataFile));
+		FileOutputStream stream = new FileOutputStream(imageMetadataFile);
+		FileChannel channel = stream.getChannel();
 		
+		// Use the file channel to create a lock on the file.
+        // This method blocks until it can retrieve the lock.
+        FileLock lock = channel.lock();
+
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 		imageMetadata.toJSON(jGenerator);
+		if( lock != null ) {
+            lock.release();
+        }
+        
 		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
-		
-		//Files.setPosixFilePermissions(imageMetadataFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	private void updateImageMetadataTagIndex(I metaData) {
@@ -1576,14 +1588,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					return null;
 				}
 				
-				InputStream inputStream = new BufferedInputStream(new FileInputStream(moleculeFile));
-		
+				FileInputStream inputStream = new FileInputStream(moleculeFile);
+		       
 				JsonParser jParser = jfactory.createParser(inputStream);
 
 				molecule = createMolecule(jParser);
-				
+
 				jParser.close();
-				inputStream.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
