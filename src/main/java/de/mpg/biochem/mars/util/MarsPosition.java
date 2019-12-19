@@ -48,10 +48,11 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
  * @author Karl Duderstadt
  */
 public class MarsPosition implements JsonConvertibleRecord {
-		String name;
-		String column;
-		String color;
-		double position;
+		private String name = "Position"; 
+		private String column = "Time (s)";
+		private String color = "#000000";
+		private double stroke = 1;
+		private double position = 0;
 		
 		/**
 		 * Constructor for creating a plot position of a given name with default settings. 
@@ -60,8 +61,6 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 */
 		public MarsPosition(String name) {
 			this.name = name;
-			this.position = 0;
-			this.color = "rgba(0,0,0,1.0)";
 		}
 		
 		/**
@@ -81,13 +80,15 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 * @param column Name of column the region refers to.
 		 * @param position Location of the position in unit of column.
 		 * @param color Color string in hex format.
-		 * 
+		 * @param style Line dash pattern string.
+		 * @param stroke Line thickness.
 		 */
-		public MarsPosition(String name, String column, double position, String color) {
+		public MarsPosition(String name, String column, double position, String color, double stroke) {
 			this.name = name;
 			this.column = column;
 			this.color = color;
 			this.position = position;
+			this.stroke = stroke;
 		}
 
 		/**
@@ -106,6 +107,7 @@ public class MarsPosition implements JsonConvertibleRecord {
 			jGenerator.writeStringField("column", column);
 			jGenerator.writeNumberField("position",position);
 			jGenerator.writeStringField("color", color);
+			jGenerator.writeNumberField("stroke",stroke);
 			jGenerator.writeEndObject();
 		}
 
@@ -138,6 +140,10 @@ public class MarsPosition implements JsonConvertibleRecord {
 	    		if ("color".equals(fieldname)) {
 	    			jParser.nextToken();
 	    			color = jParser.getText();
+	    		}
+	    		if ("stroke".equals(fieldname)) {
+	    			jParser.nextToken();
+	    			stroke = jParser.getDoubleValue();
 	    		}
 	    	}
 		}
@@ -205,5 +211,19 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 */
 		public void setPosition(double position) {
 			this.position = position;
+		}
+		
+		/**
+		 * Get the stroke value (line thickness).
+		 */
+		public double getStroke() {
+			return stroke;
+		}
+		
+		/**
+		 * Set the stroke value (line thickness). Default is 1.0.
+		 */
+		public void setStroke(double stroke) {
+			this.stroke = stroke;
 		}
 	}

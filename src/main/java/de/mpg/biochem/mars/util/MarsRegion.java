@@ -65,10 +65,12 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
  * @author Karl Duderstadt
  */
 public class MarsRegion implements JsonConvertibleRecord {
-		private String name;
-		private String column;
-		private String color;
-		private double start, end, opacity;
+		private String name = "Region";
+		private String column = "Time (s)";
+		private String color = "#416ef468";
+		private double start = 0;
+		private double end = 0;
+		private double opacity = 0.2;
 		
 		/**
 		 * Constructor for creating a plot region of a given name with default settings. 
@@ -79,11 +81,6 @@ public class MarsRegion implements JsonConvertibleRecord {
 		 */
 		public MarsRegion(String name) {
 			this.name = name;
-			this.start = 0;
-			this.end = 0;
-			this.column = "Time (s)";
-			this.color = "#416ef468";
-			this.opacity = 0.2;
 		}
 		
 		/**
