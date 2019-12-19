@@ -39,7 +39,6 @@ import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -321,6 +320,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	private void initializeVariables() {
 		moleculeIndex = new ArrayList<String>();  
 		imageMetadataIndex = new ArrayList<String>(); 
+		imageMetadata = new ConcurrentHashMap<>();
 		
 		if (virtual) {
 			tagIndex = new ConcurrentHashMap<>();
@@ -331,7 +331,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			virtualImageMetadataSet = ConcurrentHashMap.newKeySet();
 		} else {
 			molecules = new ConcurrentHashMap<>();
-			imageMetadata = new ConcurrentHashMap<>();
 		}
 		
 		archiveProperties = createProperties();
@@ -468,7 +467,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			System.out.println("No indexes.json file found. Rebuilding indexes... This might take a while...");
 			rebuildIndexes();
 		}
-		//updateProperties();
 	}
 	
 	protected void load(File file) throws JsonParseException, IOException {
@@ -780,8 +778,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//flush and close streams...
 		stream.flush();
 		stream.close();
-		
-        //Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -901,11 +897,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		imageMetaDataDir.mkdirs();
 		moleculesDir.mkdirs();
-		
-		//Set directory permissions
-		//Files.setPosixFilePermissions(virtualDirectory.toPath(), MarsUtil.ownerGroupPermissions);
-		//Files.setPosixFilePermissions(imageMetaDataDir.toPath(), MarsUtil.ownerGroupPermissions);
-		//Files.setPosixFilePermissions(moleculesDir.toPath(), MarsUtil.ownerGroupPermissions);
 
 		//We will generate the index as we save records...
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
@@ -940,7 +931,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	}
 	        })).get();
 			
-			//Generate all molecule record files and indexes as the same time...
+			//Generate all molecule record files and indexes at the same time...
 	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
 	        	newTagIndex.put(UID, molecule.getTags());
@@ -986,8 +977,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		stream.flush();
 		stream.close();
-		
-        //Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
 			
 		//Generate indexes file using moleculeIndex and imageMetadataIndex of current archive
 		//If the current archive is not virtual.. then tagIndex and moleculeImageMetadataUIDIndex
@@ -1051,23 +1040,27 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param metaData an ImageMetadata record to add or update.
 	 */
-	public void putImageMetadata(I metaData) {
+	public void putImageMetadata(I metaData) {		
+		//If virtual we save the metadata to file
 		if (virtual) {
-				if (!virtualImageMetadataSet.contains(metaData.getUID())) {
-					synchronized(imageMetadataIndex) {	
-						imageMetadataIndex.add(metaData.getUID());
-					}
-					virtualImageMetadataSet.add(metaData.getUID());
-					archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+			if (!virtualImageMetadataSet.contains(metaData.getUID())) {
+				synchronized(imageMetadataIndex) {	
+					imageMetadataIndex.add(metaData.getUID());
 				}
+				virtualImageMetadataSet.add(metaData.getUID());
+				archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+			}
+			
 			try {
 				saveImageMetadataToFile(new File(file.getAbsolutePath() + "/ImageMetadata"), metaData, jfactory);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			updateImageMetadataTagIndex(metaData);
-		} else if (!imageMetadata.containsKey(metaData.getUID())) {
-			//If working in memory and the key is already in the map
+		}
+		
+		if (!imageMetadata.containsKey(metaData.getUID())) {
+			//If the key is already in the map
 			//there is only one copy and all changes have already been saved
 			//otherwise, we add it as a new record.
 			synchronized(imageMetadataIndex) {	
@@ -1120,32 +1113,42 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Retrieves a MARSImageMetadata record.
+	 * Retrieves a MarsImageMetadata record.
 	 * 
 	 * @param metaUID The UID of the MARSImageMetadata record to retrieve.
-	 * @return A MARSImageMetadata record.
+	 * @return A MarsImageMetadata record.
 	 */
 	public I getImageMetadata(String metaUID) {
 		if (virtual) {
-			I metaData = null;
-			try {
-				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
+			if (imageMetadata.containsKey(metaUID))
+				return imageMetadata.get(metaUID);
+			else {
+				I metaData = null;
+				try {
+					File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
+					
+					//Need to be read/write to ensure lock but the file is only read here.
+					RandomAccessFile raf = new RandomAccessFile(metaDataFile, "rw");
+					FileLock lock = raf.getChannel().lock();
+					
+					JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
+	
+					metaData = createImageMetadata(jParser);
+	
+					lock.release();
+					raf.close();
+					jParser.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				
-				//Need to be read/write to ensure lock but the file is only read here.
-				RandomAccessFile raf = new RandomAccessFile(metaDataFile, "rw");
-				FileLock lock = raf.getChannel().lock();
+				if (metaData != null) {
+					metaData.setParent(this);
+					imageMetadata.put(metaData.getUID(), metaData);
+				}
 				
-				JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
-
-				metaData = createImageMetadata(jParser);
-
-				lock.release();
-				raf.close();
-				jParser.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				return metaData;
 			}
-			return metaData;
 		} else {
 			return imageMetadata.get(metaUID);
 		}
