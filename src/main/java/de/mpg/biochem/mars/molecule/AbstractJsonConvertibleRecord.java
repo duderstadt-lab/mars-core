@@ -37,12 +37,26 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.util.MarsUtil;
 
+/**
+ * Abstract superclass for JsonConvertibleRecords. Contains basic conversion 
+ * methods to and from Json based on the Jackson streaming API. This abstract
+ * class can be extended for any classes that need to be serialized or de-serialized
+ * from Json. The subclass must then define an input and output Predicate maps that define
+ * how objects, fields, arrays should be stored using the jackson streaming API. 
+ * <p>
+ * For examples, see {@link MarsRecord}, {@link AbstractMolecule}, {@link AbstractMarsImageMetadata}.
+ * </p>
+ * @author Karl Duderstadt
+ */
 public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	
 	protected LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
 	
 	protected HashMap<String, Predicate<JsonParser>> inputMap;
 	
+	/**
+	 * Constructor for creating a JsonConvertiableRecord. 
+	 */
 	public AbstractJsonConvertibleRecord() {
 		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
 		inputMap = new HashMap<String, Predicate<JsonParser>>();
@@ -115,5 +129,7 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		}
 	}
 	
+	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
+	//based on the Jackson streaming API.
 	protected abstract void createIOMaps();
 }

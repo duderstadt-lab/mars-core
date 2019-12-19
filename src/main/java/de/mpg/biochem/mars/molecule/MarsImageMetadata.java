@@ -29,30 +29,105 @@ package de.mpg.biochem.mars.molecule;
 import java.util.Collection;
 import java.util.Set;
 
+import de.mpg.biochem.mars.table.MarsTable;
+
+/**
+ * MarsImageMetadata records store image metadata and all information
+ * about specific data collections, imaging settings, frame timing. Mapping of frames/slices
+ * to actual real time. These records can also include readouts from other instruments connected
+ * to microscopes.
+ * <p>
+ * These records may also contain BigDataViewer registration coordinates, video locations, and channel names.
+ * The log contained in these records will contain a history of commands run on this dataset and the molecule
+ * records associated with it that are stored in the same {@link MoleculeArchive}. The {@link MarsTable} inherited
+ * from {@link AbstractMarsRecord} will contain metadata for each frame in individual rows in order of collection.
+ * </p>
+ * <p>
+ * This record format is designed for use with single-molecule time-series data collected on TIRF microscopes or bead
+ * tracking microscopes. Therefore, these data are assumed to be 2D only. If individual colors are recorded in separate 
+ * frames their information should be merged into a single row contained in the {@link MarsTable}.
+ * </p>
+ * @author Karl Duderstadt
+ */
 public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
+	
+	/**
+	 * Set the name of the microscope used for data collection.
+	 * This is just for record keeping. There are no predefined
+	 * setting based on microscope names.
+	 */
 	void setMicroscopeName(String Microscope);
 	
+	/**
+	 * Get the name of the microscope used for data collection.
+	 * This is just for record keeping. There are no predefined
+	 * setting based on microscope names.
+	 */
 	String getMicroscopeName();
 	
+	/**
+	 * Set the Date when these data were collected.
+	 */
 	void setCollectionDate(String str);
 	
+	/**
+	 * Get the Date when these data were collected.
+	 */
 	String getCollectionDate();
 	
+	/**
+	 * Get the Source Directory where the images are stored.
+	 */
 	String getSourceDirectory();
 	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}.
+	 */
 	void addLogMessage(String str);
 	
+	/**
+	 * Get the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}.
+	 */
 	String getLog();
 	
+	/**
+	 * Get the {@link MarsBdvSource} with the 
+	 * name provided.
+	 */
 	MarsBdvSource getBdvSource(String name);
 	
+	/**
+	 * Add or update the {@link MarsBdvSource} with the 
+	 * name provided. All {@link MarsBdvSource} are unique
+	 * so record will be overwritten if they have the same
+	 * name.
+	 */
 	void putBdvSource(MarsBdvSource source);
 	
+	/**
+	 * Remove the {@link MarsBdvSource} with the 
+	 * name provided.
+	 */
 	void removeBdvSource(String name);
 	
+	/**
+	 * Get the Collection of BigDataViewer sources with 
+	 * each in {@link MarsBdvSource} format.
+	 */
 	Collection<MarsBdvSource> getBdvSources();
 	
+	/**
+	 * Get the set of BigDataViewer source names.
+	 */
 	Set<String> getBdvSourceNames();
 	
+	/**
+	 * Check if this record contains the BigDataViewer
+	 * with the name provided.
+	 */
 	boolean hasBdvSource(String name);
 }

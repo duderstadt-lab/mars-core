@@ -31,57 +31,117 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-
 import de.mpg.biochem.mars.table.MarsTable;
 
+/**
+ * Default implementation of {@link AbstractMoleculeArchive}.
+ * 
+ * @author Karl Duderstadt
+ */
 public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsImageMetadata, DefaultMoleculeArchiveProperties> {
 	
+	/**
+	 * Creates an empty MoleculeArchive with the given name. 
+	 */
 	public DefaultMoleculeArchive(String name) {
 		super(name);
 	}
 	
+	/**
+	 * Constructor for loading a MoleculeArchive. A
+	 * yama file can be given or a yama virtual 
+	 * store directory. Virtual mode will automatically
+	 * be activated if a directory is provided.
+	 * <p>
+	 * MoleculeArchives should typically be opened using the
+	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * detect the type and open the archive accordingly.
+	 * <p>
+	 * @param file The file or directory to load the archive from.
+	 * 
+	 * @throws JsonParseException if there is a problem parsing the file provided.
+	 * @throws IOException if there is a problem with the file location.
+	 */
 	public DefaultMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
 	
-	public DefaultMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
-	}
-	
+	/**
+	 * Constructor for loading a MoleculeArchive. A
+	 * yama file can be given or a yama virtual 
+	 * store directory. Virtual mode will automatically
+	 * be activated if a directory is provided.
+	 * 
+	 * If the MoleculeArchiveService is provided the statusService
+	 * will be retrieved and when working in Fiji the progress
+	 * shows up in the bar as molecule records are loaded.
+	 * 
+	 * <p>
+	 * MoleculeArchives should typically be opened using the
+	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * detect the type and open the archive accordingly.
+	 * <p>
+	 * @param name The name of the archive.
+	 * @param file The file or directory to load the archive from.
+	 * @param moleculeArchiveService The MoleculeArchiveService from
+	 * the current context.
+	 * 
+	 * @throws JsonParseException if there is a parsing exception.
+	 * @throws IOException if there is a problem with the file provided.
+	 */
 	public DefaultMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
 		super(name, file, moleculeArchiveService);
 	}
 	
-	public DefaultMoleculeArchiveProperties createProperties() {
+	/**
+	 * Constructor for building a molecule archive from a MarsTable.
+	 * The table provided must contain a molecule column. The integer values
+	 * in the molecule column determine the grouping for creation of 
+	 * molecule records.
+	 * 
+	 * Status will be reported during processing by retrieving the StatusService
+	 * from the MoleculeArchiveService instance.
+	 * 
+	 * @param name The name of the archive.
+	 * @param table A MarsTable to build the archive from.
+	 * @param moleculeArchiveService The MoleculeArchiveService from
+	 * the current context.
+	 */
+	public DefaultMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
+		super(name, table, moleculeArchiveService);
+	}
+	
+	// -- Internal methods --
+	
+	protected DefaultMoleculeArchiveProperties createProperties() {
 		return new DefaultMoleculeArchiveProperties();
 	}
 	
-	public DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	protected DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new DefaultMoleculeArchiveProperties(jParser);
 	}
 	
-	public DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	protected DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new DefaultMarsImageMetadata(jParser);
 	}
 	
-	public DefaultMarsImageMetadata createImageMetadata(String metaUID) {
+	protected DefaultMarsImageMetadata createImageMetadata(String metaUID) {
 		return new DefaultMarsImageMetadata(metaUID);
 	}
 	
-	public DefaultMolecule createMolecule() {
+	protected DefaultMolecule createMolecule() {
 		return new DefaultMolecule();
 	}
 	
-	public DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
+	protected DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new DefaultMolecule(jParser);
 	}
 	
-	public DefaultMolecule createMolecule(String UID) {
+	protected DefaultMolecule createMolecule(String UID) {
 		return new DefaultMolecule(UID);
 	}
 	
-	public DefaultMolecule createMolecule(String UID, MarsTable table) {
+	protected DefaultMolecule createMolecule(String UID, MarsTable table) {
 		return new DefaultMolecule(UID, table);
 	}
-
 }

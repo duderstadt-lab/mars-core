@@ -34,8 +34,43 @@ import java.util.LinkedHashSet;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
+import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
+import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.kcp.commands.SegmentDistributionBuilderCommand;
+import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
+import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
+import de.mpg.biochem.mars.molecule.commands.ImportMoleculeArchiveCommand;
+import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 import de.mpg.biochem.mars.table.MarsTable;
 
+/**
+ * MoleculeArchives are the primary storage structure of Mars datasets. MoleculeArchives provides an optimal structure 
+ * for storing single-molecule time-series data. Time-series data for each molecule in a dataset are 
+ * stored in the form of {@link Molecule} records, which may also contain calculated parameters, tags, 
+ * notes, and kinetic change point segments. These records are assigned a UID string at the time of creation.
+ * This string provides univeral molecule uniqueness throughout all datasets. MoleculeArchives 
+ * contain a collection of molecule records associated with a given experimental condition or analysis 
+ * pipeline.
+ * <p>
+ * {@link MarsImageMetadata} records containing data collection information are also stored 
+ * in MoleculeArchives. They are identified using metaUID strings. {@link Molecule} records 
+ * associated with a given data collection have a metaUID string linking them
+ * to the correct {@link MarsImageMetadata} record within the same MoleculeArchive. 
+ * 
+ * Global properties of the MoleculeArchive, including indexing, comments, etc.., are stored 
+ * in a {@link MoleculeArchiveProperties} record also contained within the MoleculeArchive. 
+ * <p>
+ * See {@link AbstractMoleculeArchive} for further information.
+ * </p>
+ * @author Karl Duderstadt
+ * @param <M> Molecule type.
+ * @param <I> MarsImageMetadata type.
+ * @param <P> MoleculeArchiveProperties type.
+ */
 public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> extends JsonConvertibleRecord {
 	
 	/**
@@ -462,25 +497,35 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	 */
 	void addLogMessage(String message);
 	
+	/**
+	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
+	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
+	 * 
+	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 */
 	MoleculeArchiveProperties getProperties();
 	
+	/**
+	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
+	 * the current Context. 
+	 * 
+	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 */
 	MoleculeArchiveService getMoleculeArchiveService();
 	
+	/**
+	 * Update the {@link MoleculeArchiveProperties}. Updates the global tag 
+	 * list using the tagIndex and updates the record numbers. 
+	 * If in virtual mode, this saves the properties to the virtual store.
+	 * 
+	 * The parameter list and MarsTable column names are not updated 
+	 * because in virtual mode this would require reading all records in the
+	 * archive, since indexes for these items are not maintained. Therefore,
+	 * the accuracy of these elements rely entirely on updates when adding
+	 * and changing records.
+	 * 
+	 * If a complete update is required then use the {@link #rebuildIndexes()} method 
+	 * or corresponding menu item in the MoleculeArchiveWindow.
+	 */
 	void updateProperties();
-	
-	P createProperties();
-	
-	P createProperties(JsonParser jParser) throws IOException;
-	
-	I createImageMetadata(JsonParser jParser) throws IOException;
-	
-	I createImageMetadata(String metaUID);
-	
-	M createMolecule();
-	
-	M createMolecule(JsonParser jParser) throws IOException;
-	
-	M createMolecule(String UID);
-	
-	M createMolecule(String UID, MarsTable table);
 }

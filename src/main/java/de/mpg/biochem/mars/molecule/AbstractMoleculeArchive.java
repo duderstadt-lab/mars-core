@@ -85,7 +85,7 @@ import static java.util.stream.Collectors.toList;
 import org.scijava.table.*;
 
 /**
- * Abstract definition for the primary storage structure of Mars datasets. MoleculeArchives provides an optimal structure 
+ * Abstract superclass for the primary storage structure of Mars datasets. MoleculeArchives provides an optimal structure 
  * for storing single-molecule time-series data. Time-series data for each molecule in a dataset are 
  * stored in the form of {@link Molecule} records, which may also contain calculated parameters, tags, 
  * notes, and kinetic change point segments. These records are assigned a UID string at the time of creation.
@@ -128,12 +128,19 @@ import org.scijava.table.*;
  * and value types.
  * </p>
  * <p>
+ * MoleculeArchive of different types can be opened using the {@link ImporMoleculeArchiveCommand}. This import command
+ * will automatically detect the type and load the archive in accordingly.
+ * </p>
+ * <p>
  * MoleculeArchives can be loaded using the constructors {@link #AbstractMoleculeArchive(File)} or 
  * {@link #AbstractMoleculeArchive(String, File, MoleculeArchiveService)}. Otherwise, MoleculeArchives can be loaded
  * using the Mars command {@link ImportMoleculeArchiveCommand} through the 
  * GUI or in scripts.
  * </p>
  * @author Karl Duderstadt
+ * @param <M> Molecule type.
+ * @param <I> MarsImageMetadata type.
+ * @param <P> MoleculeArchiveProperties type.
  */
 public abstract class AbstractMoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> 
 	implements MoleculeArchive<M, I, P> {
@@ -279,7 +286,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Constructor for building a molecule archive from a MARSResultsTable.
+	 * Constructor for building a molecule archive from a MarsTable.
 	 * The table provided must contain a molecule column. The integer values
 	 * in the molecule column determine the grouping for creation of 
 	 * molecule records.
@@ -288,7 +295,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * from the MoleculeArchiveService instance.
 	 * 
 	 * @param name The name of the archive.
-	 * @param table A MARSResultsTable to build the archive from.
+	 * @param table A MarsTable to build the archive from.
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
@@ -303,7 +310,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Constructor for building a molecule archive from a MARSResultsTable.
+	 * Constructor for building a molecule archive from a MarsTable.
 	 * The table provided must contain a molecule column. The integer values
 	 * in the molecule column determine the grouping for creation of 
 	 * molecule records.
@@ -311,7 +318,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * No status update are provided during processing.
 	 * 
 	 * @param name The name of the archive.
-	 * @param table A MARSResultsTable to build the archive from.
+	 * @param table A MarsTable to build the archive from.
 	 */
 	public AbstractMoleculeArchive(String name, MarsTable table) {
 		this.name = name;
@@ -1661,21 +1668,37 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return moleculeIndex.indexOf(UID);
 	}
 	
+	/**
+	 * Convenience method to retrieve a Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach.
+	 * 
+	 * @return Molecule stream.
+	 */
 	public Stream<M> stream() {
 		return this.moleculeIndex.stream().map(UID -> get(UID));
 	}
 	
+	/**
+	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach in a multithreaded manner.
+	 * 
+	 * @return Molecule stream.
+	 */
 	public Stream<M> parallelStream() {
 		return this.moleculeIndex.parallelStream().map(UID -> get(UID));
 	}
 	
-	//Should we add a put statement at the end to enforce proper saving even in the case of a virtual archive.
+	/**
+	 * Convenience method to execute an action on all molecules using a Consumer.
+	 * 
+	 * @return Molecule stream.
+	 */
 	public void forEach(Consumer<? super Molecule> action) {
 		this.moleculeIndex.stream().map(UID -> get(UID)).forEach(action);
 	}
 	
 	/**
-	 * Get the UID of the MARSImageMetadata for a molecule record. If 
+	 * Get the UID of the MarsImageMetadata for a molecule record. If 
 	 * working from a virtual store, this will use an index providing
 	 * optimal performance. If working in memory this is the same as
 	 * retrieving the molecule record and the ImageMetadata UID from 
@@ -1693,7 +1716,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Get the UID at the provided index location.
+	 * Get the molecule UID for the provided index location.
 	 * 
 	 * @param index Retrieve the UID at this index location.
 	 * @return The UID at the index location provided.
@@ -1703,7 +1726,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Get the ImageMetadata UID at the provided index location.
+	 * Get the MarsImageMetadata UID at the provided index location.
 	 * 
 	 * @param index Retrieve the ImageMetadata UID at this index location.
 	 * @return The ImageMetadata UID at the index location provided.
@@ -1722,12 +1745,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Set the file the archive should save to.
+	 * Set the file the archive should save to. Does
+	 * nothing if called on a virtual archive.
 	 * 
-	 * @return The File the archive was opened from.
+	 * @param file The File where the archive should be saved.
 	 */
 	public void setFile(File file) {
-		this.file = file;
+		if (!virtual)
+			this.file = file;
 	}
 
 	/**
@@ -1826,10 +1851,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Add a Log message to all MARSImageMetadata records. Used by all processing plugins 
-	 * so there is a record of the sequence of processing steps during analysis.
+	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * to keep a record of the sequence of processing steps during analysis.
 	 * 
-	 * @param message The String message to add to all MARSImageMetadata logs.
+	 * @param message The String message to add to all MarsImageMetadata logs.
 	 */
 	public void addLogMessage(String message) {
 		for (String metaUID : imageMetadataIndex) {
@@ -1859,7 +1884,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * list using the tagIndex and updates the record numbers. 
 	 * If in virtual mode, this saves the properties to the virtual store.
 	 * 
-	 * The parameter list and MARSResultsTable column names are not updated 
+	 * The parameter list and MarsTable column names are not updated 
 	 * because in virtual mode this would require reading all records in the
 	 * archive, since indexes for these items are not maintained. Therefore,
 	 * the accuracy of these elements relay entirely on updates when adding
@@ -1883,33 +1908,37 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				
 				stream.flush();
 				stream.close();
-				
-				//Files.setPosixFilePermissions(propertiesFile.toPath(), MarsUtil.ownerGroupPermissions);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 	
+	/**
+	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
+	 * the current Context. 
+	 * 
+	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 */
 	public MoleculeArchiveService getMoleculeArchiveService() {
 		return moleculeArchiveService;
 	}
 	
-	public abstract P createProperties();
+	protected abstract P createProperties();
 	
-	public abstract P createProperties(JsonParser jParser) throws IOException;
+	protected abstract P createProperties(JsonParser jParser) throws IOException;
 	
-	public abstract I createImageMetadata(JsonParser jParser) throws IOException;
+	protected abstract I createImageMetadata(JsonParser jParser) throws IOException;
 	
-	public abstract I createImageMetadata(String metaUID);
+	protected abstract I createImageMetadata(String metaUID);
 	
-	public abstract M createMolecule();
+	protected abstract M createMolecule();
 	
-	public abstract M createMolecule(JsonParser jParser) throws IOException;
+	protected abstract M createMolecule(JsonParser jParser) throws IOException;
 	
-	public abstract M createMolecule(String UID);
+	protected abstract M createMolecule(String UID);
 	
-	public abstract M createMolecule(String UID, MarsTable table);
+	protected abstract M createMolecule(String UID, MarsTable table);
 	
 	@Override
 	public String toString() {

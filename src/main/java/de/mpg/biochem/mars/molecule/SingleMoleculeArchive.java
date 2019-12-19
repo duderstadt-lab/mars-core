@@ -34,53 +34,124 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
+/**
+ * Implementation of {@link AbstractMoleculeArchive} for default archives used for
+ * routine single molecule time-series datasets composed of {@link SingleMolecule} 
+ * molecule records, {@link SdmmImageMetadata} metadata records, and 
+ * {@link SingleMoleculeArchiveProperties} archive properties.
+ * <p>
+ * For a more extensive explanation of uses and features of molecule archives see 
+ * {@link AbstractMoleculeArchive}.
+ * <p>
+ * @author Karl Duderstadt
+ * @param <SingleMolecule> Molecule type.
+ * @param <SdmmImageMetadata> MarsImageMetadata type.
+ * @param <SingleMoleculeArchiveProperties> MoleculeArchiveProperties type.
+ */
 public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
+	/**
+	 * Creates an empty SingleMoleculeArchive with the given name. 
+	 */
 	public SingleMoleculeArchive(String name) {
 		super(name);
 	}
 	
+	/**
+	 * Constructor for loading a SingleMoleculeArchive. A
+	 * yama file can be given or a yama virtual 
+	 * store directory. Virtual mode will automatically
+	 * be activated if a directory is provided.
+	 * <p>
+	 * MoleculeArchives should typically be opened using the
+	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * detect the type and open the archive accordingly.
+	 * <p>
+	 * @param file The file or directory to load the archive from.
+	 * 
+	 * @throws JsonParseException if there is a problem parsing the file provided.
+	 * @throws IOException if there is a problem with the file location.
+	 */
 	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
 	
-	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
-	}
-	
+	/**
+	 * Constructor for loading a SingleMoleculeArchive. A
+	 * yama file can be given or a yama virtual 
+	 * store directory. Virtual mode will automatically
+	 * be activated if a directory is provided.
+	 * 
+	 * If the MoleculeArchiveService is provided the statusService
+	 * will be retrieved and when working in Fiji the progress
+	 * shows up in the bar as molecule records are loaded.
+	 * 
+	 * <p>
+	 * MoleculeArchives should typically be opened using the
+	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * detect the type and open the archive accordingly.
+	 * <p>
+	 * @param name The name of the archive.
+	 * @param file The file or directory to load the archive from.
+	 * @param moleculeArchiveService The MoleculeArchiveService from
+	 * the current context.
+	 * 
+	 * @throws JsonParseException if there is a parsing exception.
+	 * @throws IOException if there is a problem with the file provided.
+	 */
 	public SingleMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
 		super(name, file, moleculeArchiveService);
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties() {
+	/**
+	 * Constructor for building a SingleMoleculeArchive from a MarsTable.
+	 * The table provided must contain a molecule column. The integer values
+	 * in the molecule column determine the grouping for creation of 
+	 * molecule records.
+	 * 
+	 * Status will be reported during processing by retrieving the StatusService
+	 * from the MoleculeArchiveService instance.
+	 * 
+	 * @param name The name of the archive.
+	 * @param table A MarsTable to build the archive from.
+	 * @param moleculeArchiveService The MoleculeArchiveService from
+	 * the current context.
+	 */
+	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
+		super(name, table, moleculeArchiveService);
+	}
+	
+	// -- Internal methods --
+	
+	protected SingleMoleculeArchiveProperties createProperties() {
 		return new SingleMoleculeArchiveProperties();
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	protected SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	public SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	protected SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new SdmmImageMetadata(jParser);
 	}
 	
-	public SdmmImageMetadata createImageMetadata(String metaUID) {
+	protected SdmmImageMetadata createImageMetadata(String metaUID) {
 		return new SdmmImageMetadata(metaUID);
 	}
 	
-	public SingleMolecule createMolecule() {
+	protected SingleMolecule createMolecule() {
 		return new SingleMolecule();
 	}
 	
-	public SingleMolecule createMolecule(JsonParser jParser) throws IOException {
+	protected SingleMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new SingleMolecule(jParser);
 	}
 	
-	public SingleMolecule createMolecule(String UID) {
+	protected SingleMolecule createMolecule(String UID) {
 		return new SingleMolecule(UID);
 	}
 	
-	public SingleMolecule createMolecule(String UID, MarsTable table) {
+	protected SingleMolecule createMolecule(String UID, MarsTable table) {
 		return new SingleMolecule(UID, table);
 	}
 }

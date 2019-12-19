@@ -44,6 +44,24 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
+/**
+ * Abstract superclass for storage of image metadata, which includes all information
+ * about specific data collections, imaging settings, frame timing. Mapping of frames/slices
+ * to actual real time. These records can also include readouts from other instruments connected
+ * to microscopes.
+ * <p>
+ * These records may also contain BigDataViewer registration coordinates, video locations, and channel names.
+ * The log contained in these records will contain a history of commands run on this dataset and the molecule
+ * records associated with it that are stored in the same {@link MoleculeArchive}. The {@link MarsTable} inherited
+ * from {@link AbstractMarsRecord} will contain metadata for each frame in individual rows in order of collection.
+ * </p>
+ * <p>
+ * This record format is designed for use with single-molecule time-series data collected on TIRF microscopes or bead
+ * tracking microscopes. Therefore, these data are assumed to be 2D only. If individual colors are recorded in separate 
+ * frames their information should be merged into a single row contained in the {@link MarsTable}.
+ * </p>
+ * @author Karl Duderstadt
+ */
 public class AbstractMarsImageMetadata extends AbstractMarsRecord implements MarsImageMetadata {
 	//Processing log for the record
 	protected String log;
@@ -64,18 +82,43 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	//Here json is always UTF encoded
     protected static JsonFactory jfactory = new JsonFactory();
     
+    /**
+	 * Constructor for creating an empty MarsImageMetadata record. 
+	 */
     public AbstractMarsImageMetadata() {
     	super();
     }
     
+    /**
+	 * Constructor for creating an empty MarsImageMetadata record with the
+	 * specified UID. 
+	 * 
+	 * @param UID The unique identifier for this record.
+	 */
     public AbstractMarsImageMetadata(String UID) {
     	super(UID);
     }
     
+    /**
+	 * Constructor for creating a new record with the
+	 * specified UID and the {@link MarsTable} given
+	 * as the DataTable. 
+	 * 
+	 * @param UID The unique identifier for this record.
+	 * @param dataTable The {@link MarsTable} to use for 
+	 * initialization.
+	 */
     public AbstractMarsImageMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	
+    /**
+	 * Constructor for loading a MarsImageMetadata record from a file. Typically,
+	 * used when streaming records into memory when loading a {@link MoleculeArchive}
+	 * or when a record is retrieved from the virtual store. 
+	 * 
+	 * @param jParser A JsonParser at the start of the record.
+	 */
 	public AbstractMarsImageMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
@@ -141,30 +184,58 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 		}, IOException.class));
 	}
 	
+	/**
+	 * Add or update the {@link MarsBdvSource} with the 
+	 * name provided. All {@link MarsBdvSource} are unique
+	 * so record will be overwritten if they have the same
+	 * name.
+	 */
 	public void putBdvSource(MarsBdvSource source) {
 		bdvSources.put(source.getName(), source);
 	}
 	
+	/**
+	 * Get the {@link MarsBdvSource} with the 
+	 * name provided.
+	 */
 	public MarsBdvSource getBdvSource(String name) {
 		return bdvSources.get(name);
 	}
 	
+	/**
+	 * Remove the {@link MarsBdvSource} with the 
+	 * name provided.
+	 */
 	public void removeBdvSource(String name) {
 		bdvSources.remove(name);
 	}
 	
+	/**
+	 * Get the Collection of BigDataViewer sources with 
+	 * each in {@link MarsBdvSource} format.
+	 */
 	public Collection<MarsBdvSource> getBdvSources() {
 		return bdvSources.values();
 	}
 	
+	/**
+	 * Get the set of BigDataViewer source names.
+	 */
 	public Set<String> getBdvSourceNames() {
 		return bdvSources.keySet();
 	}
 	
+	/**
+	 * Check if this record contains the BigDataViewer
+	 * with the name provided.
+	 */
 	public boolean hasBdvSource(String name) {
 		return bdvSources.containsKey(name);
 	}
   	
+	/**
+	 * Get the record in Json string format.
+	 */
   	public String toJSONString() {
   		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
@@ -181,30 +252,59 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
   		return stream.toString();
   	}
     
+  	/**
+	 * Set the name of the microscope used for data collection.
+	 * This is just for record keeping. There are no predefined
+	 * setting based on microscope names.
+	 */
 	public void setMicroscopeName(String Microscope) {
 		this.Microscope = Microscope;
 	}
 	
+	/**
+	 * Get the name of the microscope used for data collection.
+	 * This is just for record keeping. There are no predefined
+	 * setting based on microscope names.
+	 */
 	public String getMicroscopeName() {
 		return Microscope;
 	}
 	
+	/**
+	 * Set the Date when these data were collected.
+	 */
 	public void setCollectionDate(String str) {
 		CollectionDate = str;
 	}
 	
+	/**
+	 * Get the Date when these data were collected.
+	 */
 	public String getCollectionDate() {
 		return CollectionDate;
 	}
 	
+	/**
+	 * Get the Source Directory where the images are stored.
+	 */
 	public String getSourceDirectory() {
 		return SourceDirectory;
 	}
 	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}.
+	 */
 	public void addLogMessage(String str) {
 		log += str + "\n";
 	}
 	
+	/**
+	 * Get the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}.
+	 */
 	public String getLog() {
 		return log;
 	}

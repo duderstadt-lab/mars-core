@@ -39,11 +39,23 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
+/**
+ * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsImageMetadata}. 
+ * All {@link MarsRecord}s have a basic set of properties including a UID, Notes, 
+ * Tags, Parameters, a {@link MarsTable}, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}
+ * can also be serialized to and from Json.
+ * <p>
+ * This basic set of properties is extended for storage of molecule information and metadata information in
+ * {@link Molecule}, {@link AbstractMolecule}, {@link MarsImageMetadata}, {@link AbstractMarsImageMetadata}.
+ * </p>
+ * @author Karl Duderstadt
+ */
 public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
 	//Unique ID for storage in maps and universal identification.
 	protected String UID;
@@ -69,6 +81,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	//Positions of interest map
 	protected LinkedHashMap<String, MarsPosition> positionsOfInterest;
 	
+	/**
+	 * Constructor for creating an empty MarsRecord. 
+	 */
 	public AbstractMarsRecord() {
 		super();
 		Parameters = new LinkedHashMap<>();
@@ -78,22 +93,35 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		positionsOfInterest = new LinkedHashMap<>();
 	}
 	
+	/**
+	 * Constructor for creating an empty MarsRecord with the
+	 * specified UID. 
+	 * 
+	 * @param UID The unique identifier for this MarsRecord.
+	 */
 	public AbstractMarsRecord(String UID) {
 		this();
 		this.UID = UID;
 	}
 	
+	/**
+	 * Constructor for loading a MarsRecord record from a file. Typically,
+	 * used when streaming records into memory when loading a {@link MoleculeArchive}
+	 * or when a record is retrieved from the virtual store. 
+	 * 
+	 * @param jParser A JsonParser at the start of the MarsRecord.
+	 */
 	public AbstractMarsRecord(JsonParser jParser) throws IOException {
 		this();
 		fromJSON(jParser);
 	}
 	
 	/**
-	 * Constructor for creating a new Molecule record with the
+	 * Constructor for creating a new record with the
 	 * specified UID and the {@link MarsTable} given
 	 * as the DataTable. 
 	 * 
-	 * @param UID The unique identifier for this Molecule record.
+	 * @param UID The unique identifier for this record.
 	 * @param dataTable The {@link MarsTable} to use for 
 	 * initialization.
 	 */
@@ -207,7 +235,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Get the UID for this molecule record.
+	 * Get the UID for this record.
 	 * 
 	 * @return Returns the UID.
 	 */
@@ -219,7 +247,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * Get notes for this record. Notes can be added during manual sorting
 	 * to point out a feature or important detail about the current record.
 	 * 
-	 * @return Returns a string containing any notes associated with this molecule record.
+	 * @return Returns a string containing any notes associated with this record.
 	 */
 	public String getNotes() {
 		return Notes;
@@ -238,7 +266,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Add to any notes already in the record.
 	 *  
-	 * @param Note String with the note to add to the molecule record.
+	 * @param Note String with the note to add to the record.
 	 */
 	public void addNote(String Note) {
 		Notes += Note;
@@ -258,20 +286,20 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Check if the molecule record has a tag.
+	 * Check if the record has a tag.
 	 *  
 	 * @param tag The string tag to check for.
-	 * @return Returns true if the molecule has the tag
-	 * and false if the molecule doesn't.
+	 * @return Returns true if the record has the tag
+	 * and false if not.
 	 */
 	public boolean hasTag(String tag) {
 		return Tags.contains(tag);
 	}
 	
 	/**
-	 * Check if the molecule has to tags.
+	 * Check if the record has no tags.
 	 *  
-	 * @return Returns true if the molecule has no tags.
+	 * @return Returns true if the record has no tags.
 	 */
 	public boolean hasNoTags() {
 		return Tags.size() == 0;
@@ -280,7 +308,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Get the set of all tags.
 	 *  
-	 * @return Returns the set of tags for this molecule record.
+	 * @return Returns the set of tags for this record.
 	 */
 	public LinkedHashSet<String> getTags() {
 		return Tags;
@@ -289,7 +317,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Get an array list of all tags.
 	 *  
-	 * @return Returns the set of tags for this molecule record as an array.
+	 * @return Returns the set of tags for this record as an array.
 	 */
 	public String[] getTagsArray() {
 		String tagArray[] = new String[Tags.size()];
@@ -306,7 +334,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Remove all tags from the molecule record.
+	 * Remove all tags from the record.
 	 */
 	public void removeAllTags() {
 		Tags.clear();
@@ -314,9 +342,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	
 	/**
 	 * Add or update a parameter value. Parameters are used to store single 
-	 * values associated with the molecule. For example, this can be the 
+	 * values associated with the record. For example, this can be the 
 	 * start and stop times for a region of interest. Or calculated features
-	 * such as the slope or MSD. Storing parameters with the molecule data
+	 * such as a slope. Storing parameters with the record data
 	 * allows for easier and more efficient processing and data extraction.
 	 *  
 	 * @param parameter The string parameter name.
@@ -330,7 +358,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Remove all parameter values from the molecule record.
+	 * Remove all parameter values from the record.
 	 */
 	public void removeAllParameters() {
 		Parameters.clear();
@@ -382,9 +410,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	
 	/**
 	 * Get the {@link MarsTable} DataTable holding the primary data for
-	 * this molecule record.
+	 * this record.
 	 * 
-	 * @return The primary DataTable for this molecule record.
+	 * @return The primary DataTable for this record.
 	 */
 	public MarsTable getDataTable() {
 		return dataTable;
@@ -392,11 +420,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	
 	/**
 	 * Set the {@link MarsTable} holding the primary data for
-	 * this molecule record. Usually this is tracking or intensity 
+	 * this record. Usually this is tracking or intensity 
 	 * as a function of time.
 	 * 
 	 * @param table The {@link MarsTable} to add or update in the 
-	 * molecule record.
+	 * record.
 	 */
 	public void setDataTable(MarsTable table) {
 		//This means we are resetting all the data...
@@ -406,52 +434,108 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		dataTable = table;
 	}
 	
-	
+	/**
+	 * Add or update a {@link MarsRegion}. This can be a region of
+	 * interest for further analysis steps: slope calculations or
+	 * KCP calculations {@link KCPCommand}. Region names are unique. If a region that
+	 * has this name already exists in the record it will be
+	 * overwritten by this method.
+	 *  
+	 * @param regionOfInterest The region to add to the record.
+	 */
 	public void putRegion(MarsRegion regionOfInterest) {
 		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
 	}
 	
+	/**
+	 * Get a {@link MarsRegion}. Region names are
+	 * unique. Only one copy of each region can be 
+	 * stored in the record.
+	 *  
+	 * @param name The name of the region to retrieve.
+	 */
 	public MarsRegion getRegion(String name) {
 		return regionsOfInterest.get(name);
 	}
 	
+	/**
+	 * Check if the record contains a {@link MarsRegion}
+	 * using the name.
+	 *  
+	 * @param name The name of the region to check for.
+	 */
 	public boolean hasRegion(String name) {
 		return regionsOfInterest.containsKey(name);
 	}
 	
+	/**
+	 * Remove a {@link MarsRegion} from the record using the name.
+	 *  
+	 * @param name The name of the region to remove.
+	 */
 	public void removeRegion(String name) {
 		regionsOfInterest.remove(name);
 	}
 	
+	/**
+	 * Get the set of region names contained in this record.
+	 */
 	public Set<String> getRegionNames() {
 		return regionsOfInterest.keySet();
 	}
 	
+	/**
+	 * Add or update a {@link MarsPosition}. This can be a position of
+	 * interest for further analysis steps. Position names are unique. 
+	 * If a position with has this name already exists in the record it 
+	 * will be overwritten by this method.
+	 *  
+	 * @param positionOfInterest The position to add to the record.
+	 */
 	public void putPosition(MarsPosition positionOfInterest) {
 		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
 	}
 	
+	/**
+	 * Get a {@link MarsPosition}. Position names are
+	 * unique. Only one copy of each region can be 
+	 * stored in the record.
+	 *  
+	 * @param name The name of the position to retrieve.
+	 */
 	public MarsPosition getPosition(String name) {
 		return positionsOfInterest.get(name);
 	}
 	
+	/**
+	 * Check if the record contains a {@link MarsPosition}
+	 * using the name.
+	 *  
+	 * @param name The name of the position to check for.
+	 */
 	public boolean hasPosition(String name) {
 		return positionsOfInterest.containsKey(name);
 	}
 	
+	/**
+	 * Remove a {@link MarsPosition} from the record using the name.
+	 *  
+	 * @param name The name of the position to remove.
+	 */
 	public void removePosition(String name) {
 		positionsOfInterest.remove(name);
 	}
 	
+	/**
+	 * Get the set of position names contained in this record.
+	 */
 	public Set<String> getPositionNames() {
 		return positionsOfInterest.keySet();
 	}
 	
 	/**
-	 * Set the parent {@link AbstractMoleculeArchive} that this molecule
-	 * record is stored in.
 	 * 
-	 * @param archive The {@link AbstractMoleculeArchive} holding this record.
+	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
 	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
 		parent = archive;

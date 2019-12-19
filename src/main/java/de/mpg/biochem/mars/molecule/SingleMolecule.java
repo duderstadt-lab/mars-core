@@ -27,25 +27,10 @@
 package de.mpg.biochem.mars.molecule;
 
 import de.mpg.biochem.mars.table.*;
-import de.mpg.biochem.mars.util.MarsUtil;
-import de.mpg.biochem.mars.kcp.*;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 
-import java.util.Iterator;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-
-import java.util.Objects;
-import java.util.Set;
-
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
 
 /**

@@ -80,9 +80,14 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import io.scif.services.FormatService;
 
 /**
- * MarsImageMetaData records act as the storage location for all information
- * about specific data collections, including imaging settings, frame timing..
- * 
+ * MarsImageMetadata implementation used routinely in the Structure and
+ * Dynamics of Molecular Machines (SDMM) research group. Contains many
+ * convenient methods for generating metadata UIDs. Parsing Micromanager
+ * metadata and Norpix metadata. A list of field to exclude are at the end.
+ * <p>
+ * Future implementations will integrate more fully with the existing scijava
+ * metadata frameworks.
+ * </p>
  * @author Karl Duderstadt
  */
 public class SdmmImageMetadata extends AbstractMarsImageMetadata {

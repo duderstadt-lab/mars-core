@@ -28,46 +28,37 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
-
-import org.scijava.table.DoubleColumn;
-import org.scijava.table.GenericColumn;
-
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-
-import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 
+/**
+ * Abstract superclass for MoleculeArchiveProperties objects that contain
+ * global properties of the MoleculeArchive, including indexing, comments, and many
+ * other global properties. Any information you would like to know without having to 
+ * read the entire archive record-by-record.
+ * 
+ * @author Karl Duderstadt
+ */
 public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConvertibleRecord implements MoleculeArchiveProperties {
-	//Contains general information about the molecule archive
-	//Number of molecules, ImageMetadata, tags, average size in bytes.
-	//Any information we about to know without having to read the entire archive in directly.
-	
 	protected int numberOfMolecules;
 	protected int numImageMetadata;
 	protected String comments;
 	
-	//Not really used for anything at the moment...
+	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
 	protected Set<String> parameterSet;
 	protected Set<String> moleculeDataTableColumnSet;
-	
 	protected Set<ArrayList<String>> moleculeSegmentTableNames;
 	
-	//Reference to MoleculeArchive containing the record
 	protected MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> parent;
 	
+	/**
+	 * Creates an empty MoleculeArchiveProperties record. 
+	 */
 	public AbstractMoleculeArchiveProperties() {
 		super();
 		numberOfMolecules = 0;
@@ -80,10 +71,18 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		moleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 	}
 	
+	/**
+	 * Constructor for loading MoleculeArchiveProperties record from a JsonParser stream. 
+	 * Used when archives are initially opened.
+	 * 
+	 * @param jParser A JsonParser at the start of the MoleculeArchiveProperties record.
+	 */
 	public AbstractMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		this();
 		fromJSON(jParser);
 	}
+	
+	// JsonConveritableRecord methods...
 	
 	@Override
 	protected void createIOMaps() {
@@ -215,6 +214,13 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		}, IOException.class));
 	}
 	
+	/**
+	 * Used to during merge MoleculeArchive merge events to merge the properties
+	 * of another archive into this one.
+	 * 
+	 * @param properties MoleculeArchiveProperties record to merge into this one.
+	 * @param archiveName Name of the archive that is being merged with this one.
+	 */
 	public void merge(MoleculeArchiveProperties properties, String archiveName) {
 		this.numberOfMolecules += properties.getNumberOfMolecules();
 		this.numImageMetadata += properties.getNumImageMetadata();
@@ -226,107 +232,195 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		addAllSegmentTableNames(properties.getSegmentTableNames());
 	}
 	
-	//Getters and Setters	
+	/**
+	 * Add a molecule tag to the global set that contains a record of all unique tag 
+	 * names that are being used.
+	 */	
 	public void addTag(String tag) {
 		tagSet.add(tag);
 	}
 	
+	/**
+	 * Add molecule tags to the global set that contains a record of all unique tag 
+	 * names that are being used.
+	 */
 	public void addAllTags(Set<String> tags) {
 		tagSet.addAll(tags);
 	}
 	
+	/**
+	 * Get the set of molecule tag names in use.
+	 */
 	public Set<String> getTagSet() {
 		return tagSet;
 	}
 	
+	/**
+	 * Redefine the set of molecule tags in use. 
+	 */
 	public void setTagSet(Set<String> tagSet) {
 		this.tagSet = tagSet;
 	}
 	
+	/**
+	 * Add a molecule parameter name to the global set that contains a record of all
+	 * unique parameter names that are being used.
+	 */
 	public void addParameter(String parameterName) {
 		parameterSet.add(parameterName);
 	}
 	
+	/**
+	 * Add molecule parameter names to the global set that contains a record of all unique parameter 
+	 * names that are being used.
+	 */
 	public void addAllParameters(Set<String> parameters) {
 		parameterSet.addAll(parameterSet);
 	}
 	
+	/**
+	 * Remove a paramter name fron the set of unique molecule parameter names being used.
+	 */
 	public void removeParameter(String parameter) {
 		tagSet.remove(parameter);
 	}
 	
+	/**
+	 * Get the set of parameter names in use.
+	 */
 	public Set<String> getParameterSet() {
 		return parameterSet;
 	}
 	
+	/**
+	 * Redefine the set of parameter names in use.
+	 */
 	public void setParameterSet(Set<String> parameterSet) {
 		this.parameterSet = parameterSet;
 	}
 	
+	/**
+	 * Set the number of molecule in the archive.
+	 */
 	public void setNumberOfMolecules(int numMolecules) {
 		this.numberOfMolecules = numMolecules;
 	}
 	
+	/**
+	 * Get the number of molecule in the archive.
+	 */
 	public int getNumberOfMolecules() {
 		return numberOfMolecules;
 	}
 	
+	/**
+	 * Set the number of MarsImageMetadata records in the archive.
+	 */
 	public void setNumImageMetadata(int numImageMetadata) {
 		this.numImageMetadata = numImageMetadata;
 	}
 	
+	/**
+	 * Get the set of MarsImageMetadata records in the archive.
+	 */
 	public int getNumImageMetadata() {
 		return numImageMetadata;
 	}
 	
+	/**
+	 * Add a column name to the unique set of column names 
+	 * in use in molecule DataTables.
+	 */
 	public void addColumn(String column) {
 		this.moleculeDataTableColumnSet.add(column);
 	}
 	
+	/**
+	 * Add column names to the unique set of column names 
+	 * in use in molecule DataTables.
+	 */
 	public void addAllColumns(Set<String> columns) {
 		this.moleculeDataTableColumnSet.addAll(columns);
 	}
 	
+	/**
+	 * Add column names to the unique set of column names 
+	 * in use in molecule DataTables.
+	 */
 	public void addAllColumns(ArrayList<String> columns) {
 		this.moleculeDataTableColumnSet.addAll(columns);
 	}
 	
+	/**
+	 * Redefine the unique set of column names 
+	 * in use in molecule DataTables.
+	 */
 	public void setColumnSet(Set<String> moleculeDataTableColumnSet) {
 		this.moleculeDataTableColumnSet = moleculeDataTableColumnSet;
 	}
 	
+	/**
+	 * Get the unique set of column names 
+	 * in use in molecule DataTables.
+	 */
 	public Set<String> getColumnSet() {
 		return moleculeDataTableColumnSet;
 	}
 	
+	/**
+	 * Add a segment table name to the unique set of segment table 
+	 * names found in molecule records.
+	 */
 	public void addSegmentTableName(ArrayList<String> segmentTableName) {
 		this.moleculeSegmentTableNames.add(segmentTableName);
 	}
 	
+	/**
+	 * Add segment table names to the unique set of segment table names found in 
+	 * molecule records.
+	 */
 	public void addAllSegmentTableNames(Set<ArrayList<String>> segmentTableNames) {
 		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
 	
+	/**
+	 * Redefine the unique set of segment table names found in molecule records.
+	 */
 	public void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames) {
 		this.moleculeSegmentTableNames = moleculeSegmentTableNames;
 	}
 	
+	/**
+	 * Get the unique set of segment table names found in molecule records.
+	 */
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		return moleculeSegmentTableNames;
 	}
 	
+	/**
+	 * Get archive comments.
+	 */
 	public String getComments() {
 		return comments;
 	}
 	
+	/**
+	 * Add to archive comments.
+	 */
 	public void addComment(String comment) {
 		this.comments += comment;
 	}
 	
+	/**
+	 * Overwrite archive comments with new set of comments.
+	 */
 	public void setComments(String comments) {
 		this.comments = comments;
 	}
 	
+	/**
+	 * Set the parent MoleculeArchive that these MoleculeArchiveProperties belong to.
+	 */
 	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
 		this.parent = archive;
 	}
