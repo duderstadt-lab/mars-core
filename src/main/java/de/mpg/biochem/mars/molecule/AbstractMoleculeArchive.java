@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
@@ -1129,12 +1130,17 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			I metaData = null;
 			try {
 				File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
-				FileInputStream inputStream = new FileInputStream(metaDataFile);
-		       
-				JsonParser jParser = jfactory.createParser(inputStream);
+				
+				//Need to be read/write to ensure lock but the file is only read here.
+				RandomAccessFile raf = new RandomAccessFile(metaDataFile, "rw");
+				FileLock lock = raf.getChannel().lock();
+				
+				JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 
 				metaData = createImageMetadata(jParser);
-				
+
+				lock.release();
+				raf.close();
 				jParser.close();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -1578,22 +1584,22 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				
 				if (!moleculeFile.exists()) {
 					addLogMessage("Molecule record " + UID + " cannot be found.");
-					//molecule = createMolecule(UID);
-					//molecule.setNotes("This record cannot be found.");
 					return null;
 				} else if (moleculeFile.length() == 0) {
 					addLogMessage("Molecule record " + UID + " has been corrupted.");
-					//molecule = createMolecule(UID);
-					//molecule.setNotes("There is no data available for this record.");
 					return null;
 				}
 				
-				FileInputStream inputStream = new FileInputStream(moleculeFile);
-		       
-				JsonParser jParser = jfactory.createParser(inputStream);
+				//Need to be read/write to ensure lock but the file is only read here.
+				RandomAccessFile raf = new RandomAccessFile(moleculeFile, "rw");
+				FileLock lock = raf.getChannel().lock();
+				
+				JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 
 				molecule = createMolecule(jParser);
 
+				lock.release();
+				raf.close();
 				jParser.close();
 			} catch (IOException e) {
 				e.printStackTrace();
