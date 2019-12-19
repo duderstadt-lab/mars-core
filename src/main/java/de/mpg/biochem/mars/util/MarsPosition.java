@@ -31,16 +31,13 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.MarsImageMetadata;
-import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
-import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
+import de.mpg.biochem.mars.molecule.*;
 
 /**
  * This class provides a simple position definition. Usually this is a position in time or slice that is of interest
- * for further analysis. {@link Molecules} and {@link MarsImageMetadata} can contain a list of these positions.
+ * for further analysis. {@link Molecule}s and {@link MarsImageMetadata}s can contain a list of these positions.
  * <p>
  * Position definitions include the name, value, column (Time (s) or slice or otherwise), and color (in hex). 
  * These values are used by mars-fx to draw position on plots based value and color.
@@ -58,6 +55,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 * Constructor for creating a plot position of a given name with default settings. 
 		 * This has a default black color and position value = 0. The position can then be 
 		 * changed in the gui. 
+		 * 
+		 * @param name Name of the MarsPositon to create.
 		 */
 		public MarsPosition(String name) {
 			this.name = name;
@@ -68,6 +67,7 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 * objects from file.
 		 * 
 		 * @param jParser Json stream used to build the object.
+		 * @throws IOException Thrown if unable to parse Json from JsonParser.
 		 */
 		public MarsPosition(JsonParser jParser) throws IOException {
 			fromJSON(jParser);
@@ -80,7 +80,6 @@ public class MarsPosition implements JsonConvertibleRecord {
 		 * @param column Name of column the region refers to.
 		 * @param position Location of the position in unit of column.
 		 * @param color Color string in hex format.
-		 * @param style Line dash pattern string.
 		 * @param stroke Line thickness.
 		 */
 		public MarsPosition(String name, String column, double position, String color, double stroke) {
@@ -151,6 +150,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		//Getters and Setters
 		/**
 		 * Get position name.
+		 * 
+		 * @return Position name.
 		 */
 		public String getName() {
 			return name;
@@ -158,6 +159,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		
 		/**
 		 * Set position name.
+		 * 
+		 * @param name Position name.
 		 */
 		public void setName(String name) {
 			this.name = name;
@@ -176,6 +179,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		/**
 		 * Set the name of the column the
 		 * position value refers to.
+		 * 
+		 * @param column Name of the column that defines the position units.
 		 */
 		public void setColumn(String column) {
 			this.column = column;
@@ -201,6 +206,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		
 		/**
 		 * Get the position value.
+		 * 
+		 * @return Position value.
 		 */
 		public double getPosition() {
 			return position;
@@ -208,6 +215,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		
 		/**
 		 * Set the position value in units of column.
+		 * 
+		 * @param position Position value.
 		 */
 		public void setPosition(double position) {
 			this.position = position;
@@ -215,6 +224,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		
 		/**
 		 * Get the stroke value (line thickness).
+		 * 
+		 * @return Stroke (line thickness).
 		 */
 		public double getStroke() {
 			return stroke;
@@ -222,6 +233,8 @@ public class MarsPosition implements JsonConvertibleRecord {
 		
 		/**
 		 * Set the stroke value (line thickness). Default is 1.0.
+		 * 
+		 * @param stroke Line thickness.
 		 */
 		public void setStroke(double stroke) {
 			this.stroke = stroke;

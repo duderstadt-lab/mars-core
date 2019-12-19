@@ -32,6 +32,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
  * Default implementation of {@link AbstractMoleculeArchive}.
@@ -41,7 +42,9 @@ import de.mpg.biochem.mars.table.MarsTable;
 public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsImageMetadata, DefaultMoleculeArchiveProperties> {
 	
 	/**
-	 * Creates an empty MoleculeArchive with the given name. 
+	 * Creates an empty DefaultMoleculeArchive with the given name. 
+	 * 
+	 * @param name Name of the empty DefaultMoleculeArchive to create.
 	 */
 	public DefaultMoleculeArchive(String name) {
 		super(name);
@@ -58,7 +61,6 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * detect the type and open the archive accordingly.
 	 * <p>
 	 * @param file The file or directory to load the archive from.
-	 * 
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */

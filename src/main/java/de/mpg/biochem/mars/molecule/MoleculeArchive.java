@@ -416,7 +416,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	/**
 	 * Set the file the archive should save to.
 	 * 
-	 * @return The File the archive was opened from.
+	 * @param file The File the archive was opened from.
 	 */
 	void setFile(File file);
 
@@ -531,41 +531,67 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	
 	/**
 	 * Create empty MoleculeArchiveProperties record.
+	 * 
+	 * @return Empty MoleculeArchiveProperties.
 	 */
 	public P createProperties();
 	
 	/**
 	 * Create MoleculeArchiveProperties record using JsonParser stream.
+	 * 
+	 * @param jParser JsonParser to use to create archive properties.
+	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
+	 * @return MoleculeArchiveProperties created.
 	 */
 	public P createProperties(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create MarsImageMetadata record using JsonParser stream.
+	 * 
+	 * @param jParser JsonParser to use to create ImageMetadata.
+	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
+	 * @return MarsImageMetadata record created using JsonParser stream.
 	 */
 	public I createImageMetadata(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create empty MarsImageMetadata record with the metaUID specified.
+	 * 
+	 * @param metaUID The metaUID to use during creation of the empty MarsImageMetadata record.
+	 * @return MarsImageMetadata record.
 	 */
 	public I createImageMetadata(String metaUID);
 	
 	/**
 	 * Create empty Molecule record.
+	 * 
+	 * @return Empty molecule record.
 	 */
 	public M createMolecule();
 	
 	/**
 	 * Create Molecule record using the JsonParser stream given.
+	 * 
+	 * @param jParser JsonParser to use to create the molecule.
+	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
+	 * @return Molecule created using the JsonParser stream.
 	 */
 	public M createMolecule(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create empty Molecule record with the UID specified.
+	 * 
+	 * @param UID The UID to use during creation.
+	 * @return Empty molecule with the UID given.
 	 */
 	public M createMolecule(String UID);
 	
 	/**
 	 * Create Molecule record using the UID and {@link MarsTable} specified.
+	 * 
+	 * @param UID The UID to use during molecule creation.
+	 * @param table The MarsTable set as the DataTable during creation.
+	 * @return Molecule created.
 	 */
 	public M createMolecule(String UID, MarsTable table);
 }

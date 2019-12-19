@@ -93,6 +93,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * 
 	 * @param jParser A JsonParser at the start of the molecule record json
 	 * for loading the molecule record from a file.
+	 * @throws IOException Thrown if unable to read Json from the JsonParser stream.
 	 */
 	public AbstractMolecule(JsonParser jParser) throws IOException {
 		super();

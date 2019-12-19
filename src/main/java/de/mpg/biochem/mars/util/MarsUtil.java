@@ -64,8 +64,8 @@ public class MarsUtil {
 	/**
 	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
 	 * 
-	 * @param jParser
-	 * @throws IOException
+	 * @param jParser JsonParser stream to processing pass through for.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser given.
 	 */
   	public static void passThroughUnknownObjects(JsonParser jParser) throws IOException {
       	while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -77,8 +77,8 @@ public class MarsUtil {
   	/**
 	 * Used to bypass unknown Json Arrays with JacksonJson streaming interface.
 	 * 
-	 * @param jParser
-	 * @throws IOException
+	 * @param jParser JsonParser stream to processing pass through for.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser given.
 	 */
   	public static void passThroughUnknownArrays(JsonParser jParser) throws IOException {
       	while (jParser.nextToken() != JsonToken.END_ARRAY) {

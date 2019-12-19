@@ -76,6 +76,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 * Used when archives are initially opened.
 	 * 
 	 * @param jParser A JsonParser at the start of the MoleculeArchiveProperties record.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser stream.
 	 */
 	public AbstractMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		this();

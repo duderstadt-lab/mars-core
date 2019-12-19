@@ -90,7 +90,11 @@ public class ImageList {
         return list;
 	}
 	
-	/** Removes names that start with "." or end with ".db", ".txt", ".lut", "roi", ".pty", ".hdr", ".py", etc. */
+	/** Removes names that start with "." or end with ".db", ".txt", ".lut", "roi", ".pty", ".hdr", ".py", etc. 
+	 * 
+	 * @param rawlist Full list of files in the image directory.
+	 * @return Image file list.
+	 * */
     public static String[] trimFileList(String[] rawlist) {
         int count = 0;
         for (int i=0; i< rawlist.length; i++) {

@@ -52,7 +52,7 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 
 /**
  * This class provides a simple region definition. Usually this a region in time or slice that is of interest
- * for further analysis. {@link Molecules} and {@link MarsImageMetadata} can contain a list of these regions, 
+ * for further analysis. {@link Molecule}s and {@link MarsImageMetadata}s can contain a list of these regions, 
  * which are used when running several commands including {@link KCPCommand}, {@link SigmaCalculatorCommand}, 
  * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link MSDCalculatorCommand}.
  * <p>
@@ -88,6 +88,7 @@ public class MarsRegion implements JsonConvertibleRecord {
 		 * objects from file.
 		 * 
 		 * @param jParser Json stream used to build the object.
+		 * @throws IOException Thrown if unable to parse Json from the JsonParser stream.
 		 */
 		public MarsRegion(JsonParser jParser) throws IOException {
 			fromJSON(jParser);

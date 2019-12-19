@@ -118,6 +118,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	 * or when a record is retrieved from the virtual store. 
 	 * 
 	 * @param jParser A JsonParser at the start of the record.
+	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
 	public AbstractMarsImageMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
@@ -235,6 +236,8 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
   	
 	/**
 	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the MarsImageMetadata record.
 	 */
   	public String toJSONString() {
   		ByteArrayOutputStream stream = new ByteArrayOutputStream();

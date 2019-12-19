@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import de.mpg.biochem.mars.molecule.commands.*;
 
 import org.scijava.ui.DialogPrompt.MessageType;
 
@@ -128,7 +129,7 @@ import org.scijava.table.*;
  * and value types.
  * </p>
  * <p>
- * MoleculeArchive of different types can be opened using the {@link ImporMoleculeArchiveCommand}. This import command
+ * MoleculeArchive of different types can be opened using the {@link ImportMoleculeArchiveCommand}. This import command
  * will automatically detect the type and load the archive in accordingly.
  * </p>
  * <p>
@@ -1691,7 +1692,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Convenience method to execute an action on all molecules using a Consumer.
 	 * 
-	 * @return Molecule stream.
+	 * @param action Action to perform on all molecules.
 	 */
 	public void forEach(Consumer<? super Molecule> action) {
 		this.moleculeIndex.stream().map(UID -> get(UID)).forEach(action);

@@ -110,6 +110,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * or when a record is retrieved from the virtual store. 
 	 * 
 	 * @param jParser A JsonParser at the start of the MarsRecord.
+	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
 	public AbstractMarsRecord(JsonParser jParser) throws IOException {
 		this();

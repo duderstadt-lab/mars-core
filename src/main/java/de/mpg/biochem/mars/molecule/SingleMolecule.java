@@ -75,6 +75,7 @@ public class SingleMolecule extends AbstractMolecule {
 	 * 
 	 * @param jParser A JsonParser at the start of the molecule record json
 	 * for loading the molecule record from a file.
+	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
 	public SingleMolecule(JsonParser jParser) throws IOException {
 		super(jParser);

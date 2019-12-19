@@ -33,6 +33,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
  * Implementation of {@link AbstractMoleculeArchive} for default archives used for
@@ -44,14 +45,13 @@ import de.mpg.biochem.mars.table.MarsTable;
  * {@link AbstractMoleculeArchive}.
  * <p>
  * @author Karl Duderstadt
- * @param <SingleMolecule> Molecule type.
- * @param <SdmmImageMetadata> MarsImageMetadata type.
- * @param <SingleMoleculeArchiveProperties> MoleculeArchiveProperties type.
  */
 public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty SingleMoleculeArchive with the given name. 
+	 * 
+	 * @param name Name of the empty SingleMoleculeArchive to create.
 	 */
 	public SingleMoleculeArchive(String name) {
 		super(name);

@@ -55,6 +55,8 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * Set the name of the microscope used for data collection.
 	 * This is just for record keeping. There are no predefined
 	 * setting based on microscope names.
+	 * 
+	 * @param Microscope Name of the microscope used for collection.
 	 */
 	void setMicroscopeName(String Microscope);
 	
@@ -62,21 +64,29 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * Get the name of the microscope used for data collection.
 	 * This is just for record keeping. There are no predefined
 	 * setting based on microscope names.
+	 * 
+	 * @return Name of the microscope used for collection.
 	 */
 	String getMicroscopeName();
 	
 	/**
 	 * Set the Date when these data were collected.
+	 * 
+	 * @param str Date when metadata was collected.
 	 */
 	void setCollectionDate(String str);
 	
 	/**
 	 * Get the Date when these data were collected.
+	 * 
+	 * @return The date when the metadata was collected.
 	 */
 	String getCollectionDate();
 	
 	/**
 	 * Get the Source Directory where the images are stored.
+	 * 
+	 * @return Directory where the images are stored.
 	 */
 	String getSourceDirectory();
 	
@@ -84,6 +94,8 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * Add to the log that contains the history of processing steps
 	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}.
+	 * 
+	 * @param str Message to add to the log.
 	 */
 	void addLogMessage(String str);
 	
@@ -91,12 +103,17 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * Get the log that contains the history of processing steps
 	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}.
+	 * 
+	 * @return The processing log for this metadata record.
 	 */
 	String getLog();
 	
 	/**
 	 * Get the {@link MarsBdvSource} with the 
 	 * name provided.
+	 * 
+	 * @param name Name of the MarsBdvSource to retrieve.
+	 * @return Mars BigDataViewer Source with the name given.
 	 */
 	MarsBdvSource getBdvSource(String name);
 	
@@ -105,29 +122,40 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * name provided. All {@link MarsBdvSource} are unique
 	 * so record will be overwritten if they have the same
 	 * name.
+	 * 
+	 * @param source Mars BigDataViewer Source to add to the MarsImageMetadata record.
 	 */
 	void putBdvSource(MarsBdvSource source);
 	
 	/**
 	 * Remove the {@link MarsBdvSource} with the 
 	 * name provided.
+	 * 
+	 * @param name Name of the MarsBdvSource to remove.
 	 */
 	void removeBdvSource(String name);
 	
 	/**
 	 * Get the Collection of BigDataViewer sources with 
 	 * each in {@link MarsBdvSource} format.
+	 * 
+	 * @return Collection of MarsBdvSources in the record.
 	 */
 	Collection<MarsBdvSource> getBdvSources();
 	
 	/**
 	 * Get the set of BigDataViewer source names.
+	 * 
+	 * @return Names of MarsBdvSources in the record.
 	 */
 	Set<String> getBdvSourceNames();
 	
 	/**
 	 * Check if this record contains the BigDataViewer
 	 * with the name provided.
+	 * 
+	 * @param name Name of the MarsBdvSource to check for.
+	 * @return True if a source with the name given is found.
 	 */
 	boolean hasBdvSource(String name);
 }

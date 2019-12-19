@@ -116,13 +116,20 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		super();
 	}
 
-	/** Creates an empty results table with the name given. */
+	/** Creates an empty results table with the name given. 
+	 * 
+	 * @param name Table name.
+	 * */
 	public MarsTable(String name) {
 		super();
 		this.name = name;
 	}
 	
-	/** Creates a results table with the name given and column headers. */
+	/** Creates a results table with the name given and column headers. 
+	 * 
+	 * @param name Table name.
+	 * @param headers Names of column headers to initialize.
+	 * */
 	public MarsTable(String name, String... headers) {
 		super();
 		this.name = name;
@@ -134,6 +141,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * the extension of the file provided, which can be json or csv. If no file extension
 	 * is found it is assumed the file has csv format.
 	 *  
+	 * @param file File to load table from.
+	 * @throws JsonParseException Thrown if unable to parse Json.
+	 * @throws IOException Thrown if unable to read file.
 	 */
 	public MarsTable(File file) throws JsonParseException, IOException {
 		super();
@@ -149,6 +159,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * is found it is assumed the file has csv format.
 	 *  
 	 *  If the StatusService is provided, then a progress bar is shown during loading of csv files.
+	 *  
+	 *  @param file File to load the table from.
+	 *  @param statusService StatusService from the current Context to provide the user with progress updates.
+	 *  @throws IOException If unable to load the file.
+	 *  @throws JsonParseException If a problem is encountered when parsing Json.
 	 */
 	public MarsTable(File file, StatusService statusService) throws JsonParseException, IOException {
 		super();
@@ -162,12 +177,21 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 			loadCSV(file);
 	}
 	
-	/** Creates a results table with the given row and column dimensions. */
+	/** Creates a results table with the given row and column dimensions. 
+	 * 
+	 * @param columnCount Number of columns.
+	 * @param rowCount Number of rows.
+	 * */
 	public MarsTable(final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 	}
 
-	/** Creates a results table with the given name and column and row dimensions. */
+	/** Creates a results table with the given name and column and row dimensions. 
+	 * 
+	 * @param name Table name.
+	 * @param columnCount Number of columns.
+	 * @param rowCount Number of rows.
+	 * */
 	public MarsTable(final String name, final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 		this.name = name;
@@ -347,7 +371,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	/** Saves the table to the string file path specified in
 	 * csv format.
 	 * @param path The string path for saving.
-	 * @throws IOException
+	 * @throws IOException Thrown if unable to write the file.
 	 */
     public void saveAsCSV(String path) throws IOException {
         if (getRowCount() == 0) return;
@@ -374,16 +398,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
         for (int i=0; i<getRowCount(); i++)
             pw.println(getRowAsString(i));
         pw.close();
-        
-        File file = new File(path);
-        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
     }
 	
 	/** JSON serialization of table values. Includes schema with column type definitions of either string or number.
 	 * values specified in records format, with each row an object containing column:value pairs.
 	 * 
 	 * @param jGenerator JsonGenerator stream the table should be serialized to.
-	 * @throws IOException 
+	 * @throws IOException Thrown if unable to write to the JsonGenerator stream.
 	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
@@ -427,7 +448,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * NaN, Infinity, -Infinity are serialized and deserialized.
 	 * 
 	 * @param jParser JsonParser stream to read objects and fields from.
-	 * @throws IOException 
+	 * @throws IOException Thrown if unable to read from the JsonParser stream.
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {			
     	//Then we move through fields
@@ -508,6 +529,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * json format.
 	 * 
 	 * @param path String path for writing.
+	 * @throws IOException Thrown if unable to write to the path given.
 	 */
 	public void saveAsJSON(String path) throws IOException {
 		if (getRowCount() == 0) return;
@@ -529,15 +551,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		//flush and close streams...
 		stream.flush();
 		stream.close();		
-		
-		File file = new File(path);
-        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/** Saves the table to the file path specified in
 	 * yamt format. This is a smile encoded json file.
 	 * 
 	 * @param path String path for writing.
+	 * @throws IOException Thown if unable to save to path given.
 	 */
 	public void saveAsYAMT(String path) throws IOException {
 		if (getRowCount() == 0) return;
@@ -559,9 +579,6 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		//flush and close streams...
 		stream.flush();
 		stream.close();	
-		
-		File file = new File(path);
-        Files.setPosixFilePermissions(file.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	private void loadCSV(File file) {
@@ -1205,8 +1222,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * B = output[2] +/- output[3]
 	 * Standard error is reported.
 	 * 
-	 * @param  xColumn Name of the column containing the x values.
-	 * @return yColumn Name of the column containing the y values.
+	 * @param xColumn Name of the column containing the x values.
+	 * @param yColumn Name of the column containing the y values.
+	 * @return Array with fit result.
 	 */
 	public double[] linearRegression(String xColumn, String yColumn) {
 		SimpleRegression linearFit = new SimpleRegression(true);
@@ -1230,8 +1248,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * B = output[2] +/- output[3]
 	 * Standard error is reported.
 	 * 
-	 * @param  xColumn Name of the column containing the x values.
-	 * @return yColumn Name of the column containing the y values.
+	 * @param xColumn Name of the column containing the x values.
+	 * @param yColumn Name of the column containing the y values.
+	 * @param lowerBound LowerBound of fitting region in x values.
+	 * @param upperBound UpperBound of fitting region in x values.
+	 * @return Array with fit result.
 	 */
 	public double[] linearRegression(String xColumn, String yColumn, double lowerBound, double upperBound) {
 		SimpleRegression linearFit = new SimpleRegression(true);
@@ -1256,6 +1277,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * Sort the table in ascending order on one or more columns.
 	 * 
 	 * @param  columns Comma separated list of columns to sort by.
+	 * @return True if sort finished.
 	 */
 	public boolean sort(String... columns) {
 		return sort(true, columns);
@@ -1266,6 +1288,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * 
 	 * @param  ascending Determines sort order.
 	 * @param  columns Comma separated list of columns to sort by.
+	 * @return True if sort finished.
 	 */
 	public boolean sort(final boolean ascending, String... columns) {
 		for (int index=0; index<columns.length; index++) {	
