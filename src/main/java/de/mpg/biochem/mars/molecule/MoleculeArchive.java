@@ -528,4 +528,44 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	 * or corresponding menu item in the MoleculeArchiveWindow.
 	 */
 	void updateProperties();
+	
+	/**
+	 * Create empty MoleculeArchiveProperties record.
+	 */
+	public P createProperties();
+	
+	/**
+	 * Create MoleculeArchiveProperties record using JsonParser stream.
+	 */
+	public P createProperties(JsonParser jParser) throws IOException;
+	
+	/**
+	 * Create MarsImageMetadata record using JsonParser stream.
+	 */
+	public I createImageMetadata(JsonParser jParser) throws IOException;
+	
+	/**
+	 * Create empty MarsImageMetadata record with the metaUID specified.
+	 */
+	public I createImageMetadata(String metaUID);
+	
+	/**
+	 * Create empty Molecule record.
+	 */
+	public M createMolecule();
+	
+	/**
+	 * Create Molecule record using the JsonParser stream given.
+	 */
+	public M createMolecule(JsonParser jParser) throws IOException;
+	
+	/**
+	 * Create empty Molecule record with the UID specified.
+	 */
+	public M createMolecule(String UID);
+	
+	/**
+	 * Create Molecule record using the UID and {@link MarsTable} specified.
+	 */
+	public M createMolecule(String UID, MarsTable table);
 }

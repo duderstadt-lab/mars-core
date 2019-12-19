@@ -1924,21 +1924,45 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return moleculeArchiveService;
 	}
 	
-	protected abstract P createProperties();
+	/**
+	 * Create empty MoleculeArchiveProperties record.
+	 */
+	public abstract P createProperties();
 	
-	protected abstract P createProperties(JsonParser jParser) throws IOException;
+	/**
+	 * Create MoleculeArchiveProperties record using JsonParser stream.
+	 */
+	public abstract P createProperties(JsonParser jParser) throws IOException;
 	
-	protected abstract I createImageMetadata(JsonParser jParser) throws IOException;
+	/**
+	 * Create MarsImageMetadata record using JsonParser stream.
+	 */
+	public abstract I createImageMetadata(JsonParser jParser) throws IOException;
 	
-	protected abstract I createImageMetadata(String metaUID);
+	/**
+	 * Create empty MarsImageMetadata record with the metaUID specified.
+	 */
+	public abstract I createImageMetadata(String metaUID);
 	
-	protected abstract M createMolecule();
+	/**
+	 * Create empty Molecule record.
+	 */
+	public abstract M createMolecule();
 	
-	protected abstract M createMolecule(JsonParser jParser) throws IOException;
+	/**
+	 * Create Molecule record using the JsonParser stream given.
+	 */
+	public abstract M createMolecule(JsonParser jParser) throws IOException;
 	
-	protected abstract M createMolecule(String UID);
+	/**
+	 * Create empty Molecule record with the UID specified.
+	 */
+	public abstract M createMolecule(String UID);
 	
-	protected abstract M createMolecule(String UID, MarsTable table);
+	/**
+	 * Create Molecule record using the UID and {@link MarsTable} specified.
+	 */
+	public abstract M createMolecule(String UID, MarsTable table);
 	
 	@Override
 	public String toString() {

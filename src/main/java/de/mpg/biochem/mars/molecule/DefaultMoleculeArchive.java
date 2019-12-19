@@ -111,37 +111,59 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 		super(name, table, moleculeArchiveService);
 	}
 	
-	// -- Internal methods --
-	
-	protected DefaultMoleculeArchiveProperties createProperties() {
+	/**
+	 * Create empty DefaultMoleculeArchiveProperties record.
+	 */
+	public DefaultMoleculeArchiveProperties createProperties() {
 		return new DefaultMoleculeArchiveProperties();
 	}
 	
-	protected DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	/**
+	 * Create DefaultMoleculeArchiveProperties record using JsonParser stream.
+	 */
+	public DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new DefaultMoleculeArchiveProperties(jParser);
 	}
 	
-	protected DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	/**
+	 * Create DefaultMarsImageMetadata record using JsonParser stream.
+	 */
+	public DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new DefaultMarsImageMetadata(jParser);
 	}
 	
-	protected DefaultMarsImageMetadata createImageMetadata(String metaUID) {
+	/**
+	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
+	 */
+	public DefaultMarsImageMetadata createImageMetadata(String metaUID) {
 		return new DefaultMarsImageMetadata(metaUID);
 	}
 	
-	protected DefaultMolecule createMolecule() {
+	/**
+	 * Create empty DefaultMolecule record.
+	 */
+	public DefaultMolecule createMolecule() {
 		return new DefaultMolecule();
 	}
 	
-	protected DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
+	/**
+	 * Create DefaultMolecule record using the JsonParser stream given.
+	 */
+	public DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new DefaultMolecule(jParser);
 	}
 	
-	protected DefaultMolecule createMolecule(String UID) {
+	/**
+	 * Create empty DefaultMolecule record with the UID specified.
+	 */
+	public DefaultMolecule createMolecule(String UID) {
 		return new DefaultMolecule(UID);
 	}
 	
-	protected DefaultMolecule createMolecule(String UID, MarsTable table) {
+	/**
+	 * Create DefaultMolecule record using the UID and {@link MarsTable} specified.
+	 */
+	public DefaultMolecule createMolecule(String UID, MarsTable table) {
 		return new DefaultMolecule(UID, table);
 	}
 }

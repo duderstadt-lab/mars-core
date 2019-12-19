@@ -121,37 +121,59 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 		super(name, table, moleculeArchiveService);
 	}
 	
-	// -- Internal methods --
-	
-	protected SingleMoleculeArchiveProperties createProperties() {
+	/**
+	 * Create empty SingleMoleculeArchiveProperties record.
+	 */
+	public SingleMoleculeArchiveProperties createProperties() {
 		return new SingleMoleculeArchiveProperties();
 	}
 	
-	protected SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	/**
+	 * Create SingleMoleculeArchiveProperties record using JsonParser stream.
+	 */
+	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	protected SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	/**
+	 * Create SdmmImageMetadata record using JsonParser stream.
+	 */
+	public SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
 		return new SdmmImageMetadata(jParser);
 	}
 	
-	protected SdmmImageMetadata createImageMetadata(String metaUID) {
+	/**
+	 * Create empty SdmmImageMetadata record with the metaUID specified.
+	 */
+	public SdmmImageMetadata createImageMetadata(String metaUID) {
 		return new SdmmImageMetadata(metaUID);
 	}
 	
-	protected SingleMolecule createMolecule() {
+	/**
+	 * Create empty SingleMolecule record.
+	 */
+	public SingleMolecule createMolecule() {
 		return new SingleMolecule();
 	}
 	
-	protected SingleMolecule createMolecule(JsonParser jParser) throws IOException {
+	/**
+	 * Create SingleMolecule record using the JsonParser stream given.
+	 */
+	public SingleMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new SingleMolecule(jParser);
 	}
 	
-	protected SingleMolecule createMolecule(String UID) {
+	/**
+	 * Create empty SingleMolecule record with the UID specified.
+	 */
+	public SingleMolecule createMolecule(String UID) {
 		return new SingleMolecule(UID);
 	}
 	
-	protected SingleMolecule createMolecule(String UID, MarsTable table) {
+	/**
+	 * Create SingleMolecule record using the UID and {@link MarsTable} specified.
+	 */
+	public SingleMolecule createMolecule(String UID, MarsTable table) {
 		return new SingleMolecule(UID, table);
 	}
 }
