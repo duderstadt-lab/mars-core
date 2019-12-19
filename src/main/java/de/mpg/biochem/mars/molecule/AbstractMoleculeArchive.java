@@ -78,6 +78,8 @@ import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.*;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static java.util.stream.Collectors.toList;
 
 import org.scijava.table.*;
@@ -176,6 +178,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	//this is a map of molecule UIDs to imageMetadataUID for virtual storage indexing...
 	private ConcurrentMap<String, String> moleculeImageMetadataUIDIndex;
+	
+	//To ensure thread blocking for record access
+	private ConcurrentMap<String, ReentrantLock> recordLocks;
 	
 	//This is a map from keys to molecules if working in memory..
 	//Otherwise if working in virtual memory it is left null..
@@ -326,6 +331,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			tagIndex = new ConcurrentHashMap<>();
 			imageMetadataTagIndex = new ConcurrentHashMap<>();
 			moleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
+			
+			recordLocks = new ConcurrentHashMap();
 			
 			virtualMoleculesSet = ConcurrentHashMap.newKeySet();
 			virtualImageMetadataSet = ConcurrentHashMap.newKeySet();
@@ -1124,24 +1131,32 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				return imageMetadata.get(metaUID);
 			else {
 				I metaData = null;
+				
+				if (!recordLocks.containsKey(metaUID))
+					recordLocks.put(metaUID, new ReentrantLock());
+				
+				recordLocks.get(metaUID).lock();
 				try {
 					File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
 					
 					//Need to be read/write to ensure lock but the file is only read here.
 					RandomAccessFile raf = new RandomAccessFile(metaDataFile, "rw");
-					FileLock lock = raf.getChannel().lock();
+					FileLock fileLock = raf.getChannel().lock();
 					
 					JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 	
 					metaData = createImageMetadata(jParser);
 	
-					lock.release();
+					fileLock.release();
 					raf.close();
 					jParser.close();
 				} catch (IOException e) {
 					e.printStackTrace();
+					recordLocks.get(metaUID).unlock();
+				} finally {
+					recordLocks.get(metaUID).unlock();
 				}
-				
+					
 				if (metaData != null) {
 					metaData.setParent(this);
 					imageMetadata.put(metaData.getUID(), metaData);
@@ -1352,23 +1367,28 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
 	public void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException {
-		File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
+		if (!recordLocks.containsKey(molecule.getUID()))
+			recordLocks.put(molecule.getUID(), new ReentrantLock());
 		
-		FileOutputStream stream = new FileOutputStream(moleculeFile);
-		FileChannel channel = stream.getChannel();
-
-		// Use the file channel to create a lock on the file.
-        // This method blocks until it can retrieve the lock.
-        FileLock lock = channel.lock();
-
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		molecule.toJSON(jGenerator);
-		
-        if( lock != null ) {
-            lock.release();
-        }
-        
-		jGenerator.close();
+		recordLocks.get(molecule.getUID()).lock();
+		try {
+			File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
+			
+			FileOutputStream stream = new FileOutputStream(moleculeFile);
+			FileChannel channel = stream.getChannel();
+	
+			// Use the file channel to create a lock on the file.
+	        // This method blocks until it can retrieve the lock.
+	        FileLock fileLock = channel.lock();
+	
+			JsonGenerator jGenerator = jfactory.createGenerator(stream);
+			molecule.toJSON(jGenerator);
+			
+	        fileLock.release();
+			jGenerator.close();
+		} finally {
+			recordLocks.get(molecule.getUID()).unlock();
+		}
 	}
 	
 	/**
@@ -1382,21 +1402,27 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if the MARSImageMetadata can't be saved to the file given.
 	 */
 	public void saveImageMetadataToFile(File directory, I imageMetadata, JsonFactory jfactory) throws IOException {
-		File imageMetadataFile = new File(directory.getAbsolutePath() + "/" + imageMetadata.getUID() + ".json");
-		FileOutputStream stream = new FileOutputStream(imageMetadataFile);
-		FileChannel channel = stream.getChannel();
+		if (!recordLocks.containsKey(imageMetadata.getUID()))
+			recordLocks.put(imageMetadata.getUID(), new ReentrantLock());
 		
-		// Use the file channel to create a lock on the file.
-        // This method blocks until it can retrieve the lock.
-        FileLock lock = channel.lock();
+		recordLocks.get(imageMetadata.getUID()).lock();
+		try {
+			File imageMetadataFile = new File(directory.getAbsolutePath() + "/" + imageMetadata.getUID() + ".json");
+			FileOutputStream stream = new FileOutputStream(imageMetadataFile);
+			FileChannel channel = stream.getChannel();
+			
+			// Use the file channel to create a lock on the file.
+	        // This method blocks until it can retrieve the lock.
+	        FileLock fileLock = channel.lock();
+	
+			JsonGenerator jGenerator = jfactory.createGenerator(stream);
+			imageMetadata.toJSON(jGenerator);
 
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		imageMetadata.toJSON(jGenerator);
-		if( lock != null ) {
-            lock.release();
-        }
-        
-		jGenerator.close();
+			fileLock.release();
+			jGenerator.close();
+		} finally {
+			recordLocks.get(imageMetadata.getUID()).unlock();
+		}
 	}
 	
 	private void updateImageMetadataTagIndex(I metaData) {
@@ -1582,6 +1608,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public M get(String UID) {
 		if (virtual) {
 			M molecule = null;
+			
+			if (!recordLocks.containsKey(UID))
+				recordLocks.put(UID, new ReentrantLock());
+			
+			recordLocks.get(UID).lock();
 			try {
 				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
 				
@@ -1606,7 +1637,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				jParser.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+				recordLocks.get(UID).unlock();
+			} finally {
+				recordLocks.get(UID).unlock();
 			}
+			
 			return molecule;
 		} else {
 			return molecules.get(UID);
