@@ -54,13 +54,18 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	
 	protected HashMap<String, Predicate<JsonParser>> inputMap;
 	
+	//IOMaps are created during the first call to toJSON or fromJSON lazily
+	//This ensures subclasses overriding createIOMaps have been fully 
+	//initialized before the first call. If false this field triggers initialization.
+	private boolean IOMapsInitialized;
+	
 	/**
 	 * Constructor for creating a JsonConvertiableRecord. 
 	 */
 	public AbstractJsonConvertibleRecord() {
 		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
 		inputMap = new HashMap<String, Predicate<JsonParser>>();
-		createIOMaps();
+		IOMapsInitialized = false;
 	}
 	
 	/**
@@ -73,6 +78,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
      * @throws IOException if there is a problem reading from the file.
 	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
+		if (!IOMapsInitialized) {
+			createIOMaps();
+			IOMapsInitialized = true;
+		}
+		
 		jGenerator.writeStartObject();
 		for (String field : outputMap.keySet()) {
 			if (!outputMap.get(field).test(jGenerator))
@@ -91,6 +101,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
      * @throws IOException if there is a problem reading from the file.
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {
+		if (!IOMapsInitialized) {
+			createIOMaps();
+			IOMapsInitialized = true;
+		}
+		
 		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
 		String fieldBlockName = "";
 		while (nextToken != JsonToken.END_OBJECT) {

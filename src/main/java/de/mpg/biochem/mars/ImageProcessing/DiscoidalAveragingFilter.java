@@ -29,7 +29,6 @@ package de.mpg.biochem.mars.ImageProcessing;
 import net.imagej.ops.AbstractOp;
 import net.imagej.ops.Op;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -39,17 +38,6 @@ import org.scijava.plugin.Plugin;
 
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
-import ij.text.TextWindow;
-import net.imglib2.img.Img;
-import net.imglib2.util.IntervalIndexer;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
-import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
 
 /**
  * Image filter that enhances peak intensity over background. The innerRadius will determine the 

@@ -174,7 +174,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
 			if (regionsOfInterest.size() > 0) {
 				jGenerator.writeArrayFieldStart("RegionsOfInterest");
-				for (String region :regionsOfInterest.keySet()) 
+				for (String region : regionsOfInterest.keySet()) 
 					regionsOfInterest.get(region).toJSON(jGenerator);
 				jGenerator.writeEndArray();
 			}
