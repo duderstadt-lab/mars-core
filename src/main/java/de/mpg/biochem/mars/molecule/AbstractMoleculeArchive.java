@@ -335,12 +335,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		imageMetadataIndex = new ArrayList<String>(); 
 		imageMetadata = new ConcurrentHashMap<>();
 		
+		recordLocks = new ConcurrentHashMap<>();
+		
 		if (virtual) {
 			tagIndex = new ConcurrentHashMap<>();
 			imageMetadataTagIndex = new ConcurrentHashMap<>();
 			moleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
-			
-			recordLocks = new ConcurrentHashMap<>();
 			
 			virtualMoleculesSet = ConcurrentHashMap.newKeySet();
 			virtualImageMetadataSet = ConcurrentHashMap.newKeySet();
