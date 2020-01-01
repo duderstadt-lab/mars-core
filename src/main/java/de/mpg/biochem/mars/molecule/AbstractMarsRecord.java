@@ -112,13 +112,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param jParser A JsonParser at the start of the MarsRecord.
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
-	public AbstractMarsRecord(JsonParser jParser) throws IOException {
-		this();
+	//public AbstractMarsRecord(JsonParser jParser) throws IOException {
+	//	this();
 		
 		//This is a problem because it calls create maps overriden in subclasses from a superclass 
 		//constructor....!!!!!!!!!! We work around the issue for the moment...
-		fromJSON(jParser);
-	}
+	//	fromJSON(jParser);
+	//}
 	
 	/**
 	 * Constructor for creating a new record with the

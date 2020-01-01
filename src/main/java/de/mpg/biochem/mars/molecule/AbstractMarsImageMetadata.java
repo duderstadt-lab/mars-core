@@ -64,15 +64,15 @@ import de.mpg.biochem.mars.util.MarsUtil;
  */
 public class AbstractMarsImageMetadata extends AbstractMarsRecord implements MarsImageMetadata {
 	//Processing log for the record
-	protected String log;
-	
-	protected String Microscope;
+	protected String log = "";
+
+	protected String Microscope = "unknown";
 	
 	//Directory where the images are stored..
-	protected String SourceDirectory;
+	protected String SourceDirectory = "unknown";
 	
 	//Date and time when the data was collected...
-	protected String CollectionDate;
+	protected String CollectionDate = "unknown";
 	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
@@ -121,25 +121,13 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
 	public AbstractMarsImageMetadata(JsonParser jParser) throws IOException {
-		super(jParser);
+		super();
+		fromJSON(jParser);
 	}
 	
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
-		
-		//Initialize variables
-		if (log == null)
-			log = "";
-		
-		if (Microscope == null)
-			Microscope = "unknown";
-		
-		if (SourceDirectory == null)
-			SourceDirectory = "unknown";
-		
-		if (CollectionDate == null)
-			CollectionDate = "unknown";
 
 		//Add to output map
 		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {
