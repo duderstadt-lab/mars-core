@@ -75,7 +75,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	protected String CollectionDate;
 	
 	//BDV views
-	protected LinkedHashMap<String, MarsBdvSource> bdvSources;
+	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
     
     //Used for making JsonParser instances...
     //We make it static because we just need to it make parsers so we don't need multiple copies..
@@ -128,13 +128,18 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		bdvSources = new LinkedHashMap<String, MarsBdvSource>();
+		//Initialize variables
+		if (log == null)
+			log = "";
 		
-		//Set defaults in case these don't exist.
-		log = "";
-		Microscope = "unknown";
-		SourceDirectory = "unknown";
-		CollectionDate = "unknown";
+		if (Microscope == null)
+			Microscope = "unknown";
+		
+		if (SourceDirectory == null)
+			SourceDirectory = "unknown";
+		
+		if (CollectionDate == null)
+			CollectionDate = "unknown";
 
 		//Add to output map
 		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {

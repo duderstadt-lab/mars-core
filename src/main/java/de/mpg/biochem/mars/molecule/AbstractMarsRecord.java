@@ -114,6 +114,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public AbstractMarsRecord(JsonParser jParser) throws IOException {
 		this();
+		
+		//This is a problem because it calls create maps overriden in subclasses from a superclass 
+		//constructor....!!!!!!!!!! We work around the issue for the moment...
 		fromJSON(jParser);
 	}
 	

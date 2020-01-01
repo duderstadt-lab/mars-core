@@ -376,7 +376,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			//Build log
 			LogBuilder builder = new LogBuilder();
 			
-			String log = builder.buildTitleBlock("Peak Tracker");
+			String log = LogBuilder.buildTitleBlock("Peak Tracker");
 			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
@@ -499,7 +499,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 	
 				log += "\n" + LogBuilder.endBlock(true);
 				archive.addLogMessage(log);
-				archive.addLogMessage("   ");			
+				archive.addLogMessage("   ");	
 			}
 		}
 
