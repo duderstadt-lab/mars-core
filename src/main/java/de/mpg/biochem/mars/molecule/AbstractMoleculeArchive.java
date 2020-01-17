@@ -1478,6 +1478,26 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
+	 * Retrieve the list of tags for a molecule. Will retrieve
+	 * the list from the index if working in virtual memory.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the tags of.
+	 * @return Returns the set of for the molecule with UID.
+	 */
+	public LinkedHashSet<String> moleculeTags(String UID) {
+		if (UID != null) {
+			if (virtual) {
+				if (tagIndex.containsKey(UID))
+					return tagIndex.get(UID);
+				else
+					return new LinkedHashSet<String>();
+			} else
+				return get(UID).getTags();
+		}
+		return null;
+	}
+	
+	/**
 	 * Check if a molecule record has tags. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.

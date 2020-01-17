@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -317,6 +319,15 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	boolean moleculeHasTags(String UID);
 	
 	/**
+	 * Retrieve the list of tags for a molecule. Will retrieve
+	 * the list from the index if working in virtual memory.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the tags of.
+	 * @return Returns the set of for the molecule with UID.
+	 */
+	public LinkedHashSet<String> moleculeTags(String UID);
+	
+	/**
 	 * Check if a MARSImageMetadata record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
@@ -376,6 +387,29 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	 * the UID provided.
 	 */
 	int getIndex(String UID);
+	
+	/**
+	 * Convenience method to retrieve a Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<M> stream();
+	
+	/**
+	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach in a multithreaded manner.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<M> parallelStream();
+	
+	/**
+	 * Convenience method to execute an action on all molecules using a Consumer.
+	 * 
+	 * @param action Action to perform on all molecules.
+	 */
+	public void forEach(Consumer<? super Molecule> action);
 	
 	/**
 	 * Get the UID of the MARSImageMetadata for a molecule record. If 
