@@ -1324,12 +1324,23 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	}
 	
 	/**
-	 * Returns a stream of MARSTableRow. This is useful for performing operations on all rows
+	 * Returns a stream of MarsTableRow. This is useful for performing operations on all rows
 	 * using Consumers. 
 	 * 
-	 * @return A stream of MARSTableRows.
+	 * @return A stream of MarsTableRows.
 	 */
+	@Deprecated
 	public Stream<MarsTableRow> rowStream() {
+		return rows();
+    }
+	
+	/**
+	 * Returns a stream of MarsTableRow. This is useful for performing operations on all rows
+	 * using Consumers. 
+	 * 
+	 * @return A stream of MarsTableRows.
+	 */
+	public Stream<MarsTableRow> rows() {
 		Iterator<MarsTableRow> iterator = new Iterator<MarsTableRow>() {
 
                 final private MarsTableRow row = new MarsTableRow(MarsTable.this);
