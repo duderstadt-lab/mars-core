@@ -109,13 +109,13 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
     @Parameter(label="Calculate from background")
     private boolean calcBackgroundSigma = true;
     
-    @Parameter(label="Background region")
+    @Parameter(label="Background region", required=false)
 	private String backgroundRegion;
     
     @Parameter(label="Analyze region")
     private boolean region = true;
     
-    @Parameter(label="Region")
+    @Parameter(label="Region", required=false)
 	private String regionName;
     
     @Parameter(label="Fit steps (zero slope)")
@@ -151,7 +151,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Change Point Finder");
+		String log = LogBuilder.buildTitleBlock("Change Point Finder");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -253,15 +253,17 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	private void findChangePoints(Molecule molecule) {
 		MarsTable datatable = molecule.getDataTable();
 		
-		MarsRecord regionRecord;
-		if (regionSource.equals("Molecules")) {
-			regionRecord = molecule;
-		} else {
-			regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+		MarsRecord regionRecord = null;
+		if (region) {
+			if (regionSource.equals("Molecules")) {
+				regionRecord = molecule;
+			} else {
+				regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+			}
+			
+			if (!regionRecord.hasRegion(regionName))
+				return;
 		}
-		
-		if (!regionRecord.hasRegion(regionName))
-			return;
 		
 		//START NaN FIX
 		ArrayList<Double> xDataSafe = new ArrayList<Double>();
