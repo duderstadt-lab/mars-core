@@ -126,7 +126,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Opening MoleculeArchive");
+		String log = LogBuilder.buildTitleBlock("Opening MoleculeArchive");
 		builder.addParameter("Loading File", file.getAbsolutePath());
 		builder.addParameter("Archive Name", name);
 		
