@@ -210,6 +210,7 @@ public class BigDataPeakTracker {
 		//First remove All Peaks lists
 		for (int slice=start;slice<=end;slice++) {
 			PeakStack.remove(slice);
+			KDTreeStack.remove(slice);
 		}
 
 		for (int index=0; index < trajectoryFirstSlice.size(); index++) {
