@@ -69,6 +69,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import net.imagej.ops.Initializable;
@@ -296,6 +297,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 		//For the progress thread
 		private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+		private final AtomicInteger framesProcessed = new AtomicInteger(0);
 
 		//array for max error margins.
 		private double[] maxDifference;
@@ -415,12 +417,29 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			//Output first part of log message...
 			logService.info(log);
 
+			double starttime = System.currentTimeMillis();
+			logService.info("Finding and Fitting Peaks...");
 		    try {
+		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
+		    	//Waiting call back to update the progress bar!!
+		    	Thread progressThread = new Thread() {
+		            public synchronized void run() {
+	                    try {
+	        		        while(progressUpdating.get()) {
+	        		        	Thread.sleep(100);
+	        		        	statusService.showStatus(framesProcessed.get(), image.getStackSize(), "Finding and tracking " + image.getTitle());
+	        		        }
+	                    } catch (Exception e) {
+	                        e.printStackTrace();
+	                    }
+		            }
+		        };
+
+		        progressThread.start();
+		    	
 		    	int chunkSize = 1000;
 		    	int slices = image.getStack().size();
 		    	int chunks = (slices + chunkSize - 1) / chunkSize;
-
-		    	System.out.println("chunks " + chunks);
 
 		    	for (int chunk = 0 ; chunk < chunks; chunk++) {
 		    		int start = chunk*chunkSize + 1;
@@ -436,22 +455,28 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 		    		final int finalStart = start;
 		    		final int finalEnd = end;
 
-		    		System.out.println("finder start " + finalStart + " end " + finalEnd);
-
 			        forkJoinPool.submit(() -> IntStream.rangeClosed(finalStart, finalEnd).parallel().forEach(i -> {
 			        	ArrayList<Peak> peaks = findPeaksInSlice(i);
 			        	if (peaks.size() > 0)
 			        		PeakStack.put(i, peaks);
+			        	framesProcessed.incrementAndGet();
 			        })).get();
 
 			        tracker.trackChunk(PeakStack, start, end, gap);
 		    	}
+		    	
+		    	progressUpdating.set(false);
+		        
+		        statusService.showStatus(1, 1, "Finding and tracking for " + image.getTitle() + " - Done!");
+		        
 		   } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
 		    	e.printStackTrace();
 		   }
 
 		   forkJoinPool.shutdown();
+		   
+		   logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -479,6 +504,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 			image.setRoi(startingRoi);
 
+			//Why is there here???
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -486,6 +512,8 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 				e.printStackTrace();
 			}
 			statusService.showProgress(1, 1);
+			
+			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");

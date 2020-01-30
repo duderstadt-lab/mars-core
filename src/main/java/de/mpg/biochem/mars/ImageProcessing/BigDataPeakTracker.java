@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -114,7 +115,6 @@ public class BigDataPeakTracker {
 	//The gap is the gap to leave to process in the next round...
 	public void trackChunk(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int start, int end, int gap) {
 
-		System.out.println("Generate KDTree from start " + start + " end " + end);
 		try {
 			final int finalStart = start;
 			final int finalEnd = end;
@@ -140,8 +140,6 @@ public class BigDataPeakTracker {
 			final int finalStart2 = start;
 			final int finalEnd2 = end;
 
-			System.out.println("Finding possible links start " + finalStart2 + " end " + finalEnd2);
-
 	        //This will spawn a bunch of threads that will find all possible links for peaks
 			//within each slice individually in parallel and put the results into the global map possibleLinks
 	        forkJoinPool.submit(() -> IntStream.rangeClosed(finalStart2, finalEnd2).parallel().forEach(i -> findPossibleLinks(PeakStack, i))).get();
@@ -152,8 +150,6 @@ public class BigDataPeakTracker {
 	    	e.printStackTrace();
 	    	return;
 	    }
-
-		System.out.println("linking from " + start + " to " + end);
 
 		for (int slice=start;slice<=end;slice++) {
 			ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
@@ -189,7 +185,6 @@ public class BigDataPeakTracker {
 						//Add references in each peak for forward and backward links...
 						from.setForwardLink(to);
 						to.setBackwardLink(from);
-
 					} else if (!regionAlreadyLinked) {
 						//Generate a new UID
 						String UID = MarsMath.getUUID58();
@@ -208,9 +203,13 @@ public class BigDataPeakTracker {
 
 		//Release memory where possible...
 		//First remove All Peaks lists
+	
 		for (int slice=start;slice<=end;slice++) {
+			List<Peak> peaks = PeakStack.get(slice);
+			peaks.clear();
 			PeakStack.remove(slice);
-			KDTreeStack.remove(slice);
+			KDTreeStack.remove(slice);			
+			possibleLinks.remove(slice);
 		}
 
 		for (int index=0; index < trajectoryFirstSlice.size(); index++) {
@@ -227,9 +226,18 @@ public class BigDataPeakTracker {
 
 			if (peak.getSlice() > end)
 				continue;
-			else
+			else {
+				//remove all links so there objects can be garbage collected...
+				Peak pk = trajectoryFirstSlice.get(index);
+				while (pk.getForwardLink() != null) {
+					pk = pk.getForwardLink();
+					pk.backwardLink = null;
+					pk.forwardLink = null;
+				}
 				trajectoryFirstSlice.remove(index);
+			}
 		}
+		System.gc();
 	}
 
 	public void buildArchive(SingleMoleculeArchive archive) {
@@ -247,6 +255,7 @@ public class BigDataPeakTracker {
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
+	    
 	}
 
 	private void findPossibleLinks(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int slice) {
