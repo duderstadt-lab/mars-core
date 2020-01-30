@@ -237,6 +237,7 @@ public class BigDataPeakTracker {
 				trajectoryFirstSlice.remove(index);
 			}
 		}
+		
 		System.gc();
 	}
 
