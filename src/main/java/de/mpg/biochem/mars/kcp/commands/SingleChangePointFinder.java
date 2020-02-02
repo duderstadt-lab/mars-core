@@ -85,7 +85,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 		//private String backgroundRegion;
 	    
 	    //@Parameter(label="Analyze region")
-	    private boolean region = true;
+	    private boolean region = false;
 	    
 	    //@Parameter(label="Region", required=false)
 		private String regionName;
