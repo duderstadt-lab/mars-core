@@ -141,7 +141,6 @@ public class KCP {
 			lineSum += (yData[i]-B*xData[i]-A)*(yData[i]-B*xData[i]-A);
 		}
 		
-		
 		//I guess these pi terms cancel below so I could remove them but I will leave it for now...
 		return length*Math.log(1/sigma*Math.sqrt(2*Math.PI))-lineSum/(2*sigma*sigma);
 	}

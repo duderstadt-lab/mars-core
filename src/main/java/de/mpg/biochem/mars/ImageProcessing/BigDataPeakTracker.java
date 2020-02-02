@@ -238,7 +238,7 @@ public class BigDataPeakTracker {
 			}
 		}
 		
-		System.gc();
+		//System.gc();
 	}
 
 	public void buildArchive(SingleMoleculeArchive archive) {
