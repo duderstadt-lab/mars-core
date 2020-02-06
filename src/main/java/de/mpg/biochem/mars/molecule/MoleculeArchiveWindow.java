@@ -28,7 +28,7 @@ package de.mpg.biochem.mars.molecule;
 
 public interface MoleculeArchiveWindow {
 	public void update();
-	public void progress(double progress);
+	public void setProgress(double progress);
 	public void updateLockMessage(String message);
 	public void lock(String message);
 	public void lock();
