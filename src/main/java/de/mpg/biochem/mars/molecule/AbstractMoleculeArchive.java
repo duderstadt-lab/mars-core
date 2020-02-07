@@ -1887,6 +1887,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				imageMetadata.get(metaUID).addLogMessage(message);
 			}
 		}
+		if (getWindow() != null)
+			getWindow().addLogMessage(message);
 	}
 	
 	/**

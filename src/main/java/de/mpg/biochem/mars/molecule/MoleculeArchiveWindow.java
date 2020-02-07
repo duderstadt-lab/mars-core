@@ -30,6 +30,7 @@ public interface MoleculeArchiveWindow {
 	public void update();
 	public void setProgress(double progress);
 	public void updateLockMessage(String message);
+	public void addLogMessage(String message);
 	public void lock(String message);
 	public void lock();
 	public void unlock();
