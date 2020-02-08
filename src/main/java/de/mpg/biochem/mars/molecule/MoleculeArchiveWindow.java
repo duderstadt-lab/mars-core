@@ -63,10 +63,10 @@ public interface MoleculeArchiveWindow {
 	/**
 	 * Add a message to the log that is presented in the background
 	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#addLogMessage() addLogMessage} are printed
+	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
 	 * to the lock screen background using this method.
 	 * 
-	 * @param progress Fraction of job that is complete.
+	 * @param message String message to add to the lock screen log background.
 	 */
 	public void addLogMessage(String message);
 	
