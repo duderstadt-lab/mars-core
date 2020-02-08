@@ -38,8 +38,9 @@ package de.mpg.biochem.mars.molecule;
  */
 public interface MoleculeArchiveWindow {
 	/**
-	 * Force the window to refresh its components.
+	 * Force the window to refresh its components. Deprecated - lock/unlock could also be used to force a reset or type casting if needed.
 	 */
+	@Deprecated
 	public void update();
 	
 	/**
