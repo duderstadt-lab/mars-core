@@ -390,19 +390,54 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach. Deprecated - use molecules() instead.
+	 * 
+	 * @return Molecule stream.
+	 */
+	@Deprecated
+	public Stream<M> stream();
+	
+	/**
+	 * Convenience method to retrieve a Molecule stream. Can be used to 
 	 * iterate over all molecules using forEach.
 	 * 
 	 * @return Molecule stream.
 	 */
-	public Stream<M> stream();
+	public Stream<M> molecules();
+	
+	/**
+	 * Convenience method to retrieve a metadata stream. Can be used to 
+	 * iterate over all metadata using forEach.
+	 * 
+	 * @return Metadata stream.
+	 */
+	public Stream<I> metadata();
 	
 	/**
 	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
-	 * iterate over all molecules using forEach in a multithreaded manner.
+	 * iterate over all molecules using forEach in a multithreaded manner. 
 	 * 
 	 * @return Molecule stream.
 	 */
+	public Stream<I> parallelMetadata();
+	
+	/**
+	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach in a multithreaded manner. Deprecated
+	 * use parallelMolecules() instead.
+	 * 
+	 * @return Molecule stream.
+	 */
+	@Deprecated
 	public Stream<M> parallelStream();
+	
+	/**
+	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach in a multithreaded manner. 
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<M> parallelMolecules();
 	
 	/**
 	 * Convenience method to execute an action on all molecules using a Consumer.
@@ -534,10 +569,20 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
 	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
+	 * Deprecated - use properties() instead. 
 	 * 
 	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
 	 */
+	@Deprecated
 	MoleculeArchiveProperties getProperties();
+	
+	/**
+	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
+	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
+	 * 
+	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 */
+	MoleculeArchiveProperties properties();
 	
 	/**
 	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 

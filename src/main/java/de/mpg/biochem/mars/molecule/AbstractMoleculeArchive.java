@@ -1695,8 +1695,39 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return Molecule stream.
 	 */
+	@Deprecated
 	public Stream<M> stream() {
 		return this.moleculeIndex.stream().map(UID -> get(UID));
+	}
+	
+	/**
+	 * Convenience method to retrieve a Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<M> molecules() {
+		return this.moleculeIndex.stream().map(UID -> get(UID));
+	}
+	
+	/**
+	 * Convenience method to retrieve a metadata stream. Can be used to 
+	 * iterate over all metadata using forEach.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<I> metadata() {
+		return this.imageMetadataIndex.stream().map(UID -> getImageMetadata(UID));
+	}
+	
+	/**
+	 * Convenience method to retrieve a metadata stream. Can be used to 
+	 * iterate over all metadata using forEach.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<I> parallelMetadata() {
+		return this.imageMetadataIndex.parallelStream().map(UID -> getImageMetadata(UID));
 	}
 	
 	/**
@@ -1705,7 +1736,18 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return Molecule stream.
 	 */
+	@Deprecated
 	public Stream<M> parallelStream() {
+		return this.moleculeIndex.parallelStream().map(UID -> get(UID));
+	}
+	
+	/**
+	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
+	 * iterate over all molecules using forEach in a multithreaded manner.
+	 * 
+	 * @return Molecule stream.
+	 */
+	public Stream<M> parallelMolecules() {
 		return this.moleculeIndex.parallelStream().map(UID -> get(UID));
 	}
 	
@@ -1894,11 +1936,23 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
 	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
+	 * tags, and parameters. Deprecated
+	 * 
+	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 */
+	@Deprecated
+	public P getProperties() {
+		return archiveProperties;
+	}
+	
+	/**
+	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
+	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
 	 * tags, and parameters. 
 	 * 
 	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
 	 */
-	public P getProperties() {
+	public P properties() {
 		return archiveProperties;
 	}
 	
