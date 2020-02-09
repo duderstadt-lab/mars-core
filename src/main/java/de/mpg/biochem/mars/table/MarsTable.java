@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -258,14 +259,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @return Array of double values for the column. With NaN values included.
 	 */
 	public double[] getColumnAsDoubles(String column) {
-		if (get(column) instanceof DoubleColumn) { 
-			double[] col_array = new double[getRowCount()];
-			for (int i=0;i<col_array.length;i++) {
-				col_array[i] = ((DoubleColumn)get(column)).getValue(i);
-			}
-			return col_array;
+		if (hasColumn(column) && get(column) instanceof DoubleColumn) { 
+			DoubleColumn dCol = (DoubleColumn)get(column);
+			return dCol.copyArray();
 		} else {
-			return null;
+			return new double[0];
 		}
 	}
 	
@@ -274,17 +272,22 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @return Array of double values for the column with NaN values removed.
 	 */
 	public double[] getColumnAsDoublesNoNaNs(String column) {
-		if (!hasColumn(column))
-			return new double[0];
-		ArrayList<Double> values = new ArrayList<Double>();
-		for (int row=0;row<getRowCount();row++) {
-			if (Double.isNaN(getValue(column, row)))
-				continue;
+		if (hasColumn(column) && get(column) instanceof DoubleColumn) {
+			ArrayList<Double> values = new ArrayList<Double>();
+			DoubleColumn dCol = (DoubleColumn)get(column);
+			double[] backingArray = dCol.getArray();
 			
-			values.add(getValue(column, row));
+			for (int row=0;row<getRowCount();row++) {
+				if (Double.isNaN(backingArray[row]))
+					continue;
+				
+				values.add(backingArray[row]);
+			}
+			
+			return values.stream().mapToDouble(i->i).toArray();
+		} else {
+			return new double[0];
 		}
-		
-		return values.stream().mapToDouble(i->i).toArray();
 	}
 	
 	/** Returns an array of double values for the column within the range given 
@@ -298,19 +301,23 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @return Array of double values for the column within the range given. NaN values removed.
 	 */
 	public double[] getColumnAsDoublesNoNaNs(String column, String rowSelectionColumn, double lowerBound, double upperBound) {
-		if (!hasColumn(column) || !hasColumn(rowSelectionColumn))
-			return new double[0];
-		
-		ArrayList<Double> values = new ArrayList<Double>();
-		for (int row = 0; row < getRowCount(); row++) {
-			if (Double.isNaN(getValue(column, row)))
-				continue;
+		if (hasColumn(column) && hasColumn(rowSelectionColumn) && get(column) instanceof DoubleColumn && get(rowSelectionColumn) instanceof DoubleColumn) {
+			ArrayList<Double> values = new ArrayList<Double>();
+			double[] backingArrayColumn = ((DoubleColumn) get(column)).getArray();
+			double[] backingArrayRowSelectionColumn = ((DoubleColumn) get(rowSelectionColumn)).getArray();
 			
-			if (getValue(rowSelectionColumn, row) >= lowerBound && getValue(rowSelectionColumn, row) <= upperBound)
-				values.add(getValue(column, row));
+			for (int row = 0; row < getRowCount(); row++) {
+				if (Double.isNaN(backingArrayColumn[row]))
+					continue;
+				
+				if (backingArrayRowSelectionColumn[row] >= lowerBound && backingArrayRowSelectionColumn[row] <= upperBound)
+					values.add(backingArrayColumn[row]);
+			}
+	
+			return values.stream().mapToDouble(i->i).toArray();
+		} else {
+			return new double[0];
 		}
-		
-		return values.stream().mapToDouble(i->i).toArray();
 	}
 	
     /** Returns a comma delimited string of the values in the row specified.
