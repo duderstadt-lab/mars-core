@@ -77,7 +77,7 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- * MARS implementation of a scijava results table. All numbers are stored as doubles (as {@link org.scijava.table.DoubleColumn}).
+ * Mars implementation of a scijava results table. All numbers are stored as doubles (as {@link org.scijava.table.DoubleColumn}).
  * Convenience methods and constructors are provided for common operations 
  * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
  * for saving and opening tables in csv or json format, and retrieval of values
