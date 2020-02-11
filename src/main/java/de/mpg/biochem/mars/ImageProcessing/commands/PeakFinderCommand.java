@@ -594,10 +594,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			}
 		});
 		
+		if (peakList.size() == 0)
+			return peakList;
+		
 		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
 		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
 		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
-		
+
 		//Allows for fast search of nearest peaks...
 		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
 		
