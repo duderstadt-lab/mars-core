@@ -188,7 +188,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 	}
 	
 	public boolean contains(String key) {
-		return getTables().stream().anyMatch(archive -> archive.getName().equals(key));
+		return getTables().stream().anyMatch(n -> n.getName().equals(key));
 	}
 	
 	public MarsTable getTable(String name) {
