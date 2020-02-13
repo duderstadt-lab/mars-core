@@ -408,10 +408,8 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 
-		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, logService);
-
-		    tracker.initializeChuckedTracking();
-
+		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, image.getStackSize(), logService);
+		    
 			//Output first part of log message...
 			logService.info(log);
 
@@ -435,30 +433,11 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 		        progressThread.start();
 		    	
-		    	int chunkSize = 1000;
-		    	int slices = image.getStack().size();
-		    	int chunks = (slices + chunkSize - 1) / chunkSize;
-
-		    	for (int chunk = 0 ; chunk < chunks; chunk++) {
-		    		int start = chunk*chunkSize + 1;
-		    		int end = (chunk + 1)*chunkSize;
-		    		int gap = (int)maxDifference[5];
-
-		    		if (end > slices)
-		    			end = slices;
-
-		    		if (chunk == chunks - 1)
-		    			gap = 0;
-
-		    		final int finalStart = start;
-		    		final int finalEnd = end;
-
-			        forkJoinPool.submit(() -> IntStream.rangeClosed(finalStart, finalEnd).parallel().forEach(i -> {
-			        	ArrayList<Peak> peaks = findPeaksInSlice(i);
-			        	tracker.addPeakList(i, peaks);
-			        	framesProcessed.incrementAndGet();
-			        })).get();
-		    	}
+		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> {
+		        	ArrayList<Peak> peaks = findPeaksInSlice(i);
+		        	tracker.addPeakList(i, peaks);
+		        	framesProcessed.incrementAndGet();
+		        })).get();
 		    	
 		    	progressUpdating.set(false);
 		        
@@ -470,6 +449,9 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 		   }
 
 		   forkJoinPool.shutdown();
+		   
+		   //This will block until the tracker is done.
+		   tracker.isDone();
 		   
 		   logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 

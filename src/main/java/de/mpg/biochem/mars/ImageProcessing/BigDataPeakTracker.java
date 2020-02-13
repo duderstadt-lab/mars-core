@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -47,10 +48,12 @@ import org.scijava.log.LogService;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
 import ij.IJ;
+
 import org.scijava.table.DoubleColumn;
 import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -65,13 +68,20 @@ public class BigDataPeakTracker {
 	boolean writeIntegration = false;
 	int minimumDistance;
 	
+	private AtomicBoolean isDone = new AtomicBoolean(false);
+	
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	String metaDataUID;
-	
-    private final ExecutorService executor = Executors.newFixedThreadPool(5, runnable -> {
+    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
         Thread t = new Thread(runnable);
+        t.setDaemon(true);
+        return t;
+    });
+    
+    private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
+        Thread t = new Thread(runnable);
+        t.setPriority(Thread.MAX_PRIORITY);
         t.setDaemon(true);
         return t;
     });
@@ -86,9 +96,22 @@ public class BigDataPeakTracker {
 	//Stores the list of possible links from each slice as a list with the key of that slice.
 	private ConcurrentMap<Integer, ArrayList<PeakLink>> possibleLinks;
 	
+	private Set<Integer> possibleLinksSlicesQueued;
+	
+	//This will keep track of the length of the trajectories so we can remove short ones later
+	private HashMap<String, Integer> trajectoryLengths;
+	
+	//This will keep track of the first peak for each trajectory
+	//I think since the loop below goes from slice 1 forward we should always get the first slice with the peak.
+	ArrayList<Peak> trajectoryFirstSlice;
+	
 	LogService logService;
 	
-	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, LogService logService) {
+	private int sliceNumber;
+	
+	private int nextSliceToLink;
+	
+	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.writeIntegration = writeIntegration;
@@ -96,6 +119,7 @@ public class BigDataPeakTracker {
 		this.ckMaxDifference = ckMaxDifference;
 		this.minimumDistance = minimumDistance;
 		this.minTrajectoryLength = minTrajectoryLength;
+		this.sliceNumber = sliceNumber;
 
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
@@ -107,56 +131,81 @@ public class BigDataPeakTracker {
 		//First we will build a KDTree for each peak list to allow for fast 2D searching..
 		//For this purpose we will make a second ConcurrentMap with slice as the key and KDTrees for each slice
 		KDTreeStack = new ConcurrentHashMap<>();
-		
 		possibleLinks = new ConcurrentHashMap<>();
+		
+		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesQueuedMap = new ConcurrentHashMap<>();
+		possibleLinksSlicesQueued = possibleLinksSlicesQueuedMap.newKeySet();
+		
+		trajectoryLengths = new HashMap<>();
+    	trajectoryFirstSlice = new ArrayList<Peak>();
+    	
+    	nextSliceToLink = 1;
 		
 	}
 	
 	public synchronized void addPeakList(int slice, ArrayList<Peak> peaks) {
 		PeakStack.put(slice, peaks);
-		//Check if we can queue job...
-		
+		updateFindPossibleLinksQueue();
 	}
 	
-	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, SingleMoleculeArchive archive) {
-		//The metadata information should have been added already
-		//this should always be a new archive so there can only be one metadata item added
-		//at index 0.
-		metaDataUID = archive.getImageMetadata(0).getUID();
-		
-		
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		
-		logService.info("building KDTrees and finding possible Peak links...");
-		
-		double starttime = System.currentTimeMillis();
-		
-		try {		
+	public synchronized void updateFindPossibleLinksQueue() {
+		//Loop through all slices
+		for (int slice = 1; slice <= sliceNumber; slice++) {
+			if (possibleLinksSlicesQueued.contains(slice))
+				continue;
 			
-			forkJoinPool.submit(() -> IntStream.rangeClosed(1, PeakStack.size()).parallel().forEach(i -> {
-					//Remember this operation will change the order of the peaks in the Arraylists but that should not be a problem here...
-				
-					//If you have a very small ROI and there are fames with no actual peaks in them.
-					//you need to skip that slice.
-					if (PeakStack.containsKey(i)) {
-						KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(i), PeakStack.get(i));
-						KDTreeStack.put(i, tree);
-					}
-				})).get();
+			int endslice = slice + (int)maxDifference[5];
+			if (endslice > sliceNumber)
+				endslice = sliceNumber;
 			
-	        //This will spawn a bunch of threads that will find all possible links for peaks 
-			//within each slice individually in parallel and put the results into the global map possibleLinks
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, PeakStack.size()).parallel().forEach(i -> findPossibleLinks(PeakStack, i))).get();
-	        
-	    } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
-	    	logService.error("Failed to finish building KDTrees.. " + e.getMessage());
-	    	e.printStackTrace();
-	    } finally {
-	        forkJoinPool.shutdown();
+			for (int i=slice;i<=endslice;i++)
+				if (!PeakStack.containsKey(i))
+					continue;
+			
+			possibleLinksSlicesQueued.add(slice);
+			possibleLinkCalculators.submit(new findPossibleLinks(slice));
+		}
+	}
+	
+	public void isDone() {
+		while (!isDone.get()) {}
+		
+		possibleLinkCalculators.shutdown();
+		linkMaker.shutdown();
+	}
+	
+	//Called when a findPossibleLinks job is finished.
+	public synchronized void updateLinkPeakQueue() {
+		if (!possibleLinks.containsKey(nextSliceToLink))
+			return;
+		
+		linkMaker.submit(new linkPeaks(nextSliceToLink));
+		//The last slice can't be linked to anything
+		if (nextSliceToLink < sliceNumber)
+			nextSliceToLink++;
+	}
+	
+	class findPossibleLinks implements Runnable {
+
+		private int slice;
+		
+	    public findPossibleLinks(int slice) {
+	    	this.slice = slice;
 	    }
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+
+	    @Override
+	    public void run() {
+	    	//Remember this operation will change the order of the peaks in the Arraylists but that should not be a problem here...
+	    	KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
+			KDTreeStack.put(slice, tree);
+			
+			findPossibleLinks(PeakStack, slice);
+			
+			updateLinkPeakQueue();
+	    }
+	}
+	
+	class linkPeaks implements Runnable {
 		
 		//Now we have sorted lists of all possible links from most to least likely for each slice
 		//Now we just need to run through the lists making the links until we run out of peaks to link
@@ -164,25 +213,20 @@ public class BigDataPeakTracker {
 		//same peaks will not be possible because we only link each peak once...
 		
 		//This is all single threaded at the moment, I am not sure if it would be easy to multithread this process since the order really matters
-			
-		//This will keep track of the length of the trajectories so we can remove short ones later
-		HashMap<String, Integer> trajectoryLengths = new HashMap<>();
-		
-		//This will keep track of the first peak for each trajectory
-		//I think since the loop below goes from slice 1 forward we should always get the first slice with the peak.
-		ArrayList<Peak> trajectoryFirstSlice = new ArrayList<Peak>();
-		
 		
 		//We also need to check if a link has already been made within the local region
 		//So I think the best idea is to add the Peaks we have linked to to a KDTree
 		//Then always reject further links into the same region....
 		
-		logService.info("Connecting most likely links...");
-		
-		starttime = System.currentTimeMillis();
-		
-		for (int slice=1;slice<=possibleLinks.size();slice++) {
-			ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
+		private int slice;
+
+	    public linkPeaks(int slice) {
+	    	this.slice = slice;
+	    }
+
+	    @Override
+	    public void run() {
+	    	ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
 			if (slicePossibleLinks != null) { 
 				for (int i=0; i<slicePossibleLinks.size();i++) {
 					Peak from = slicePossibleLinks.get(i).getFrom();
@@ -231,36 +275,11 @@ public class BigDataPeakTracker {
 				}
 			}
 			
-			//Added to try and help with memory issues - does it help?
-			//slicePossibleLinks.remove(slice);
-			//KDTreeStack.remove(slice);
-		}
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-		
-		logService.info("Building molecule archive...");
-		
-		logService.info("trajectoryFirstSlice size " + trajectoryFirstSlice.size());
-		
-		starttime = System.currentTimeMillis();
-		
-		//I think I need to reinitialize this pool since I shut it down above.
-		forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-	
-		//Now we build a MoleculeArchive in a multithreaded manner in which 
-		//each molecule is build by a different thread just following the 
-		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
-		try {		
-			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> buildMolecule(startingPeak, trajectoryLengths, archive))).get();  
-	    } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
-	    	logService.error("Failed to build MoleculeArchive.. " + e.getMessage());
-	    	e.printStackTrace();
-	    } finally {
-	        forkJoinPool.shutdown();
+			//If true this is the last job and we are done!
+			//So release blocking by isDone method from the tracker.
+			if (slice == sliceNumber - 1)
+				isDone.set(true);
 	    }
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	}
 	
 	private void findPossibleLinks(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int slice) {
@@ -272,8 +291,8 @@ public class BigDataPeakTracker {
 		int endslice = slice + (int)maxDifference[5];
 		
 		//Don't search past the last slice...
-		if (endslice > PeakStack.size())
-			endslice = PeakStack.size();
+		if (endslice > sliceNumber)
+			endslice = sliceNumber;
 		
 		//Here we only need to loop until maxDifference[5] slices into the future...
 		for (int j = slice + 1;j <= endslice; j++) {
@@ -327,7 +346,37 @@ public class BigDataPeakTracker {
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
 	
+	public void buildArchive(SingleMoleculeArchive archive) {
+		logService.info("Building molecule archive...");		
+		logService.info("Possible Trajectory Number " + trajectoryFirstSlice.size());
+		
+		double starttime = System.currentTimeMillis();
+		
+		//I think I need to reinitialize this pool since I shut it down above.
+		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+	
+		//Now we build a MoleculeArchive in a multithreaded manner in which 
+		//each molecule is build by a different thread just following the 
+		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
+		try {		
+			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> buildMolecule(startingPeak, trajectoryLengths, archive))).get();  
+	    } catch (InterruptedException | ExecutionException e) {
+	        // handle exceptions
+	    	logService.error("Failed to build MoleculeArchive.. " + e.getMessage());
+	    	e.printStackTrace();
+	    } finally {
+	        forkJoinPool.shutdown();
+	    }
+		
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+	}
+	
 	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, SingleMoleculeArchive archive) {
+		//The metadata information should have been added already
+		//this should always be a new archive so there can only be one metadata item added
+		//at index 0.
+		String metaDataUID = archive.getImageMetadata(0).getUID();
+		
 		//don't add the molecule if the trajectory length is below minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
 			return;
