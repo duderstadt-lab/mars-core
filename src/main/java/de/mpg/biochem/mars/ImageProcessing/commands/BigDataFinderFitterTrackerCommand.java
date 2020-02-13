@@ -284,7 +284,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 		private BigDataPeakTracker tracker;
 
 		//A map with peak lists for each slice for an image stack
-		private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
+		//private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
 
 		//A map that will hold all the metadata from individual frames as they are processed
 		//this will contain the 'label' information from each image header
@@ -387,8 +387,6 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 				log += metaDataLogMessage + "\n";
 			}
 
-			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
-
 			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 
 			//Need to determine the number of threads
@@ -457,12 +455,9 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 			        forkJoinPool.submit(() -> IntStream.rangeClosed(finalStart, finalEnd).parallel().forEach(i -> {
 			        	ArrayList<Peak> peaks = findPeaksInSlice(i);
-			        	if (peaks.size() > 0)
-			        		PeakStack.put(i, peaks);
+			        	tracker.addPeakList(i, peaks);
 			        	framesProcessed.incrementAndGet();
 			        })).get();
-
-			        tracker.trackChunk(PeakStack, start, end, gap);
 		    	}
 		    	
 		    	progressUpdating.set(false);
