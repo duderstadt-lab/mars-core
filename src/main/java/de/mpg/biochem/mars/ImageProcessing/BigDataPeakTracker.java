@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -96,7 +97,7 @@ public class BigDataPeakTracker {
 	//Stores the list of possible links from each slice as a list with the key of that slice.
 	private ConcurrentMap<Integer, ArrayList<PeakLink>> possibleLinks;
 	
-	private Set<Integer> possibleLinksSlicesQueued;
+	private Set<Integer> possibleLinksSlicesQueued, possibleLinksSlicesFinished;
 	
 	//This will keep track of the length of the trajectories so we can remove short ones later
 	private HashMap<String, Integer> trajectoryLengths;
@@ -110,6 +111,7 @@ public class BigDataPeakTracker {
 	private int sliceNumber;
 	
 	private int nextSliceToLink;
+	private int cleanedTo;
 	
 	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService) {
 		this.logService = logService;
@@ -136,11 +138,14 @@ public class BigDataPeakTracker {
 		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesQueuedMap = new ConcurrentHashMap<>();
 		possibleLinksSlicesQueued = possibleLinksSlicesQueuedMap.newKeySet();
 		
+		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesFinishedMap = new ConcurrentHashMap<>();
+		possibleLinksSlicesFinished = possibleLinksSlicesFinishedMap.newKeySet();
+		
 		trajectoryLengths = new HashMap<>();
     	trajectoryFirstSlice = new ArrayList<Peak>();
     	
     	nextSliceToLink = 1;
-		
+    	cleanedTo = 0;
 	}
 	
 	public synchronized void addPeakList(int slice, ArrayList<Peak> peaks) {
@@ -158,16 +163,40 @@ public class BigDataPeakTracker {
 			if (endslice > sliceNumber)
 				endslice = sliceNumber;
 			
+			boolean incomplete = false;
 			for (int i=slice;i<=endslice;i++)
 				if (!PeakStack.containsKey(i))
-					continue;
+					incomplete = true;
+					
+			if (incomplete)
+				continue;
 			
 			possibleLinksSlicesQueued.add(slice);
 			possibleLinkCalculators.submit(new findPossibleLinks(slice));
 		}
+		
+		//Can we clean?
+		ArrayList<Integer> cleanupSlices = new ArrayList<Integer>();
+		for (int slice = cleanedTo + 1; slice <= sliceNumber; slice++) {
+			if (possibleLinksSlicesFinished.contains(slice)) {
+				cleanupSlices.add(slice);
+				cleanedTo = slice;
+			} else 
+				break;
+		}
+		
+		//Release memory where possible...
+		//First remove All Peaks lists
+		cleanupSlices.forEach(slice -> {
+			List<Peak> peaks = PeakStack.get(slice);
+			peaks.clear();
+			PeakStack.remove(slice);
+			KDTreeStack.remove(slice);	
+		});
 	}
 	
 	public void isDone() {
+		System.out.println("waiting");
 		while (!isDone.get()) {}
 		
 		possibleLinkCalculators.shutdown();
@@ -199,8 +228,9 @@ public class BigDataPeakTracker {
 	    	KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
 			KDTreeStack.put(slice, tree);
 			
-			findPossibleLinks(PeakStack, slice);
+			findPossibleLinks(PeakStack, slice);	
 			
+			possibleLinksSlicesFinished.add(slice);
 			updateLinkPeakQueue();
 	    }
 	}
@@ -275,16 +305,51 @@ public class BigDataPeakTracker {
 				}
 			}
 			
+			//Release memory..
+			possibleLinks.remove(slice);
+			
+			//Remove short trajectories where possible
+			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
+				String UID = trajectoryFirstSlice.get(index).getUID();
+				int length = trajectoryLengths.get(UID).intValue();
+
+				if (length > minTrajectoryLength)
+					continue;
+
+				//find whether last peak is at the correctly processed slice
+				//If so keep
+				Peak peak = trajectoryFirstSlice.get(index);
+				while (peak.getForwardLink() != null)
+					peak = peak.getForwardLink();
+
+				if (peak.getSlice() > slice - (int)maxDifference[5])
+					continue;
+				else {
+					//remove all links so there objects can be garbage collected...
+					Peak pk = trajectoryFirstSlice.get(index);
+					while (pk.getForwardLink() != null) {
+						pk = pk.getForwardLink();
+						pk.backwardLink = null;
+						pk.forwardLink = null;
+					}
+					trajectoryFirstSlice.remove(index);
+				}
+			}
+			
+			//System.out.println("Done linking peaks for slice " + slice);
+			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
-			if (slice == sliceNumber - 1)
+			if (slice == sliceNumber - 1) {
+				System.out.println("FINISHED linking with " + slice);
 				isDone.set(true);
+			}
 	    }
 	}
 	
 	private void findPossibleLinks(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int slice) {
-		if (!PeakStack.containsKey(slice))
-			return;
+		if (slice > 180 && slice < 185)
+			System.out.println("possibleLinks " + slice);
 		
 		ArrayList<PeakLink> slicePossibleLinks = new ArrayList<PeakLink>();
 		
@@ -343,6 +408,9 @@ public class BigDataPeakTracker {
 			}
 			
 		});
+		if (slice > 180 && slice < 185)
+			System.out.println("Adding slice " + slice);
+		
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
 	
