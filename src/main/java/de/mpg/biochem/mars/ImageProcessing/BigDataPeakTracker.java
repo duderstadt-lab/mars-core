@@ -273,12 +273,11 @@ public class BigDataPeakTracker {
 			}
 			
 			//Remove short trajectories where possible
-			/*
 			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
 				String UID = trajectoryFirstSlice.get(index).getUID();
 				int length = trajectoryLengths.get(UID).intValue();
 
-				if (length > minTrajectoryLength)
+				if (length >= minTrajectoryLength)
 					continue;
 
 				//find whether last peak is at the correctly processed slice
@@ -287,7 +286,7 @@ public class BigDataPeakTracker {
 				while (peak.getForwardLink() != null)
 					peak = peak.getForwardLink();
 
-				if (peak.getSlice() > slice - (int)maxDifference[5] - 2)
+				if (peak.getSlice() > slice - (int)maxDifference[5] - 1)
 					continue;
 				else {
 					//remove all links so the objects can be garbage collected...
@@ -300,7 +299,6 @@ public class BigDataPeakTracker {
 					trajectoryFirstSlice.remove(index);
 				}
 			}
-*/
 			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
