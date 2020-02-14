@@ -76,14 +76,12 @@ public class BigDataPeakTracker {
 	
     private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
         Thread t = new Thread(runnable);
-        t.setDaemon(true);
         return t;
     });
     
     private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
         t.setPriority(Thread.MAX_PRIORITY);
-        t.setDaemon(true);
         return t;
     });
     
@@ -155,7 +153,7 @@ public class BigDataPeakTracker {
 	
 	public synchronized void updateFindPossibleLinksQueue() {
 		//Loop through all slices
-		for (int slice = 1; slice <= sliceNumber; slice++) {
+		for (int slice = 1; slice < sliceNumber; slice++) {
 			if (possibleLinksSlicesQueued.contains(slice))
 				continue;
 			
@@ -174,7 +172,7 @@ public class BigDataPeakTracker {
 			possibleLinksSlicesQueued.add(slice);
 			possibleLinkCalculators.submit(new findPossibleLinks(slice));
 		}
-		
+/*
 		//Can we clean?
 		ArrayList<Integer> cleanupSlices = new ArrayList<Integer>();
 		for (int slice = cleanedTo + 1; slice <= sliceNumber; slice++) {
@@ -193,25 +191,21 @@ public class BigDataPeakTracker {
 			PeakStack.remove(slice);
 			KDTreeStack.remove(slice);	
 		});
+		*/
 	}
 	
 	public void isDone() {
-		System.out.println("waiting");
 		while (!isDone.get()) {}
 		
 		possibleLinkCalculators.shutdown();
 		linkMaker.shutdown();
 	}
-	
-	//Called when a findPossibleLinks job is finished.
+
 	public synchronized void updateLinkPeakQueue() {
-		if (!possibleLinks.containsKey(nextSliceToLink))
-			return;
-		
-		linkMaker.submit(new linkPeaks(nextSliceToLink));
-		//The last slice can't be linked to anything
-		if (nextSliceToLink < sliceNumber)
+		while (possibleLinks.containsKey(nextSliceToLink) && nextSliceToLink != sliceNumber) {
+			linkMaker.submit(new linkPeaks(nextSliceToLink));
 			nextSliceToLink++;
+		}
 	}
 	
 	class findPossibleLinks implements Runnable {
@@ -224,7 +218,7 @@ public class BigDataPeakTracker {
 
 	    @Override
 	    public void run() {
-	    	//Remember this operation will change the order of the peaks in the Arraylists but that should not be a problem here...
+	    	//Remember this operation will change the order of the peaks in the ArrayLists but that should not be a problem here...
 	    	KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
 			KDTreeStack.put(slice, tree);
 			
@@ -236,7 +230,6 @@ public class BigDataPeakTracker {
 	}
 	
 	class linkPeaks implements Runnable {
-		
 		//Now we have sorted lists of all possible links from most to least likely for each slice
 		//Now we just need to run through the lists making the links until we run out of peaks to link
 		//This will ensure the most likely links are made first and other possible links involving the
@@ -306,7 +299,7 @@ public class BigDataPeakTracker {
 			}
 			
 			//Release memory..
-			possibleLinks.remove(slice);
+			//possibleLinks.remove(slice);
 			
 			//Remove short trajectories where possible
 			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
@@ -335,22 +328,17 @@ public class BigDataPeakTracker {
 					trajectoryFirstSlice.remove(index);
 				}
 			}
-			
-			//System.out.println("Done linking peaks for slice " + slice);
+
+			System.out.println("linking slice " + slice);
 			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
-			if (slice == sliceNumber - 1) {
-				System.out.println("FINISHED linking with " + slice);
+			if (slice == sliceNumber - 1)
 				isDone.set(true);
-			}
 	    }
 	}
 	
 	private void findPossibleLinks(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int slice) {
-		if (slice > 180 && slice < 185)
-			System.out.println("possibleLinks " + slice);
-		
 		ArrayList<PeakLink> slicePossibleLinks = new ArrayList<PeakLink>();
 		
 		int endslice = slice + (int)maxDifference[5];
@@ -408,17 +396,14 @@ public class BigDataPeakTracker {
 			}
 			
 		});
-		if (slice > 180 && slice < 185)
-			System.out.println("Adding slice " + slice);
 		
 		possibleLinks.put(slice, slicePossibleLinks);
 	}
 	
-	public void buildArchive(SingleMoleculeArchive archive) {
+	public void buildArchive(SingleMoleculeArchive archive) {		
+		isDone();
 		logService.info("Building molecule archive...");		
 		logService.info("Possible Trajectory Number " + trajectoryFirstSlice.size());
-		
-		double starttime = System.currentTimeMillis();
 		
 		//I think I need to reinitialize this pool since I shut it down above.
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
@@ -427,7 +412,9 @@ public class BigDataPeakTracker {
 		//each molecule is build by a different thread just following the 
 		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
 		try {		
-			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> buildMolecule(startingPeak, trajectoryLengths, archive))).get();  
+			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> {
+					buildMolecule(startingPeak, trajectoryLengths, archive);
+				})).get();  
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
 	    	logService.error("Failed to build MoleculeArchive.. " + e.getMessage());
@@ -435,8 +422,6 @@ public class BigDataPeakTracker {
 	    } finally {
 	        forkJoinPool.shutdown();
 	    }
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	}
 	
 	private void buildMolecule(Peak startingPeak, HashMap<String, Integer> trajectoryLengths, SingleMoleculeArchive archive) {
@@ -493,6 +478,7 @@ public class BigDataPeakTracker {
 		
 		return molTable;
 	}
+	
 	private void addPeakToTable(MarsTable table, Peak peak, int slice) {
 		table.appendRow();
 		int row = table.getRowCount() - 1;

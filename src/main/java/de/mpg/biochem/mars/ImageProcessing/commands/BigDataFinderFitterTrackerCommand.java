@@ -90,6 +90,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -392,8 +394,6 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			//Need to determine the number of threads
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-
 			//Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
 		    maxDifference = new double[6];
 		    maxDifference[0] = PeakTracker_maxDifferenceBaseline;
@@ -415,45 +415,31 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 			double starttime = System.currentTimeMillis();
 			logService.info("Finding and Fitting Peaks...");
-		    try {
-		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-		    	//Waiting call back to update the progress bar!!
-		    	Thread progressThread = new Thread() {
-		            public synchronized void run() {
-	                    try {
-	        		        while(progressUpdating.get()) {
-	        		        	Thread.sleep(100);
-	        		        	statusService.showStatus(framesProcessed.get(), image.getStackSize(), "Finding and tracking " + image.getTitle());
-	        		        }
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-		            }
-		        };
 
-		        progressThread.start();
-		    	
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> {
-		        	ArrayList<Peak> peaks = findPeaksInSlice(i);
-		        	tracker.addPeakList(i, peaks);
-		        	framesProcessed.incrementAndGet();
-		        })).get();
-		    	
-		    	progressUpdating.set(false);
-		        
-		        statusService.showStatus(1, 1, "Finding and tracking for " + image.getTitle() + " - Done!");
-		        
-		   } catch (InterruptedException | ExecutionException e) {
-		        // handle exceptions
-		    	e.printStackTrace();
-		   }
-
-		   forkJoinPool.shutdown();
-		   
-		   //This will block until the tracker is done.
-		   tracker.isDone();
-		   
-		   logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
+	    	//Waiting call back to update the progress bar!!
+	    	Thread progressThread = new Thread() {
+	            public synchronized void run() {
+                    try {
+        		        while(progressUpdating.get()) {
+        		        	Thread.sleep(100);
+        		        	statusService.showStatus(framesProcessed.get(), image.getStackSize(), "Finding and tracking " + image.getTitle());
+        		        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+	            }
+	        };
+			 
+	        progressThread.start();
+	        
+	        final ExecutorService executor = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+	            Thread t = new Thread(runnable);
+	            return t;
+	        });
+	        
+	        for (int slice = 1; slice <= image.getStackSize(); slice++)
+	        	executor.submit(new findPeaks(slice));
 
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -488,9 +474,14 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			statusService.showProgress(1, 1);
+			
+			progressUpdating.set(false);
+	        
+	        statusService.showStatus(1, 1, "Finding and tracking for " + image.getTitle() + " - Done!");
 			
 			logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
+			
+			executor.shutdown();
 
 			if (archive.getNumberOfMolecules() == 0) {
 				logService.info("No molecules found. Maybe there is a problem with your settings");
@@ -504,6 +495,22 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 				archive.addLogMessage("   ");
 			}
 		}
+    	
+    	class findPeaks implements Runnable {
+
+    		private int slice;
+    		
+    	    public findPeaks(int slice) {
+    	    	this.slice = slice;
+    	    }
+
+    	    @Override
+    	    public void run() {
+    			ArrayList<Peak> peaks = findPeaksInSlice(slice);
+    	    	tracker.addPeakList(slice, peaks);
+    	    	framesProcessed.incrementAndGet();
+    	    }
+    	}
 
 		private void BuildOffsets() {
 			innerOffsets = new ArrayList<int[]>();
