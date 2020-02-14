@@ -202,13 +202,6 @@ public class BigDataPeakTracker {
 		possibleLinkCalculators.shutdown();
 		linkMaker.shutdown();
 	}
-
-	public synchronized void updateLinkPeakQueue() {
-		while (possibleLinks.containsKey(nextSliceToLink) && nextSliceToLink != sliceNumber) {
-			linkMaker.submit(new linkPeaks(nextSliceToLink));
-			nextSliceToLink++;
-		}
-	}
 	
 	class findPossibleLinks implements Runnable {
 
@@ -226,18 +219,14 @@ public class BigDataPeakTracker {
 	    }
 	}
 	
+	public synchronized void updateLinkPeakQueue() {
+		while (possibleLinks.containsKey(nextSliceToLink) && nextSliceToLink != sliceNumber) {
+			linkMaker.submit(new linkPeaks(nextSliceToLink));
+			nextSliceToLink++;
+		}
+	}
+	
 	class linkPeaks implements Runnable {
-		//Now we have sorted lists of all possible links from most to least likely for each slice
-		//Now we just need to run through the lists making the links until we run out of peaks to link
-		//This will ensure the most likely links are made first and other possible links involving the
-		//same peaks will not be possible because we only link each peak once...
-		
-		//This is all single threaded at the moment, I am not sure if it would be easy to multithread this process since the order really matters
-		
-		//We also need to check if a link has already been made within the local region
-		//So I think the best idea is to add the Peaks we have linked to to a KDTree
-		//Then always reject further links into the same region....
-		
 		private int slice;
 
 	    public linkPeaks(int slice) {
@@ -247,53 +236,49 @@ public class BigDataPeakTracker {
 	    @Override
 	    public void run() {
 	    	ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
-	    	System.out.println("slicePossibleLinks " + slicePossibleLinks.size());
-			if (slicePossibleLinks != null) { 
-				for (int i=0; i<slicePossibleLinks.size();i++) {
-					Peak from = slicePossibleLinks.get(i).getFrom();
-					Peak to = slicePossibleLinks.get(i).getTo();
+			for (int i=0; i<slicePossibleLinks.size();i++) {
+				Peak from = slicePossibleLinks.get(i).getFrom();
+				Peak to = slicePossibleLinks.get(i).getTo();
+				
+				if (from.getForwardLink() != null || to.getBackwardLink() != null) {
+					//already linked
+					continue;
+				} 
+				
+				//We need to check if the to peak has any nearest neighbors that have already been linked...
+				boolean regionAlreadyLinked = false;
+				for (int q=slice+1;q<=slice + maxDifference[5];q++) {
 					
-					if (from.getForwardLink() != null || to.getBackwardLink() != null) {
-						//already linked
+					if (q > sliceNumber)
 						continue;
-					} 
 					
-					//We need to check if the to peak has any nearest neighbors that have already been linked...
-					boolean regionAlreadyLinked = false;
-					for (int q=slice+1;q<=slice + maxDifference[5];q++) {
-						
-						if (q > sliceNumber)
-							continue;
-						
-						RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( KDTreeStack.get(q) );
-							radiusSearch.search(to, minimumDistance, false);
-							
-							for (int w = 0 ; w < radiusSearch.numNeighbors() ; w++ ) {
-								if (radiusSearch.getSampler(w).get().getUID() != null)
-									regionAlreadyLinked = true;
-							}	
-					}
+					RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( KDTreeStack.get(q) );
+					radiusSearch.search(to, minimumDistance, false);
 					
-					if (from.getUID() != null && !regionAlreadyLinked) {
-						to.setUID(from.getUID());
-						trajectoryLengths.put(from.getUID(), trajectoryLengths.get(from.getUID()) + 1);
-						
-						//Add references in each peak for forward and backward links...
-						from.setForwardLink(to);
-						to.setBackwardLink(from);
-						
-					} else if (!regionAlreadyLinked) { 
-						//Generate a new UID
-						String UID = MarsMath.getUUID58();
-						from.setUID(UID);
-						to.setUID(UID);
-						trajectoryLengths.put(UID, 2);
-						trajectoryFirstSlice.add(from);
-						
-						//Add references in each peak for forward and backward links...
-						from.setForwardLink(to);
-						to.setBackwardLink(from);
-					}
+					for (int w = 0 ; w < radiusSearch.numNeighbors() ; w++ ) {
+						if (radiusSearch.getSampler(w).get().getUID() != null)
+							regionAlreadyLinked = true;
+					}	
+				} 
+				
+				if (from.getUID() != null && !regionAlreadyLinked) {
+					to.setUID(from.getUID());
+					trajectoryLengths.put(from.getUID(), trajectoryLengths.get(from.getUID()) + 1);
+					
+					//Add references in each peak for forward and backward links...
+					from.setForwardLink(to);
+					to.setBackwardLink(from);
+				} else if (!regionAlreadyLinked) { 
+					//Generate a new UID
+					String UID = MarsMath.getUUID58();
+					from.setUID(UID);
+					to.setUID(UID);
+					trajectoryLengths.put(UID, 2);
+					trajectoryFirstSlice.add(from);
+					
+					//Add references in each peak for forward and backward links...
+					from.setForwardLink(to);
+					to.setBackwardLink(from);
 				}
 			}
 			
@@ -407,7 +392,6 @@ public class BigDataPeakTracker {
 		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
 		try {		
 			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> {
-					System.out.println("trajectoryLengths " + trajectoryLengths.size());
 					buildMolecule(startingPeak, trajectoryLengths, archive);
 				})).get();  
 	    } catch (InterruptedException | ExecutionException e) {

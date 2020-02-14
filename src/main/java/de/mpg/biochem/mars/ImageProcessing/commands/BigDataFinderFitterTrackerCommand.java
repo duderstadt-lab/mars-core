@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -440,6 +441,14 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 	        
 	        for (int slice = 1; slice <= image.getStackSize(); slice++)
 	        	executor.submit(new findPeaks(slice));
+	        
+	        //The shutdown followed by awaitTermination will block the thread until all the jobs are done.
+	        executor.shutdown();
+	        try {
+	        	executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+	        } catch (InterruptedException e) {
+	        	e.printStackTrace();
+	        }
 
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -466,14 +475,6 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
 
 			image.setRoi(startingRoi);
-
-			//Why is there here???
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			
 			progressUpdating.set(false);
 	        
