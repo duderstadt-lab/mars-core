@@ -148,6 +148,8 @@ public class BigDataPeakTracker {
 	
 	public synchronized void addPeakList(int slice, ArrayList<Peak> peaks) {
 		PeakStack.put(slice, peaks);
+		KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
+		KDTreeStack.put(slice, tree);
 		updateFindPossibleLinksQueue();
 	}
 	
@@ -163,7 +165,7 @@ public class BigDataPeakTracker {
 			
 			boolean incomplete = false;
 			for (int i=slice;i<=endslice;i++)
-				if (!PeakStack.containsKey(i))
+				if (!PeakStack.containsKey(i) && !KDTreeStack.containsKey(i))
 					incomplete = true;
 					
 			if (incomplete)
@@ -218,12 +220,7 @@ public class BigDataPeakTracker {
 
 	    @Override
 	    public void run() {
-	    	//Remember this operation will change the order of the peaks in the ArrayLists but that should not be a problem here...
-	    	KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
-			KDTreeStack.put(slice, tree);
-			
 			findPossibleLinks(PeakStack, slice);	
-			
 			possibleLinksSlicesFinished.add(slice);
 			updateLinkPeakQueue();
 	    }
@@ -250,6 +247,7 @@ public class BigDataPeakTracker {
 	    @Override
 	    public void run() {
 	    	ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
+	    	System.out.println("slicePossibleLinks " + slicePossibleLinks.size());
 			if (slicePossibleLinks != null) { 
 				for (int i=0; i<slicePossibleLinks.size();i++) {
 					Peak from = slicePossibleLinks.get(i).getFrom();
@@ -263,7 +261,8 @@ public class BigDataPeakTracker {
 					//We need to check if the to peak has any nearest neighbors that have already been linked...
 					boolean regionAlreadyLinked = false;
 					for (int q=slice+1;q<=slice + maxDifference[5];q++) {
-						if (!KDTreeStack.containsKey(q))
+						
+						if (q > sliceNumber)
 							continue;
 						
 						RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( KDTreeStack.get(q) );
@@ -302,6 +301,7 @@ public class BigDataPeakTracker {
 			//possibleLinks.remove(slice);
 			
 			//Remove short trajectories where possible
+			/*
 			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
 				String UID = trajectoryFirstSlice.get(index).getUID();
 				int length = trajectoryLengths.get(UID).intValue();
@@ -328,9 +328,7 @@ public class BigDataPeakTracker {
 					trajectoryFirstSlice.remove(index);
 				}
 			}
-
-			System.out.println("linking slice " + slice);
-			
+			*/
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
 			if (slice == sliceNumber - 1)
@@ -348,11 +346,7 @@ public class BigDataPeakTracker {
 			endslice = sliceNumber;
 		
 		//Here we only need to loop until maxDifference[5] slices into the future...
-		for (int j = slice + 1;j <= endslice; j++) {
-			//can't search if there are not peaks in that given slice...
-			if (!KDTreeStack.containsKey(j))
-				continue;
-			
+		for (int j = slice + 1;j <= endslice; j++) {			
 			RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( KDTreeStack.get(j) );
 			for (Peak linkFrom: PeakStack.get(slice)) {
 				radiusSearch.search(linkFrom, searchRadius, false);
@@ -413,6 +407,7 @@ public class BigDataPeakTracker {
 		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
 		try {		
 			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> {
+					System.out.println("trajectoryLengths " + trajectoryLengths.size());
 					buildMolecule(startingPeak, trajectoryLengths, archive);
 				})).get();  
 	    } catch (InterruptedException | ExecutionException e) {
