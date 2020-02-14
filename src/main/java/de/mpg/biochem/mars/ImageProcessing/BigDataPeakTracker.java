@@ -85,6 +85,12 @@ public class BigDataPeakTracker {
         return t;
     });
     
+    private final ExecutorService cleaner = Executors.newFixedThreadPool(1, runnable -> {
+        Thread t = new Thread(runnable);
+        //t.setPriority(Thread.MAX_PRIORITY);
+        return t;
+    });
+    
     //A map with peak lists for each slice for an image stack
   	private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
 	
@@ -136,14 +142,11 @@ public class BigDataPeakTracker {
 		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesQueuedMap = new ConcurrentHashMap<>();
 		possibleLinksSlicesQueued = possibleLinksSlicesQueuedMap.newKeySet();
 		
-		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesFinishedMap = new ConcurrentHashMap<>();
-		possibleLinksSlicesFinished = possibleLinksSlicesFinishedMap.newKeySet();
-		
 		trajectoryLengths = new HashMap<>();
     	trajectoryFirstSlice = new ArrayList<Peak>();
     	
     	nextSliceToLink = 1;
-    	cleanedTo = 0;
+    	cleanedTo = 1;
 	}
 	
 	public synchronized void addPeakList(int slice, ArrayList<Peak> peaks) {
@@ -174,26 +177,6 @@ public class BigDataPeakTracker {
 			possibleLinksSlicesQueued.add(slice);
 			possibleLinkCalculators.submit(new findPossibleLinks(slice));
 		}
-/*
-		//Can we clean?
-		ArrayList<Integer> cleanupSlices = new ArrayList<Integer>();
-		for (int slice = cleanedTo + 1; slice <= sliceNumber; slice++) {
-			if (possibleLinksSlicesFinished.contains(slice)) {
-				cleanupSlices.add(slice);
-				cleanedTo = slice;
-			} else 
-				break;
-		}
-		
-		//Release memory where possible...
-		//First remove All Peaks lists
-		cleanupSlices.forEach(slice -> {
-			List<Peak> peaks = PeakStack.get(slice);
-			peaks.clear();
-			PeakStack.remove(slice);
-			KDTreeStack.remove(slice);	
-		});
-		*/
 	}
 	
 	public void isDone() {
@@ -201,6 +184,7 @@ public class BigDataPeakTracker {
 		
 		possibleLinkCalculators.shutdown();
 		linkMaker.shutdown();
+		cleaner.shutdown();
 	}
 	
 	class findPossibleLinks implements Runnable {
@@ -214,7 +198,6 @@ public class BigDataPeakTracker {
 	    @Override
 	    public void run() {
 			findPossibleLinks(PeakStack, slice);	
-			possibleLinksSlicesFinished.add(slice);
 			updateLinkPeakQueue();
 	    }
 	}
@@ -282,8 +265,12 @@ public class BigDataPeakTracker {
 				}
 			}
 			
-			//Release memory..
-			//possibleLinks.remove(slice);
+			//Release memory where possible...
+			//First remove All Peaks lists
+			while (cleanedTo <= slice) {
+				cleaner.submit(new cleanSlice(cleanedTo));
+				cleanedTo++;
+			}
 			
 			//Remove short trajectories where possible
 			/*
@@ -300,10 +287,10 @@ public class BigDataPeakTracker {
 				while (peak.getForwardLink() != null)
 					peak = peak.getForwardLink();
 
-				if (peak.getSlice() > slice - (int)maxDifference[5])
+				if (peak.getSlice() > slice - (int)maxDifference[5] - 2)
 					continue;
 				else {
-					//remove all links so there objects can be garbage collected...
+					//remove all links so the objects can be garbage collected...
 					Peak pk = trajectoryFirstSlice.get(index);
 					while (pk.getForwardLink() != null) {
 						pk = pk.getForwardLink();
@@ -313,11 +300,31 @@ public class BigDataPeakTracker {
 					trajectoryFirstSlice.remove(index);
 				}
 			}
-			*/
+*/
+			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
 			if (slice == sliceNumber - 1)
 				isDone.set(true);
+	    }
+	}
+	
+	class cleanSlice implements Runnable {
+
+		private int slice;
+		
+	    public cleanSlice(int slice) {
+	    	this.slice = slice;
+	    }
+
+	    @Override
+	    public void run() {
+	    	//Release memory..
+			possibleLinks.remove(slice);
+	    	List<Peak> peaks = PeakStack.get(slice);
+			peaks.clear();
+			PeakStack.remove(slice);
+			KDTreeStack.remove(slice);
 	    }
 	}
 	
