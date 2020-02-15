@@ -73,21 +73,21 @@ public class BigDataPeakTracker {
 	
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-	
-    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+
+    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 4) + 1, runnable -> {
         Thread t = new Thread(runnable);
         return t;
     });
     
     private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
-        t.setPriority(Thread.MAX_PRIORITY);
+        t.setPriority(9);
         return t;
     });
     
-    private final ExecutorService cleaner = Executors.newFixedThreadPool(1, runnable -> {
+    private final ExecutorService cleaner = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
         Thread t = new Thread(runnable);
-        //t.setPriority(Thread.MAX_PRIORITY);
+        t.setPriority(10);
         return t;
     });
     
@@ -268,9 +268,36 @@ public class BigDataPeakTracker {
 			//Release memory where possible...
 			//First remove All Peaks lists
 			while (cleanedTo <= slice) {
+				//System.out.println("Queued cleaner for slice " + slice);
 				cleaner.submit(new cleanSlice(cleanedTo));
 				cleanedTo++;
 			}
+			
+			System.out.println("Done Linking slice " + slice);
+			
+			//If true this is the last job and we are done!
+			//So release blocking by isDone method from the tracker.
+			if (slice == sliceNumber - 1)
+				isDone.set(true);
+	    }
+	}
+	
+	class cleanSlice implements Runnable {
+
+		private int slice;
+		
+	    public cleanSlice(int slice) {
+	    	this.slice = slice;
+	    }
+
+	    @Override
+	    public void run() {
+	    	//Release memory..
+			possibleLinks.remove(slice);
+	    	List<Peak> peaks = PeakStack.get(slice);
+			peaks.clear();
+			PeakStack.remove(slice);
+			KDTreeStack.remove(slice);
 			
 			//Remove short trajectories where possible
 			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
@@ -300,29 +327,8 @@ public class BigDataPeakTracker {
 				}
 			}
 			
-			//If true this is the last job and we are done!
-			//So release blocking by isDone method from the tracker.
-			if (slice == sliceNumber - 1)
-				isDone.set(true);
-	    }
-	}
-	
-	class cleanSlice implements Runnable {
-
-		private int slice;
-		
-	    public cleanSlice(int slice) {
-	    	this.slice = slice;
-	    }
-
-	    @Override
-	    public void run() {
-	    	//Release memory..
-			possibleLinks.remove(slice);
-	    	List<Peak> peaks = PeakStack.get(slice);
-			peaks.clear();
-			PeakStack.remove(slice);
-			KDTreeStack.remove(slice);
+			 System.out.println("Done Cleaning slice " + slice);
+			
 	    }
 	}
 	

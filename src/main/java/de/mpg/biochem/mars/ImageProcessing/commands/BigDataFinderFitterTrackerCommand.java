@@ -434,11 +434,11 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			 
 	        progressThread.start();
 	        
-	        final ExecutorService executor = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+	        final ExecutorService executor = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 4) + 1, runnable -> {
 	            Thread t = new Thread(runnable);
 	            return t;
 	        });
-	        
+
 	        for (int slice = 1; slice <= image.getStackSize(); slice++)
 	        	executor.submit(new findPeaks(slice));
 	        
