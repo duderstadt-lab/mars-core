@@ -45,8 +45,10 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpg.biochem.mars.ImageProcessing.BigDataPeakFinder;
 import de.mpg.biochem.mars.ImageProcessing.BigDataPeakTracker;
 import de.mpg.biochem.mars.ImageProcessing.Peak;
+import de.mpg.biochem.mars.ImageProcessing.PeakFactory;
 import de.mpg.biochem.mars.ImageProcessing.PeakFinder;
 import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
 import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
@@ -278,7 +280,9 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 		private SingleMoleculeArchive archive;
 
 		//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
-		private PeakFinder finder;
+		private BigDataPeakFinder finder;
+		
+		private PeakFactory peakFactory;
 
 		//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
 		private PeakFitter fitter;
@@ -353,11 +357,13 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 				metaDataLogMessage = "Images did not appear to have a NorPix image format so the format was switched to None.";
     			imageFormat = "None";
 			}
+			
+			peakFactory = new PeakFactory();
 
 			if (useDiscoidalAveragingFilter) {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
+		    	finder = new BigDataPeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks, peakFactory);
 		    } else {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
+		    	finder = new BigDataPeakFinder< T >(threshold, minimumDistance, findNegativePeaks, peakFactory);
 		    }
 
 			vary = new boolean[5];
@@ -409,7 +415,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 
-		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, image.getStackSize(), logService);
+		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, image.getStackSize(), logService, peakFactory);
 		    
 			//Output first part of log message...
 			logService.info(log);
@@ -475,6 +481,13 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
 
 			image.setRoi(startingRoi);
+	        
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			progressUpdating.set(false);
 	        

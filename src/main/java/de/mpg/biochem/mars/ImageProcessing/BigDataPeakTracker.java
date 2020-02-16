@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,7 +86,7 @@ public class BigDataPeakTracker {
         return t;
     });
     
-    private final ExecutorService cleaner = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+    private final ExecutorService cleaner = Executors.newFixedThreadPool(2, runnable -> {
         Thread t = new Thread(runnable);
         t.setPriority(10);
         return t;
@@ -101,14 +102,17 @@ public class BigDataPeakTracker {
 	//Stores the list of possible links from each slice as a list with the key of that slice.
 	private ConcurrentMap<Integer, ArrayList<PeakLink>> possibleLinks;
 	
-	private Set<Integer> possibleLinksSlicesQueued, possibleLinksSlicesFinished;
+	private Set<Integer> possibleLinksSlicesQueued;
+	
+	private PeakFactory peakFactory;
+	private PeakLinkFactory peakLinkFactory;
 	
 	//This will keep track of the length of the trajectories so we can remove short ones later
 	private HashMap<String, Integer> trajectoryLengths;
 	
 	//This will keep track of the first peak for each trajectory
 	//I think since the loop below goes from slice 1 forward we should always get the first slice with the peak.
-	ArrayList<Peak> trajectoryFirstSlice;
+	private LinkedList<Peak> trajectoryFirstSlice;
 	
 	LogService logService;
 	
@@ -117,7 +121,7 @@ public class BigDataPeakTracker {
 	private int nextSliceToLink;
 	private int cleanedTo;
 	
-	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService) {
+	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService, PeakFactory peakFactory) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.writeIntegration = writeIntegration;
@@ -126,6 +130,7 @@ public class BigDataPeakTracker {
 		this.minimumDistance = minimumDistance;
 		this.minTrajectoryLength = minTrajectoryLength;
 		this.sliceNumber = sliceNumber;
+		this.peakFactory = peakFactory;
 
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
@@ -134,16 +139,15 @@ public class BigDataPeakTracker {
 		
 		PeakStack = new ConcurrentHashMap<>();
 		
+		peakLinkFactory = new PeakLinkFactory();
+		
 		//First we will build a KDTree for each peak list to allow for fast 2D searching..
 		//For this purpose we will make a second ConcurrentMap with slice as the key and KDTrees for each slice
 		KDTreeStack = new ConcurrentHashMap<>();
 		possibleLinks = new ConcurrentHashMap<>();
 		
-		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesQueuedMap = new ConcurrentHashMap<>();
-		possibleLinksSlicesQueued = possibleLinksSlicesQueuedMap.newKeySet();
-		
 		trajectoryLengths = new HashMap<>();
-    	trajectoryFirstSlice = new ArrayList<Peak>();
+    	trajectoryFirstSlice = new LinkedList<Peak>();
     	
     	nextSliceToLink = 1;
     	cleanedTo = 1;
@@ -292,43 +296,53 @@ public class BigDataPeakTracker {
 
 	    @Override
 	    public void run() {
-	    	//Release memory..
+	    	//Recycling links
+	    	ArrayList<PeakLink> slicePossibleLinks = possibleLinks.get(slice);
+	    	for (PeakLink link : slicePossibleLinks)
+	    		peakLinkFactory.recyclePeakLink(link);
+	    	
 			possibleLinks.remove(slice);
+			
 	    	List<Peak> peaks = PeakStack.get(slice);
+	    	//directly recycle orphen peaks...
+	    	for (Peak peak : peaks) {
+	    		if (peak.getForwardLink() == null && peak.getBackwardLink() == null)
+	    			peakFactory.recyclePeak(peak);
+	    	}
 			peaks.clear();
 			PeakStack.remove(slice);
 			KDTreeStack.remove(slice);
 			
-			//Remove short trajectories where possible
-			for (int index=0; index < trajectoryFirstSlice.size(); index++) {
-				String UID = trajectoryFirstSlice.get(index).getUID();
-				int length = trajectoryLengths.get(UID).intValue();
-
-				if (length >= minTrajectoryLength)
-					continue;
-
-				//find whether last peak is at the correctly processed slice
-				//If so keep
-				Peak peak = trajectoryFirstSlice.get(index);
-				while (peak.getForwardLink() != null)
-					peak = peak.getForwardLink();
-
-				if (peak.getSlice() > slice - (int)maxDifference[5] - 1)
-					continue;
-				else {
-					//remove all links so the objects can be garbage collected...
-					Peak pk = trajectoryFirstSlice.get(index);
-					while (pk.getForwardLink() != null) {
-						pk = pk.getForwardLink();
-						pk.backwardLink = null;
-						pk.forwardLink = null;
+			//Recycle peaks from short trajectories where possible
+			synchronized(this) {
+				for (int index=0; index < trajectoryFirstSlice.size(); index++) {
+					String UID = trajectoryFirstSlice.get(index).getUID();
+					int length = trajectoryLengths.get(UID).intValue();
+	
+					if (length >= minTrajectoryLength)
+						continue;
+	
+					//find whether last peak is at the correctly processed slice
+					//If so keep
+					Peak peak = trajectoryFirstSlice.get(index);
+					while (peak.getForwardLink() != null)
+						peak = peak.getForwardLink();
+	
+					if (peak.getSlice() > slice - (int)maxDifference[5] - 1)
+						continue;
+					else {
+						Peak pk = trajectoryFirstSlice.get(index);
+						while (pk.getForwardLink() != null) {
+							Peak pk2 = pk.getForwardLink();
+							
+							peakFactory.recyclePeak(pk2);
+						}
+						peakFactory.recyclePeak(pk);
+						trajectoryFirstSlice.remove(index);
 					}
-					trajectoryFirstSlice.remove(index);
 				}
 			}
-			
-			 System.out.println("Done Cleaning slice " + slice);
-			
+			System.out.println("Done Cleaning slice " + slice);
 	    }
 	}
 	
@@ -367,7 +381,7 @@ public class BigDataPeakTracker {
 						valid = false;
 					
 					if (valid) {
-						PeakLink link = new PeakLink(linkFrom, linkTo, radiusSearch.getSquareDistance(q), slice, j - slice);
+						PeakLink link = peakLinkFactory.createPeakLink(linkFrom, linkTo, radiusSearch.getSquareDistance(q), slice, j - slice);
 						slicePossibleLinks.add(link);
 					}
 				}

@@ -221,6 +221,18 @@ public class Peak implements RealLocalizable {
 		return intensity;
 	}
 	
+	public void reset(double x, double y, double pixelValue, int slice) {
+		this.x = x;
+		this.y = y;
+		this.pixelValue = pixelValue;
+		this.slice = slice;
+		
+		valid = true;
+		UID = null;
+		forwardLink = null;
+		backwardLink = null;
+	}
+	
 	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
 	@Override
 	public int numDimensions() {
