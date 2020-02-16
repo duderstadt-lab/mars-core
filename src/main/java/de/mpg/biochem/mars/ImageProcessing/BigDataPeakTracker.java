@@ -75,7 +75,7 @@ public class BigDataPeakTracker {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 4) + 1, runnable -> {
+    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
         Thread t = new Thread(runnable);
         return t;
     });
@@ -86,7 +86,7 @@ public class BigDataPeakTracker {
         return t;
     });
     
-    private final ExecutorService cleaner = Executors.newFixedThreadPool(2, runnable -> {
+    private final ExecutorService cleaner = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
         t.setPriority(10);
         return t;
@@ -109,10 +109,12 @@ public class BigDataPeakTracker {
 	
 	//This will keep track of the length of the trajectories so we can remove short ones later
 	private HashMap<String, Integer> trajectoryLengths;
+	private HashMap<String, Integer> trajectoryLastSlice;
+	private HashMap<String, Peak> trajectoryLastPeaks;
 	
 	//This will keep track of the first peak for each trajectory
 	//I think since the loop below goes from slice 1 forward we should always get the first slice with the peak.
-	private LinkedList<Peak> trajectoryFirstSlice;
+	private HashMap<String, Peak> trajectoryFirstPeaks;
 	
 	LogService logService;
 	
@@ -141,13 +143,19 @@ public class BigDataPeakTracker {
 		
 		peakLinkFactory = new PeakLinkFactory();
 		
+		ConcurrentHashMap<Integer, Integer> possibleLinksSlicesQueuedMap = new ConcurrentHashMap<>();
+		possibleLinksSlicesQueued = possibleLinksSlicesQueuedMap.newKeySet();
+		
 		//First we will build a KDTree for each peak list to allow for fast 2D searching..
 		//For this purpose we will make a second ConcurrentMap with slice as the key and KDTrees for each slice
 		KDTreeStack = new ConcurrentHashMap<>();
 		possibleLinks = new ConcurrentHashMap<>();
 		
 		trajectoryLengths = new HashMap<>();
-    	trajectoryFirstSlice = new LinkedList<Peak>();
+		trajectoryFirstPeaks = new HashMap<>();
+    	
+    	trajectoryLastSlice = new HashMap<>();
+    	trajectoryLastPeaks = new HashMap<>();
     	
     	nextSliceToLink = 1;
     	cleanedTo = 1;
@@ -252,6 +260,10 @@ public class BigDataPeakTracker {
 					to.setUID(from.getUID());
 					trajectoryLengths.put(from.getUID(), trajectoryLengths.get(from.getUID()) + 1);
 					
+					//Keep lists of last slice and last peak
+					trajectoryLastSlice.put(from.getUID(), to.getSlice());
+			    	trajectoryLastPeaks.put(from.getUID(), to);
+			    	
 					//Add references in each peak for forward and backward links...
 					from.setForwardLink(to);
 					to.setBackwardLink(from);
@@ -261,7 +273,7 @@ public class BigDataPeakTracker {
 					from.setUID(UID);
 					to.setUID(UID);
 					trajectoryLengths.put(UID, 2);
-					trajectoryFirstSlice.add(from);
+					trajectoryFirstPeaks.put(UID, from);
 					
 					//Add references in each peak for forward and backward links...
 					from.setForwardLink(to);
@@ -270,14 +282,10 @@ public class BigDataPeakTracker {
 			}
 			
 			//Release memory where possible...
-			//First remove All Peaks lists
 			while (cleanedTo <= slice) {
-				//System.out.println("Queued cleaner for slice " + slice);
 				cleaner.submit(new cleanSlice(cleanedTo));
 				cleanedTo++;
 			}
-			
-			System.out.println("Done Linking slice " + slice);
 			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
@@ -304,45 +312,41 @@ public class BigDataPeakTracker {
 			possibleLinks.remove(slice);
 			
 	    	List<Peak> peaks = PeakStack.get(slice);
-	    	//directly recycle orphen peaks...
-	    	for (Peak peak : peaks) {
+	    	
+	    	//directly recycle orphan peaks...
+	    	for (Peak peak : peaks)
 	    		if (peak.getForwardLink() == null && peak.getBackwardLink() == null)
 	    			peakFactory.recyclePeak(peak);
-	    	}
 			peaks.clear();
 			PeakStack.remove(slice);
 			KDTreeStack.remove(slice);
 			
 			//Recycle peaks from short trajectories where possible
-			synchronized(this) {
-				for (int index=0; index < trajectoryFirstSlice.size(); index++) {
-					String UID = trajectoryFirstSlice.get(index).getUID();
+			if (slice > minTrajectoryLength) {
+				Set<String> UIDs = trajectoryLastPeaks.keySet();
+				for (String UID : UIDs) {
 					int length = trajectoryLengths.get(UID).intValue();
 	
 					if (length >= minTrajectoryLength)
 						continue;
-	
-					//find whether last peak is at the correctly processed slice
-					//If so keep
-					Peak peak = trajectoryFirstSlice.get(index);
-					while (peak.getForwardLink() != null)
-						peak = peak.getForwardLink();
-	
-					if (peak.getSlice() > slice - (int)maxDifference[5] - 1)
+
+					if (trajectoryLastSlice.get(UID) > slice - (int)maxDifference[5] - 1)
 						continue;
 					else {
-						Peak pk = trajectoryFirstSlice.get(index);
-						while (pk.getForwardLink() != null) {
-							Peak pk2 = pk.getForwardLink();
-							
-							peakFactory.recyclePeak(pk2);
+						trajectoryFirstPeaks.remove(UID);
+						trajectoryLastPeaks.remove(UID);
+						
+						Peak pk = trajectoryLastPeaks.get(UID);
+						Peak previous = pk;
+						while (pk.getBackwardLink() != null) {
+							previous = pk.getBackwardLink();
+							peakFactory.recyclePeak(pk);
+							pk = previous;
 						}
-						peakFactory.recyclePeak(pk);
-						trajectoryFirstSlice.remove(index);
+						peakFactory.recyclePeak(previous);
 					}
 				}
 			}
-			System.out.println("Done Cleaning slice " + slice);
 	    }
 	}
 	
@@ -407,7 +411,7 @@ public class BigDataPeakTracker {
 	public void buildArchive(SingleMoleculeArchive archive) {		
 		isDone();
 		logService.info("Building molecule archive...");		
-		logService.info("Possible Trajectory Number " + trajectoryFirstSlice.size());
+		logService.info("Possible Trajectory Number " + trajectoryFirstPeaks.keySet().size());
 		
 		//I think I need to reinitialize this pool since I shut it down above.
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
@@ -416,7 +420,7 @@ public class BigDataPeakTracker {
 		//each molecule is build by a different thread just following the 
 		//links until it hits a molecule with no UID, which signifies the end of the trajectory.
 		try {		
-			forkJoinPool.submit(() -> trajectoryFirstSlice.parallelStream().forEach(startingPeak -> {
+			forkJoinPool.submit(() -> trajectoryFirstPeaks.values().parallelStream().forEach(startingPeak -> {
 					buildMolecule(startingPeak, trajectoryLengths, archive);
 				})).get();  
 	    } catch (InterruptedException | ExecutionException e) {

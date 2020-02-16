@@ -15,6 +15,8 @@ public class PeakLinkFactory {
 		
 		if (peakLink == null)
 			peakLink = new PeakLink(from, to, distanceSq, slice, sliceDifference);
+		else 
+			peakLink.reset(from, to, distanceSq, slice, sliceDifference);
 		
 		return peakLink;
 	}
