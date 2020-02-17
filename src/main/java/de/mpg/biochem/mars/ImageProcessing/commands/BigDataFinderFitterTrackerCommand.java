@@ -274,6 +274,12 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 
 		@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
 		private String imageFormat;
+		
+		@Parameter(label="Image Processing Thread Count")
+		private int imageThreadCount = 4;
+		
+		@Parameter(label="Peak Connector Thread Count")
+		private int peakConnectorThreadCount = 4;
 
 		//OUTPUT PARAMETERS
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
@@ -399,7 +405,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 
 			//Need to determine the number of threads
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+			//final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 			//Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
 		    maxDifference = new double[6];
@@ -415,7 +421,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
 			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
 
-		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, image.getStackSize(), logService, peakFactory);
+		    tracker = new BigDataPeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, image.getStackSize(), logService, peakFactory, peakConnectorThreadCount);
 		    
 			//Output first part of log message...
 			logService.info(log);
@@ -440,7 +446,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			 
 	        progressThread.start();
 	        
-	        final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
+	        final ExecutorService executor = Executors.newFixedThreadPool(imageThreadCount, runnable -> {
 	            Thread t = new Thread(runnable);
 	            return t;
 	        });

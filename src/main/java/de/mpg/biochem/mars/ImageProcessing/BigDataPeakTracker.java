@@ -61,24 +61,22 @@ import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 public class BigDataPeakTracker {
-	double[] maxDifference;
-	boolean[] ckMaxDifference;
-	int minTrajectoryLength;
+	private double[] maxDifference;
+	private boolean[] ckMaxDifference;
+	private int minTrajectoryLength;
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
-	double searchRadius;
-	boolean PeakFitter_writeEverything = false;
-	boolean writeIntegration = false;
-	int minimumDistance;
+	private double searchRadius;
+	private boolean PeakFitter_writeEverything = false;
+	private boolean writeIntegration = false;
+	private int minimumDistance;
+	private int possibleSliceThreads = 4;
 	
 	private AtomicBoolean isDone = new AtomicBoolean(false);
 	
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(4, runnable -> {
-        Thread t = new Thread(runnable);
-        return t;
-    });
+    private final ExecutorService possibleLinkCalculators;
     
     private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
@@ -123,7 +121,7 @@ public class BigDataPeakTracker {
 	private int nextSliceToLink;
 	private int cleanedTo;
 	
-	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService, PeakFactory peakFactory) {
+	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService, PeakFactory peakFactory, int possibleSliceThreads) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.writeIntegration = writeIntegration;
@@ -133,6 +131,12 @@ public class BigDataPeakTracker {
 		this.minTrajectoryLength = minTrajectoryLength;
 		this.sliceNumber = sliceNumber;
 		this.peakFactory = peakFactory;
+		this.possibleSliceThreads = possibleSliceThreads;
+		
+		possibleLinkCalculators = Executors.newFixedThreadPool(possibleSliceThreads, runnable -> {
+	        Thread t = new Thread(runnable);
+	        return t;
+	    });
 
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
