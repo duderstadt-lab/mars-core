@@ -407,7 +407,7 @@ public class BigDataPeakTracker {
 	public void buildArchive(SingleMoleculeArchive archive) {		
 		isDone();
 		logService.info("Building molecule archive...");		
-		logService.info("Possible Trajectory Number " + trajectoryFirstPeaks.keySet().size());
+		//logService.info("Possible Trajectory Number " + trajectoryFirstPeaks.keySet().size());
 		
 		//I think I need to reinitialize this pool since I shut it down above.
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
