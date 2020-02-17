@@ -287,8 +287,6 @@ public class BigDataPeakTracker {
 				cleanedTo++;
 			}
 			
-			System.out.println("Done linking slice " + slice);
-			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
 			if (slice == sliceNumber - 1)
@@ -343,11 +341,8 @@ public class BigDataPeakTracker {
 						peakFactory.recyclePeak(pk.getForwardLink());
 					}
 					peakFactory.recyclePeak(pk);
-					//System.out.println("Done recycling " + UID);
 				}
 			}
-			
-			System.out.println("Done cleaning slice " + slice);
 	    }
 	}
 	
