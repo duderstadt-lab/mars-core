@@ -75,14 +75,14 @@ public class BigDataPeakTracker {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(4, runnable -> {
         Thread t = new Thread(runnable);
         return t;
     });
     
     private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
-        t.setPriority(9);
+        t.setPriority(10);
         return t;
     });
     
@@ -287,6 +287,8 @@ public class BigDataPeakTracker {
 				cleanedTo++;
 			}
 			
+			System.out.println("Done linking slice " + slice);
+			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
 			if (slice == sliceNumber - 1)
@@ -322,31 +324,30 @@ public class BigDataPeakTracker {
 			KDTreeStack.remove(slice);
 			
 			//Recycle peaks from short trajectories where possible
-			if (slice > minTrajectoryLength) {
-				Set<String> UIDs = trajectoryLastPeaks.keySet();
-				for (String UID : UIDs) {
-					int length = trajectoryLengths.get(UID).intValue();
-	
-					if (length >= minTrajectoryLength)
-						continue;
+			Set<String> UIDs = new HashSet<String>(trajectoryLastPeaks.keySet());
+			for (String UID : UIDs) {
+				int length = trajectoryLengths.get(UID).intValue();
 
-					if (trajectoryLastSlice.get(UID) > slice - (int)maxDifference[5] - 1)
-						continue;
-					else {
-						trajectoryFirstPeaks.remove(UID);
-						trajectoryLastPeaks.remove(UID);
-						
-						Peak pk = trajectoryLastPeaks.get(UID);
-						Peak previous = pk;
-						while (pk.getBackwardLink() != null) {
-							previous = pk.getBackwardLink();
-							peakFactory.recyclePeak(pk);
-							pk = previous;
-						}
-						peakFactory.recyclePeak(previous);
+				if (length >= minTrajectoryLength)
+					continue;
+
+				if (trajectoryLastSlice.get(UID) > slice - (int)maxDifference[5] - 1)
+					continue;
+				else {
+					Peak pk = trajectoryLastPeaks.get(UID);
+					trajectoryFirstPeaks.remove(UID);
+					trajectoryLastPeaks.remove(UID);
+					
+					while (pk.getBackwardLink() != null) {
+						pk = pk.getBackwardLink();
+						peakFactory.recyclePeak(pk.getForwardLink());
 					}
+					peakFactory.recyclePeak(pk);
+					//System.out.println("Done recycling " + UID);
 				}
 			}
+			
+			System.out.println("Done cleaning slice " + slice);
 	    }
 	}
 	

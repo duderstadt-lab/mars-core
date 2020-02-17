@@ -440,7 +440,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			 
 	        progressThread.start();
 	        
-	        final ExecutorService executor = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 2) + 1, runnable -> {
+	        final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
 	            Thread t = new Thread(runnable);
 	            return t;
 	        });
