@@ -1,0 +1,10 @@
+de.mpg.biochem.mars.ImageProcessing
+de.mpg.biochem.mars.ImageProcessing.commands
+de.mpg.biochem.mars.kcp
+de.mpg.biochem.mars.kcp.commands
+de.mpg.biochem.mars.molecule
+de.mpg.biochem.mars.molecule.commands
+de.mpg.biochem.mars.table
+de.mpg.biochem.mars.table.commands
+de.mpg.biochem.mars.table.event
+de.mpg.biochem.mars.util
