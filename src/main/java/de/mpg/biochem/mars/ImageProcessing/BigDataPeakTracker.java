@@ -69,14 +69,17 @@ public class BigDataPeakTracker {
 	private boolean PeakFitter_writeEverything = false;
 	private boolean writeIntegration = false;
 	private int minimumDistance;
-	private int possibleSliceThreads = 4;
 	
 	private AtomicBoolean isDone = new AtomicBoolean(false);
+	private AtomicBoolean pausePeakFinding = new AtomicBoolean(false);
 	
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-    private final ExecutorService possibleLinkCalculators;
+    private final ExecutorService possibleLinkCalculators = Executors.newFixedThreadPool(Math.round(PARALLELISM_LEVEL / 4) + 1, runnable -> {
+        Thread t = new Thread(runnable);
+        return t;
+    });
     
     private final ExecutorService linkMaker = Executors.newFixedThreadPool(1, runnable -> {
         Thread t = new Thread(runnable);
@@ -121,7 +124,9 @@ public class BigDataPeakTracker {
 	private int nextSliceToLink;
 	private int cleanedTo;
 	
-	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService, PeakFactory peakFactory, int possibleSliceThreads) {
+	private AtomicInteger peakListSlice = new AtomicInteger(0);
+	
+	public BigDataPeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, int sliceNumber, LogService logService, PeakFactory peakFactory) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.writeIntegration = writeIntegration;
@@ -131,13 +136,7 @@ public class BigDataPeakTracker {
 		this.minTrajectoryLength = minTrajectoryLength;
 		this.sliceNumber = sliceNumber;
 		this.peakFactory = peakFactory;
-		this.possibleSliceThreads = possibleSliceThreads;
 		
-		possibleLinkCalculators = Executors.newFixedThreadPool(possibleSliceThreads, runnable -> {
-	        Thread t = new Thread(runnable);
-	        return t;
-	    });
-
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
 		else
@@ -170,6 +169,16 @@ public class BigDataPeakTracker {
 		KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(slice), PeakStack.get(slice));
 		KDTreeStack.put(slice, tree);
 		updateFindPossibleLinksQueue();
+		peakListSlice.incrementAndGet();
+		
+		while (pausePeakFinding.get()) {
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public synchronized void updateFindPossibleLinksQueue() {
@@ -291,6 +300,16 @@ public class BigDataPeakTracker {
 				cleanedTo++;
 			}
 			
+			if (peakListSlice.get() - slice > 25 + (int)maxDifference[5]) {
+				//System.out.println("Blocking...");
+				pausePeakFinding.set(true);
+			} else {
+				//System.out.println("UnBlocking...");
+				pausePeakFinding.set(false);
+			}
+			
+			//System.out.println("Done linking slice " + slice);
+			
 			//If true this is the last job and we are done!
 			//So release blocking by isDone method from the tracker.
 			if (slice == sliceNumber - 1)
@@ -347,6 +366,7 @@ public class BigDataPeakTracker {
 					peakFactory.recyclePeak(pk);
 				}
 			}
+			//System.out.println("Done cleaning slice " + slice);
 	    }
 	}
 	
