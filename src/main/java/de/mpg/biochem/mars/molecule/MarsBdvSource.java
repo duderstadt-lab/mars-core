@@ -42,6 +42,10 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
+		xDriftColumn = "";
+		yDriftColumn = "";
+		pathToXml = "";
+		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	}
 	
 	public MarsBdvSource(JsonParser jParser) throws IOException {
