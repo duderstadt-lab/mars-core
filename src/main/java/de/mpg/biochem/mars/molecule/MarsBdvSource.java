@@ -27,7 +27,6 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -50,18 +49,16 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 	
 	public MarsBdvSource(JsonParser jParser) throws IOException {
 		super();
+		name = "";
+		xDriftColumn = "";
+		yDriftColumn = "";
+		pathToXml = "";
+		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 		fromJSON(jParser);
 	}
 	
 	@Override
 	protected void createIOMaps() {
-		//Initialize in case field is not found
-		name = "";
-		xDriftColumn = "";
-		yDriftColumn = "";
-		pathToXml = "";
-		affine3D = new AffineTransform3D();
-		
 		//Add to output map
 		outputMap.put("Name", MarsUtil.catchConsumerException(jGenerator -> {
 			jGenerator.writeStringField("Name", name);
