@@ -68,7 +68,28 @@ public interface MoleculeArchiveWindow {
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
+	@Deprecated
 	public void addLogMessage(String message);
+	
+	/**
+	 * Add a message to the log that is presented in the background
+	 * of the lock screen. All log messages sent to the method 
+	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
+	 * to the lock screen background using this method.
+	 * 
+	 * @param message String message to add to the lock screen log background.
+	 */
+	public void log(String message);
+	
+	/**
+	 * Add a message and start a new line in the log that is presented in the background
+	 * of the lock screen. All log messages sent to the method 
+	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
+	 * to the lock screen background using this method.
+	 * 
+	 * @param message String message to add to the lock screen log background.
+	 */
+	public void logln(String message);
 	
 	/**
 	 * Lock the MoleculeArchive window to prevent changes from being 

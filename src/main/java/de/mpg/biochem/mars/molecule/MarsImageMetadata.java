@@ -97,7 +97,27 @@ public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * 
 	 * @param str Message to add to the log.
 	 */
+	@Deprecated
 	void addLogMessage(String str);
+	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}.
+	 * 
+	 * @param str Message to add to the log.
+	 */
+	void log(String str);
+	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}. Start a new line
+	 * after adding the message.
+	 * 
+	 * @param str Message to add to the log.
+	 */
+	void logln(String str);
 	
 	/**
 	 * Get the log that contains the history of processing steps

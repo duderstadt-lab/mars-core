@@ -395,7 +395,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 			LogBuilder builder = new LogBuilder();
 
 			String log = LogBuilder.buildTitleBlock("BigData Peak Tracker");
-
+			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
 			if (!metaDataLogMessage.equals("")) {

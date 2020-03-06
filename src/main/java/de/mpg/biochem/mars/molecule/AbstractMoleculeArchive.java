@@ -1919,6 +1919,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param message The String message to add to all MarsImageMetadata logs.
 	 */
+	@Deprecated
 	public void addLogMessage(String message) {
 		for (String metaUID : imageMetadataIndex) {
 			if (virtual) {
@@ -1931,6 +1932,49 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		if (getWindow() != null)
 			getWindow().addLogMessage(message);
+	}
+	
+	/**
+	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * to keep a record of the sequence of processing steps during analysis. Start
+	 * a new line after adding the message.
+	 * 
+	 * @param message The String message to add to all MarsImageMetadata logs.
+	 */
+	public void logln(String message) {
+		for (String metaUID : imageMetadataIndex) {
+			if (virtual) {
+				I meta = getImageMetadata(metaUID);
+				meta.logln(message);
+				putImageMetadata(meta);
+			} else {
+				imageMetadata.get(metaUID).logln(message);
+			}
+		}
+		if (getWindow() != null)
+			getWindow().logln(message);
+	}
+	
+	/**
+	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * to keep a record of the sequence of processing steps during analysis. Start
+	 * a new line after adding the message. Do not start a new line after adding 
+	 * the message.
+	 * 
+	 * @param message The String message to add to all MarsImageMetadata logs.
+	 */
+	public void log(String message) {
+		for (String metaUID : imageMetadataIndex) {
+			if (virtual) {
+				I meta = getImageMetadata(metaUID);
+				meta.log(message);
+				putImageMetadata(meta);
+			} else {
+				imageMetadata.get(metaUID).log(message);
+			}
+		}
+		if (getWindow() != null)
+			getWindow().log(message);
 	}
 	
 	/**

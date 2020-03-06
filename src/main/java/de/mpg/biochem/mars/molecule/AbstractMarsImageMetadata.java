@@ -292,8 +292,29 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}.
 	 */
+	@Deprecated
 	public void addLogMessage(String str) {
 		log += str + "\n";
+	}
+	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}. Start a new line
+	 * after adding the message.
+	 */
+	public void logln(String str) {
+		log += str + "\n";
+	}
+	
+	/**
+	 * Add to the log that contains the history of processing steps
+	 * conducted on this dataset and the associated molecule records
+	 * contained in the same {@link MoleculeArchive}. Do not start a 
+	 * new line after adding the message.
+	 */
+	public void log(String str) {
+		log += str;
 	}
 	
 	/**

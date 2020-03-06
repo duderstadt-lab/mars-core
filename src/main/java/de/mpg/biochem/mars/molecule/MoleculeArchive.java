@@ -564,7 +564,26 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsImageMetadata
 	 * 
 	 * @param message The String message to add to all MARSImageMetadata logs.
 	 */
+	@Deprecated
 	void addLogMessage(String message);
+	
+	/**
+	 * Add a log message to all MarsImageMetadata records. Used by all processing plugins 
+	 * so there is a record of the sequence of processing steps during analysis. Do not
+	 * start a new line after adding the message.
+	 * 
+	 * @param message The String message to add to all MarsImageMetadata logs.
+	 */
+	void log(String str);
+	
+	/**
+	 * Add a log message to all MarsImageMetadata records. Used by all processing plugins 
+	 * so there is a record of the sequence of processing steps during analysis. Start
+	 * a new line after adding the message.
+	 * 
+	 * @param message The String message to add to all MarsImageMetadata logs.
+	 */
+	void logln(String str);
 	
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
