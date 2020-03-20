@@ -591,9 +591,9 @@ public class DogPeakTrackerCommand<T extends RealType< T >> extends DynamicComma
 			}
 			
 			if (useROI) {
-		    	peaks = finder.findPeaks(filteredImage, new Roi(x0, y0, width, height));
+		    	peaks = finder.findPeaks(filteredImage, new Roi(x0, y0, width, height), slice);
 			} else {
-				peaks = finder.findPeaks(filteredImage);
+				peaks = finder.findPeaks(filteredImage, slice);
 			}
 			
 			if (peaks == null)
