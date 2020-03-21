@@ -307,7 +307,7 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Peak Finder");
+		String log = LogBuilder.buildTitleBlock("Peak Finder");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();

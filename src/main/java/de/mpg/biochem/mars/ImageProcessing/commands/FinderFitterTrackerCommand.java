@@ -219,16 +219,16 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		private final String trackerTitle =
 			"Peak tracker settings:";
 		
-		@Parameter(label="Check Max Difference Baseline")
+		//@Parameter(label="Check Max Difference Baseline")
 		private boolean PeakTracker_ckMaxDifferenceBaseline = false;
 		
-		@Parameter(label="Max Difference Baseline")
+		//@Parameter(label="Max Difference Baseline")
 		private double PeakTracker_maxDifferenceBaseline = 5000;
 		
-		@Parameter(label="Check Max Difference Height")
+		//@Parameter(label="Check Max Difference Height")
 		private boolean PeakTracker_ckMaxDifferenceHeight = false;
 		
-		@Parameter(label="Max Difference Height")
+		//@Parameter(label="Max Difference Height")
 		private double PeakTracker_maxDifferenceHeight = 5000;
 		
 		@Parameter(label="Max Difference X")
@@ -237,10 +237,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		@Parameter(label="Max Difference Y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		@Parameter(label="Check Max Difference Sigma")
+		//@Parameter(label="Check Max Difference Sigma")
 		private boolean PeakTracker_ckMaxDifferenceSigma = false;
 		
-		@Parameter(label="Max Difference Sigma")
+		//@Parameter(label="Max Difference Sigma")
 		private double PeakTracker_maxDifferenceSigma = 1;
 		
 		@Parameter(label="Max Difference Slice")

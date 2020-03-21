@@ -94,10 +94,12 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public void removeArchive(String title) {
 		objectService.removeObject(getArchive(title));
+		objectService.removeObject(displayService.getDisplay(title));
 	}
 	
 	public void removeArchive(MoleculeArchive archive) {
 		objectService.removeObject(archive);
+		objectService.removeObject(displayService.getDisplay(archive.getName()));
 	}
 	
 	public boolean rename(String oldName, String newName) {
@@ -123,7 +125,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		Set<String> columnSet = new LinkedHashSet<String>();
 		List<MoleculeArchive<?,?,?>> archives = getArchives();
 		
-		archives.forEach(archive -> columnSet.addAll(archive.getProperties().getColumnSet()));
+		archives.forEach(archive -> columnSet.addAll(archive.properties().getColumnSet()));
 		
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
@@ -137,7 +139,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 		List<MoleculeArchive<?,?,?>> archives = getArchives();
 	
-		archives.forEach(archive -> segTableNames.addAll(archive.getProperties().getSegmentTableNames()));
+		archives.forEach(archive -> segTableNames.addAll(archive.properties().getSegmentTableNames()));
 		
 		return segTableNames;
 	}

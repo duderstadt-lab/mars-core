@@ -229,16 +229,16 @@ public class DogPeakTrackerCommand<T extends RealType< T >> extends DynamicComma
 		private final String trackerTitle =
 			"Peak tracker settings:";
 		
-		@Parameter(label="Check Max Difference Baseline")
+		//@Parameter(label="Check Max Difference Baseline")
 		private boolean PeakTracker_ckMaxDifferenceBaseline = false;
 		
-		@Parameter(label="Max Difference Baseline")
+		//@Parameter(label="Max Difference Baseline")
 		private double PeakTracker_maxDifferenceBaseline = 5000;
 		
-		@Parameter(label="Check Max Difference Height")
+		//@Parameter(label="Check Max Difference Height")
 		private boolean PeakTracker_ckMaxDifferenceHeight = false;
 		
-		@Parameter(label="Max Difference Height")
+		//@Parameter(label="Max Difference Height")
 		private double PeakTracker_maxDifferenceHeight = 5000;
 		
 		@Parameter(label="Max Difference X")
@@ -247,10 +247,10 @@ public class DogPeakTrackerCommand<T extends RealType< T >> extends DynamicComma
 		@Parameter(label="Max Difference Y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		@Parameter(label="Check Max Difference Sigma")
+		//@Parameter(label="Check Max Difference Sigma")
 		private boolean PeakTracker_ckMaxDifferenceSigma = false;
 		
-		@Parameter(label="Max Difference Sigma")
+		//@Parameter(label="Max Difference Sigma")
 		private double PeakTracker_maxDifferenceSigma = 1;
 		
 		@Parameter(label="Max Difference Slice")
@@ -552,7 +552,7 @@ public class DogPeakTrackerCommand<T extends RealType< T >> extends DynamicComma
 			
 			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor), slice));
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor.duplicate()), slice));
 			
 			//After fitting some peaks may have moved within the mininmum distance
 			//So we remove these always favoring the ones having lower fit error in x and y

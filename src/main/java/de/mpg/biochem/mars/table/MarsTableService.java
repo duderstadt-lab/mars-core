@@ -106,10 +106,12 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 	
 	public void removeTable(String title) {
 		objectService.removeObject(getTable(title));
+		objectService.removeObject(displayService.getDisplay(title));
 	}
 	
 	public void removeTable(MarsTable table) {
 		objectService.removeObject(table);
+		objectService.removeObject(displayService.getDisplay(table.getName()));
 	}
 	
 	public boolean rename(String oldName, String newName) {
