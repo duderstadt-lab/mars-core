@@ -169,7 +169,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return The integer number of metadata records.
 	 */
-	int getNumberOfMetadata();
+	int getNumberOfMetadatas();
 	
 	/**
 	 * Location of the virtual store.

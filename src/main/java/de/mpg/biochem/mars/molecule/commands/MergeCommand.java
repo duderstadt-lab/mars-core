@@ -191,7 +191,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			log += "Merged " + archiveFileList.length + " yama files into the output archive merged.yama\n";
 			log += "Including: " + archiveList + "\n";
-			log += "In total " + mergedProperties.getNumberOfMetadata() + " Datasets were merged.\n";
+			log += "In total " + mergedProperties.getNumberOfMetadatas() + " Datasets were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true);
 			
@@ -295,7 +295,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
 			logService.info("Including: " + archiveList);
-			logService.info("In total " + mergedProperties.getNumberOfMetadata() + " Datasets were merged.");
+			logService.info("In total " + mergedProperties.getNumberOfMetadatas() + " Datasets were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {

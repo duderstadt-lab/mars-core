@@ -1063,7 +1063,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					metadataIndex.add(metadata.getUID());
 				}
 				virtualMetadataSet.add(metadata.getUID());
-				archiveProperties.setNumberOfMetadata(metadataIndex.size());
+				archiveProperties.setNumberOfMetadatas(metadataIndex.size());
 			}
 			
 			try {
@@ -1083,7 +1083,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 			metadata.setParent(this);
 			metadatas.put(metadata.getUID(), metadata);
-			archiveProperties.setNumberOfMetadata(metadataIndex.size());
+			archiveProperties.setNumberOfMetadatas(metadataIndex.size());
 		}
 	}
 	
@@ -1202,7 +1202,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return The integer number of MarsMetadata records.
 	 */
-	public int getNumberOfMetadata() {
+	public int getNumberOfMetadatas() {
 		return metadataIndex.size();
 	}
 	
@@ -1594,7 +1594,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		
 		metadataIndex = newMetadataIndex;
-		archiveProperties.setNumberOfMetadata(metadataIndex.size());
+		archiveProperties.setNumberOfMetadatas(metadataIndex.size());
 	}
 	
 	/**
@@ -2006,7 +2006,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void updateProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-		archiveProperties.setNumberOfMetadata(metadataIndex.size());
+		archiveProperties.setNumberOfMetadatas(metadataIndex.size());
 		
 		if (virtual) {
 			try {

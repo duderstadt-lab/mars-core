@@ -182,7 +182,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			for (MoleculeArchive<?,?,?> archive : archives) {
 				MoleculeArchiveProperties properties = archive.properties();
 				numMolecules += properties.getNumberOfMolecules();
-				numMetadata += properties.getNumberOfMetadata();
+				numMetadata += properties.getNumberOfMetadatas();
 				globalComments += "Comments from Merged Archive " + archive.getName() + ":\n" + properties.getComments() + "\n";
 				
 				//update global indexes
@@ -192,7 +192,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 	
 			mergedProperties.setNumberOfMolecules(numMolecules);
-			mergedProperties.setNumberOfMetadata(numMetadata);
+			mergedProperties.setNumberOfMetadatas(numMetadata);
 			mergedProperties.setComments(globalComments);
 			
 			try {
@@ -366,7 +366,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			//Now we just need to update the metadata logs.
 			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
 			log += "Including: " + storeList + "\n";
-			log += "In total " + mergedProperties.getNumberOfMetadata() + " MarsMetadata records were merged.\n";
+			log += "In total " + mergedProperties.getNumberOfMetadatas() + " MarsMetadata records were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
 			try {
@@ -379,7 +379,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store");
 			log += "Including: " + storeList + "\n";
-			logService.info("In total " + mergedProperties.getNumberOfMetadata() + " MarsMetadata records were merged.");
+			logService.info("In total " + mergedProperties.getNumberOfMetadatas() + " MarsMetadata records were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {

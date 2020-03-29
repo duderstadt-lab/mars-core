@@ -227,7 +227,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public void merge(MoleculeArchiveProperties properties, String archiveName) {
 		this.numberOfMolecules += properties.getNumberOfMolecules();
-		this.numMetadata += properties.getNumberOfMetadata();
+		this.numMetadata += properties.getNumberOfMetadatas();
 		this.addComment("Comments from Merged Archive " + archiveName + ":\n" + properties.getComments() + "\n");
 		
 		addAllTags(properties.getTagSet());
@@ -320,14 +320,14 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	/**
 	 * Set the number of MarsMetadata records in the archive.
 	 */
-	public void setNumberOfMetadata(int numMetadata) {
+	public void setNumberOfMetadatas(int numMetadata) {
 		this.numMetadata = numMetadata;
 	}
 	
 	/**
 	 * Get the number of MarsMetadata records in the archive.
 	 */
-	public int getNumberOfMetadata() {
+	public int getNumberOfMetadatas() {
 		return numMetadata;
 	}
 	

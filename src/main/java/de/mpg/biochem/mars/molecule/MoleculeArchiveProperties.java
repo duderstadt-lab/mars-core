@@ -53,9 +53,9 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	int getNumberOfMolecules();
 	
-	void setNumberOfMetadata(int numMetadata);
+	void setNumberOfMetadatas(int numMetadata);
 	
-	int getNumberOfMetadata();
+	int getNumberOfMetadatas();
 	
 	void addColumn(String column);
 	
