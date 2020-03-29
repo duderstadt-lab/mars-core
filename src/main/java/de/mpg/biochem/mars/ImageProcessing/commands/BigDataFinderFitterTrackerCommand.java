@@ -475,7 +475,7 @@ public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends 
 		    archive = new SingleMoleculeArchive(newName + ".yama");
 
 		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putImageMetadata(metaData);
+			archive.putMetadata(metaData);
 
 		    tracker.buildArchive(archive);
 

@@ -110,7 +110,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Sigma Calculator");
+		String log = LogBuilder.buildTitleBlock("Sigma Calculator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -122,15 +122,15 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		final String paramName = Ycolumn + "_sigma";
 		
 		ConcurrentMap<String, MarsRegion> regionMap = new ConcurrentHashMap<String, MarsRegion>();
 		
 		if (region.equals("Defined in Metadata")) {
-			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
-				MarsMetadata metadata = archive.getImageMetadata(metaUID);
+			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
+				MarsMetadata metadata = archive.getMetadata(metaUID);
 				if (metadata.hasRegion(regionName))
 					regionMap.put(metaUID, metadata.getRegion(regionName));
 			});
@@ -146,8 +146,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 			} else if (region.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
 				MarsRegion regionOfInterest = molecule.getRegion(regionName);
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));				
-			} else if (region.equals("Defined in Metadata") && regionMap.containsKey(molecule.getImageMetadataUID())) {
-				MarsRegion regionOfInterest = regionMap.get(molecule.getImageMetadataUID());
+			} else if (region.equals("Defined in Metadata") && regionMap.containsKey(molecule.getMetadataUID())) {
+				MarsRegion regionOfInterest = regionMap.get(molecule.getMetadataUID());
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			} else {
 				//WE assume this mean sigma for whole trace.
@@ -159,8 +159,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage(LogBuilder.endBlock(true));
-	    archive.addLogMessage("   ");
+	    archive.logln(LogBuilder.endBlock(true));
+	    archive.logln("   ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 

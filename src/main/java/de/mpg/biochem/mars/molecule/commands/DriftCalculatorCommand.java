@@ -124,12 +124,12 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
-		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsMetadata meta = archive.getImageMetadata(metaUID);
+		for (String metaUID : archive.getMetadataUIDs()) {
+			MarsMetadata meta = archive.getMetadata(metaUID);
 			//Let's find the last slice
 			MarsTable metaDataTable = meta.getDataTable();
 			
@@ -146,7 +146,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (use_incomplete_traces) {
 				//For all molecules in this dataset that are marked with the background tag and have all slices
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MarsTable datatable = archive.get(UID).getDataTable();
@@ -164,7 +164,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				long[] num_full_traj = new long[1];
 				num_full_traj[0] = 0;
 				archive.getMoleculeUIDs().stream()
-					.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+					.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MarsTable datatable = archive.get(UID).getDataTable();
@@ -252,13 +252,13 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
 			}
 			
-			archive.putImageMetadata(meta);
+			archive.putMetadata(meta);
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
-	    archive.addLogMessage("  ");
+	    archive.logln("\n" + LogBuilder.endBlock(true));
+	    archive.logln("  ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
@@ -327,8 +327,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			
 			//We will want to calculate the background for each dataset 
 			//in the archive separately
-			for (String metaUID : archive.getImageMetadataUIDs()) {
-				MarsMetadata meta = archive.getImageMetadata(metaUID);
+			for (String metaUID : archive.getMetadataUIDs()) {
+				MarsMetadata meta = archive.getMetadata(metaUID);
 				//Let's find the last slice
 				MarsTable metaDataTable = meta.getDataTable();
 				
@@ -345,7 +345,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				if (use_incomplete_traces) {
 					//For all molecules in this dataset that are marked with the background tag and have all slices
 					archive.getMoleculeUIDs().stream()
-						.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+						.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 						.forEach(UID -> {
 							MarsTable datatable = archive.get(UID).getDataTable();
@@ -364,7 +364,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					long[] num_full_traj = new long[1];
 					num_full_traj[0] = 0;
 					archive.getMoleculeUIDs().stream()
-						.filter(UID -> archive.getImageMetadataUIDforMolecule(UID).equals(meta.getUID()))
+						.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 						.forEach(UID -> {
 							MarsTable datatable = archive.get(UID).getDataTable();
@@ -382,7 +382,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					});
 					
 					if (num_full_traj[0] == 0) {
-					    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+					    archive.logln("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
 					    continue;
 					}
 				}
@@ -451,11 +451,11 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
 				}
 				
-				archive.putImageMetadata(meta);
+				archive.putMetadata(meta);
 			}
 			
-		    archive.addLogMessage(LogBuilder.endBlock(true));
-		    archive.addLogMessage("  ");
+		    archive.logln(LogBuilder.endBlock(true));
+		    archive.logln("  ");
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {

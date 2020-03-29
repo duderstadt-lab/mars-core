@@ -114,7 +114,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Drift Corrector");
+		String log = LogBuilder.buildTitleBlock("Drift Corrector");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -126,22 +126,22 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		//Build maps from slice to x and slice to y for each metadataset
 		HashMap<String, HashMap<Double, Double>> metaToMapX = new HashMap<String, HashMap<Double, Double>>();
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
-		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsMetadata meta = archive.getImageMetadata(metaUID);
+		for (String metaUID : archive.getMetadataUIDs()) {
+			MarsMetadata meta = archive.getMetadata(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
 			} else {
-				logService.error("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+				logService.error("Metadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
-				archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-				archive.addLogMessage(LogBuilder.endBlock(false));
+				archive.logln("Metadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+				archive.logln(LogBuilder.endBlock(false));
 				
 				//Unlock the window so it can be changed
 			    if (!uiService.isHeadless())
@@ -156,12 +156,12 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			
 			if (molecule == null) {
 				logService.error("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
-				archive.addLogMessage("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
+				archive.logln("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
 				return;
 			}
 			
-			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetadataUID());
-			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetadataUID());
+			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getMetadataUID());
+			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getMetadataUID());
 			
 			MarsTable datatable = molecule.getDataTable();
 			
@@ -219,8 +219,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
-	    archive.addLogMessage("  ");
+	    archive.logln("\n" + LogBuilder.endBlock(true));
+	    archive.logln("  ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
@@ -259,20 +259,20 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			builder.addParameter("correct original coordinates", String.valueOf(retainCoordinates));
 			log += builder.buildParameterList();
 			
-			archive.addLogMessage(log);
+			archive.logln(log);
 			
 			//Build maps from slice to x and slice to y for each metadataset
 			HashMap<String, HashMap<Double, Double>> metaToMapX = new HashMap<String, HashMap<Double, Double>>();
 			HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 			
-			for (String metaUID : archive.getImageMetadataUIDs()) {
-				MarsMetadata meta = archive.getImageMetadata(metaUID);
+			for (String metaUID : archive.getMetadataUIDs()) {
+				MarsMetadata meta = archive.getMetadata(metaUID);
 				if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
 					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
 				} else {
-					archive.addLogMessage("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-					archive.addLogMessage(LogBuilder.endBlock(false));
+					archive.logln("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
+					archive.logln(LogBuilder.endBlock(false));
 
 					return;
 				}
@@ -283,12 +283,12 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				Molecule molecule = archive.get(UID);
 				
 				if (molecule == null) {
-					archive.addLogMessage("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
+					archive.logln("No record found for molecule with UID " + UID + ". Could be due to data corruption. Continuing with the rest.");
 					return;
 				}
 				
-				HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getImageMetadataUID());
-				HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getImageMetadataUID());
+				HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getMetadataUID());
+				HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getMetadataUID());
 				
 				MarsTable datatable = molecule.getDataTable();
 				

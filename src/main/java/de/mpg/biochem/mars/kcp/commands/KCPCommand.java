@@ -258,7 +258,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 			if (regionSource.equals("Molecules")) {
 				regionRecord = molecule;
 			} else {
-				regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+				regionRecord = archive.getMetadata(molecule.getMetadataUID());
 			}
 			
 			if (!regionRecord.hasRegion(regionName))

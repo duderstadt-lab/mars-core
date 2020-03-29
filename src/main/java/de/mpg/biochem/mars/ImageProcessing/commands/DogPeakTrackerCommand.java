@@ -474,7 +474,7 @@ public class DogPeakTrackerCommand<T extends RealType< T >> extends DynamicComma
 		    archive = new SingleMoleculeArchive(newName + ".yama");
 		    
 		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putImageMetadata(metaData);
+			archive.putMetadata(metaData);
 		    
 		    tracker.track(PeakStack, archive);
 		    

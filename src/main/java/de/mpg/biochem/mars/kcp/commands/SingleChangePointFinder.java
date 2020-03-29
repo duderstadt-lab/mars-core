@@ -217,7 +217,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    logService.info(LogBuilder.endBlock(true));
-		    archive.addLogMessage(LogBuilder.endBlock(true));
+		    archive.logln(LogBuilder.endBlock(true));
 		    
 			//Unlock the window so it can be changed
 		    if (!uiService.isHeadless())
@@ -233,7 +233,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 				if (regionSource.equals("Molecules")) {
 					regionRecord = molecule;
 				} else {
-					regionRecord = archive.getImageMetadata(molecule.getImageMetadataUID());
+					regionRecord = archive.getMetadata(molecule.getMetadataUID());
 				}
 				
 				if (!regionRecord.hasRegion(regionName))

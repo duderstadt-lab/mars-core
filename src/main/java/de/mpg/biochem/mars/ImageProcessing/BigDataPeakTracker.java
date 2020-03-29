@@ -456,7 +456,7 @@ public class BigDataPeakTracker {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
-		String metaDataUID = archive.getImageMetadata(0).getUID();
+		String metaDataUID = archive.getMetadata(0).getUID();
 		
 		//don't add the molecule if the trajectory length is below minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
@@ -471,7 +471,7 @@ public class BigDataPeakTracker {
 		//fail-safe in case somehow a peak is linked to itself?
 		//Fixes some kind of bug observed very very rarely that 
 		//prevents creation of an archive...
-		int slices = archive.getImageMetadata(0).getDataTable().getRowCount();
+		int slices = archive.getMetadata(0).getDataTable().getRowCount();
 		int count = 0;
 		while (peak.getForwardLink() != null && count < slices) {
 			peak = peak.getForwardLink();
@@ -480,7 +480,7 @@ public class BigDataPeakTracker {
 		}
 
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
-		mol.setImageMetadataUID(metaDataUID);
+		mol.setMetadataUID(metaDataUID);
 		archive.put(mol);
 	}
 	

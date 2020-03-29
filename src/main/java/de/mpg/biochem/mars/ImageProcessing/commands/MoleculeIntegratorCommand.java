@@ -387,7 +387,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        archive = new SingleMoleculeArchive(newName + ".yama");
 	        
 		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putImageMetadata(metaData);
+			archive.putMetadata(metaData);
 			
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
@@ -448,7 +448,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	}
 	        	
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
-	        	molecule.setImageMetadataUID(metaData.getUID());
+	        	molecule.setMetadataUID(metaData.getUID());
 	        	
 	        	archive.put(molecule);
 	        	

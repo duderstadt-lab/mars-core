@@ -93,7 +93,7 @@ public class PeakTracker {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
-		metaDataUID = archive.getImageMetadata(0).getUID();
+		metaDataUID = archive.getMetadata(0).getUID();
 		
 		//Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -327,7 +327,7 @@ public class PeakTracker {
 		//fail-safe in case somehow a peak is linked to itself?
 		//Fixes some kind of bug observed very very rarely that 
 		//prevents creation of an archive...
-		int slices = archive.getImageMetadata(0).getDataTable().getRowCount();
+		int slices = archive.getMetadata(0).getDataTable().getRowCount();
 		int count = 0;
 		while (peak.getForwardLink() != null && count < slices) {
 			peak = peak.getForwardLink();
@@ -336,7 +336,7 @@ public class PeakTracker {
 		}
 
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
-		mol.setImageMetadataUID(metaDataUID);
+		mol.setMetadataUID(metaDataUID);
 		archive.put(mol);
 	}
 	

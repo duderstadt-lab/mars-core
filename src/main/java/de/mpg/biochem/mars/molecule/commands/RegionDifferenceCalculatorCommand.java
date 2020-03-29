@@ -161,8 +161,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 			ConcurrentMap<String, MarsRegion> metadataRegionOneMap = new ConcurrentHashMap<String, MarsRegion>();
 			ConcurrentMap<String, MarsRegion> metadataRegionTwoMap = new ConcurrentHashMap<String, MarsRegion>();
 			
-			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
-				MarsMetadata metadata = archive.getImageMetadata(metaUID);
+			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
+				MarsMetadata metadata = archive.getMetadata(metaUID);
 				if (metadata.hasRegion(regionOneName))
 					metadataRegionOneMap.put(metaUID, metadata.getRegion(regionOneName));
 				
@@ -172,7 +172,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 			
 			//Loop through each molecule and add reversal difference value to parameters for each molecule
 			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-				String metaUID = archive.getImageMetadataUIDforMolecule(UID);
+				String metaUID = archive.getMetadataUIDforMolecule(UID);
 				if (!metadataRegionOneMap.containsKey(metaUID) && !metadataRegionTwoMap.containsKey(metaUID))
 					return;
 				
