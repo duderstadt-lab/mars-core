@@ -90,7 +90,7 @@ import io.scif.services.FormatService;
  * </p>
  * @author Karl Duderstadt
  */
-public class SdmmImageMetadata extends AbstractMarsImageMetadata {
+public class SdmmImageMetadata extends AbstractMarsMetadata {
     
     public SdmmImageMetadata(String UID) {
     	super(UID);

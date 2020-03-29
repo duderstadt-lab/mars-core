@@ -43,7 +43,7 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -77,7 +77,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="Background Tag")
     private String backgroundTag = "background";
@@ -129,7 +129,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//We will want to calculate the background for each dataset 
 		//in the archive separately
 		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+			MarsMetadata meta = archive.getImageMetadata(metaUID);
 			//Let's find the last slice
 			MarsTable metaDataTable = meta.getDataTable();
 			
@@ -305,7 +305,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		table.sort(true, "slice");
 	}
 	
-	public static void calcDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
+	public static void calcDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
 			String output_x, String output_y, boolean use_incomplete_traces, String mode, String zeroPoint) {
 			//Build log message
 			LogBuilder builder = new LogBuilder();
@@ -328,7 +328,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			//We will want to calculate the background for each dataset 
 			//in the archive separately
 			for (String metaUID : archive.getImageMetadataUIDs()) {
-				MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+				MarsMetadata meta = archive.getImageMetadata(metaUID);
 				//Let's find the last slice
 				MarsTable metaDataTable = meta.getDataTable();
 				
@@ -470,7 +470,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("mode", mode);
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
@@ -506,7 +506,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		this.zeroPoint = zeroPoint;
 	}
 	
-	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

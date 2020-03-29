@@ -32,12 +32,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;
 
 /**
  * This class provides a simple position definition. Usually this is a position in time or slice that is of interest
- * for further analysis. {@link Molecule}s and {@link MarsImageMetadata}s can contain a list of these positions.
+ * for further analysis. {@link Molecule}s and {@link MarsMetadata}s can contain a list of these positions.
  * <p>
  * Position definitions include the name, value, column (Time (s) or slice or otherwise), and color (in hex). 
  * These values are used by mars-fx to draw position on plots based value and color.

@@ -94,17 +94,17 @@ import org.scijava.table.*;
  * contain a collection of molecule records associated with a given experimental condition or analysis 
  * pipeline.
  * <p>
- * {@link MarsImageMetadata} records containing data collection information are also stored 
+ * {@link MarsMetadata} records containing data collection information are also stored 
  * in MoleculeArchives. They are identified using metaUID strings. {@link Molecule} records 
  * associated with a given data collection have a metaUID string linking them
- * to the correct {@link MarsImageMetadata} record within the same MoleculeArchive. 
+ * to the correct {@link MarsMetadata} record within the same MoleculeArchive. 
  * 
  * Global properties of the MoleculeArchive, including indexing, comments, etc.., are stored 
  * in a {@link MoleculeArchiveProperties} record also contained within the MoleculeArchive. 
  * <p>
  * Multiple MoleculeArchives can easily be merged with all {@link Molecule} records preserving uniqueness 
- * due to their UIDs and unique {@link MarsImageMetadata} information. After a merge the archive will 
- * then have additional {@link Molecule} records and {@link MarsImageMetadata} records.
+ * due to their UIDs and unique {@link MarsMetadata} information. After a merge the archive will 
+ * then have additional {@link Molecule} records and {@link MarsMetadata} records.
  * </p>
  * <p>
  * Multithreaded processing is straightforward with this data structure because individual 
@@ -140,10 +140,10 @@ import org.scijava.table.*;
  * </p>
  * @author Karl Duderstadt
  * @param <M> Molecule type.
- * @param <I> MarsImageMetadata type.
+ * @param <I> MarsMetadata type.
  * @param <P> MoleculeArchiveProperties type.
  */
-public abstract class AbstractMoleculeArchive<M extends Molecule, I extends MarsImageMetadata, P extends MoleculeArchiveProperties> 
+public abstract class AbstractMoleculeArchive<M extends Molecule, I extends MarsMetadata, P extends MoleculeArchiveProperties> 
 	implements MoleculeArchive<M, I, P> {
 	
 	private String name;
@@ -164,14 +164,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	private P archiveProperties;
 	
 	//This will maintain a list of the metaDatasets as an index with UID keys for each..
-	//Need to make sure all write operations are placed within synchronized blocks. synchronized(imageMetadataIndex) { ... }
+	//Need to make sure all write operations are placed within synchronized blocks. synchronized(metadataIndex) { ... }
 	//To avoid thread issues.
 	//All read operations can be done in parallel no problem.
-	private ArrayList<String> imageMetadataIndex;
+	private ArrayList<String> metadataIndex;
 	
-	//This will store all the ImageMetadata sets associated with the molecules
+	//This will store all the Metadata sets associated with the molecules
 	//molecules have a metadataUID that maps to these keys so it is clear which dataset they were from.
-	private ConcurrentMap<String, I> imageMetadata;
+	private ConcurrentMap<String, I> metadatas;
 	
 	//This is a list of molecule keys that will define the index and be used for retrieval from the ChronicleMap in virtual memory
 	//or retrieval from the molecules array in memory
@@ -182,10 +182,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	private ArrayList<String> moleculeIndex;
 	
 	//This is a map index of tags for searching in molecule tables etc..
-	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex, imageMetadataTagIndex;
+	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex, metadataTagIndex;
 	
-	//this is a map of molecule UIDs to imageMetadataUID for virtual storage indexing...
-	private ConcurrentMap<String, String> moleculeImageMetadataUIDIndex;
+	//this is a map of molecule UIDs to MetadataUID for virtual storage indexing...
+	private ConcurrentMap<String, String> moleculeMetadataUIDIndex;
 	
 	//To ensure thread blocking for record access
 	private ConcurrentMap<String, ReentrantLock> recordLocks;
@@ -197,7 +197,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	//If true we work in virtual memory
 	private boolean virtual;
 	
-	private Set<String> virtualMoleculesSet, virtualImageMetadataSet;
+	private Set<String> virtualMoleculesSet, virtualMetadataSet;
 	
 	//determines whether the file is encoded in binary smile format
 	private boolean outputSmileEncoding = true;
@@ -332,18 +332,18 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	private void initializeVariables() {
 		moleculeIndex = new ArrayList<String>();  
-		imageMetadataIndex = new ArrayList<String>(); 
-		imageMetadata = new ConcurrentHashMap<>();
+		metadataIndex = new ArrayList<String>(); 
+		metadatas = new ConcurrentHashMap<>();
 		
 		recordLocks = new ConcurrentHashMap<>();
 		
 		if (virtual) {
 			tagIndex = new ConcurrentHashMap<>();
-			imageMetadataTagIndex = new ConcurrentHashMap<>();
-			moleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
+			metadataTagIndex = new ConcurrentHashMap<>();
+			moleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 			
 			virtualMoleculesSet = ConcurrentHashMap.newKeySet();
-			virtualImageMetadataSet = ConcurrentHashMap.newKeySet();
+			virtualMetadataSet = ConcurrentHashMap.newKeySet();
 		} else {
 			molecules = new ConcurrentHashMap<>();
 		}
@@ -405,7 +405,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    else 
 			    	fieldBlockName = fieldname;
 		    	
-			    if ("imageMetaDataIndex".equals(fieldname) || "ImageMetadataIndex".equals(fieldname)) {
+			    if ("imageMetaDataIndex".equals(fieldname) || "ImageMetadataIndex".equals(fieldname) || "MetadataIndex".equals(fieldname)) {
 			    	indexJParser.nextToken();
 			    	while (indexJParser.nextToken() != JsonToken.END_ARRAY) {
 		    			String metaUID = "NULL";
@@ -413,8 +413,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    			if("UID".equals(indexJParser.getCurrentName())) {
 			    				indexJParser.nextToken();
 			    				metaUID = indexJParser.getText();
-				    			virtualImageMetadataSet.add(metaUID);
-				    			imageMetadataIndex.add(metaUID);
+				    			virtualMetadataSet.add(metaUID);
+				    			metadataIndex.add(metaUID);
 			    			}
 			    			
 			    			if ("Tags".equals(indexJParser.getCurrentName())) {
@@ -424,7 +424,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    		            tags.add(indexJParser.getText());
 			    		        }
 			    		    	if (!metaUID.equals("NULL"))
-			    		    		imageMetadataTagIndex.put(metaUID, tags);
+			    		    		metadataTagIndex.put(metaUID, tags);
 			    			}
 			    		}
 			    		
@@ -444,9 +444,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					    			moleculeIndex.add(UID);
 			    			}
 			    			
-			    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName()) || "ImageMetadataUID".equals(indexJParser.getCurrentName())) {
+			    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName()) || "ImageMetadataUID".equals(indexJParser.getCurrentName()) || "MetadataUID".equals(indexJParser.getCurrentName())) {
 			    				indexJParser.nextToken();
-			    				moleculeImageMetadataUIDIndex.put(UID, indexJParser.getText());
+			    				moleculeMetadataUIDIndex.put(UID, indexJParser.getText());
 			    			}
 			    			
 			    			if ("Tags".equals(indexJParser.getCurrentName())) {
@@ -529,12 +529,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//Here we assume their is a molecule column that defines which data is related to which molecule.
 		LinkedHashMap<Integer, GroupIndices> groups = MarsTableService.find_group_indices(results, "molecule");
 		
-		//We need to generate and add an ImageMetadata entry for the molecules from the the table
+		//We need to generate and add an Metadata entry for the molecules from the the table
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
 		//Also, the DataTable can be updated manually.
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
-		I meta = createImageMetadata(metaUID);
-		putImageMetadata(meta);
+		I meta = createMetadata(metaUID);
+		putMetadata(meta);
 
 		String[] headers = new String[results.getColumnCount() - 1];
 		int col = 0;
@@ -564,7 +564,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				row++;
 			}
 			M molecule = createMolecule(MarsMath.getUUID58(), molTable);
-			molecule.setImageMetadataUID(metaUID);
+			molecule.setMetadataUID(metaUID);
 			put(molecule);
 		}
 	}
@@ -587,8 +587,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		if (virtual) {
-			//First we get file lists from ImageMetadata and Molecule Directories
-			//these are considered the new moleculeIndex and imageMetadataIndex
+			//First we get file lists from Metadata and Molecule Directories
+			//these are considered the new moleculeIndex and MetadataIndex
 			String[] moleculeFileNameIndex = new File(file.getAbsolutePath() + "/Molecules").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
 					return name.endsWith(".json");
@@ -603,30 +603,30 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				newVirtualMoleculesSet.add(UID);
 			}
 			
-			String[] imageMetadataFileNameIndex = new File(file.getAbsolutePath() + "/ImageMetadata").list(new FilenameFilter() {
+			String[] metadataFileNameIndex = new File(file.getAbsolutePath() + "/Metadata").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
 					return name.endsWith(".json");
 				}
 			});
 			
-			Set<String> newVirtualImageMetadataSet = ConcurrentHashMap.newKeySet();
-			ArrayList<String> newImageMetadataIndex = new ArrayList<String>();
-			for (int i=0;i<imageMetadataFileNameIndex.length;i++) {
-				String UID = imageMetadataFileNameIndex[i].substring(0, imageMetadataFileNameIndex[i].length() - 5);
-				newImageMetadataIndex.add(UID);
-				newVirtualImageMetadataSet.add(UID);
+			Set<String> newVirtualMetadataSet = ConcurrentHashMap.newKeySet();
+			ArrayList<String> newMetadataIndex = new ArrayList<String>();
+			for (int i=0;i<metadataFileNameIndex.length;i++) {
+				String UID = metadataFileNameIndex[i].substring(0, metadataFileNameIndex[i].length() - 5);
+				newMetadataIndex.add(UID);
+				newVirtualMetadataSet.add(UID);
 			}
 			
 			ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
-			ConcurrentMap<String, LinkedHashSet<String>> newTmageMetadataTagIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, LinkedHashSet<String>> newMetadataTagIndex = new ConcurrentHashMap<>();
 			
-			ConcurrentMap<String, String> newMoleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, String> newMoleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 			
 		   try {
 		        forkJoinPool.submit(() -> newMoleculeIndex.parallelStream().forEach(UID -> { 
 		        	M molecule = get(UID);
 		        	newTagIndex.put(UID, molecule.getTags());
-		        	newMoleculeImageMetadataUIDIndex.put(UID, molecule.getImageMetadataUID());
+		        	newMoleculeMetadataUIDIndex.put(UID, molecule.getMetadataUID());
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
@@ -634,9 +634,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
 		        })).get();    
 		        
-		        forkJoinPool.submit(() -> newImageMetadataIndex.parallelStream().forEach(metaUID -> { 
-		        	I metaData = getImageMetadata(metaUID);
-		        	newTmageMetadataTagIndex.put(metaUID, metaData.getTags());
+		        forkJoinPool.submit(() -> metadataIndex.parallelStream().forEach(metaUID -> { 
+		        	I metaData = getMetadata(metaUID);
+		        	newMetadataTagIndex.put(metaUID, metaData.getTags());
 		        })).get();
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -646,13 +646,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   }
 			
 		   this.moleculeIndex = (ArrayList<String>)newMoleculeIndex.stream().sorted().collect(toList());
-		   this.imageMetadataIndex = (ArrayList<String>)newImageMetadataIndex.stream().sorted().collect(toList());
+		   this.metadataIndex = (ArrayList<String>)metadataIndex.stream().sorted().collect(toList());
 		   this.tagIndex = newTagIndex;
-		   this.moleculeImageMetadataUIDIndex = newMoleculeImageMetadataUIDIndex;
-		   this.imageMetadataTagIndex = newTmageMetadataTagIndex;
+		   this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
+		   this.metadataTagIndex = newMetadataTagIndex;
 		   
 		   this.virtualMoleculesSet = newVirtualMoleculesSet;
-		   this.virtualImageMetadataSet = newVirtualImageMetadataSet;
+		   this.virtualMetadataSet = newVirtualMetadataSet;
 		   
 		   archiveProperties.setTagSet(newTagSet);
 		   archiveProperties.setParameterSet(newParameterSet);
@@ -692,10 +692,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	private void saveIndexes() throws IOException {
-		saveIndexes(file, moleculeIndex, imageMetadataIndex, moleculeImageMetadataUIDIndex, imageMetadataTagIndex, tagIndex, jfactory);
+		saveIndexes(file, moleculeIndex, metadataIndex, moleculeMetadataUIDIndex, metadataTagIndex, tagIndex, jfactory);
 	}
 	
-	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> imageMetadataIndex, ConcurrentMap<String, String> moleculeImageMetadataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> imageMetadataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
+	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> metadataIndex, ConcurrentMap<String, String> moleculeMetadataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> metadataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
 		File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 		
@@ -703,16 +703,16 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		jGenerator.writeStartObject();
 
-		//Write imageMetadataIndex
-		jGenerator.writeFieldName("ImageMetadataIndex");
+		//Write MetadataIndex
+		jGenerator.writeFieldName("MetadataIndex");
 		jGenerator.writeStartArray();
-		for (String metaUID : imageMetadataIndex) {
+		for (String metaUID : metadataIndex) {
 			jGenerator.writeStartObject();
 			jGenerator.writeStringField("UID", metaUID);
 			
-			if (imageMetadataTagIndex.containsKey(metaUID)) {
+			if (metadataTagIndex.containsKey(metaUID)) {
 				jGenerator.writeArrayFieldStart("Tags");
-				for (String tag : imageMetadataTagIndex.get(metaUID)) {
+				for (String tag : metadataTagIndex.get(metaUID)) {
 					jGenerator.writeString(tag);
 				}
 				jGenerator.writeEndArray();
@@ -727,7 +727,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		for (String UID : moleculeIndex) {
 			jGenerator.writeStartObject();
 			jGenerator.writeStringField("UID", UID);
-			jGenerator.writeStringField("ImageMetadataUID", moleculeImageMetadataUIDIndex.get(UID));
+			jGenerator.writeStringField("MetadataUID", moleculeMetadataUIDIndex.get(UID));
 			
 			if (tagIndex.containsKey(UID)) {
 				jGenerator.writeArrayFieldStart("Tags");
@@ -813,11 +813,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		jGenerator.writeFieldName("MoleculeArchiveProperties");
 		archiveProperties.toJSON(jGenerator);
 		
-		if (imageMetadataIndex.size() > 0) {
-			jGenerator.writeArrayFieldStart("ImageMetadata");
-			Iterator<String> iter = imageMetadataIndex.iterator();
+		if (metadataIndex.size() > 0) {
+			jGenerator.writeArrayFieldStart("Metadata");
+			Iterator<String> iter = metadataIndex.iterator();
 			while (iter.hasNext()) {
-				getImageMetadata(iter.next()).toJSON(jGenerator);
+				getMetadata(iter.next()).toJSON(jGenerator);
 			}
 			jGenerator.writeEndArray();
 		}
@@ -866,9 +866,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    else 
 		    	fieldBlockName = fieldName;
 			
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
+			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					putImageMetadata(createImageMetadata(jParser));
+					putMetadata(createMetadata(jParser));
 				}
 			}
 			
@@ -907,16 +907,16 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void saveAsVirtualStore(File virtualDirectory) throws IOException {
 		virtualDirectory.mkdirs();
-		File imageMetaDataDir = new File(virtualDirectory.getAbsolutePath() + "/ImageMetadata");
+		File metadataDir = new File(virtualDirectory.getAbsolutePath() + "/Metadata");
 		File moleculesDir = new File(virtualDirectory.getAbsolutePath() + "/Molecules");
 		
-		imageMetaDataDir.mkdirs();
+		metadataDir.mkdirs();
 		moleculesDir.mkdirs();
 
 		//We will generate the index as we save records...
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
-		ConcurrentMap<String, LinkedHashSet<String>> newImageMetadataTagIndex = new ConcurrentHashMap<>();
-		ConcurrentMap<String, String> newMoleculeImageMetadataUIDIndex = new ConcurrentHashMap<>();
+		ConcurrentMap<String, LinkedHashSet<String>> newMetadataTagIndex = new ConcurrentHashMap<>();
+		ConcurrentMap<String, String> newMoleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 		
 		//Let's also rebuild the parameter index stored in the archiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
@@ -936,11 +936,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		try {
-			forkJoinPool.submit(() -> imageMetadataIndex.parallelStream().forEach(metaUID -> { 
+			forkJoinPool.submit(() -> metadataIndex.parallelStream().forEach(metaUID -> { 
 	        	try {
-	        		I metaData = getImageMetadata(metaUID);
-	        		newImageMetadataTagIndex.put(metaUID, metaData.getTags());
-					saveImageMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/ImageMetadata"), metaData, jfactory);
+	        		I metaData = getMetadata(metaUID);
+	        		newMetadataTagIndex.put(metaUID, metaData.getTags());
+					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metaData, jfactory);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -950,7 +950,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
 	        	newTagIndex.put(UID, molecule.getTags());
-	        	newMoleculeImageMetadataUIDIndex.put(UID, molecule.getImageMetadataUID());
+	        	newMoleculeMetadataUIDIndex.put(UID, molecule.getMetadataUID());
 	        	
 	        	newParameterSet.addAll(molecule.getParameters().keySet());
 	        	newTagSet.addAll(molecule.getTags());
@@ -974,7 +974,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		if (virtual) {
 			this.tagIndex = newTagIndex;
-	    	this.moleculeImageMetadataUIDIndex = newMoleculeImageMetadataUIDIndex;
+	    	this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
 		}
 		
 		archiveProperties.setTagSet(newTagSet);
@@ -993,13 +993,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.flush();
 		stream.close();
 			
-		//Generate indexes file using moleculeIndex and imageMetadataIndex of current archive
-		//If the current archive is not virtual.. then tagIndex and moleculeImageMetadataUIDIndex
+		//Generate indexes file using moleculeIndex and metadataIndex of current archive
+		//If the current archive is not virtual.. then tagIndex and moleculeMetadataUIDIndex
 		//were never created.. So here we create local copies as we save records
 		//then we save the resulting indexes from the operation..
 		//this way virtual or in memory archive can both be saved no problem..
 		//In the case of saving virtual archives this method then re-indexes completely.
-		saveIndexes(virtualDirectory, moleculeIndex, imageMetadataIndex, newMoleculeImageMetadataUIDIndex, newImageMetadataTagIndex, newTagIndex, jfactory);
+		saveIndexes(virtualDirectory, moleculeIndex, metadataIndex, newMoleculeMetadataUIDIndex, newMetadataTagIndex, newTagIndex, jfactory);
 	}
 	
 	/**
@@ -1048,144 +1048,144 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Adds an ImageMetadata record to the archive. If an ImageMetadata record with 
+	 * Adds an metadata record to the archive. If a metadata record with 
 	 * the same UID is already in the archive, the record is updated.
 	 * 
-	 * All indexes are updated with the properties of the ImageMetadata record added.
+	 * All indexes are updated with the properties of the metadata record added.
 	 * 
-	 * @param metaData an ImageMetadata record to add or update.
+	 * @param metadata an metadata record to add or update.
 	 */
-	public void putImageMetadata(I metaData) {		
+	public void putMetadata(I metadata) {		
 		//If virtual we save the metadata to file
 		if (virtual) {
-			if (!virtualImageMetadataSet.contains(metaData.getUID())) {
-				synchronized(imageMetadataIndex) {	
-					imageMetadataIndex.add(metaData.getUID());
+			if (!virtualMetadataSet.contains(metadata.getUID())) {
+				synchronized(metadataIndex) {	
+					metadataIndex.add(metadata.getUID());
 				}
-				virtualImageMetadataSet.add(metaData.getUID());
-				archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+				virtualMetadataSet.add(metadata.getUID());
+				archiveProperties.setNumberOfMetadata(metadataIndex.size());
 			}
 			
 			try {
-				saveImageMetadataToFile(new File(file.getAbsolutePath() + "/ImageMetadata"), metaData, jfactory);
+				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"), metadata, jfactory);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			updateImageMetadataTagIndex(metaData);
+			updateMetadataTagIndex(metadata);
 		}
 		
-		if (!imageMetadata.containsKey(metaData.getUID())) {
+		if (!metadatas.containsKey(metadata.getUID())) {
 			//If the key is already in the map
 			//there is only one copy and all changes have already been saved
 			//otherwise, we add it as a new record.
-			synchronized(imageMetadataIndex) {	
-				imageMetadataIndex.add(metaData.getUID());
+			synchronized(metadataIndex) {	
+				metadataIndex.add(metadata.getUID());
 			}
-			metaData.setParent(this);
-			imageMetadata.put(metaData.getUID(), metaData);
-			archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+			metadata.setParent(this);
+			metadatas.put(metadata.getUID(), metadata);
+			archiveProperties.setNumberOfMetadata(metadataIndex.size());
 		}
 	}
 	
 	/**
-	 * The ImageMetadata record with the UID given is removed from the archive. 
+	 * The metadata record with the UID given is removed from the archive. 
 	 * All indexes are updated to reflect the change.
 	 * 
-	 * @param metaUID the UID of the ImageMetadata record to remove.
+	 * @param metaUID the UID of the metadata record to remove.
 	 */
-	public void removeImageMetadata(String metaUID) {
-		synchronized(imageMetadataIndex) {
-			imageMetadataIndex.remove(metaUID);
+	public void removeMetadata(String metaUID) {
+		synchronized(metadataIndex) {
+			metadataIndex.remove(metaUID);
 		}
 		if (virtual) {
-			File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
-			if (metaDataFile.exists())
-				metaDataFile.delete();
-			virtualImageMetadataSet.remove(metaUID);
+			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + ".json");
+			if (metadataFile.exists())
+				metadataFile.delete();
+			virtualMetadataSet.remove(metaUID);
 		} else {
-			imageMetadata.remove(metaUID);
+			metadatas.remove(metaUID);
 		}
 	}
 
 	/**
-	 * The ImageMetadata record given is removed from the archive. 
+	 * The Metadata record given is removed from the archive. 
 	 * All indexes are updated to reflect the change.
 	 * 
-	 * @param meta ImageMetadata record to remove.
+	 * @param meta Metadata record to remove.
 	 */
-	public void removeImageMetadata(I meta) {
-		removeImageMetadata(meta.getUID());
+	public void removeMetadata(I meta) {
+		removeMetadata(meta.getUID());
 	}
 	
 	/**
-	 * Retrieves an MARSImageMetadata record.
+	 * Retrieves an MarsMetadata record.
 	 * 
-	 * @param index The index of the MARSImageMetadata record to retrieve.
-	 * @return A MARSImageMetadata record.
+	 * @param index The index of the MarsMetadata record to retrieve.
+	 * @return A MarsMetadata record.
 	 */
-	public I getImageMetadata(int index) {
-		return getImageMetadata(imageMetadataIndex.get(index));
+	public I getMetadata(int index) {
+		return getMetadata(metadataIndex.get(index));
 	}
 	
 	/**
-	 * Retrieves a MarsImageMetadata record.
+	 * Retrieves a MarsMetadata record.
 	 * 
-	 * @param metaUID The UID of the MARSImageMetadata record to retrieve.
-	 * @return A MarsImageMetadata record.
+	 * @param metaUID The UID of the MarsMetadata record to retrieve.
+	 * @return A MarsMetadata record.
 	 */
-	public I getImageMetadata(String metaUID) {
+	public I getMetadata(String metaUID) {
 		if (virtual) {
-			if (imageMetadata.containsKey(metaUID))
-				return imageMetadata.get(metaUID);
+			if (metadatas.containsKey(metaUID))
+				return metadatas.get(metaUID);
 			else {
-				I metaData = null;
+				I metadata = null;
 				
 				if (!recordLocks.containsKey(metaUID))
 					recordLocks.put(metaUID, new ReentrantLock());
 				
 				recordLocks.get(metaUID).lock();
 				try {
-					File metaDataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + metaUID + ".json");
+					File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + ".json");
 					
 					//Need to be read/write to ensure lock but the file is only read here.
-					RandomAccessFile raf = new RandomAccessFile(metaDataFile, "rw");
+					RandomAccessFile raf = new RandomAccessFile(metadataFile, "rw");
 					FileLock fileLock = raf.getChannel().lock();
 					
 					JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 	
-					metaData = createImageMetadata(jParser);
+					metadata = createMetadata(jParser);
 	
 					fileLock.release();
 					raf.close();
 					jParser.close();
 				} catch (IOException e) {
-					addLogMessage("MarsImageMetadata record " + metaUID + " has been corrupted.");
+					logln("MarsMetadata record " + metaUID + " has been corrupted.");
 					recordLocks.get(metaUID).unlock();
 					return null;
 				} finally {
 					recordLocks.get(metaUID).unlock();
 				}
 					
-				if (metaData != null) {
-					metaData.setParent(this);
-					imageMetadata.put(metaData.getUID(), metaData);
+				if (metadata != null) {
+					metadata.setParent(this);
+					metadatas.put(metadata.getUID(), metadata);
 				}
 				
-				return metaData;
+				return metadata;
 			}
 		} else {
-			return imageMetadata.get(metaUID);
+			return metadatas.get(metaUID);
 		}
 	}
 	
 	/**
-	 * Retrieves the list of UIDs of all MARSImageMetadata records.
+	 * Retrieves the list of UIDs of all MarsMetadata records.
 	 * Useful for stream().forEach(...) operations.
 	 * 
-	 * @return The list of all MARImageMetadata UIDs.
+	 * @return The list of all MarsMetadata UIDs.
 	 */
-	public final ArrayList<String> getImageMetadataUIDs() {
-		return imageMetadataIndex;
+	public final ArrayList<String> getMetadataUIDs() {
+		return metadataIndex;
 	}
 	
 	/**
@@ -1198,12 +1198,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Number of MARSImageMetadata records in the MoleculeArchive.
+	 * Number of MarsMetadata records in the MoleculeArchive.
 	 * 
-	 * @return The integer number of MARSImageMetadata records.
+	 * @return The integer number of MarsMetadata records.
 	 */
-	public int getNumberOfImageMetadataRecords() {
-		return imageMetadataIndex.size();
+	public int getNumberOfMetadata() {
+		return metadataIndex.size();
 	}
 	
 	/**
@@ -1329,19 +1329,19 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Comma separated list of tags for the MARSImageMetadata record with the given UID.
+	 * Comma separated list of tags for the MarsMetadata record with the given UID.
 	 * 
-	 * @param UID The UID of the MARSImageMetadata record to retrieve the tag list for.
+	 * @param UID The UID of the MarsMetadata record to retrieve the tag list for.
 	 * @return A String containing a comma separated list of tags.
 	 */
-	public String getImageMetadataTagList(String UID) {
+	public String getMetadataTagList(String UID) {
 		LinkedHashSet<String> tags;
 		if (UID == null)
 			 return null;
 		else if (virtual) {
-			tags = imageMetadataTagIndex.get(UID);
+			tags = metadataTagIndex.get(UID);
 		} else {
-			tags = getImageMetadata(UID).getTags();
+			tags = getMetadata(UID).getTags();
 		}
 		
 		if (tags == null)
@@ -1356,13 +1356,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Tags for the MARSImageMetadata record with the given UID.
+	 * Tags for the MarsMetadata record with the given UID.
 	 * 
-	 * @param UID The UID of the MARSImageMetadata record to retrieve the tag list for.
-	 * @return The set of tags for the given MARSImageMetadata record.
+	 * @param UID The UID of the MarsMetadata record to retrieve the tag list for.
+	 * @return The set of tags for the given MarsMetadata record.
 	 */
-	public LinkedHashSet<String> getImageMetadataTagSet(String UID) {
-		return imageMetadataTagIndex.get(UID);
+	public LinkedHashSet<String> getMetadataTagSet(String UID) {
+		return metadataTagIndex.get(UID);
 	}
 	
 	/**
@@ -1401,23 +1401,23 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Saves a MARSImageMetadata record as a json file.
+	 * Saves a MarsMetadata record as a json file.
 	 * 
 	 * @param directory The directory to save the file in.
-	 * @param imageMetadata The MARSImageMetadata record to save.
+	 * @param metadata The MarsMetadata record to save.
 	 * @param jfactory the JsonFactory to use when saving. 
 	 * Determines if smile or text encoding is used.
 	 * 
-	 * @throws IOException if the MARSImageMetadata can't be saved to the file given.
+	 * @throws IOException if the MarsMetadata can't be saved to the file given.
 	 */
-	public void saveImageMetadataToFile(File directory, I imageMetadata, JsonFactory jfactory) throws IOException {
-		if (!recordLocks.containsKey(imageMetadata.getUID()))
-			recordLocks.put(imageMetadata.getUID(), new ReentrantLock());
+	public void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory) throws IOException {
+		if (!recordLocks.containsKey(metadata.getUID()))
+			recordLocks.put(metadata.getUID(), new ReentrantLock());
 		
-		recordLocks.get(imageMetadata.getUID()).lock();
+		recordLocks.get(metadata.getUID()).lock();
 		try {
-			File imageMetadataFile = new File(directory.getAbsolutePath() + "/" + imageMetadata.getUID() + ".json");
-			FileOutputStream stream = new FileOutputStream(imageMetadataFile);
+			File metadataFile = new File(directory.getAbsolutePath() + "/" + metadata.getUID() + ".json");
+			FileOutputStream stream = new FileOutputStream(metadataFile);
 			FileChannel channel = stream.getChannel();
 			
 			// Use the file channel to create a lock on the file.
@@ -1425,21 +1425,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        FileLock fileLock = channel.lock();
 	
 			JsonGenerator jGenerator = jfactory.createGenerator(stream);
-			imageMetadata.toJSON(jGenerator);
+			metadata.toJSON(jGenerator);
 
 			fileLock.release();
 			jGenerator.close();
 		} finally {
-			recordLocks.get(imageMetadata.getUID()).unlock();
+			recordLocks.get(metadata.getUID()).unlock();
 		}
 	}
 	
-	private void updateImageMetadataTagIndex(I metaData) {
+	private void updateMetadataTagIndex(I metadata) {
 		if (virtual) {
-			if (metaData.getTags().size() > 0) {
-				imageMetadataTagIndex.put(metaData.getUID(), metaData.getTags());
+			if (metadata.getTags().size() > 0) {
+				metadataTagIndex.put(metadata.getUID(), metadata.getTags());
 			} else {
-				imageMetadataTagIndex.remove(metaData.getUID());
+				metadataTagIndex.remove(metadata.getUID());
 			}
 		}
 	}
@@ -1519,23 +1519,23 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Check if a MARSImageMetadata record has a tag. This offers optimal
+	 * Check if a MarsMetadata record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
 	 * 
-	 * @param UID The UID of the MARSImageMetadata record to check for the tag.
+	 * @param UID The UID of the MarsMetadata record to check for the tag.
 	 * @param tag The tag to check for.
-	 * @return Returns true if the MARSImageMetadata record has the tag and false if not.
+	 * @return Returns true if the MarsMetadata record has the tag and false if not.
 	 */
-	public boolean imageMetadataHasTag(String UID, String tag) {
+	public boolean metadataHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (imageMetadataTagIndex.containsKey(UID) && imageMetadataTagIndex.get(UID).contains(tag))
+				if (metadataTagIndex.containsKey(UID) && metadataTagIndex.get(UID).contains(tag))
 					return true;
 				else
 					return false;
 			} else
-				return getImageMetadata(UID).hasTag(tag);
+				return getMetadata(UID).hasTag(tag);
 		}
 		return false;
 	}
@@ -1569,32 +1569,32 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Removes all MARSImageMetadata records with the tag provided.
+	 * Removes all MarsMetadata records with the tag provided.
 	 * 
-	 * @param tag MARSImageMetadata records with this tag will be removed.
+	 * @param tag MarsMetadata records with this tag will be removed.
 	 */
-	public void deleteImageMetadataRecordsWithTag(String tag) {
+	public void deleteMetadataRecordsWithTag(String tag) {
 		//We should do this with streams but for the moment this is faster
-		ArrayList<String> newImageMetadataIndex = new ArrayList<String>();
+		ArrayList<String> newMetadataIndex = new ArrayList<String>();
 		
-		for (String UID : imageMetadataIndex) {
-			I metaData = getImageMetadata(UID);
+		for (String UID : metadataIndex) {
+			I metaData = getMetadata(UID);
 			
-			if (imageMetadataHasTag(UID,tag)) {
+			if (metadataHasTag(UID,tag)) {
 				if (virtual) {
-					File imageMetadataFile = new File(file.getAbsolutePath() + "/ImageMetadata/" + UID + ".json");
-					if (imageMetadataFile.exists())
-						imageMetadataFile.delete();
-					virtualImageMetadataSet.remove(metaData.getUID());
+					File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + UID + ".json");
+					if (metadataFile.exists())
+						metadataFile.delete();
+					virtualMetadataSet.remove(metaData.getUID());
 				}
-				imageMetadataTagIndex.remove(UID);			
+				metadataTagIndex.remove(UID);			
 			} else {
-				newImageMetadataIndex.add(metaData.getUID());
+				newMetadataIndex.add(metaData.getUID());
 			}
 		}
 		
-		imageMetadataIndex = newImageMetadataIndex;
-		archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+		metadataIndex = newMetadataIndex;
+		archiveProperties.setNumberOfMetadata(metadataIndex.size());
 	}
 	
 	/**
@@ -1613,17 +1613,17 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Used to check if there is a MARSImageMetadata record with the UID given.
+	 * Used to check if there is a MarsMetadata record with the UID given.
 	 * 
-	 * @param UID Check for a MARSImageMetadata record with this UID.
-	 * @return True if the archive contains a MARSImageMetadata record 
+	 * @param UID Check for a MarsMetadata record with this UID.
+	 * @return True if the archive contains a MarsMetadata record 
 	 * with the provided UID and false if not.
 	 */
-	public boolean containsImageMetadataRecord(String UID) {
+	public boolean containsMetadata(String UID) {
 		if (virtual) {
-			return virtualImageMetadataSet.contains(UID);
+			return virtualMetadataSet.contains(UID);
 		} else {
-			return imageMetadata.containsKey(UID);
+			return metadatas.containsKey(UID);
 		}
 	}
 
@@ -1646,10 +1646,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
 				
 				if (!moleculeFile.exists()) {
-					addLogMessage("Molecule record " + UID + " cannot be found.");
+					logln("Molecule record " + UID + " cannot be found.");
 					return null;
 				} else if (moleculeFile.length() == 0) {
-					addLogMessage("Molecule record " + UID + " has been corrupted.");
+					logln("Molecule record " + UID + " has been corrupted.");
 					return null;
 				}
 				
@@ -1665,7 +1665,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				raf.close();
 				jParser.close();
 			} catch (IOException e) {
-				addLogMessage("Molecule record " + UID + " has been corrupted.");
+				logln("Molecule record " + UID + " has been corrupted.");
 				recordLocks.get(UID).unlock();
 				return null;
 			} finally {
@@ -1717,7 +1717,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return Molecule stream.
 	 */
 	public Stream<I> metadata() {
-		return this.imageMetadataIndex.stream().map(UID -> getImageMetadata(UID));
+		return this.metadataIndex.stream().map(UID -> getMetadata(UID));
 	}
 	
 	/**
@@ -1727,7 +1727,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return Molecule stream.
 	 */
 	public Stream<I> parallelMetadata() {
-		return this.imageMetadataIndex.parallelStream().map(UID -> getImageMetadata(UID));
+		return this.metadataIndex.parallelStream().map(UID -> getMetadata(UID));
 	}
 	
 	/**
@@ -1761,21 +1761,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Get the UID of the MarsImageMetadata for a molecule record. If 
+	 * Get the UID of the metadata for a molecule record. If 
 	 * working from a virtual store, this will use an index providing
 	 * optimal performance. If working in memory this is the same as
-	 * retrieving the molecule record and the ImageMetadata UID from 
+	 * retrieving the molecule record and the metadata UID from 
 	 * it directly.
 	 * 
-	 * @param UID The UID of the molecule to get the MARSImageMetadata UID for.
-	 * @return The UID string of the MARSImageMetadata record corresponding to the
+	 * @param UID The UID of the molecule to get the metadata UID for.
+	 * @return The UID string of the metadata record corresponding to the
 	 * molecule record whose UID was provided.
 	 */
-	public String getImageMetadataUIDforMolecule(String UID) {
+	public String getMetadataUIDforMolecule(String UID) {
 		if (virtual)
-			return moleculeImageMetadataUIDIndex.get(UID);
+			return moleculeMetadataUIDIndex.get(UID);
 		else 
-			return get(UID).getImageMetadataUID();
+			return get(UID).getMetadataUID();
 	}
 	
 	/**
@@ -1789,13 +1789,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Get the MarsImageMetadata UID at the provided index location.
+	 * Get the metadata UID at the provided index location.
 	 * 
-	 * @param index Retrieve the ImageMetadata UID at this index location.
-	 * @return The ImageMetadata UID at the index location provided.
+	 * @param index Retrieve the metadata UID at this index location.
+	 * @return The metadata UID at the index location provided.
 	 */
-	public String getImageMetadataUIDAtIndex(int index) {
-		return imageMetadataIndex.get(index);
+	public String getMetadataUIDAtIndex(int index) {
+		return metadataIndex.get(index);
 	}
 	
 	/**
@@ -1914,41 +1914,31 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * Add a log message to all metadata records. Used by Mars commands 
 	 * to keep a record of the sequence of processing steps during analysis.
 	 * 
-	 * @param message The String message to add to all MarsImageMetadata logs.
+	 * @param message The String message to add to all metadata logs.
 	 */
 	@Deprecated
 	public void addLogMessage(String message) {
-		for (String metaUID : imageMetadataIndex) {
-			if (virtual) {
-				I meta = getImageMetadata(metaUID);
-				meta.addLogMessage(message);
-				putImageMetadata(meta);
-			} else {
-				imageMetadata.get(metaUID).addLogMessage(message);
-			}
-		}
-		if (getWindow() != null)
-			getWindow().addLogMessage(message);
+		logln(message);
 	}
 	
 	/**
-	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * Add a log message to all metadata records. Used by Mars commands 
 	 * to keep a record of the sequence of processing steps during analysis. Start
 	 * a new line after adding the message.
 	 * 
-	 * @param message The String message to add to all MarsImageMetadata logs.
+	 * @param message The String message to add to all metadata logs.
 	 */
 	public void logln(String message) {
-		for (String metaUID : imageMetadataIndex) {
+		for (String metaUID : metadataIndex) {
 			if (virtual) {
-				I meta = getImageMetadata(metaUID);
+				I meta = getMetadata(metaUID);
 				meta.logln(message);
-				putImageMetadata(meta);
+				putMetadata(meta);
 			} else {
-				imageMetadata.get(metaUID).logln(message);
+				metadatas.get(metaUID).logln(message);
 			}
 		}
 		if (getWindow() != null)
@@ -1956,21 +1946,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Add a log message to all MarsImageMetadata records. Used by Mars commands 
+	 * Add a log message to all metadata records. Used by Mars commands 
 	 * to keep a record of the sequence of processing steps during analysis. Start
 	 * a new line after adding the message. Do not start a new line after adding 
 	 * the message.
 	 * 
-	 * @param message The String message to add to all MarsImageMetadata logs.
+	 * @param message The String message to add to all metadata logs.
 	 */
 	public void log(String message) {
-		for (String metaUID : imageMetadataIndex) {
+		for (String metaUID : metadataIndex) {
 			if (virtual) {
-				I meta = getImageMetadata(metaUID);
+				I meta = getMetadata(metaUID);
 				meta.log(message);
-				putImageMetadata(meta);
+				putMetadata(meta);
 			} else {
-				imageMetadata.get(metaUID).log(message);
+				metadatas.get(metaUID).log(message);
 			}
 		}
 		if (getWindow() != null)
@@ -2016,7 +2006,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void updateProperties() {
 		archiveProperties.setNumberOfMolecules(moleculeIndex.size());
-		archiveProperties.setNumImageMetadata(imageMetadataIndex.size());
+		archiveProperties.setNumberOfMetadata(metadataIndex.size());
 		
 		if (virtual) {
 			try {
@@ -2056,14 +2046,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public abstract P createProperties(JsonParser jParser) throws IOException;
 	
 	/**
-	 * Create MarsImageMetadata record using JsonParser stream.
+	 * Create MarsMetadata record using JsonParser stream.
 	 */
-	public abstract I createImageMetadata(JsonParser jParser) throws IOException;
+	public abstract I createMetadata(JsonParser jParser) throws IOException;
 	
 	/**
-	 * Create empty MarsImageMetadata record with the metaUID specified.
+	 * Create empty MarsMetadata record with the metaUID specified.
 	 */
-	public abstract I createImageMetadata(String metaUID);
+	public abstract I createMetadata(String metaUID);
 	
 	/**
 	 * Create empty Molecule record.

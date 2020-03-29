@@ -68,8 +68,8 @@ import de.mpg.biochem.mars.util.MarsUtil;
  * @author Karl Duderstadt
  */
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
-	//UID of ImageMetadata associated wit this molecule.
-	protected String imageMetadataUID;
+	//UID of metadata associated wit this molecule.
+	protected String metadataUID;
 	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
@@ -132,8 +132,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		//Add to output map
 		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (imageMetadataUID != null)
-				jGenerator.writeStringField("ImageMetadataUID", imageMetadataUID);
+			if (metadataUID != null)
+				jGenerator.writeStringField("ImageMetadataUID", metadataUID);
+	 	}, IOException.class));
+		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
+			if (metadataUID != null)
+				jGenerator.writeStringField("MetadataUID", metadataUID);
 	 	}, IOException.class));
 		outputMap.put("SegmentTables", MarsUtil.catchConsumerException(jGenerator -> {
 			if (segmentTables.size() > 0) {
@@ -158,10 +162,13 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		//Add to input map
 		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	imageMetadataUID = jParser.getText();
+	    	metadataUID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	imageMetadataUID = jParser.getText();
+	    	metadataUID = jParser.getText();
+		}, IOException.class));
+		inputMap.put("MetadataUID", MarsUtil.catchConsumerException(jParser -> {
+	    	metadataUID = jParser.getText();
 		}, IOException.class));
 		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
@@ -241,25 +248,25 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	}
 	
 	/**
-	 * Set the UID of the {@link MarsImageMetadata} record associated with
-	 * this molecule. The {@link MarsImageMetadata} contains information about
+	 * Set the UID of the {@link MarsMetadata} record associated with
+	 * this molecule. The {@link MarsMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
-	 * @param imageMetadataUID The new MarsImageMetadata UID to set.
+	 * @param MetadataUID The new MarsMetadata UID to set.
 	 */
-	public void setImageMetadataUID(String imageMetadataUID) {
-		this.imageMetadataUID = imageMetadataUID;
+	public void setMetadataUID(String metadataUID) {
+		this.metadataUID = metadataUID;
 	}
 	
 	/**
-	 * Get the UID of the {@link MarsImageMetadata} record associated with
-	 * this molecule. The {@link MarsImageMetadata} contains information about
+	 * Get the UID of the {@link MarsMetadata} record associated with
+	 * this molecule. The {@link MarsMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
-	 * @return Return a JSON string representation of the molecule.
+	 * @return Return UID string of the metadata record associated with this molecule.
 	 */
-	public String getImageMetadataUID() {
-		return imageMetadataUID;
+	public String getMetadataUID() {
+		return metadataUID;
 	}
 		
 	/**

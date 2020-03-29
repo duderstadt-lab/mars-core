@@ -45,7 +45,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**
- * Abstract superclass for storage of image metadata, which includes all information
+ * Abstract superclass for storage of metadata, which includes all information
  * about specific data collections, imaging settings, frame timing. Mapping of frames/slices
  * to actual real time. These records can also include readouts from other instruments connected
  * to microscopes.
@@ -62,7 +62,7 @@ import de.mpg.biochem.mars.util.MarsUtil;
  * </p>
  * @author Karl Duderstadt
  */
-public class AbstractMarsImageMetadata extends AbstractMarsRecord implements MarsImageMetadata {
+public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
 	//Processing log for the record
 	protected String log = "";
 
@@ -83,19 +83,19 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
     protected static JsonFactory jfactory = new JsonFactory();
     
     /**
-	 * Constructor for creating an empty MarsImageMetadata record. 
+	 * Constructor for creating an empty MarsMetadata record. 
 	 */
-    public AbstractMarsImageMetadata() {
+    public AbstractMarsMetadata() {
     	super();
     }
     
     /**
-	 * Constructor for creating an empty MarsImageMetadata record with the
+	 * Constructor for creating an empty MarsMetadata record with the
 	 * specified UID. 
 	 * 
 	 * @param UID The unique identifier for this record.
 	 */
-    public AbstractMarsImageMetadata(String UID) {
+    public AbstractMarsMetadata(String UID) {
     	super(UID);
     }
     
@@ -108,19 +108,19 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	 * @param dataTable The {@link MarsTable} to use for 
 	 * initialization.
 	 */
-    public AbstractMarsImageMetadata(String UID, MarsTable dataTable) {
+    public AbstractMarsMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	
     /**
-	 * Constructor for loading a MarsImageMetadata record from a file. Typically,
+	 * Constructor for loading a MarsMetadata record from a file. Typically,
 	 * used when streaming records into memory when loading a {@link MoleculeArchive}
 	 * or when a record is retrieved from the virtual store. 
 	 * 
 	 * @param jParser A JsonParser at the start of the record.
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
-	public AbstractMarsImageMetadata(JsonParser jParser) throws IOException {
+	public AbstractMarsMetadata(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
 	}
@@ -230,7 +230,7 @@ public class AbstractMarsImageMetadata extends AbstractMarsRecord implements Mar
 	/**
 	 * Get the record in Json string format.
 	 * 
-	 * @return Json string representation of the MarsImageMetadata record.
+	 * @return Json string representation of the MarsMetadata record.
 	 */
   	public String toJSONString() {
   		ByteArrayOutputStream stream = new ByteArrayOutputStream();

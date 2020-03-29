@@ -44,7 +44,7 @@ import de.mpg.biochem.mars.util.MarsUtil;
  * from Json. The subclass must then define an input and output Predicate maps that define
  * how objects, fields, arrays should be stored using the jackson streaming API. 
  * <p>
- * For examples, see {@link MarsRecord}, {@link AbstractMolecule}, {@link AbstractMarsImageMetadata}.
+ * For examples, see {@link MarsRecord}, {@link AbstractMolecule}, {@link AbstractMarsMetadata}.
  * </p>
  * @author Karl Duderstadt
  */

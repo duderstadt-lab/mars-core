@@ -138,14 +138,14 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	/**
 	 * Create SdmmImageMetadata record using JsonParser stream.
 	 */
-	public SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
 		return new SdmmImageMetadata(jParser);
 	}
 	
 	/**
 	 * Create empty SdmmImageMetadata record with the metaUID specified.
 	 */
-	public SdmmImageMetadata createImageMetadata(String metaUID) {
+	public SdmmImageMetadata createMetadata(String metaUID) {
 		return new SdmmImageMetadata(metaUID);
 	}
 	

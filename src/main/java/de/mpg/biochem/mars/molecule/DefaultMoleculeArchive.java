@@ -39,7 +39,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * 
  * @author Karl Duderstadt
  */
-public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsImageMetadata, DefaultMoleculeArchiveProperties> {
+public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsMetadata, DefaultMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty DefaultMoleculeArchive with the given name. 
@@ -128,17 +128,17 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	}
 	
 	/**
-	 * Create DefaultMarsImageMetadata record using JsonParser stream.
+	 * Create DefaultMarsMetadata record using JsonParser stream.
 	 */
-	public DefaultMarsImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
-		return new DefaultMarsImageMetadata(jParser);
+	public DefaultMarsMetadata createMetadata(JsonParser jParser) throws IOException {
+		return new DefaultMarsMetadata(jParser);
 	}
 	
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
-	public DefaultMarsImageMetadata createImageMetadata(String metaUID) {
-		return new DefaultMarsImageMetadata(metaUID);
+	public DefaultMarsMetadata createMetadata(String metaUID) {
+		return new DefaultMarsMetadata(metaUID);
 	}
 	
 	/**

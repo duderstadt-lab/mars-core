@@ -206,5 +206,5 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive);
+	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive);
 }

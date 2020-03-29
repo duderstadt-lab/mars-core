@@ -197,11 +197,11 @@ public class MergeCommand extends DynamicCommand {
 			
 			
 			//read in all MarsImageMetadata items from all archives - I hope they fit in memory :)
-			ArrayList<ArrayList<MarsImageMetadata>> allMetadataItems = new ArrayList<ArrayList<MarsImageMetadata>>();
+			ArrayList<ArrayList<MarsMetadata>> allMetadataItems = new ArrayList<ArrayList<MarsMetadata>>();
 			ArrayList<String> metaUIDs = new ArrayList<String>();
 			
 			for (JsonParser jParser :jParsers) {
-				ArrayList<MarsImageMetadata> imageMetaDataList = new ArrayList<MarsImageMetadata>();
+				ArrayList<MarsMetadata> imageMetaDataList = new ArrayList<MarsMetadata>();
 				try {
 					while (jParser.nextToken() != JsonToken.END_OBJECT) {
 						String fieldName = jParser.getCurrentName();
@@ -223,8 +223,8 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//Check for duplicate ImageMetadata items
-			for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
-				for (MarsImageMetadata metaItem : archiveMetaList) {
+			for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
+				for (MarsMetadata metaItem : archiveMetaList) {
 					String metaUID = metaItem.getUID();
 					if (metaUIDs.contains(metaUID)) {
 						logService.info("Duplicate ImageMetadata record " + metaUID + " found.");
@@ -260,8 +260,8 @@ public class MergeCommand extends DynamicCommand {
 				mergedProperties.toJSON(jGenerator);
 				
 				jGenerator.writeArrayFieldStart("ImageMetadata");
-				for (ArrayList<MarsImageMetadata> archiveMetaList : allMetadataItems) {
-					for (MarsImageMetadata metaItem : archiveMetaList) {
+				for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
+					for (MarsMetadata metaItem : archiveMetaList) {
 						metaItem.toJSON(jGenerator);
 					}
 				}	

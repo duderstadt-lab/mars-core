@@ -41,7 +41,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -73,7 +73,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
     
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String header =
@@ -133,7 +133,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 		
 		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+			MarsMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
 				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
@@ -227,7 +227,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private static HashMap<Double, Double> getSliceToColumnMap(MarsImageMetadata meta, String columnName, int from, int to) {
+	private static HashMap<Double, Double> getSliceToColumnMap(MarsMetadata meta, String columnName, int from, int to) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
 		MarsTable metaTable = meta.getDataTable();
@@ -240,7 +240,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return sliceToColumn;
 	}
 	
-	public static void correctDrift(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
+	public static void correctDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
 			String meta_y, String input_x, String input_y, String output_x, String output_y, boolean retainCoordinates) {
 			//Build log message
 			LogBuilder builder = new LogBuilder();
@@ -266,7 +266,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			HashMap<String, HashMap<Double, Double>> metaToMapY = new HashMap<String, HashMap<Double, Double>>();
 			
 			for (String metaUID : archive.getImageMetadataUIDs()) {
-				MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+				MarsMetadata meta = archive.getImageMetadata(metaUID);
 				if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
 					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
 					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
@@ -361,11 +361,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("correct original coordinates", String.valueOf(retainCoordinates));
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

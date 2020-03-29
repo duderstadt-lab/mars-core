@@ -44,7 +44,7 @@ import org.scijava.ui.UIService;
 import java.util.HashMap;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -77,7 +77,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="Column", choices = {"a", "b", "c"})
 	private String column;
@@ -147,11 +147,11 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	}
 	
 	//Getters and Setters
-	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

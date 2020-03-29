@@ -71,7 +71,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="X Column", choices = {"a", "b", "c"})
 	private String Xcolumn;
@@ -130,7 +130,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		if (region.equals("Defined in Metadata")) {
 			archive.getImageMetadataUIDs().parallelStream().forEach(metaUID -> {
-				MarsImageMetadata metadata = archive.getImageMetadata(metaUID);
+				MarsMetadata metadata = archive.getImageMetadata(metaUID);
 				if (metadata.hasRegion(regionName))
 					regionMap.put(metaUID, metadata.getRegion(regionName));
 			});

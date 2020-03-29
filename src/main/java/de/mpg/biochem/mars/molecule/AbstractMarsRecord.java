@@ -46,13 +46,13 @@ import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
 /**
- * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsImageMetadata}. 
+ * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsMetadata}. 
  * All {@link MarsRecord}s have a basic set of properties including a UID, Notes, 
  * Tags, Parameters, a {@link MarsTable}, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}
  * can also be serialized to and from Json.
  * <p>
  * This basic set of properties is extended for storage of molecule information and metadata information in
- * {@link Molecule}, {@link AbstractMolecule}, {@link MarsImageMetadata}, {@link AbstractMarsImageMetadata}.
+ * {@link Molecule}, {@link AbstractMolecule}, {@link MarsMetadata}, {@link AbstractMarsMetadata}.
  * </p>
  * @author Karl Duderstadt
  */
@@ -61,7 +61,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	protected String UID;
 	
 	//Reference to MoleculeArchive containing the record
-	protected MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> parent;
+	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
 	
 	//For any notes associated with the record
 	protected String Notes;
@@ -541,7 +541,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
+	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive) {
 		parent = archive;
 	}
 }

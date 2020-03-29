@@ -25,7 +25,7 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.kcp.KCP;
 import de.mpg.biochem.mars.kcp.Segment;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
@@ -59,7 +59,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 	    private UIService uiService;
 	    
 	    @Parameter(label="MoleculeArchive")
-	  	private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+	  	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
 	    
 	    @Parameter(label="X Column", choices = {"a", "b", "c"})
 		private String Xcolumn;
@@ -481,11 +481,11 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			//builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
 		}
 		
-		public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+		public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 			this.archive = archive;
 		}
 		
-		public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+		public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
 			return archive;
 		}
 		

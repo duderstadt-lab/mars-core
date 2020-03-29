@@ -45,7 +45,7 @@ import de.mpg.biochem.mars.util.MarsUtil;
  */
 public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConvertibleRecord implements MoleculeArchiveProperties {
 	protected int numberOfMolecules;
-	protected int numImageMetadata;
+	protected int numMetadata;
 	protected String comments;
 	
 	//Sets containing global indexes for various molecule properties.
@@ -54,7 +54,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected Set<String> moleculeDataTableColumnSet;
 	protected Set<ArrayList<String>> moleculeSegmentTableNames;
 	
-	protected MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> parent;
+	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
 	
 	/**
 	 * Creates an empty MoleculeArchiveProperties record. 
@@ -62,7 +62,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	public AbstractMoleculeArchiveProperties() {
 		super();
 		numberOfMolecules = 0;
-		numImageMetadata = 0;
+		numMetadata = 0;
 		comments = "";
 		
 		tagSet = ConcurrentHashMap.newKeySet();
@@ -96,8 +96,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
 		outputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jGenerator ->
 			jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), IOException.class));
-		outputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeNumberField("numImageMetadata", numImageMetadata), IOException.class));
+		outputMap.put("numberOfMetadata", MarsUtil.catchConsumerException(jGenerator ->
+			jGenerator.writeNumberField("numberOfMetadata", numMetadata), IOException.class));
 		outputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jGenerator -> {
 				if (moleculeDataTableColumnSet.size() > 0) {
 					jGenerator.writeFieldName("MoleculeDataTableColumnSet");
@@ -157,10 +157,13 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	        numberOfMolecules = jParser.getValueAsInt();
 		}, IOException.class));
 		inputMap.put("numImageMetaData", MarsUtil.catchConsumerException(jParser -> {
-	        numImageMetadata = jParser.getIntValue();
+	        numMetadata = jParser.getIntValue();
 		}, IOException.class));
 		inputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jParser -> {
-	        numImageMetadata = jParser.getIntValue();
+	        numMetadata = jParser.getIntValue();
+		}, IOException.class));
+		inputMap.put("numberOfMetadata", MarsUtil.catchConsumerException(jParser -> {
+	        numMetadata = jParser.getIntValue();
 		}, IOException.class));
 		inputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jParser -> {
 	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
@@ -224,7 +227,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public void merge(MoleculeArchiveProperties properties, String archiveName) {
 		this.numberOfMolecules += properties.getNumberOfMolecules();
-		this.numImageMetadata += properties.getNumImageMetadata();
+		this.numMetadata += properties.getNumberOfMetadata();
 		this.addComment("Comments from Merged Archive " + archiveName + ":\n" + properties.getComments() + "\n");
 		
 		addAllTags(properties.getTagSet());
@@ -280,7 +283,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	}
 	
 	/**
-	 * Remove a paramter name fron the set of unique molecule parameter names being used.
+	 * Remove a parameter name from the set of unique molecule parameter names being used.
 	 */
 	public void removeParameter(String parameter) {
 		tagSet.remove(parameter);
@@ -315,17 +318,17 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	}
 	
 	/**
-	 * Set the number of MarsImageMetadata records in the archive.
+	 * Set the number of MarsMetadata records in the archive.
 	 */
-	public void setNumImageMetadata(int numImageMetadata) {
-		this.numImageMetadata = numImageMetadata;
+	public void setNumberOfMetadata(int numMetadata) {
+		this.numMetadata = numMetadata;
 	}
 	
 	/**
-	 * Get the set of MarsImageMetadata records in the archive.
+	 * Get the number of MarsMetadata records in the archive.
 	 */
-	public int getNumImageMetadata() {
-		return numImageMetadata;
+	public int getNumberOfMetadata() {
+		return numMetadata;
 	}
 	
 	/**
@@ -422,7 +425,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	/**
 	 * Set the parent MoleculeArchive that these MoleculeArchiveProperties belong to.
 	 */
-	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive) {
+	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive) {
 		this.parent = archive;
 	}
 }

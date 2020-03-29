@@ -62,22 +62,22 @@ import de.mpg.biochem.mars.util.MarsRegion;
 public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	
 	/**
-	 * Set the UID of the {@link MarsImageMetadata} record associated with
-	 * this molecule. The {@link MarsImageMetadata} contains information about
+	 * Set the UID of the {@link MarsMetadata} record associated with
+	 * this molecule. The {@link MarsMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
-	 * @param imageMetadataUID The new MarsImageMetadata UID to set.
+	 * @param metadataUID The new metadata UID to set.
 	 */
-	void setImageMetadataUID(String imageMetadataUID);
+	void setMetadataUID(String metadataUID);
 	
 	/**
-	 * Get the UID of the {@link MarsImageMetadata} record associated with
-	 * this molecule. The {@link MarsImageMetadata} contains information about
+	 * Get the UID of the {@link MarsMetadata} record associated with
+	 * this molecule. The {@link MarsMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
 	 * @return Return a JSON string representation of the molecule.
 	 */
-	String getImageMetadataUID();
+	String getMetadataUID();
 		
 	/**
 	 * Add or update a Segments table ({@link MarsTable}) generated 

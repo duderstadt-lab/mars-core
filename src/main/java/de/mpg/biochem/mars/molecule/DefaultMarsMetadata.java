@@ -32,20 +32,20 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class DefaultMarsImageMetadata extends AbstractMarsImageMetadata {
-    public DefaultMarsImageMetadata() {
+public class DefaultMarsMetadata extends AbstractMarsMetadata {
+    public DefaultMarsMetadata() {
     	super();
     }
     
-    public DefaultMarsImageMetadata(String UID) {
+    public DefaultMarsMetadata(String UID) {
     	super(UID);
     }
     
-    public DefaultMarsImageMetadata(String UID, MarsTable dataTable) {
+    public DefaultMarsMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	
-	public DefaultMarsImageMetadata(JsonParser jParser) throws IOException {
+	public DefaultMarsMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
 }

@@ -96,7 +96,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+			MarsMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
 			} else {
@@ -157,7 +157,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//Could just use a list of maps, but I guess this is simplier below...
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getImageMetadataUIDs()) {
-			MarsImageMetadata meta = archive.getImageMetadata(metaUID);
+			MarsMetadata meta = archive.getImageMetadata(metaUID);
 			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
 			} else {
@@ -190,7 +190,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	    archive.addLogMessage("  ");
 	}
 	
-	private static HashMap<Double, Double> getSliceToTimeMap(MarsImageMetadata metadata) {
+	private static HashMap<Double, Double> getSliceToTimeMap(MarsMetadata metadata) {
 		HashMap<Double, Double> sliceToTime = new HashMap<Double, Double>();
 		
 		//First we retrieve columns from image metadata

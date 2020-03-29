@@ -45,7 +45,7 @@ import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.ImageProcessing.Peak;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -78,7 +78,7 @@ public class SegmentDistributionBuilder {
 	private boolean bootstrap_Segments = false;
 	private boolean bootstrap_Molecules = false;
 	
-	private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
 	private ArrayList<String> UIDs;
 	private String yColumnName, xColumnName;
 	
@@ -94,7 +94,7 @@ public class SegmentDistributionBuilder {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	public SegmentDistributionBuilder(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
+	public SegmentDistributionBuilder(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
 		this.archive = archive;
 		this.UIDs = UIDs;
 		this.yColumnName = yColumnName;

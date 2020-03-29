@@ -39,7 +39,7 @@ import de.mpg.biochem.mars.kcp.commands.SegmentDistributionBuilderCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
@@ -52,7 +52,7 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 
 /**
  * This class provides a simple region definition. Usually this a region in time or slice that is of interest
- * for further analysis. {@link Molecule}s and {@link MarsImageMetadata}s can contain a list of these regions, 
+ * for further analysis. {@link Molecule}s and {@link MarsMetadata}s can contain a list of these regions, 
  * which are used when running several commands including {@link KCPCommand}, {@link SigmaCalculatorCommand}, 
  * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link MSDCalculatorCommand}.
  * <p>

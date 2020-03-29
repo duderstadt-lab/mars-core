@@ -49,7 +49,7 @@ import de.mpg.biochem.mars.table.MarsTable;
  * </p>
  * @author Karl Duderstadt
  */
-public interface MarsImageMetadata extends JsonConvertibleRecord, MarsRecord {
+public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	/**
 	 * Set the name of the microscope used for data collection.

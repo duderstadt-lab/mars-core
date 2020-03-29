@@ -53,9 +53,9 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	int getNumberOfMolecules();
 	
-	void setNumImageMetadata(int numImageMetadata);
+	void setNumberOfMetadata(int numMetadata);
 	
-	int getNumImageMetadata();
+	int getNumberOfMetadata();
 	
 	void addColumn(String column);
 	
@@ -88,5 +88,5 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsImageMetadata, ? extends MoleculeArchiveProperties> archive);
+	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive);
 }

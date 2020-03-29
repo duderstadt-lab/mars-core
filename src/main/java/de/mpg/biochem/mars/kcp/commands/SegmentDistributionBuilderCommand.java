@@ -67,7 +67,7 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.kcp.SegmentDistributionBuilder;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsImageMetadata;
+import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -107,7 +107,7 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-  	private MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive;
+  	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
     
     @Parameter(label="Segments", choices = {"a", "b", "c"})
 	private String segmentsTableName;
@@ -283,11 +283,11 @@ public class SegmentDistributionBuilderCommand extends DynamicCommand implements
 		builder.addParameter("Tags", tags);
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
 	
-	public MoleculeArchive<Molecule, MarsImageMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
 		return archive;
 	}
 	

@@ -60,11 +60,11 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Sdm
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	public SdmmImageMetadata createImageMetadata(JsonParser jParser) throws IOException {
+	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
 		return new SdmmImageMetadata(jParser);
 	}
 	
-	public SdmmImageMetadata createImageMetadata(String metaUID) {
+	public SdmmImageMetadata createMetadata(String metaUID) {
 		return new SdmmImageMetadata(metaUID);
 	}
 	
