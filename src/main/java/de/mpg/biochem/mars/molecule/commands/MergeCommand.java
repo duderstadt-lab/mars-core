@@ -196,18 +196,18 @@ public class MergeCommand extends DynamicCommand {
 			log += LogBuilder.endBlock(true);
 			
 			
-			//read in all MarsImageMetadata items from all archives - I hope they fit in memory :)
+			//read in all MarsMetadata items from all archives - I hope they fit in memory :)
 			ArrayList<ArrayList<MarsMetadata>> allMetadataItems = new ArrayList<ArrayList<MarsMetadata>>();
 			ArrayList<String> metaUIDs = new ArrayList<String>();
 			
 			for (JsonParser jParser :jParsers) {
-				ArrayList<MarsMetadata> imageMetaDataList = new ArrayList<MarsMetadata>();
+				ArrayList<MarsMetadata> metadataList = new ArrayList<MarsMetadata>();
 				try {
 					while (jParser.nextToken() != JsonToken.END_OBJECT) {
 						String fieldName = jParser.getCurrentName();
-						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName)) {
+						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
-								imageMetaDataList.add(mergedArchiveType.createMetadata(jParser));
+								metadataList.add(mergedArchiveType.createMetadata(jParser));
 							}
 						}
 						
@@ -219,15 +219,15 @@ public class MergeCommand extends DynamicCommand {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				allMetadataItems.add(imageMetaDataList);
+				allMetadataItems.add(metadataList);
 			}
 			
-			//Check for duplicate ImageMetadata items
+			//Check for duplicate metadata items
 			for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
 				for (MarsMetadata metaItem : archiveMetaList) {
 					String metaUID = metaItem.getUID();
 					if (metaUIDs.contains(metaUID)) {
-						logService.info("Duplicate ImageMetadata record " + metaUID + " found.");
+						logService.info("Duplicate metadata record " + metaUID + " found.");
 						logService.info("Are you trying to merge copies of the same dataset?");
 						logService.info("Please resolve the conflict and run the merge command again.");
 						logService.info(LogBuilder.endBlock(false));
@@ -259,7 +259,7 @@ public class MergeCommand extends DynamicCommand {
 				jGenerator.writeFieldName("MoleculeArchiveProperties");
 				mergedProperties.toJSON(jGenerator);
 				
-				jGenerator.writeArrayFieldStart("ImageMetadata");
+				jGenerator.writeArrayFieldStart("Metadata");
 				for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
 					for (MarsMetadata metaItem : archiveMetaList) {
 						metaItem.toJSON(jGenerator);
