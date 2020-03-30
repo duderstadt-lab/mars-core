@@ -130,7 +130,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveDirectoryList) {
 				try {
-					archiveTypes.add(MarsUtil.getArchiveTypeFromStore(file));
+					archiveTypes.add(MarsUtil.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json")));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

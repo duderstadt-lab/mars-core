@@ -90,7 +90,7 @@ import org.scijava.table.*;
  * for storing single-molecule time-series data. Time-series data for each molecule in a dataset are 
  * stored in the form of {@link Molecule} records, which may also contain calculated parameters, tags, 
  * notes, and kinetic change point segments. These records are assigned a UID string at the time of creation.
- * This string provides univeral molecule uniqueness throughout all datasets. MoleculeArchives 
+ * This string provides universal molecule uniqueness throughout all datasets. MoleculeArchives 
  * contain a collection of molecule records associated with a given experimental condition or analysis 
  * pipeline.
  * <p>
