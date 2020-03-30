@@ -228,7 +228,8 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					moleculeIndex.add(UID);
 					virtualMoleculesSet.add(UID);
 					moleculeMetadataUIDIndex.put(UID, archive.getMetadataUIDforMolecule(UID));
-					tagIndex.put(UID, archive.getTagSet(UID));
+					if (archive.getTagSet(UID) != null)	
+						tagIndex.put(UID, archive.getTagSet(UID));
 				}
 				
 				for (String metaUID : archive.getMetadataUIDs()) {
