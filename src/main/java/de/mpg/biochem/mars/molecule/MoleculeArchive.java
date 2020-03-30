@@ -263,30 +263,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	LinkedHashSet<String> getMetadataTagSet(String UID);
 	
 	/**
-	 * Saves a molecule record as a json file.
-	 * 
-	 * @param directory The directory to save the file in.
-	 * @param molecule The molecule record to save.
-	 * @param jfactory the JsonFactory to use when saving. 
-	 * Determines if smile or text encoding is used.
-	 * 
-	 * @throws IOException if the molecule can't be saved to the file given.
-	 */
-	void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException;
-	
-	/**
-	 * Saves a metadata record as a json file.
-	 * 
-	 * @param directory The directory to save the file in.
-	 * @param imageMetadata The metadata record to save.
-	 * @param jfactory the JsonFactory to use when saving. 
-	 * Determines if smile or text encoding is used.
-	 * 
-	 * @throws IOException if the MARSImageMetadata can't be saved to the file given.
-	 */
-	void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory) throws IOException;
-	
-	/**
 	 * Check if a molecule record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
@@ -379,15 +355,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to 
-	 * iterate over all molecules using forEach. Deprecated - use molecules() instead.
-	 * 
-	 * @return Molecule stream.
-	 */
-	@Deprecated
-	public Stream<M> stream();
-	
-	/**
-	 * Convenience method to retrieve a Molecule stream. Can be used to 
 	 * iterate over all molecules using forEach.
 	 * 
 	 * @return Molecule stream.
@@ -409,16 +376,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return Molecule stream.
 	 */
 	public Stream<I> parallelMetadata();
-	
-	/**
-	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
-	 * iterate over all molecules using forEach in a multithreaded manner. Deprecated
-	 * use parallelMolecules() instead.
-	 * 
-	 * @return Molecule stream.
-	 */
-	@Deprecated
-	public Stream<M> parallelStream();
 	
 	/**
 	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 

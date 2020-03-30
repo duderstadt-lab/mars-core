@@ -1375,7 +1375,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
-	public void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException {
+	protected void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException {
 		if (!recordLocks.containsKey(molecule.getUID()))
 			recordLocks.put(molecule.getUID(), new ReentrantLock());
 		
@@ -1410,7 +1410,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @throws IOException if the MarsMetadata can't be saved to the file given.
 	 */
-	public void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory) throws IOException {
+	protected void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory) throws IOException {
 		if (!recordLocks.containsKey(metadata.getUID()))
 			recordLocks.put(metadata.getUID(), new ReentrantLock());
 		
@@ -1695,17 +1695,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return Molecule stream.
 	 */
-	@Deprecated
-	public Stream<M> stream() {
-		return this.moleculeIndex.stream().map(UID -> get(UID));
-	}
-	
-	/**
-	 * Convenience method to retrieve a Molecule stream. Can be used to 
-	 * iterate over all molecules using forEach.
-	 * 
-	 * @return Molecule stream.
-	 */
 	public Stream<M> molecules() {
 		return this.moleculeIndex.stream().map(UID -> get(UID));
 	}
@@ -1728,17 +1717,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public Stream<I> parallelMetadata() {
 		return this.metadataIndex.parallelStream().map(UID -> getMetadata(UID));
-	}
-	
-	/**
-	 * Convenience method to retrieve a multithreated Molecule stream. Can be used to 
-	 * iterate over all molecules using forEach in a multithreaded manner.
-	 * 
-	 * @return Molecule stream.
-	 */
-	@Deprecated
-	public Stream<M> parallelStream() {
-		return this.moleculeIndex.parallelStream().map(UID -> get(UID));
 	}
 	
 	/**
