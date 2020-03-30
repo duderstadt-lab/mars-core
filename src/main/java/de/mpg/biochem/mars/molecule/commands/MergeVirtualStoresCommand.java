@@ -200,9 +200,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
-				jGenerator.writeStartObject();
 				mergedProperties.toJSON(jGenerator);
-				jGenerator.writeEndObject();
 				jGenerator.close();
 				
 				stream.flush();
