@@ -95,7 +95,7 @@ public class MergeCommand extends DynamicCommand {
 	public void run() {				
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Merge Archives");
+		String log = LogBuilder.buildTitleBlock("Merge Archives");
 		builder.addParameter("Directory", directory.getAbsolutePath());
 		builder.addParameter("Use smile encoding", String.valueOf(smileEncoding));
 		log += builder.buildParameterList();
