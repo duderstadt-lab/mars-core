@@ -81,6 +81,8 @@ import org.scijava.table.DoubleColumn;
 import io.scif.img.IO;
 import io.scif.img.ImgIOException;
 
+import org.scijava.widget.NumberWidget;
+
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Polygon;
@@ -191,6 +193,9 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
 	private boolean preview = false;
 	
+	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+	private int previewSlice;
+	
 	//PEAK FITTER
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String PeakFitterMessage =
@@ -298,8 +303,12 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 		
 		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 		imgHeight.setValue(this, rect.height);
-
+		
+		final MutableModuleItem<Integer> preSlice = getInfo().getMutableInput("previewSlice", Integer.class);
+		preSlice.setValue(this, image.getCurrentSlice());
+		preSlice.setMaximumValue(image.getStackSize());
 	}
+	
 	@Override
 	public void run() {				
 		image.deleteRoi();
@@ -672,6 +681,7 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 	@Override
 	public void preview() {
 		if (preview) {
+			image.setSlice(previewSlice);
 			image.deleteRoi();
 			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
