@@ -93,14 +93,14 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public void removeArchive(String title) {
-		if (objectService.getObjects(MoleculeArchive.class).contains(getArchive(title))) {
+		if (contains(title)) {
 			objectService.removeObject(getArchive(title));
 			objectService.removeObject(displayService.getDisplay(title));
 		}
 	}
 	
 	public void removeArchive(MoleculeArchive archive) {
-		if (objectService.getObjects(MoleculeArchive.class).contains(archive)) {
+		if (contains(archive)) {
 			objectService.removeObject(archive);
 			objectService.removeObject(displayService.getDisplay(archive.getName()));
 		}
@@ -156,6 +156,10 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public boolean contains(String name) {
 		return getArchives().stream().anyMatch(archive -> archive.getName().equals(name));
+	}
+	
+	public boolean contains(MoleculeArchive archive) {
+		return getArchives().stream().anyMatch(a -> a.equals(archive));
 	}
 	
 	public MoleculeArchive<?,?,?> getArchive(String name) {
