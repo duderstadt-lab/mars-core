@@ -172,6 +172,15 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 	@Parameter(label="Minimum distance between peaks (in pixels)")
 	private int minimumDistance;
 	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
+	private boolean preview = false;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private String slicePeakCount = "count: 0";
+	
+	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+	private int previewSlice;
+	
 	@Parameter(label="Find Negative Peaks")
 	private boolean findNegativePeaks = false;
 	
@@ -189,12 +198,6 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 	
 	@Parameter(label="Process all slices")
 	private boolean allSlices;
-
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
-	private boolean preview = false;
-	
-	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
-	private int previewSlice;
 	
 	//PEAK FITTER
 	@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -557,10 +560,10 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 
 	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
 			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
-	        
+
 	        // Do the DoG filtering using ImageJ Ops
 	        opService.filter().dog(dog, converted, sigma2, sigma1);
-	        
+
 	        filteredImage = ImageJFunctions.wrap(dog, "dog Images");
 		}
 		
@@ -679,13 +682,14 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 	}
 	
 	@Override
-	public void preview() {
+	public void preview() {	
 		if (preview) {
 			image.setSlice(previewSlice);
 			image.deleteRoi();
 			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
 			
+			final MutableModuleItem<String> preSliceCount = getInfo().getMutableInput("slicePeakCount", String.class);
 			if (!peaks.isEmpty()) {
 				Polygon poly = new Polygon();
 				
@@ -697,6 +701,11 @@ public class DogPeakFinderCommand<T extends RealType< T >> extends DynamicComman
 				
 				PointRoi peakRoi = new PointRoi(poly);
 				image.setRoi(peakRoi);
+				
+				
+				preSliceCount.setValue(this, "count: " + peaks.size());
+			} else {
+				preSliceCount.setValue(this, "count: 0");
 			}
 		}
 	}
