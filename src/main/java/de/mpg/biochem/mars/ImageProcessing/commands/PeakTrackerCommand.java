@@ -62,6 +62,7 @@ import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
 import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,6 +72,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+
 import org.scijava.table.DoubleColumn;
 import io.scif.img.IO;
 import io.scif.img.ImgIOException;
@@ -90,6 +93,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
@@ -98,15 +102,15 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class, label = "Peak Tracker", menu = {
+@Plugin(type = Command.class, label = "Dog Peak Tracker", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
-		@Menu(label = "Peak Tracker", weight = 10, mnemonic = 'd')})
-public class FinderFitterTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
+		@Menu(label = "Peak Tracker", weight = 10, mnemonic = 'p')})
+public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED
 		@Parameter(required=false)
 		private RoiManager roiManager;
@@ -119,6 +123,9 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 	    
 		@Parameter
 	    private MarsTableService resultsTableService;
+		
+	    @Parameter
+	    private OpService opService;
 		
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
@@ -144,14 +151,17 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 		private int height;
 		
 		//PEAK FINDER SETTINGS
-		@Parameter(label="Use Discoidal Averaging Filter")
-		private boolean useDiscoidalAveragingFilter;
+		@Parameter(label="Use Median Filter")
+		private boolean useMedianFilter;
 		
-		@Parameter(label="Inner radius")
-		private int DS_innerRadius;
+		@Parameter(label="Median Filter radius")
+		private long medianFilterRadius;
 		
-		@Parameter(label="Outer radius")
-		private int DS_outerRadius;
+		@Parameter(label="Use Dog Filter")
+		private boolean useDogFilter;
+		
+		@Parameter(label="Dog Filter radius")
+		private double dogFilterRadius;
 		
 		@Parameter(label="Detection threshold (mean + N * STD)")
 		private double threshold;
@@ -348,11 +358,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
     			imageFormat = "None";
 			}
 			
-			if (useDiscoidalAveragingFilter) {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
-		    } else {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
-		    }
+		    finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
 			
 			vary = new boolean[5];
 			vary[0] = PeakFitter_varyBaseline;
@@ -546,7 +552,7 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			
 			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor), slice));
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor.duplicate()), slice));
 			
 			//After fitting some peaks may have moved within the mininmum distance
 			//So we remove these always favoring the ones having lower fit error in x and y
@@ -557,11 +563,37 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 
 		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
 			ArrayList<Peak> peaks;
+
+			ImagePlus filteredImage = imp.duplicate();
+			
+			Img< T > copy = (Img< T >)ImagePlusAdapter.wrap( filteredImage );
+			
+			if (useMedianFilter) {
+				HyperSphereShape shape = new HyperSphereShape(medianFilterRadius);
+
+				opService.filter().median(copy, (Img< T >)ImagePlusAdapter.wrap( imp ), shape);	
+		    }
+			
+			if (useDogFilter) {
+				// Convert image to FloatType for better numeric precision
+		        Img<FloatType> converted = opService.convert().float32(copy);
+
+		        // Create the filtering result
+		        Img<FloatType> dog = opService.create().img(converted);
+
+		        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
+				final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
+		        
+		        // Do the DoG filtering using ImageJ Ops
+		        opService.filter().dog(dog, converted, sigma2, sigma1);
+		        
+		        filteredImage = ImageJFunctions.wrap(dog, "dog Images");
+			}
 			
 			if (useROI) {
-		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, width, height), slice);
+		    	peaks = finder.findPeaks(filteredImage, new Roi(x0, y0, width, height), slice);
 			} else {
-				peaks = finder.findPeaks(imp, slice);
+				peaks = finder.findPeaks(filteredImage, slice);
 			}
 			
 			if (peaks == null)
@@ -760,9 +792,10 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			builder.addParameter("ROI y0", String.valueOf(y0));
 			builder.addParameter("ROI w", String.valueOf(width));
 			builder.addParameter("ROI h", String.valueOf(height));
-			builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
-			builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
-			builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
+			builder.addParameter("Use Median Filter", String.valueOf(useMedianFilter));
+			builder.addParameter("Median Filter radius", String.valueOf(medianFilterRadius));
+			builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
+			builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
 			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
 			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
@@ -847,28 +880,20 @@ public class FinderFitterTrackerCommand<T extends RealType< T >> extends Dynamic
 			return height;
 		}
 		
-		public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
-			this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+		public void setUseMedianFiler(boolean useMedianFilter) {
+			this.useMedianFilter = useMedianFilter;
 		}
 		
-		public boolean getUseDiscoidalAveragingFilter() {
-			return useDiscoidalAveragingFilter;
+		public void setMedianFilterRadius(long medianFilterRadius) {
+			this.medianFilterRadius = medianFilterRadius;
 		}
 		
-		public void setInnerRadius(int DS_innerRadius) {
-			this.DS_innerRadius = DS_innerRadius;
+		public void setUseDogFiler(boolean useDogFilter) {
+			this.useDogFilter = useDogFilter;
 		}
 		
-		public int getInnerRadius() {
-			return DS_innerRadius;
-		}
-		
-		public void setOuterRadius(int DS_outerRadius) {
-			this.DS_outerRadius = DS_outerRadius;
-		}
-		
-		public int getOuterRadius() {
-			return DS_outerRadius;
+		public void setDogFilterRadius(double dogFilterRadius) {
+			this.dogFilterRadius = dogFilterRadius;
 		}
 		
 		public void setThreshold(int threshold) {

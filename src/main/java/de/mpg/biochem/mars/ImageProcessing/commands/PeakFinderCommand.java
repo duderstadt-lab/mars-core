@@ -81,6 +81,8 @@ import org.scijava.table.DoubleColumn;
 import io.scif.img.IO;
 import io.scif.img.ImgIOException;
 
+import org.scijava.widget.NumberWidget;
+
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Polygon;
@@ -93,6 +95,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
@@ -100,15 +103,18 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
-@Plugin(type = Command.class, label = "Peak Finder", menu = {
+import net.imagej.ops.OpService;
+
+@Plugin(type = Command.class, label = "Dog Peak Finder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
-		@Menu(label = "Peak Finder", weight = 1, mnemonic = 'd')})
+		@Menu(label = "Peak Finder", weight = 1, mnemonic = 'p')})
 public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable, Previewable {
 	
 	//GENERAL SERVICES NEEDED
@@ -123,6 +129,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
     
 	@Parameter
     private MarsTableService resultsTableService;
+	
+    @Parameter
+    private OpService opService;
 	
 	//INPUT IMAGE
 	@Parameter(label = "Image to search for Peaks")
@@ -145,20 +154,32 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private int height;
 	
 	//PEAK FINDER SETTINGS
-	@Parameter(label="Use Discoidal Averaging Filter")
-	private boolean useDiscoidalAveragingFilter;
+	@Parameter(label="Use Median Filter")
+	private boolean useMedianFilter;
 	
-	@Parameter(label="Inner radius")
-	private int DS_innerRadius;
+	@Parameter(label="Median Filter radius")
+	private long medianFilterRadius;
 	
-	@Parameter(label="Outer radius")
-	private int DS_outerRadius;
+	@Parameter(label="Use Dog Filter")
+	private boolean useDogFilter;
+	
+	@Parameter(label="Dog Filter radius")
+	private double dogFilterRadius;
 	
 	@Parameter(label="Detection threshold (mean + N * STD)")
 	private double threshold;
 	
 	@Parameter(label="Minimum distance between peaks (in pixels)")
 	private int minimumDistance;
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
+	private boolean preview = false;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private String slicePeakCount = "count: 0";
+	
+	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+	private int previewSlice;
 	
 	@Parameter(label="Find Negative Peaks")
 	private boolean findNegativePeaks = false;
@@ -177,9 +198,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	@Parameter(label="Process all slices")
 	private boolean allSlices;
-
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
-	private boolean preview = false;
 	
 	//PEAK FITTER
 	@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -288,8 +306,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 		imgHeight.setValue(this, rect.height);
-
+		
+		final MutableModuleItem<Integer> preSlice = getInfo().getMutableInput("previewSlice", Integer.class);
+		preSlice.setValue(this, image.getCurrentSlice());
+		preSlice.setMaximumValue(image.getStackSize());
 	}
+	
 	@Override
 	public void run() {				
 		image.deleteRoi();
@@ -297,7 +319,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Peak Finder");
+		String log = LogBuilder.buildTitleBlock("Peak Finder");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -516,16 +538,39 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	public ArrayList<Peak> findPeaks(ImagePlus imp) {
 		ArrayList<Peak> peaks;
 		
-		if (useDiscoidalAveragingFilter) {
-	    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
-	    } else {
-	    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
+		finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
+		
+		ImagePlus filteredImage = imp.duplicate();
+		
+		Img< T > copy = (Img< T >)ImagePlusAdapter.wrap( filteredImage );
+		
+		if (useMedianFilter) {
+			HyperSphereShape shape = new HyperSphereShape(medianFilterRadius);
+
+			opService.filter().median(copy, (Img< T >)ImagePlusAdapter.wrap( imp ), shape);
+			
 	    }
 		
+		if (useDogFilter) {
+			// Convert image to FloatType for better numeric precision
+	        Img<FloatType> converted = opService.convert().float32(copy);
+
+	        // Create the filtering result
+	        Img<FloatType> dog = opService.create().img(converted);
+
+	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
+			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
+
+	        // Do the DoG filtering using ImageJ Ops
+	        opService.filter().dog(dog, converted, sigma2, sigma1);
+
+	        filteredImage = ImageJFunctions.wrap(dog, "dog Images");
+		}
+		
 		if (useROI) {
-	    	peaks = finder.findPeaks(imp, new Roi(x0, y0, width, height));
+	    	peaks = finder.findPeaks(filteredImage, new Roi(x0, y0, width, height));
 		} else {
-			peaks = finder.findPeaks(imp);
+			peaks = finder.findPeaks(filteredImage);
 		}
 		
 		if (peaks == null)
@@ -637,12 +682,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	}
 	
 	@Override
-	public void preview() {
+	public void preview() {	
 		if (preview) {
+			image.setSlice(previewSlice);
 			image.deleteRoi();
 			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
 			
+			final MutableModuleItem<String> preSliceCount = getInfo().getMutableInput("slicePeakCount", String.class);
 			if (!peaks.isEmpty()) {
 				Polygon poly = new Polygon();
 				
@@ -654,6 +701,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				
 				PointRoi peakRoi = new PointRoi(poly);
 				image.setRoi(peakRoi);
+				
+				
+				preSliceCount.setValue(this, "count: " + peaks.size());
+			} else {
+				preSliceCount.setValue(this, "count: 0");
 			}
 		}
 	}
@@ -679,9 +731,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("ROI y0", String.valueOf(y0));
 		builder.addParameter("ROI width", String.valueOf(width));
 		builder.addParameter("ROI height", String.valueOf(height));
-		builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
-		builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
-		builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
+		builder.addParameter("Use Median Filter", String.valueOf(useMedianFilter));
+		builder.addParameter("Median Filter radius", String.valueOf(medianFilterRadius));
+		builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
+		builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
 		builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
@@ -762,30 +815,22 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return height;
 	}
 	
-	public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
-		this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+	public void setUseMedianFiler(boolean useMedianFilter) {
+		this.useMedianFilter = useMedianFilter;
 	}
 	
-	public boolean getUseDiscoidalAveragingFilter() {
-		return useDiscoidalAveragingFilter;
+	public void setMedianFilterRadius(long medianFilterRadius) {
+		this.medianFilterRadius = medianFilterRadius;
 	}
 	
-	public void setInnerRadius(int DS_innerRadius) {
-		this.DS_innerRadius = DS_innerRadius;
+	public void setUseDogFiler(boolean useDogFilter) {
+		this.useDogFilter = useDogFilter;
 	}
 	
-	public int getInnerRadius() {
-		return DS_innerRadius;
+	public void setDogFilterRadius(double dogFilterRadius) {
+		this.dogFilterRadius = dogFilterRadius;
 	}
-	
-	public void setOuterRadius(int DS_outerRadius) {
-		this.DS_outerRadius = DS_outerRadius;
-	}
-	
-	public int getOuterRadius() {
-		return DS_outerRadius;
-	}
-	
+
 	public void setThreshold(int threshold) {
 		this.threshold = threshold;
 	}

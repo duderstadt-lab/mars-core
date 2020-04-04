@@ -113,7 +113,7 @@ import net.imglib2.img.ImagePlusAdapter;
 		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "BigData Peak Tracker", weight = 10, mnemonic = 'd')})
-public class BigDataFinderFitterTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
+public class BigDataPeakTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED
 		@Parameter(required=false)
 		private RoiManager roiManager;
