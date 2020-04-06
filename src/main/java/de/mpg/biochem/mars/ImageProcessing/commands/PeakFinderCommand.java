@@ -208,7 +208,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Fit Radius")
 	private int fitRadius = 4;
 	
-	@Parameter(label="Minimum R2")
+	@Parameter(label="Minimum R-squared")
 	private double RsquaredMin = 0;
 	
 	//Which columns to write in peak table

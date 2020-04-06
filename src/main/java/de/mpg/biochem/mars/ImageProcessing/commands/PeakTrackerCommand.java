@@ -188,7 +188,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Fit Radius")
 		private int fitRadius = 4;
 		
-		@Parameter(label="Minimum R2")
+		@Parameter(label="Minimum R-squared")
 		private double RsquaredMin = 0;
 		
 		@Parameter(label="Verbose fit output")
