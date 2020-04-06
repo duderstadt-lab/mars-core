@@ -583,7 +583,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				
 				if (peak.isValid()) {
 					peak.setValues(p);
-					peak.setErrorValues(e);
+					peak.setRsquared(Rsquared);
 					
 					//Integrate intensity
 					if (integrate) {

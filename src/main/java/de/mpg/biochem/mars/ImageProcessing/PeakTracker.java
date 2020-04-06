@@ -372,7 +372,7 @@ public class PeakTracker {
 				table.set(6, row, peak.getIntensity());
 				table.set(7, row, (double)slice);
 			} else {
-				table.set(8, row, (double)slice);
+				table.set(6, row, (double)slice);
 			}
 		} else {
 			table.set(0, row, peak.getX());
