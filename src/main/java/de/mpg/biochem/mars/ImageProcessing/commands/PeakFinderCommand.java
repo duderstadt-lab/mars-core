@@ -157,12 +157,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private int height;
 	
 	//PEAK FINDER SETTINGS
-	//@Parameter(label="Use Median Filter")
-	//private boolean useMedianFilter = false;
-	
-	//@Parameter(label="Median Filter radius")
-	//private long medianFilterRadius = 3;
-	
+
 	@Parameter(label="Use DoG filter")
 	private boolean useDogFilter = true;
 	
@@ -184,8 +179,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
 	private int previewSlice;
 	
-	//@Parameter(label="Find Negative Peaks")
-	//private boolean findNegativePeaks = false;
+	@Parameter(label="Find Negative Peaks")
+	private boolean findNegativePeaks = false;
 	
 	@Parameter(label="Generate peak count table")
 	private boolean generatePeakCountTable;
@@ -226,10 +221,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	@Parameter(label="Peaks", type = ItemIO.OUTPUT)
 	private MarsTable peakTable;
-	
-	//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
-	//private PeakFinder finder;
-	//private DogPeakFinder finder;
 	
 	//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
 	private PeakFitter fitter;
@@ -294,21 +285,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		if (fitPeaks) {
 			boolean[] vary = new boolean[5];
-			vary[0] = true;//PeakFitter_varyBaseline;
-			vary[1] = true;//PeakFitter_varyHeight;
+			vary[0] = true;
+			vary[1] = true;
 			vary[2] = true;
 			vary[3] = true;
-			vary[4] = true;//PeakFitter_varySigma;
+			vary[4] = true;
 			
 			fitter = new PeakFitter(vary);
-			
-			//maxError = new double[5];
-			//maxError[0] = PeakFitter_maxErrorBaseline;
-			//maxError[1] = PeakFitter_maxErrorHeight;
-			//maxError[2] = PeakFitter_maxErrorX;
-			//maxError[3] = PeakFitter_maxErrorY;
-			//maxError[4] = PeakFitter_maxErrorSigma;
-
 		}
 		
 		double starttime = System.currentTimeMillis();
@@ -502,17 +485,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance);
 		
-		//ImagePlus copy = imp.duplicate();
-		
-		//Img< T > filteredImage = (Img< T >)ImagePlusAdapter.wrap( copy );
-		
-		//if (useMedianFilter) {
-		//	HyperSphereShape shape = new HyperSphereShape(medianFilterRadius);
-
-		//	opService.filter().median(filteredImage, (Img< T >)ImagePlusAdapter.wrap( imp ), shape);
-			
-	    //}
-		
 		if (useDogFilter) {
 			// Convert image to FloatType for better numeric precision
 	        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
@@ -525,6 +497,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 
 	        // Do the DoG filtering using ImageJ Ops
 	        opService.filter().dog(dog, converted, sigma2, sigma1);
+	        
+			if (findNegativePeaks) {
+				Img<FloatType> inverted = opService.create().img(dog);
+				opService.image().invert(inverted, dog);
+				dog = inverted;
+			}
 
 	        if (useROI) {
 		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
@@ -532,10 +510,20 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				peaks = finder.findPeaks(dog);
 			}
 		} else {
-			if (useROI) {
-		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+			if (findNegativePeaks) {
+				Img<FloatType> inverted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
+				opService.image().invert(inverted, inverted);
+				if (useROI) {
+			    	peaks = finder.findPeaks(inverted, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+				} else {
+					peaks = finder.findPeaks(inverted);
+				}
 			} else {
-				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
+				if (useROI) {
+			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+				} else {
+					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
+				}
 			}
 		}
 		
@@ -563,7 +551,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			p[4] = dogFilterRadius/2;
 			double[] e = new double[5];
 			
-			fitter.fitPeak(imp, p, e, false);
+			fitter.fitPeak(imp, p, e, findNegativePeaks);
 			
 			// First we reset valid since it was set to false for all peaks
 			// during the finding step to avoid finding the same peak twice.
@@ -759,13 +747,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("ROI y0", String.valueOf(y0));
 		builder.addParameter("ROI width", String.valueOf(width));
 		builder.addParameter("ROI height", String.valueOf(height));
-		//builder.addParameter("Use Median Filter", String.valueOf(useMedianFilter));
-		//builder.addParameter("Median Filter radius", String.valueOf(medianFilterRadius));
 		builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
 		builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-		//builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
+		builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
 		builder.addParameter("Generate peak count table", String.valueOf(generatePeakCountTable));
 		builder.addParameter("Generate peak table", String.valueOf(generatePeakTable));
 		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
@@ -855,13 +841,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return minimumDistance;
 	}
 	
-	//public void setFindNegativePeaks(boolean findNegativePeaks) {
-	//	this.findNegativePeaks = findNegativePeaks;
-	//}
+	public void setFindNegativePeaks(boolean findNegativePeaks) {
+		this.findNegativePeaks = findNegativePeaks;
+	}
 	
-	//public boolean getFindNegativePeaks() {
-	//	return findNegativePeaks;
-	//}
+	public boolean getFindNegativePeaks() {
+		return findNegativePeaks;
+	}
 	
 	public void setGeneratePeakCountTable(boolean generatePeakCountTable) {
 		this.generatePeakCountTable = generatePeakCountTable;

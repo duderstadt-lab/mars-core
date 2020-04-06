@@ -41,7 +41,7 @@ import net.imglib2.KDTree;
 
 public class DogPeakFinder<T extends RealType<T>> {
 	
-	private double threshold = 6;
+	private double threshold = 46;
 	private int minimumDistance = 8;
 	
 	public DogPeakFinder(double threshold, int minimumDistance) {
@@ -68,8 +68,8 @@ public class DogPeakFinder<T extends RealType<T>> {
 	
 	public ArrayList<Peak> findPeaks(Img<T> image, FinalInterval interval, int slice) {
 		
-		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>();
-
+		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>(); 
+		
 		Cursor< T > roiCursor = Views.interval( image, interval ).cursor();
 		
 		while (roiCursor.hasNext()) {

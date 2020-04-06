@@ -57,7 +57,7 @@ public class PeakTracker {
 	double[] maxDifference;
 	boolean[] ckMaxDifference;
 	int minTrajectoryLength;
-	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "x", "y", "sigma", "R2"};
 	double searchRadius;
 	boolean PeakFitter_writeEverything = false;
 	boolean writeIntegration = false;
@@ -216,10 +216,6 @@ public class PeakTracker {
 					}
 				}
 			}
-			
-			//Added to try and help with memory issues - does it help?
-			//slicePossibleLinks.remove(slice);
-			//KDTreeStack.remove(slice);
 		}
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
@@ -367,20 +363,16 @@ public class PeakTracker {
 		int row = table.getRowCount() - 1;
 		if (PeakFitter_writeEverything) {
 			table.set(0, row, peak.getBaseline());
-			table.set(1, row, peak.getBaselineError());
-			table.set(2, row, peak.getHeight());
-			table.set(3, row, peak.getHeightError());
-			table.set(4, row, peak.getX());
-			table.set(5, row, peak.getXError());
-			table.set(6, row, peak.getY());
-			table.set(7, row, peak.getYError());
-			table.set(8, row, peak.getSigma());
-			table.set(9, row, peak.getSigmaError());
+			table.set(1, row, peak.getHeight());
+			table.set(2, row, peak.getX());
+			table.set(3, row, peak.getY());
+			table.set(4, row, peak.getSigma());
+			table.set(5, row, peak.getRSquared());
 			if (writeIntegration) {
-				table.set(10, row, peak.getIntensity());
-				table.set(11, row, (double)slice);
+				table.set(6, row, peak.getIntensity());
+				table.set(7, row, (double)slice);
 			} else {
-				table.set(10, row, (double)slice);
+				table.set(8, row, (double)slice);
 			}
 		} else {
 			table.set(0, row, peak.getX());

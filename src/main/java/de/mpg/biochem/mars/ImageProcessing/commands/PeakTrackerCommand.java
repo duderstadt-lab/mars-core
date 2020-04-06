@@ -53,6 +53,7 @@ import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
 import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
@@ -154,13 +155,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="ROI height", persist=false)
 		private int height;
 		
-		//PEAK FINDER SETTINGS
-		//@Parameter(label="Use Median Filter")
-		//private boolean useMedianFilter = false;
-		
-		//@Parameter(label="Median Filter radius")
-		//private long medianFilterRadius;
-		
+		//PEAK FINDER SETTINGS		
 		@Parameter(label="Use DoG filter")
 		private boolean useDogFilter = true;
 		
@@ -182,8 +177,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
 		private int previewSlice;
 		
-		//@Parameter(label="Find negative peaks")
-		//private boolean findNegativePeaks = false;
+		@Parameter(label="Find negative peaks")
+		private boolean findNegativePeaks = false;
 		
 		//PEAK FITTER
 		@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -193,46 +188,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Fit Radius")
 		private int fitRadius = 4;
 		
-		//Initial guesses for fitting
-		//@Parameter(label="Initial Baseline")
-		//private double PeakFitter_initialBaseline = Double.NaN;
-		
-		//@Parameter(label="Initial Height")
-		//private double PeakFitter_initialHeight = Double.NaN;
-		
-		//@Parameter(label="Initial Sigma")
-		//private double PeakFitter_initialSigma = Double.NaN;
-		
-		//parameters to vary during fit
-		
-		//@Parameter(label="Vary Baseline")
-		//private boolean PeakFitter_varyBaseline = true;
-		
-		//@Parameter(label="Vary Height")
-		//private boolean PeakFitter_varyHeight = true;
-		
-		//@Parameter(label="Vary Sigma")
-		//private boolean PeakFitter_varySigma = true;
-		
-		//Check the maximal allowed error for the fitting process.
-		@Parameter(label="Filter by Max Error")
-		private boolean PeakFitter_maxErrorFilter = true;
-		
-		//Maximum allow error for the fitting process
-		@Parameter(label="Max Error Baseline")
-		private double PeakFitter_maxErrorBaseline = 5000;
-		
-		@Parameter(label="Max Error Height")
-		private double PeakFitter_maxErrorHeight = 5000;
-		
-		@Parameter(label="Max Error X")
-		private double PeakFitter_maxErrorX = 1;
-		
-		@Parameter(label="Max Error Y")
-		private double PeakFitter_maxErrorY = 1;
-		
-		@Parameter(label="Max Error Sigma")
-		private double PeakFitter_maxErrorSigma = 1;
+		@Parameter(label="Minimum R2")
+		private double RsquaredMin = 0;
 		
 		@Parameter(label="Verbose fit output")
 		private boolean PeakFitter_writeEverything = false;
@@ -242,29 +199,11 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private final String trackerTitle =
 			"Peak tracker settings:";
 		
-		//@Parameter(label="Check Max Difference Baseline")
-		//private boolean PeakTracker_ckMaxDifferenceBaseline = false;
-		
-		//@Parameter(label="Max Difference Baseline")
-		//private double PeakTracker_maxDifferenceBaseline = 5000;
-		
-		//@Parameter(label="Check Max Difference Height")
-		//private boolean PeakTracker_ckMaxDifferenceHeight = false;
-		
-		//@Parameter(label="Max Difference Height")
-		//private double PeakTracker_maxDifferenceHeight = 5000;
-		
 		@Parameter(label="Max Difference X")
 		private double PeakTracker_maxDifferenceX = 1;
 		
 		@Parameter(label="Max Difference Y")
 		private double PeakTracker_maxDifferenceY = 1;
-		
-		//@Parameter(label="Check Max Difference Sigma")
-		//private boolean PeakTracker_ckMaxDifferenceSigma = false;
-		
-		//@Parameter(label="Max Difference Sigma")
-		//private double PeakTracker_maxDifferenceSigma = 1;
 		
 		@Parameter(label="Max Difference Slice")
 		private int PeakTracker_maxDifferenceSlice = 1;
@@ -295,9 +234,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 		private SingleMoleculeArchive archive;
 		
-		//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
-		//private DogPeakFinder finder;
-		
 		//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
 		private PeakFitter fitter;
 		
@@ -321,12 +257,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		//array for max error margins.
 		private double[] maxDifference;
-		private double[] maxError;
 		private boolean[] ckMaxDifference;
-		private boolean[] vary;
 		
 		//For peak integration
-		private ArrayList<int[]> fitRegionOffsets;
 		private ArrayList<int[]> innerOffsets;
 		private ArrayList<int[]> outerOffsets;
 		
@@ -375,23 +308,16 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
     			imageFormat = "None";
 			}
 			
-			vary = new boolean[5];
-			vary[0] = true;//PeakFitter_varyBaseline;
-			vary[1] = true;//PeakFitter_varyHeight;
+			boolean[] vary = new boolean[5];
+			vary[0] = true;
+			vary[1] = true;
 			vary[2] = true;
 			vary[3] = true;
-			vary[4] = true;//PeakFitter_varySigma;
+			vary[4] = true;
 			
 			fitter = new PeakFitter(vary);
 			
 			BuildOffsets();
-			
-			maxError = new double[5];
-			maxError[0] = PeakFitter_maxErrorBaseline;
-			maxError[1] = PeakFitter_maxErrorHeight;
-			maxError[2] = PeakFitter_maxErrorX;
-			maxError[3] = PeakFitter_maxErrorY;
-			maxError[4] = PeakFitter_maxErrorSigma;
 			
 			//Build log
 			LogBuilder builder = new LogBuilder();
@@ -461,17 +387,17 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    
 		    //Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
-		    maxDifference[0] = Double.NaN;//PeakTracker_maxDifferenceBaseline;
-		    maxDifference[1] = Double.NaN;//PeakTracker_maxDifferenceHeight;
+		    maxDifference[0] = Double.NaN;
+		    maxDifference[1] = Double.NaN;
 		    maxDifference[2] = PeakTracker_maxDifferenceX;
 			maxDifference[3] = PeakTracker_maxDifferenceY;
-			maxDifference[4] = Double.NaN;//PeakTracker_maxDifferenceSigma;
+			maxDifference[4] = Double.NaN;
 			maxDifference[5] = PeakTracker_maxDifferenceSlice;
 			
 			ckMaxDifference = new boolean[3];
-			ckMaxDifference[0] = false;//PeakTracker_ckMaxDifferenceBaseline;
-			ckMaxDifference[1] = false;//PeakTracker_ckMaxDifferenceHeight;
-			ckMaxDifference[2] = false;//PeakTracker_ckMaxDifferenceSigma;
+			ckMaxDifference[0] = false;
+			ckMaxDifference[1] = false;
+			ckMaxDifference[2] = false;
 		    
 		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, logService);
 		    
@@ -544,17 +470,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					}
 				}
 			}
-			
-			fitRegionOffsets = new ArrayList<int[]>();
-			
-			for (int y = -fitRadius; y <= fitRadius; y++) {
-				for (int x = -fitRadius; x <= fitRadius; x++) {
-					int[] pos = new int[2];
-					pos[0] = x;
-					pos[1] = y;
-					fitRegionOffsets.add(pos);
-				}
-			}
 		}
 		
 		private ArrayList<Peak> findPeaksInSlice(int slice) {
@@ -564,8 +479,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			//IT IS REALLY IMPORTANT THAT THE LABEL IS RETRIEVED 
 			//RIGHT AFTER RUNNING GET PROCESSOR ON THE SAME SLICE
 			//The get processor method will load in all the info
-			//Then the getSliceLabel will retreive it
-			//If you are working in virtual memtory the slice label won't be set properly until
+			//Then the getSliceLabel will retrieve it
+			//If you are working in virtual memory the slice label won't be set properly until
 			//the get Processor method has been run...
 			
 			//First we add the header information to the metadata map 
@@ -591,17 +506,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance);
 			
-			//ImagePlus copy = imp.duplicate();
-			
-			//Img< T > filteredImage = (Img< T >)ImagePlusAdapter.wrap( copy );
-			
-			//if (useMedianFilter) {
-			//	HyperSphereShape shape = new HyperSphereShape(medianFilterRadius);
-
-			//	opService.filter().median(filteredImage, (Img< T >)ImagePlusAdapter.wrap( imp ), shape);
-				
-		    //}
-			
 			if (useDogFilter) {
 				// Convert image to FloatType for better numeric precision
 		        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
@@ -615,16 +519,32 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        // Do the DoG filtering using ImageJ Ops
 		        opService.filter().dog(dog, converted, sigma2, sigma1);
 
+		        if (findNegativePeaks) {
+					Img<FloatType> inverted = opService.create().img(dog);
+					opService.image().invert(inverted, dog);
+					dog = inverted;
+				}
+
 		        if (useROI) {
-			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), slice);
+			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
 				} else {
-					peaks = finder.findPeaks(dog, slice);
+					peaks = finder.findPeaks(dog);
 				}
 			} else {
-				if (useROI) {
-			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), slice);
+				if (findNegativePeaks) {
+					Img<FloatType> inverted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
+					opService.image().invert(inverted, inverted);
+					if (useROI) {
+				    	peaks = finder.findPeaks(inverted, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+					} else {
+						peaks = finder.findPeaks(inverted);
+					}
 				} else {
-					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), slice);
+					if (useROI) {
+				    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+					} else {
+						peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
+					}
 				}
 			}
 			
@@ -640,52 +560,42 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			int fitWidth = fitRadius * 2 + 1;
 			
-			//Need to read in initial guess values
-			//Also, need to read out fit results back into peak
-			
 			for (Peak peak: positionList) {
 				
 				imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
 				
-				double PeakFitter_initialBaseline = Double.MAX_VALUE;
-				double PeakFitter_initialHeight = Double.MIN_VALUE;
-				
-				for (int[] offset: fitRegionOffsets) {
-					double value = (double)getPixelValue(imp, (int)(peak.getX() + 0.5) + offset[0], (int)(peak.getY() + 0.5) + offset[1], rect);
-					if (value < PeakFitter_initialBaseline)
-						PeakFitter_initialBaseline = value;
-					if (value > PeakFitter_initialHeight)
-						PeakFitter_initialHeight = value;
-				}
-				
 				double[] p = new double[5];
-				p[0] = PeakFitter_initialBaseline;
-				p[1] = PeakFitter_initialHeight;
+				p[0] = Double.NaN;
+				p[1] = Double.NaN;
 				p[2] = peak.getX();
 				p[3] = peak.getY();
 				p[4] = dogFilterRadius/2;
 				double[] e = new double[5];
 				
-				fitter.fitPeak(imp, p, e);
+				fitter.fitPeak(imp, p, e, findNegativePeaks);
 				
 				// First we reset valid since it was set to false for all peaks
 				// during the finding step to avoid finding the same peak twice.
 				peak.setValid();
 				
 				for (int i = 0; i < p.length && peak.isValid(); i++) {
-					if (Double.isNaN(p[i]) || Double.isNaN(e[i]) || Math.abs(e[i]) > maxError[i])
+					if (Double.isNaN(p[i]))
 						peak.setNotValid();
 				}
-				
+
 				//If the x, y, sigma values are negative reject the peak
 				//but we can have negative height p[0] or baseline p[1]
 				if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 					peak.setNotValid();
 				}
 				
-				//Force all peaks to be valid... If we are not checking error
-				if (!PeakFitter_maxErrorFilter)
-					peak.setValid();
+				double Rsquared = -1;
+				if (peak.isValid() && RsquaredMin > 0) {
+					Gaussian2D gauss = new Gaussian2D(p);
+					Rsquared = calcR2(gauss, imp);
+					if (Rsquared <= RsquaredMin)
+						peak.setNotValid();
+				}
 				
 				if (peak.isValid()) {
 					peak.setValues(p);
@@ -702,6 +612,37 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				}
 			}
 			return newList;
+		}
+		
+		private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
+			double SSres = 0;
+			double SStot = 0;
+			double mean = 0;
+			double count = 0;
+			
+			Rectangle roi = imp.getRoi();
+			
+			//First determine mean
+			for (int y = roi.y; y < roi.y + roi.height; y++) {
+				for (int x = roi.x; x < roi.x + roi.width; x++) {
+					mean += (double)getPixelValue(imp, x, y, rect);
+					count++;
+				}
+			}
+			
+			mean = mean/count;
+			
+			for (int y = roi.y; y < roi.y + roi.height; y++) {
+				for (int x = roi.x; x < roi.x + roi.width; x++) {
+					double value = (double)getPixelValue(imp, x, y, rect);
+					SStot += (value - mean)*(value - mean);
+					
+					double prediction = gauss.getValue(x, y);
+					SSres += (value - prediction)*(value - prediction);
+				}
+			}
+			
+			return 1 - SSres / SStot;
 		}
 		
 		private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
@@ -846,7 +787,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					PointRoi peakRoi = new PointRoi(poly);
 					image.setRoi(peakRoi);
 					
-					
 					preSliceCount.setValue(this, "count: " + peaks.size());
 				} else {
 					preSliceCount.setValue(this, "count: 0");
@@ -875,35 +815,16 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("ROI y0", String.valueOf(y0));
 			builder.addParameter("ROI w", String.valueOf(width));
 			builder.addParameter("ROI h", String.valueOf(height));
-			//builder.addParameter("Use Median Filter", String.valueOf(useMedianFilter));
-			//builder.addParameter("Median Filter radius", String.valueOf(medianFilterRadius));
 			builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
 			builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
 			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-			//builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
+			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
 			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-			//builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
-			//builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));
-			//builder.addParameter("Initial Sigma", String.valueOf(PeakFitter_initialSigma));
-			//builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
-			//builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
-			//builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
-			builder.addParameter("Filter by Max Error", String.valueOf(this.PeakFitter_maxErrorFilter));
-			builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
-			builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
-			builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
-			builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
-			builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
+			builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
 			builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
-			//builder.addParameter("Check Max Difference Baseline", String.valueOf(PeakTracker_ckMaxDifferenceBaseline));
-			//builder.addParameter("Max Difference Baseline", String.valueOf(PeakTracker_maxDifferenceBaseline));
-			//builder.addParameter("Check Max Difference Height", String.valueOf(PeakTracker_ckMaxDifferenceHeight));
-			//builder.addParameter("Max Difference Height", String.valueOf(PeakTracker_maxDifferenceHeight));
 			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
 			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
-			//builder.addParameter("Check Max Difference Sigma", String.valueOf(PeakTracker_ckMaxDifferenceSigma));
-			//builder.addParameter("Max Difference Sigma", String.valueOf(PeakTracker_maxDifferenceSigma));
 			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));
 			builder.addParameter("Min trajectory length", String.valueOf(PeakTracker_minTrajectoryLength));
 			builder.addParameter("Microscope", microscope);
@@ -963,14 +884,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return height;
 		}
 		
-		//public void setUseMedianFiler(boolean useMedianFilter) {
-		//	this.useMedianFilter = useMedianFilter;
-		//}
-		
-		//public void setMedianFilterRadius(long medianFilterRadius) {
-		//	this.medianFilterRadius = medianFilterRadius;
-		//}
-		
 		public void setUseDogFiler(boolean useDogFilter) {
 			this.useDogFilter = useDogFilter;
 		}
@@ -995,13 +908,13 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return minimumDistance;
 		}
 		
-		//public void setFindNegativePeaks(boolean findNegativePeaks) {
-		//	this.findNegativePeaks = findNegativePeaks;
-		//}
+		public void setFindNegativePeaks(boolean findNegativePeaks) {
+			this.findNegativePeaks = findNegativePeaks;
+		}
 		
-		//public boolean getFindNegativePeaks() {
-		//	return findNegativePeaks;
-		//}
+		public boolean getFindNegativePeaks() {
+			return findNegativePeaks;
+		}
 		
 		public void setFitRadius(int fitRadius) {
 			this.fitRadius = fitRadius;
@@ -1010,101 +923,13 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public int getFitRadius() {
 			return fitRadius;
 		}
-		/*
-		public void setInitialBaseline(double PeakFitter_initialBaseline) {
-			this.PeakFitter_initialBaseline = PeakFitter_initialBaseline;
+		
+		public void setMinimumRsquared(double Rsquared) {
+			this.RsquaredMin = Rsquared;
 		}
 		
-		public double getInitialBaseline() {
-			return PeakFitter_initialBaseline;
-		}
-		
-		public void setInitialHeight(double PeakFitter_initialHeight) {
-			this.PeakFitter_initialHeight = PeakFitter_initialHeight;
-		}
-		
-		public double getInitialHeight() {
-			return PeakFitter_initialHeight;
-		}
-		
-		public void setInitialSigma(double PeakFitter_initialSigma) {
-			this.PeakFitter_initialSigma = PeakFitter_initialSigma;
-		}
-		
-		public double getInitialSigma() {
-			return PeakFitter_initialSigma;
-		}
-		
-		public void setVaryBaseline(boolean PeakFitter_varyBaseline) {
-			this.PeakFitter_varyBaseline = PeakFitter_varyBaseline;
-		}
-		
-		public boolean getVaryBaseline() {
-			return PeakFitter_varyBaseline;
-		}
-		
-		public void setVaryHeight(boolean PeakFitter_varyHeight) {
-			this.PeakFitter_varyHeight = PeakFitter_varyHeight;
-		}
-		
-		public boolean getVaryHeight() {
-			return PeakFitter_varyHeight;
-		}
-		
-		public void setVarySigma(boolean PeakFitter_varySigma) {
-			this.PeakFitter_varySigma = PeakFitter_varySigma;
-		}
-		
-		public boolean getVarySigma() {
-			return PeakFitter_varySigma;
-		}
-		*/
-		public void setMaxErrorFilter(boolean PeakFitter_maxErrorFilter) {
-			this.PeakFitter_maxErrorFilter = PeakFitter_maxErrorFilter;
-		}
-		
-		public boolean getMaxErrorFilter() {
-			return PeakFitter_maxErrorFilter;
-		}
-		
-		public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {
-			this.PeakFitter_maxErrorBaseline = PeakFitter_maxErrorBaseline;
-		}
-		
-		public double getMaxErrorBaseline() {
-			return PeakFitter_maxErrorBaseline;
-		}
-		
-		public void setMaxErrorHeight(double PeakFitter_maxErrorHeight) {
-			this.PeakFitter_maxErrorHeight = PeakFitter_maxErrorHeight;
-		}
-		
-		public double getMaxErrorHeight() {
-			return PeakFitter_maxErrorHeight;
-		}
-		
-		public void setMaxErrorX(double PeakFitter_maxErrorX) {
-			this.PeakFitter_maxErrorX = PeakFitter_maxErrorX;
-		}
-		
-		public double getMaxErrorX() {
-			return PeakFitter_maxErrorX;
-		}
-
-		public void setMaxErrorY(double PeakFitter_maxErrorY) {
-			this.PeakFitter_maxErrorY = PeakFitter_maxErrorY;
-		}
-		
-		public double getMaxErrorY() {
-			return PeakFitter_maxErrorY;
-		}
-		
-		public void setMaxErrorSigma(double PeakFitter_maxErrorSigma) {
-			this.PeakFitter_maxErrorSigma = PeakFitter_maxErrorSigma;
-		}
-		
-		public double getMaxErrorSigma() {
-			return PeakFitter_maxErrorSigma;
+		public double getMinimumRsquared() {
+			return RsquaredMin;
 		}
 		
 		public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
@@ -1114,38 +939,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public boolean getVerboseFitOutput() {
 			return PeakFitter_writeEverything;
 		}
-		
-		//public void setCheckMaxDifferenceBaseline(boolean PeakTracker_ckMaxDifferenceBaseline) {
-		//	this.PeakTracker_ckMaxDifferenceBaseline = PeakTracker_ckMaxDifferenceBaseline; 
-		//}
-		
-		//public boolean getCheckMaxDifferenceBaseline() {
-		//	return PeakTracker_ckMaxDifferenceBaseline; 
-		//}
-		
-		//public void setMaxDifferenceBaseline(double PeakTracker_maxDifferenceBaseline) {
-		//	this.PeakTracker_maxDifferenceBaseline = PeakTracker_maxDifferenceBaseline; 
-		//}
-		
-		//public double getMaxDifferenceBaseline() {
-		//	return PeakTracker_maxDifferenceBaseline; 
-		//}
-		
-		//public void setCheckMaxDifferenceHeight(boolean PeakTracker_ckMaxDifferenceHeight) {
-		//	this.PeakTracker_ckMaxDifferenceHeight = PeakTracker_ckMaxDifferenceHeight; 
-		//}
-		
-		//public boolean getCheckMaxDifferenceHeight() {
-		//	return PeakTracker_ckMaxDifferenceHeight; 
-		//}
-		
-		//public void setMaxDifferenceHeight(double PeakTracker_maxDifferenceHeight) {
-		//	this.PeakTracker_maxDifferenceHeight = PeakTracker_maxDifferenceHeight; 
-		//}
-		
-		//public double getMaxDifferenceHeight() {
-		//	return PeakTracker_maxDifferenceHeight; 
-		//}
 		
 		public void setMaxDifferenceX(double PeakTracker_maxDifferenceX) {
 			this.PeakTracker_maxDifferenceX = PeakTracker_maxDifferenceX;
@@ -1162,22 +955,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public double getMaxDifferenceY() {
 			return PeakTracker_maxDifferenceY;
 		}
-		
-		//public void setCheckMaxDifferenceSigma(boolean PeakTracker_ckMaxDifferenceSigma) {
-		//	this.PeakTracker_ckMaxDifferenceSigma = PeakTracker_ckMaxDifferenceSigma;
-		//}
-
-		//public boolean getCheckMaxDifferenceSigma() {
-		//	return PeakTracker_ckMaxDifferenceSigma;
-		//}
-		
-		//public void setMaxDifferenceSigma(double PeakTracker_maxDifferenceSigma) {
-		//	this.PeakTracker_maxDifferenceSigma = PeakTracker_maxDifferenceSigma;
-		//}
-		
-		//public double getMaxDifferenceSigma() {
-		//	return PeakTracker_maxDifferenceSigma;
-		//}
 		
 		public void setMaxDifferenceSlice(int PeakTracker_maxDifferenceSlice) {
 			this.PeakTracker_maxDifferenceSlice = PeakTracker_maxDifferenceSlice;
