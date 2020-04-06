@@ -48,7 +48,7 @@ public class Peak implements RealLocalizable {
 	
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
-	double pixelValue;
+	double pixelValue, Rsquared;
 	
 	double intensity;
 	boolean valid = true;
@@ -170,15 +170,11 @@ public class Peak implements RealLocalizable {
 	
 	public void addToColumnsVerbose(ArrayList<DoubleColumn> columns) {
 		columns.get(0).add(baseline);
-		columns.get(1).add(baselineError);
-		columns.get(2).add(height);
-		columns.get(3).add(heightError);
-		columns.get(4).add(x);
-		columns.get(5).add(xError);
-		columns.get(6).add(y);
-		columns.get(7).add(yError);
-		columns.get(8).add(sigma);
-		columns.get(9).add(sigmaError);
+		columns.get(1).add(height);
+		columns.get(2).add(x);
+		columns.get(3).add(y);
+		columns.get(4).add(sigma);
+		columns.get(5).add(Rsquared);
 	}
 	
 	//used for pixel sort in the peak finder
@@ -219,6 +215,14 @@ public class Peak implements RealLocalizable {
 	
 	public double getIntensity() {
 		return intensity;
+	}
+	
+	public void setRsquared(double Rsquared) {
+		this.Rsquared = Rsquared;
+	}
+	
+	public double getRSquared() {
+		return Rsquared;
 	}
 	
 	public void reset(double x, double y, double pixelValue, int slice) {

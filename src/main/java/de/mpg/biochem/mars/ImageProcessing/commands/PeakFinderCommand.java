@@ -56,6 +56,7 @@ import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.config.SCIFIOConfig;
@@ -212,45 +213,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Fit Radius")
 	private int fitRadius = 4;
 	
-	//Initial guesses for fitting
-	//@Parameter(label="Initial Baseline")
-	//private double PeakFitter_initialBaseline = Double.NaN;
-	
-	//@Parameter(label="Initial Height")
-	//private double PeakFitter_initialHeight = Double.NaN;
-	
-	//@Parameter(label="Initial Sigma")
-	//private double PeakFitter_initialSigma = Double.NaN;
-	
-	//parameters to vary during fit
-	
-	//@Parameter(label="Vary Baseline")
-	//private boolean PeakFitter_varyBaseline = true;
-	
-	//@Parameter(label="Vary Height")
-	//private boolean PeakFitter_varyHeight = true;
-	
-	//@Parameter(label="Vary Sigma")
-	//private boolean PeakFitter_varySigma = true;
-	
-	//Check the maximal allowed error for the fitting process.
-	@Parameter(label="Filter by Max Error")
-	private boolean PeakFitter_maxErrorFilter = true;
-	
-	@Parameter(label="Max Error Baseline")
-	private double PeakFitter_maxErrorBaseline = 5000;
-	
-	@Parameter(label="Max Error Height")
-	private double PeakFitter_maxErrorHeight = 5000;
-	
-	@Parameter(label="Max Error X")
-	private double PeakFitter_maxErrorX = 1;
-	
-	@Parameter(label="Max Error Y")
-	private double PeakFitter_maxErrorY = 1;
-	
-	@Parameter(label="Max Error Sigma")
-	private double PeakFitter_maxErrorSigma = 1;
+	@Parameter(label="Minimum R2")
+	private double RsquaredMin = 0;
 	
 	//Which columns to write in peak table
 	@Parameter(label="Verbose table fit output")
@@ -279,16 +243,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-	
-	//array for max error margins.
-	private double[] maxError;
-	private boolean[] vary;
-	
-	
-	private ArrayList<int[]> fitRegionOffsets;
-			
-	//public static final String[] TABLE_HEADERS = {"baseline", "height", "x", "y", "sigma"};
-	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "error_baseline", "height", "error_height", "x", "error_x", "y", "error_y", "sigma", "error_sigma"};
+
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "x", "y", "sigma", "R2"};
 	
 	@Override
 	public void initialize() {
@@ -333,13 +289,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		//Output first part of log message...
 		logService.info(log);
 		
-		BuildFitRegionOffsets();
-		
 		//Used to store peak list for single frame operations
 		ArrayList<Peak> peaks = new ArrayList<Peak>();
 		
 		if (fitPeaks) {
-			vary = new boolean[5];
+			boolean[] vary = new boolean[5];
 			vary[0] = true;//PeakFitter_varyBaseline;
 			vary[1] = true;//PeakFitter_varyHeight;
 			vary[2] = true;
@@ -348,12 +302,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			fitter = new PeakFitter(vary);
 			
-			maxError = new double[5];
-			maxError[0] = PeakFitter_maxErrorBaseline;
-			maxError[1] = PeakFitter_maxErrorHeight;
-			maxError[2] = PeakFitter_maxErrorX;
-			maxError[3] = PeakFitter_maxErrorY;
-			maxError[4] = PeakFitter_maxErrorSigma;
+			//maxError = new double[5];
+			//maxError[0] = PeakFitter_maxErrorBaseline;
+			//maxError[1] = PeakFitter_maxErrorHeight;
+			//maxError[2] = PeakFitter_maxErrorX;
+			//maxError[3] = PeakFitter_maxErrorY;
+			//maxError[4] = PeakFitter_maxErrorSigma;
 
 		}
 		
@@ -501,19 +455,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	private void BuildFitRegionOffsets() {
-		fitRegionOffsets = new ArrayList<int[]>();
-		
-		for (int y = -fitRadius; y <= fitRadius; y++) {
-			for (int x = -fitRadius; x <= fitRadius; x++) {
-				int[] pos = new int[2];
-				pos[0] = x;
-				pos[1] = y;
-				fitRegionOffsets.add(pos);
-			}
-		}
-	}
-	
 	private ArrayList<Peak> findPeaksInSlice(int slice) {
 		ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, image.getImageStack().getProcessor(slice)));
 		if (peaks.size() == 0)
@@ -610,27 +551,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		int fitWidth = fitRadius * 2 + 1;
 		
-		//Need to read in initial guess values
-		//Also, need to read out fit results back into peak
-		
 		for (Peak peak: positionList) {
 			
 			imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
 			
-			double PeakFitter_initialBaseline = Double.MAX_VALUE;
-			double PeakFitter_initialHeight = Double.MIN_VALUE;
-			
-			for (int[] offset: fitRegionOffsets) {
-				double value = (double)getPixelValue(imp, (int)(peak.getX() + 0.5) + offset[0], (int)(peak.getY() + 0.5) + offset[1], rect);
-				if (value < PeakFitter_initialBaseline)
-					PeakFitter_initialBaseline = value;
-				if (value > PeakFitter_initialHeight)
-					PeakFitter_initialHeight = value;
-			}
-			
 			double[] p = new double[5];
-			p[0] = PeakFitter_initialBaseline;
-			p[1] = PeakFitter_initialHeight;
+			p[0] = Double.NaN;
+			p[1] = Double.NaN;
 			p[2] = peak.getX();
 			p[3] = peak.getY();
 			p[4] = dogFilterRadius/2;
@@ -643,27 +570,62 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			peak.setValid();
 			
 			for (int i = 0; i < p.length && peak.isValid(); i++) {
-				if (Double.isNaN(p[i]) || Double.isNaN(e[i]) || Math.abs(e[i]) > maxError[i])
+				if (Double.isNaN(p[i]))
 					peak.setNotValid();
 			}
-			
+
 			//If the x, y, sigma values are negative reject the peak
 			//but we can have negative height p[0] or baseline p[1]
 			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 				peak.setNotValid();
 			}
 			
-			//Force all peaks to be valid...
-			if (!PeakFitter_maxErrorFilter)
-				peak.setValid();
+			double Rsquared = -1;
+			if (peak.isValid() && RsquaredMin > 0) {
+				Gaussian2D gauss = new Gaussian2D(p);
+				Rsquared = calcR2(gauss, imp);
+				if (Rsquared <= RsquaredMin)
+					peak.setNotValid();
+			}
 			
 			if (peak.isValid()) {
 				peak.setValues(p);
-				peak.setErrorValues(e);
+				peak.setRsquared(Rsquared);
 				newList.add(peak);
 			}
 		}
 		return newList;
+	}
+	
+	private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
+		double SSres = 0;
+		double SStot = 0;
+		double mean = 0;
+		double count = 0;
+		
+		Rectangle roi = imp.getRoi();
+		
+		//First determine mean
+		for (int y = roi.y; y < roi.y + roi.height; y++) {
+			for (int x = roi.x; x < roi.x + roi.width; x++) {
+				mean += (double)getPixelValue(imp, x, y, rect);
+				count++;
+			}
+		}
+		
+		mean = mean/count;
+		
+		for (int y = roi.y; y < roi.y + roi.height; y++) {
+			for (int x = roi.x; x < roi.x + roi.width; x++) {
+				double value = (double)getPixelValue(imp, x, y, rect);
+				SStot += (value - mean)*(value - mean);
+				
+				double prediction = gauss.getValue(x, y);
+				SSres += (value - prediction)*(value - prediction);
+			}
+		}
+		
+		return 1 - SSres / SStot;
 	}
 	
 	private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
@@ -810,19 +772,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Process all slices", String.valueOf(allSlices));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-		//builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
-		//builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));
-		//builder.addParameter("Initial Sigma", String.valueOf(PeakFitter_initialSigma));
-		//builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
-		//builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
-		//builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
-		builder.addParameter("Filter by Max Error", String.valueOf(this.PeakFitter_maxErrorFilter));
-		builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
-		builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
-		builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
-		builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
-		builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
-		builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
+		builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
 	}
 	
 	public MarsTable getPeakCountTable() {
@@ -881,14 +831,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return height;
 	}
 	
-	//public void setUseMedianFiler(boolean useMedianFilter) {
-	//	this.useMedianFilter = useMedianFilter;
-	//}
-	
-	//public void setMedianFilterRadius(long medianFilterRadius) {
-	//	this.medianFilterRadius = medianFilterRadius;
-	//}
-	
 	public void setUseDogFiler(boolean useDogFilter) {
 		this.useDogFilter = useDogFilter;
 	}
@@ -937,6 +879,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return generatePeakTable;
 	}
 	
+	public void setMinimumRsquared(double Rsquared) {
+		this.RsquaredMin = Rsquared;
+	}
+	
+	public double getMinimumRsquared() {
+		return RsquaredMin;
+	}
+	
 	public void setAddToRoiManager(boolean addToRoiManger) {
 		this.addToRoiManger = addToRoiManger;
 	}
@@ -967,106 +917,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	public int getFitRadius() {
 		return fitRadius;
-	}
-	
-	/*
-	public void setInitialBaseline(double PeakFitter_initialBaseline) {
-		this.PeakFitter_initialBaseline = PeakFitter_initialBaseline;
-	}
-	
-	public double getInitialBaseline() {
-		return PeakFitter_initialBaseline;
-	}
-	
-	public void setInitialHeight(double PeakFitter_initialHeight) {
-		this.PeakFitter_initialHeight = PeakFitter_initialHeight;
-	}
-	
-	public double getInitialHeight() {
-		return PeakFitter_initialHeight;
-	}
-	
-	public void setInitialSigma(double PeakFitter_initialSigma) {
-		this.PeakFitter_initialSigma = PeakFitter_initialSigma;
-	}
-	
-	public double getInitialSigma() {
-		return PeakFitter_initialSigma;
-	}
-	
-	
-	public void setVaryBaseline(boolean PeakFitter_varyBaseline) {
-		this.PeakFitter_varyBaseline = PeakFitter_varyBaseline;
-	}
-	
-	public boolean getVaryBaseline() {
-		return PeakFitter_varyBaseline;
-	}
-	
-	public void setVaryHeight(boolean PeakFitter_varyHeight) {
-		this.PeakFitter_varyHeight = PeakFitter_varyHeight;
-	}
-	
-	public boolean getVaryHeight() {
-		return PeakFitter_varyHeight;
-	}
-	
-	public void setVarySigma(boolean PeakFitter_varySigma) {
-		this.PeakFitter_varySigma = PeakFitter_varySigma;
-	}
-	
-	public boolean getVarySigma() {
-		return PeakFitter_varySigma;
-	}
-	
-	*/
-	
-	public void setMaxErrorFilter(boolean PeakFitter_maxErrorFilter) {
-		this.PeakFitter_maxErrorFilter = PeakFitter_maxErrorFilter;
-	}
-	
-	public boolean getMaxErrorFilter() {
-		return PeakFitter_maxErrorFilter;
-	}
-	
-	public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {
-		this.PeakFitter_maxErrorBaseline = PeakFitter_maxErrorBaseline;
-	}
-	
-	public double getMaxErrorBaseline() {
-		return PeakFitter_maxErrorBaseline;
-	}
-	
-	public void setMaxErrorHeight(double PeakFitter_maxErrorHeight) {
-		this.PeakFitter_maxErrorHeight = PeakFitter_maxErrorHeight;
-	}
-	
-	public double getMaxErrorHeight() {
-		return PeakFitter_maxErrorHeight;
-	}
-	
-	public void setMaxErrorX(double PeakFitter_maxErrorX) {
-		this.PeakFitter_maxErrorX = PeakFitter_maxErrorX;
-	}
-	
-	public double getMaxErrorX() {
-		return PeakFitter_maxErrorX;
-	}
-
-	public void setMaxErrorY(double PeakFitter_maxErrorY) {
-		this.PeakFitter_maxErrorY = PeakFitter_maxErrorY;
-	}
-	
-	public double getMaxErrorY() {
-		return PeakFitter_maxErrorY;
-	}
-	
-	public void setMaxErrorSigma(double PeakFitter_maxErrorSigma) {
-		this.PeakFitter_maxErrorSigma = PeakFitter_maxErrorSigma;
-	}
-	
-	public double getMaxErrorSigma() {
-		return PeakFitter_maxErrorSigma;
 	}
 	
 	public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
