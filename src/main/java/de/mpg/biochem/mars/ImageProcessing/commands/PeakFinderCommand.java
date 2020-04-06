@@ -483,7 +483,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	public ArrayList<Peak> findPeaks(ImagePlus imp) {
 		ArrayList<Peak> peaks;
 		
-		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance);
+		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
 		
 		if (useDogFilter) {
 			// Convert image to FloatType for better numeric precision
@@ -498,11 +498,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	        // Do the DoG filtering using ImageJ Ops
 	        opService.filter().dog(dog, converted, sigma2, sigma1);
 	        
-			if (findNegativePeaks) {
-				Img<FloatType> inverted = opService.create().img(dog);
-				opService.image().invert(inverted, dog);
-				dog = inverted;
-			}
+			//if (findNegativePeaks) {
+			//	Img<FloatType> inverted = opService.create().img(dog);
+			//	opService.image().invert(inverted, dog);
+			//	dog = inverted;
+			//}
 
 	        if (useROI) {
 		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
@@ -510,20 +510,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				peaks = finder.findPeaks(dog);
 			}
 		} else {
-			if (findNegativePeaks) {
-				Img<FloatType> inverted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
-				opService.image().invert(inverted, inverted);
-				if (useROI) {
-			    	peaks = finder.findPeaks(inverted, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
-				} else {
-					peaks = finder.findPeaks(inverted);
-				}
+			if (useROI) {
+		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
 			} else {
-				if (useROI) {
-			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
-				} else {
-					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
-				}
+				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
 			}
 		}
 		

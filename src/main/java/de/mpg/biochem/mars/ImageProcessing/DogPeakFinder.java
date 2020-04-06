@@ -43,10 +43,12 @@ public class DogPeakFinder<T extends RealType<T>> {
 	
 	private double threshold = 46;
 	private int minimumDistance = 8;
+	private boolean findNegativePeaks = false;
 	
-	public DogPeakFinder(double threshold, int minimumDistance) {
+	public DogPeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks) {
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
+		this.findNegativePeaks = findNegativePeaks;
 	}
 	
 	public ArrayList<Peak> findPeaks(Img<T> image) {
@@ -72,24 +74,45 @@ public class DogPeakFinder<T extends RealType<T>> {
 		
 		Cursor< T > roiCursor = Views.interval( image, interval ).cursor();
 		
-		while (roiCursor.hasNext()) {
-			 double pixel = roiCursor.next().getRealDouble();
-			
-			 if ( pixel > threshold ) {
-				 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
-	         }
-		}
-		
-		if (possiblePeaks.isEmpty())
-			return null;
-		
-		//Sort the list from lowest to highest pixel value...
-		Collections.sort(possiblePeaks, new Comparator<Peak>(){
-			@Override
-			public int compare(Peak o1, Peak o2) {
-				return Double.compare(o1.getPixelValue(), o2.getPixelValue());		
+		if (!findNegativePeaks) {
+			while (roiCursor.hasNext()) {
+				 double pixel = roiCursor.next().getRealDouble();
+				 
+				 if ( pixel > threshold ) {
+					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
+		         }
 			}
-		});
+		
+			if (possiblePeaks.isEmpty())
+				return null;
+			
+			//Sort the list from lowest to highest pixel value...
+			Collections.sort(possiblePeaks, new Comparator<Peak>(){
+				@Override
+				public int compare(Peak o1, Peak o2) {
+					return Double.compare(o1.getPixelValue(), o2.getPixelValue());		
+				}
+			});
+		} else {
+			while (roiCursor.hasNext()) {
+				 double pixel = roiCursor.next().getRealDouble();
+				 
+				 if ( pixel < threshold*(-1) ) {
+					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
+		         }
+			}
+		
+			if (possiblePeaks.isEmpty())
+				return null;
+			
+			//Sort the list from highest to lowest pixel value...
+			Collections.sort(possiblePeaks, new Comparator<Peak>(){
+				@Override
+				public int compare(Peak o1, Peak o2) {
+					return Double.compare(o2.getPixelValue(), o1.getPixelValue());		
+				}
+			});
+		}
 				 
 		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
 		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
