@@ -269,15 +269,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	@Override
 	public void run() {	
-		if (rect == null) {
-			if (image.getRoi() == null) {
-				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
-				final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
-				useRoifield.setValue(this, false);
-			} else {
-				rect = image.getRoi().getBounds();
-				startingRoi = image.getRoi();
-			}
+		if (useROI) {
+			rect = new Rectangle(x0,y0,width - 1,height - 1);
+		} else {
+			rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 		}
 		
 		image.deleteRoi();
