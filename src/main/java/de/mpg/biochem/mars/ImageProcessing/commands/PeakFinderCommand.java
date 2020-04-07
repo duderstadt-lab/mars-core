@@ -141,7 +141,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private ImagePlus image; 
 	
 	//ROI SETTINGS
-	@Parameter(label="use ROI", persist=false)
+	@Parameter(label="Use ROI", persist=false)
 	private boolean useROI = true;
 	
 	@Parameter(label="ROI x0", persist=false)
@@ -167,7 +167,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Detection threshold")
 	private double threshold = 50;
 	
-	@Parameter(label="Minimum distance between peaks (in pixels)")
+	@Parameter(label="Minimum distance between peaks")
 	private int minimumDistance = 4;
 	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
@@ -179,7 +179,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
 	private int previewSlice;
 	
-	@Parameter(label="Find Negative Peaks")
+	@Parameter(label="Find negative peaks")
 	private boolean findNegativePeaks = false;
 	
 	@Parameter(label="Generate peak count table")
@@ -188,10 +188,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Generate peak table")
 	private boolean generatePeakTable;
 	
-	@Parameter(label="Add to RoiManger")
+	@Parameter(label="Add to ROIManager")
 	private boolean addToRoiManger;
 	
-	@Parameter(label="Molecule Names in Manager")
+	@Parameter(label="Molecule names in ROIManager")
 	private boolean moleculeNames;
 	
 	@Parameter(label="Process all slices")
@@ -205,7 +205,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Fit peaks")
 	private boolean fitPeaks = false;
 	
-	@Parameter(label="Fit Radius")
+	@Parameter(label="Fit radius")
 	private int fitRadius = 4;
 	
 	@Parameter(label = "Minimum R-squared",
@@ -214,8 +214,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private double RsquaredMin = 0;
 	
 	//Which columns to write in peak table
-	@Parameter(label="Verbose table fit output")
-	private boolean PeakFitter_writeEverything = true;
+	@Parameter(label="Verbose output")
+	private boolean verbose = true;
 	
 	//OUTPUT PARAMETERS
 	@Parameter(label="Peak Count", type = ItemIO.OUTPUT)
@@ -385,7 +385,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 			
-			if (PeakFitter_writeEverything) {
+			if (verbose) {
 				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
 					columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
 			} else {
@@ -399,7 +399,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				for (int i=1;i<=PeakStack.size() ; i++) {
 					ArrayList<Peak> slicePeaks = PeakStack.get(i);
 					for (int j=0;j<slicePeaks.size();j++) {
-						if (PeakFitter_writeEverything)
+						if (verbose)
 							slicePeaks.get(j).addToColumnsVerbose(columns);
 						else 
 							slicePeaks.get(j).addToColumnsXY(columns);
@@ -409,7 +409,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				}
 			} else {
 				for (int j=0;j<peaks.size();j++) {
-					if (PeakFitter_writeEverything)
+					if (verbose)
 						peaks.get(j).addToColumnsVerbose(columns);
 					else 
 						peaks.get(j).addToColumnsXY(columns);
@@ -757,7 +757,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
-		builder.addParameter("Verbose output", String.valueOf(this.PeakFitter_writeEverything));
+		builder.addParameter("Verbose output", String.valueOf(verbose));
 	}
 	
 	public MarsTable getPeakCountTable() {
@@ -904,11 +904,21 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return fitRadius;
 	}
 	
-	public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
-		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+	@Deprecated
+	public void setVerboseFitOutput(boolean verbose) {
+		this.verbose = verbose;
 	}
 	
+	public void setVerboseOutput(boolean verbose) {
+		this.verbose = verbose;
+	}
+	
+	public boolean getVerboseOutput() {
+		return verbose;
+	}
+	
+	@Deprecated
 	public boolean getVerboseFitOutput() {
-		return PeakFitter_writeEverything;
+		return verbose;
 	}
 }

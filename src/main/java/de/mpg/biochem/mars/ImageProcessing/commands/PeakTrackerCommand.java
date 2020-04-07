@@ -140,7 +140,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private ImagePlus image; 
 		
 		//ROI SETTINGS
-		@Parameter(label="use ROI", persist=false)
+		@Parameter(label="Use ROI", persist=false)
 		private boolean useROI = true;
 		
 		@Parameter(label="ROI x0", persist=false)
@@ -165,7 +165,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Detection threshold")
 		private double threshold = 50;
 		
-		@Parameter(label="Minimum distance between peaks (in pixels)")
+		@Parameter(label="Minimum distance between peaks")
 		private int minimumDistance = 4;
 		
 		@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
@@ -185,7 +185,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private final String fitterTitle =
 			"Peak fitter settings:";
 		
-		@Parameter(label="Fit Radius")
+		@Parameter(label="Fit radius")
 		private int fitRadius = 4;
 		
 		@Parameter(label = "Minimum R-squared",
@@ -193,24 +193,24 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				stepSize = "0.01")
 		private double RsquaredMin = 0;
 		
-		@Parameter(label="Verbose fit output")
-		private boolean PeakFitter_writeEverything = false;
+		@Parameter(label="Verbose output")
+		private boolean verbose = false;
 		
 		//PEAK TRACKER
 		@Parameter(visibility = ItemVisibility.MESSAGE)
 		private final String trackerTitle =
 			"Peak tracker settings:";
 		
-		@Parameter(label="Max Difference X")
+		@Parameter(label="Max difference x")
 		private double PeakTracker_maxDifferenceX = 1;
 		
-		@Parameter(label="Max Difference Y")
+		@Parameter(label="Max difference y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		@Parameter(label="Max Difference Slice")
+		@Parameter(label="Max difference slice")
 		private int PeakTracker_maxDifferenceSlice = 1;
 
-		@Parameter(label="Min trajectory length")
+		@Parameter(label="Minimum track length")
 		private int PeakTracker_minTrajectoryLength = 100;
 		
 		@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -407,7 +407,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			ckMaxDifference[1] = false;
 			ckMaxDifference[2] = false;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, logService);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, verbose, logService);
 		    
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -814,7 +814,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
 			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 			builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
-			builder.addParameter("Verbose output", String.valueOf(PeakFitter_writeEverything));
+			builder.addParameter("Verbose output", String.valueOf(verbose));
 			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
 			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
 			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));
@@ -924,12 +924,22 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return RsquaredMin;
 		}
 		
-		public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
-			this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+		@Deprecated
+		public void setVerboseFitOutput(boolean verbose) {
+			this.verbose = verbose;
 		}
 		
+		public void setVerboseOutput(boolean verbose) {
+			this.verbose = verbose;
+		}
+		
+		public boolean getVerboseOutput() {
+			return verbose;
+		}
+		
+		@Deprecated
 		public boolean getVerboseFitOutput() {
-			return PeakFitter_writeEverything;
+			return verbose;
 		}
 		
 		public void setMaxDifferenceX(double PeakTracker_maxDifferenceX) {
