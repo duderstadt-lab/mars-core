@@ -293,7 +293,18 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			preSlice.setMaximumValue(image.getStackSize());
 		}
 		@Override
-		public void run() {				
+		public void run() {
+			if (rect == null) {
+				if (image.getRoi() == null) {
+					rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
+					final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
+					useRoifield.setValue(this, false);
+				} else {
+					rect = image.getRoi().getBounds();
+					startingRoi = image.getRoi();
+				}
+			}
+			
 			image.deleteRoi();
 			
 			//Check that imageFormat setting is correct...
@@ -808,7 +819,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
 			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 			builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
-			builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
+			builder.addParameter("Verbose output", String.valueOf(PeakFitter_writeEverything));
 			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
 			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
 			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));

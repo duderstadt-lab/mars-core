@@ -268,7 +268,18 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	}
 	
 	@Override
-	public void run() {				
+	public void run() {	
+		if (rect == null) {
+			if (image.getRoi() == null) {
+				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
+				final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
+				useRoifield.setValue(this, false);
+			} else {
+				rect = image.getRoi().getBounds();
+				startingRoi = image.getRoi();
+			}
+		}
+		
 		image.deleteRoi();
 		
 		//Build log
@@ -751,6 +762,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
+		builder.addParameter("Verbose output", String.valueOf(this.PeakFitter_writeEverything));
 	}
 	
 	public MarsTable getPeakCountTable() {
