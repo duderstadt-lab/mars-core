@@ -188,7 +188,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Fit Radius")
 		private int fitRadius = 4;
 		
-		@Parameter(label="Minimum R-squared")
+		@Parameter(label = "Minimum R-squared",
+				style = NumberWidget.SCROLL_BAR_STYLE, min = "0.000", max = "1.000",
+				stepSize = "0.001")
 		private double RsquaredMin = 0;
 		
 		@Parameter(label="Verbose fit output")
