@@ -213,6 +213,19 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			stepSize = "0.01")
 	private double RsquaredMin = 0;
 	
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String integrationTitle =
+		"Peak integration settings:";
+	
+	@Parameter(label="Integrate")
+	private boolean integrate = false;
+	
+	@Parameter(label="Inner radius")
+	private int integrationInnerRadius = 1;
+	
+	@Parameter(label="Outer radius")
+	private int integrationOuterRadius = 3;
+	
 	//Which columns to write in peak table
 	@Parameter(label="Verbose output")
 	private boolean verbose = true;
@@ -238,6 +251,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "x", "y", "sigma", "R2"};
+	
+	//For peak integration
+	private ArrayList<int[]> innerOffsets;
+	private ArrayList<int[]> outerOffsets;
 	
 	@Override
 	public void initialize() {
@@ -301,6 +318,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			fitter = new PeakFitter(vary);
 		}
+		
+		BuildOffsets();
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
@@ -393,14 +412,21 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				columns.add(new DoubleColumn("y"));
 			}
 			
+			if (integrate) 
+				columns.add(new DoubleColumn("Intensity"));
+			
 			columns.add(new DoubleColumn("slice"));
 			
 			if (allSlices) {
 				for (int i=1;i<=PeakStack.size() ; i++) {
 					ArrayList<Peak> slicePeaks = PeakStack.get(i);
 					for (int j=0;j<slicePeaks.size();j++) {
-						if (verbose)
+						if (verbose && integrate)
+							slicePeaks.get(j).addToColumnsVerboseIntegration(columns);
+						else if (verbose && !integrate)
 							slicePeaks.get(j).addToColumnsVerbose(columns);
+						else if (!verbose && integrate)
+							slicePeaks.get(j).addToColumnsXYIntegration(columns);
 						else 
 							slicePeaks.get(j).addToColumnsXY(columns);
 						
@@ -409,8 +435,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				}
 			} else {
 				for (int j=0;j<peaks.size();j++) {
-					if (verbose)
+					if (verbose && integrate)
+						peaks.get(j).addToColumnsVerboseIntegration(columns);
+					else if (verbose && !integrate)
 						peaks.get(j).addToColumnsVerbose(columns);
+					else if (!verbose && integrate)
+						peaks.get(j).addToColumnsXYIntegration(columns);
 					else 
 						peaks.get(j).addToColumnsXY(columns);
 					
@@ -444,6 +474,29 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
+	}
+	
+	private void BuildOffsets() {
+		innerOffsets = new ArrayList<int[]>();
+		outerOffsets = new ArrayList<int[]>();
+		
+		for (int y = -integrationOuterRadius; y <= integrationOuterRadius; y++) {
+			for (int x = -integrationOuterRadius; x <= integrationOuterRadius; x++) {
+				double d = Math.round(Math.sqrt(x * x + y * y));
+	
+				if (d <= integrationInnerRadius) {
+					int[] pos = new int[2];
+					pos[0] = x;
+					pos[1] = y;
+					innerOffsets.add(pos);
+				} else if (d <= integrationOuterRadius) {
+					int[] pos = new int[2];
+					pos[0] = x;
+					pos[1] = y;
+					outerOffsets.add(pos);
+				}
+			}
+		}
 	}
 	
 	private ArrayList<Peak> findPeaksInSlice(int slice) {
@@ -577,6 +630,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			if (peak.isValid()) {
 				peak.setValues(p);
 				peak.setRsquared(Rsquared);
+				
+				//Integrate intensity
+				if (integrate) {
+					//I think they need to be shifted for just the integration step. Otherwise, leave them.
+					double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
+					peak.setIntensity(intensity[0]);
+				}
+				
 				newList.add(peak);
 			}
 		}
@@ -612,6 +673,45 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 		
 		return 1 - SSres / SStot;
+	}
+	
+	private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
+		if (x == Double.NaN || y == Double.NaN) {
+			double[] NULLinten = new double[2];
+			NULLinten[0] = Double.NaN;
+			NULLinten[1] = Double.NaN;
+			return NULLinten;
+		}
+		
+		double Intensity = 0;
+		int innerPixels = 0;
+		
+		ArrayList<Float> outerPixelValues = new ArrayList<Float>();
+		
+		for (int[] circleOffset: innerOffsets) {
+			Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
+			innerPixels++;
+		}
+		
+		for (int[] circleOffset: outerOffsets) {
+			outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
+		}
+		
+		//Find the Median background value...
+		Collections.sort(outerPixelValues);
+		double outerMedian;
+		if (outerPixelValues.size() % 2 == 0)
+		    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
+		else
+		    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
+		
+		Intensity -= outerMedian*innerPixels;
+		
+		double[] inten = new double[2];
+		inten[0] = Intensity;
+		inten[1] = outerMedian;
+
+		return inten;
 	}
 	
 	private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
@@ -740,23 +840,23 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
 			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
 		}
-		builder.addParameter("useROI", String.valueOf(useROI));
+		builder.addParameter("Use ROI", String.valueOf(useROI));
 		builder.addParameter("ROI x0", String.valueOf(x0));
 		builder.addParameter("ROI y0", String.valueOf(y0));
 		builder.addParameter("ROI width", String.valueOf(width));
 		builder.addParameter("ROI height", String.valueOf(height));
-		builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
-		builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
+		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
+		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
-		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-		builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
+		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
+		builder.addParameter("Find negative peaks", String.valueOf(findNegativePeaks));
 		builder.addParameter("Generate peak count table", String.valueOf(generatePeakCountTable));
 		builder.addParameter("Generate peak table", String.valueOf(generatePeakTable));
-		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
+		builder.addParameter("Add to ROIManger", String.valueOf(addToRoiManger));
 		builder.addParameter("Process all slices", String.valueOf(allSlices));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-		builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
+		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 	}
 	

@@ -168,6 +168,12 @@ public class Peak implements RealLocalizable {
 		columns.get(1).add(y);
 	}
 	
+	public void addToColumnsXYIntegration(ArrayList<DoubleColumn> columns) {
+		columns.get(0).add(x);
+		columns.get(1).add(y);
+		columns.get(2).add(intensity);
+	}
+	
 	public void addToColumnsVerbose(ArrayList<DoubleColumn> columns) {
 		columns.get(0).add(baseline);
 		columns.get(1).add(height);
@@ -175,6 +181,16 @@ public class Peak implements RealLocalizable {
 		columns.get(3).add(y);
 		columns.get(4).add(sigma);
 		columns.get(5).add(Rsquared);
+	}
+	
+	public void addToColumnsVerboseIntegration(ArrayList<DoubleColumn> columns) {
+		columns.get(0).add(baseline);
+		columns.get(1).add(height);
+		columns.get(2).add(x);
+		columns.get(3).add(y);
+		columns.get(4).add(sigma);
+		columns.get(5).add(Rsquared);
+		columns.get(6).add(intensity);
 	}
 	
 	//used for pixel sort in the peak finder
