@@ -110,7 +110,7 @@ import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
 import net.imagej.ops.OpService;
 
-@Plugin(type = Command.class, label = "Dog Peak Finder", menu = {
+@Plugin(type = Command.class, label = "Peak Finder", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
@@ -189,7 +189,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private boolean generatePeakTable;
 	
 	@Parameter(label="Add to ROIManager")
-	private boolean addToRoiManger;
+	private boolean addToRoiManager;
 	
 	@Parameter(label="Molecule names in ROIManager")
 	private boolean moleculeNames;
@@ -455,7 +455,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable.getName());
 		}
 		
-		if (addToRoiManger) {
+		if (addToRoiManager) {
 			logService.info("Adding Peaks to the RoiManger. This might take a while...");
 			if (allSlices) {
 				//loop through map and slices and add to Manager
@@ -685,7 +685,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		double Intensity = 0;
 		int innerPixels = 0;
-		
 		ArrayList<Float> outerPixelValues = new ArrayList<Float>();
 		
 		for (int[] circleOffset: innerOffsets) {
@@ -852,7 +851,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Find negative peaks", String.valueOf(findNegativePeaks));
 		builder.addParameter("Generate peak count table", String.valueOf(generatePeakCountTable));
 		builder.addParameter("Generate peak table", String.valueOf(generatePeakTable));
-		builder.addParameter("Add to ROIManger", String.valueOf(addToRoiManger));
+		builder.addParameter("Add to ROIManager", String.valueOf(addToRoiManager));
 		builder.addParameter("Process all slices", String.valueOf(allSlices));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
@@ -972,12 +971,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return RsquaredMin;
 	}
 	
-	public void setAddToRoiManager(boolean addToRoiManger) {
-		this.addToRoiManger = addToRoiManger;
+	public void setAddToRoiManager(boolean addToRoiManager) {
+		this.addToRoiManager = addToRoiManager;
 	}
 	
 	public boolean getAddToRoiManager() {
-		return addToRoiManger;
+		return addToRoiManager;
 	}
 
 	public void setProcessAllSlices(boolean allSlices) {

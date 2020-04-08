@@ -107,7 +107,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class, label = "Dog Peak Tracker", menu = {
+@Plugin(type = Command.class, label = "Peak Tracker", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
