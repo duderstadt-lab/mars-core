@@ -93,17 +93,19 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public void removeArchive(String title) {
-		if (contains(title)) {
+		if (getArchive(title) != null)
 			objectService.removeObject(getArchive(title));
+		
+		if (displayService.getDisplay(title) != null)
 			objectService.removeObject(displayService.getDisplay(title));
-		}
 	}
 	
 	public void removeArchive(MoleculeArchive archive) {
-		if (contains(archive)) {
+		if (archive != null)
 			objectService.removeObject(archive);
+		
+		if (archive != null && displayService.getDisplay(archive.getName()) != null)
 			objectService.removeObject(displayService.getDisplay(archive.getName()));
-		}
 	}
 	
 	public boolean rename(String oldName, String newName) {
