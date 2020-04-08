@@ -434,7 +434,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
 		    
 			image.setRoi(startingRoi);
-	        
+	        this.setMinTrajectoryLength(num);
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -807,18 +807,21 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("ROI y0", String.valueOf(y0));
 			builder.addParameter("ROI w", String.valueOf(width));
 			builder.addParameter("ROI h", String.valueOf(height));
-			builder.addParameter("Use Dog Filter", String.valueOf(useDogFilter));
-			builder.addParameter("Dog Filter radius", String.valueOf(dogFilterRadius));
+			builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
+			builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
 			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
-			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-			builder.addParameter("Minimum R2", String.valueOf(RsquaredMin));
+			builder.addParameter("Find negative peaks", String.valueOf(findNegativePeaks));
+			builder.addParameter("Fit radius", String.valueOf(fitRadius));
+			builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
 			builder.addParameter("Verbose output", String.valueOf(verbose));
-			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
-			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
-			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));
-			builder.addParameter("Min trajectory length", String.valueOf(PeakTracker_minTrajectoryLength));
+			builder.addParameter("Max difference x", String.valueOf(PeakTracker_maxDifferenceX));
+			builder.addParameter("Max difference y", String.valueOf(PeakTracker_maxDifferenceY));
+			builder.addParameter("Max difference slice", String.valueOf(PeakTracker_maxDifferenceSlice));
+			builder.addParameter("Minimum track length", String.valueOf(PeakTracker_minTrajectoryLength));
+			builder.addParameter("Integrate", String.valueOf(integrate));
+			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
+			builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 			builder.addParameter("Microscope", microscope);
 			builder.addParameter("Format", imageFormat);
 		}
@@ -924,21 +927,11 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return RsquaredMin;
 		}
 		
-		@Deprecated
-		public void setVerboseFitOutput(boolean verbose) {
-			this.verbose = verbose;
-		}
-		
 		public void setVerboseOutput(boolean verbose) {
 			this.verbose = verbose;
 		}
 		
 		public boolean getVerboseOutput() {
-			return verbose;
-		}
-		
-		@Deprecated
-		public boolean getVerboseFitOutput() {
 			return verbose;
 		}
 		
@@ -966,12 +959,36 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return PeakTracker_maxDifferenceSlice;
 		}
 		
-		public void setMinTrajectoryLength(int PeakTracker_minTrajectoryLength) {
+		public void setMinimumTrackLength(int PeakTracker_minTrajectoryLength) {
 			this.PeakTracker_minTrajectoryLength = PeakTracker_minTrajectoryLength;
 		}
 
-		public int getMinTrajectoryLength() {
+		public int getMinimumTrackLength() {
 			return PeakTracker_minTrajectoryLength;
+		}
+		
+		public void setIntegrate(boolean integrate) {
+			this.integrate = integrate;
+		}
+		
+		public boolean getIntegrate() {
+			return integrate;
+		}
+		
+		public void setIntegrationInnerRadius(int integrationInnerRadius) {
+			this.integrationInnerRadius = integrationInnerRadius;
+		}
+		
+		public int getIntegrationInnerRadius() {
+			return integrationInnerRadius;
+		}
+		
+		public void setIntegrationOuterRadius(int integrationOuterRadius) {
+			this.integrationOuterRadius = integrationOuterRadius;
+		}
+		
+		public int getIntegrationOuterRadius() {
+			return integrationOuterRadius;
 		}
 		
 		public void setMicroscope(String microscope) {

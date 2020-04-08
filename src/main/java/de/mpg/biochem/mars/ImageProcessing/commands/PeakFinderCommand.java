@@ -856,6 +856,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
+		builder.addParameter("Integrate", String.valueOf(integrate));
+		builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
+		builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 	}
 	
@@ -1003,9 +1006,28 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return fitRadius;
 	}
 	
-	@Deprecated
-	public void setVerboseFitOutput(boolean verbose) {
-		this.verbose = verbose;
+	public void setIntegrate(boolean integrate) {
+		this.integrate = integrate;
+	}
+	
+	public boolean getIntegrate() {
+		return integrate;
+	}
+	
+	public void setIntegrationInnerRadius(int integrationInnerRadius) {
+		this.integrationInnerRadius = integrationInnerRadius;
+	}
+	
+	public int getIntegrationInnerRadius() {
+		return integrationInnerRadius;
+	}
+	
+	public void setIntegrationOuterRadius(int integrationOuterRadius) {
+		this.integrationOuterRadius = integrationOuterRadius;
+	}
+	
+	public int getIntegrationOuterRadius() {
+		return integrationOuterRadius;
 	}
 	
 	public void setVerboseOutput(boolean verbose) {
@@ -1013,11 +1035,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	}
 	
 	public boolean getVerboseOutput() {
-		return verbose;
-	}
-	
-	@Deprecated
-	public boolean getVerboseFitOutput() {
 		return verbose;
 	}
 }
