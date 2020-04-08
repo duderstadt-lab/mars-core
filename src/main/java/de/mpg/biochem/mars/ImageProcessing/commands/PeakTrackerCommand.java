@@ -434,7 +434,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
 		    
 			image.setRoi(startingRoi);
-	        this.setMinTrajectoryLength(num);
+	        
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
