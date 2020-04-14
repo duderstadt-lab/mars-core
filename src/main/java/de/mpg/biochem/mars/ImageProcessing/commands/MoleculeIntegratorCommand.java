@@ -218,7 +218,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Molecule Integrator");
+		String log = LogBuilder.buildTitleBlock("Molecule Integrator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -299,7 +299,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		String testLabel = image.getStack().getSliceLabel(1);
     	if (!imageFormat.equals("None") && testLabel == null) {
 			logService.info("No ImageMetadata found. Aborting. The image format setting must be changed to None.");
-			logService.info(builder.endBlock(false));
+			logService.info(LogBuilder.endBlock(false));
 			return;
 		}
 		
@@ -482,10 +482,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 			logService.info(LogBuilder.endBlock(false));
 		} else {
 			logService.info(LogBuilder.endBlock(true));
-
-			log += LogBuilder.endBlock(true);
-			archive.addLogMessage(log);
-			archive.addLogMessage("   ");			
+			
+			archive.logln(log);
+			archive.logln(LogBuilder.endBlock(true));
+			archive.logln("   ");			
 		}
 	}
 	
