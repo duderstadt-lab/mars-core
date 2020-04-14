@@ -19,7 +19,7 @@ public class MarsFunctionFitter {
 	double[][] identityMatrix;
 	
 	public MarsFunctionFitter(MarsFunction function, int nParameters) {
-		this(function, nParameters, 0.00001, 10000);
+		this(function, nParameters, 1e-6, 100);
 	}
 	
 	public MarsFunctionFitter(MarsFunction function, int nParameters, double precision, int maxIterations) {
