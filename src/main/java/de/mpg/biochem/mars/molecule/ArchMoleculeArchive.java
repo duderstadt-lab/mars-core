@@ -34,7 +34,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class ArchMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
 	
 	public ArchMoleculeArchive(String name) {
 		super(name);
@@ -68,19 +68,19 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Sd
 		return new SdmmImageMetadata(metaUID);
 	}
 	
-	public DnaMolecule createMolecule() {
-		return new DnaMolecule();
+	public ArchMolecule createMolecule() {
+		return new ArchMolecule();
 	}
 	
-	public DnaMolecule createMolecule(JsonParser jParser) throws IOException {
-		return new DnaMolecule(jParser);
+	public ArchMolecule createMolecule(JsonParser jParser) throws IOException {
+		return new ArchMolecule(jParser);
 	}
 	
-	public DnaMolecule createMolecule(String UID) {
-		return new DnaMolecule(UID);
+	public ArchMolecule createMolecule(String UID) {
+		return new ArchMolecule(UID);
 	}
 	
-	public DnaMolecule createMolecule(String UID, MarsTable table) {
-		return new DnaMolecule(UID, table);
+	public ArchMolecule createMolecule(String UID, MarsTable table) {
+		return new ArchMolecule(UID, table);
 	}
 }

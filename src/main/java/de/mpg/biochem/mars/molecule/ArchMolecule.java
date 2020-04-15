@@ -27,26 +27,93 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 public class ArchMolecule extends AbstractMolecule {
+	
+	private ConcurrentMap<Integer, MarsTable> archTables;
 
 	public ArchMolecule() {
 		super();
+		archTables = new ConcurrentHashMap<>();
 	}
 	
 	public ArchMolecule(JsonParser jParser) throws IOException {
-		super(jParser);
+		super();
+		archTables = new ConcurrentHashMap<>();
+		fromJSON(jParser);
 	}
 	
 	public ArchMolecule(String UID) {
 		super(UID);
+		archTables = new ConcurrentHashMap<>();
 	}
 
 	public ArchMolecule(String UID, MarsTable dataTable) {
 		super(UID, dataTable);
+		archTables = new ConcurrentHashMap<>();
+	}
+	
+	public void putArchTable(int key, MarsTable table) {
+		archTables.put(key, table);
+	}
+	
+	public MarsTable getArchTable(int key) {
+		return archTables.get(key);
+	}
+	
+	@Override
+	protected void createIOMaps() {
+		super.createIOMaps();
+		
+		//Add to output map
+		outputMap.put("ArchTables", MarsUtil.catchConsumerException(jGenerator -> {
+			if (archTables.keySet().size() > 0) {
+				jGenerator.writeArrayFieldStart("ArchTables");
+				for (int slice : archTables.keySet()) {
+						jGenerator.writeStartObject();
+						
+						jGenerator.writeNumberField("slice", slice);
+						
+						jGenerator.writeFieldName("Table");
+						archTables.get(slice).toJSON(jGenerator);
+						
+						jGenerator.writeEndObject();
+				}
+				jGenerator.writeEndArray();
+			}
+	 	}, IOException.class));
+		
+		//Add to input map
+		inputMap.put("ArchTables", MarsUtil.catchConsumerException(jParser -> {
+	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		int slice = -1;
+		    	
+		    		//Needed for backwards compatibility when reverse order was used...
+				    if ("slice".equals(jParser.getCurrentName())) {
+				    	jParser.nextToken();
+				    	slice = jParser.getNumberValue().intValue();
+				    }
+				    
+			    	//Move to next field
+			    	jParser.nextToken();
+			    	
+			    	MarsTable archTable = new MarsTable("ArchTable " + slice);
+			    	
+			    	archTable.fromJSON(jParser);
+			    	
+			    	if (slice != -1)
+			    		archTables.put(slice, archTable);
+		    	}
+	    	}
+		}, IOException.class));
 	}
 }
