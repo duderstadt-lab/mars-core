@@ -28,6 +28,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -65,8 +66,20 @@ public class ArchMolecule extends AbstractMolecule {
 		archTables.put(key, table);
 	}
 	
+	public boolean hasArchTable(int key) {
+		return archTables.containsKey(key);
+	}
+	
 	public MarsTable getArchTable(int key) {
 		return archTables.get(key);
+	}
+	
+	public void removeArchTable(int key) {
+		archTables.remove(key);
+	}
+	
+	public Set<Integer> getArchTableKeys() {
+		return archTables.keySet();
 	}
 	
 	@Override
