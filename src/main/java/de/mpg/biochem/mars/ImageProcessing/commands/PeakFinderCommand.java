@@ -558,12 +558,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 
 	        // Do the DoG filtering using ImageJ Ops
 	        opService.filter().dog(dog, converted, sigma2, sigma1);
-	        
-			//if (findNegativePeaks) {
-			//	Img<FloatType> inverted = opService.create().img(dog);
-			//	opService.image().invert(inverted, dog);
-			//	dog = inverted;
-			//}
 
 	        if (useROI) {
 		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
@@ -619,8 +613,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				peak.setNotValid();
 			}
 			
-			double Rsquared = -1;
-			if (peak.isValid() && RsquaredMin > 0) {
+			double Rsquared = 0;
+			if (peak.isValid()) {
 				Gaussian2D gauss = new Gaussian2D(p);
 				Rsquared = calcR2(gauss, imp);
 				if (Rsquared <= RsquaredMin)
@@ -744,16 +738,16 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	}
 	
 	public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
-		//Sort the list from lowest to highest XYErrors
+		if (peakList.size() < 2)
+			return peakList;
+		
+		//Sort the list from highest to lowest Rsquared
 		Collections.sort(peakList, new Comparator<Peak>(){
 			@Override
 			public int compare(Peak o1, Peak o2) {
-				return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
+				return Double.compare(o2.getRSquared(), o1.getRSquared());		
 			}
 		});
-		
-		if (peakList.size() == 0)
-			return peakList;
 		
 		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
 		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...

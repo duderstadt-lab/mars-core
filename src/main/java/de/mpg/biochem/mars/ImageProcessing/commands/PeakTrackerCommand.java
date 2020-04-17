@@ -581,8 +581,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					peak.setNotValid();
 				}
 				
-				double Rsquared = -1;
-				if (peak.isValid() && RsquaredMin > 0) {
+				double Rsquared = 0;
+				if (peak.isValid()) {
 					Gaussian2D gauss = new Gaussian2D(p);
 					Rsquared = calcR2(gauss, imp);
 					if (Rsquared <= RsquaredMin)
@@ -711,11 +711,11 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			if (peakList.size() < 2)
 				return peakList;
 			
-			//Sort the list from lowest to highest XYErrors
+			//Sort the list from highest to lowest Rsquared
 			Collections.sort(peakList, new Comparator<Peak>(){
 				@Override
 				public int compare(Peak o1, Peak o2) {
-					return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
+					return Double.compare(o2.getRSquared(), o1.getRSquared());		
 				}
 			});
 			
