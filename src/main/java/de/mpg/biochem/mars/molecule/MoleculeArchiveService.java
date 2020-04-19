@@ -84,6 +84,8 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	@Override
 	public void initialize() {				
+		scriptService.addAlias(Molecule.class);
+		scriptService.addAlias(MarsMetadata.class);
 		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
