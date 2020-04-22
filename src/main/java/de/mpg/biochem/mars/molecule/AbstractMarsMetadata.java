@@ -288,6 +288,13 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	}
 	
 	/**
+	 * Set the Source Directory where the images are stored.
+	 */
+	public void setSourceDirectory(String path) {
+		this.SourceDirectory = path;
+	}
+	
+	/**
 	 * Add to the log that contains the history of processing steps
 	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}.

@@ -91,6 +91,13 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	String getSourceDirectory();
 	
 	/**
+	 * Set the Source Directory where the images are stored.
+	 * 
+	 * @return Directory where the images are stored.
+	 */
+	void setSourceDirectory(String path);
+	
+	/**
 	 * Add to the log that contains the history of processing steps
 	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}.
