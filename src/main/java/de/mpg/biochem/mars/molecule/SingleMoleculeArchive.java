@@ -64,7 +64,7 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * be activated if a directory is provided.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * {@link ImportVirtualStoreCommand}, which automatically
 	 * detect the type and open the archive accordingly.
 	 * <p>
 	 * @param file The file or directory to load the archive from.
@@ -88,7 +88,7 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * 
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * {@link ImportVirtualStoreCommand}, which automatically
 	 * detect the type and open the archive accordingly.
 	 * <p>
 	 * @param name The name of the archive.

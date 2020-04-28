@@ -71,7 +71,7 @@ import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
-import de.mpg.biochem.mars.molecule.commands.ImportMoleculeArchiveCommand;
+import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
 import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 import de.mpg.biochem.mars.table.GroupIndices;
@@ -129,13 +129,13 @@ import org.scijava.table.*;
  * and value types.
  * </p>
  * <p>
- * MoleculeArchive of different types can be opened using the {@link ImportMoleculeArchiveCommand}. This import command
+ * MoleculeArchive of different types can be opened using the {@link ImportVirtualStoreCommand}. This import command
  * will automatically detect the type and load the archive in accordingly.
  * </p>
  * <p>
  * MoleculeArchives can be loaded using the constructors {@link #AbstractMoleculeArchive(File)} or 
  * {@link #AbstractMoleculeArchive(String, File, MoleculeArchiveService)}. Otherwise, MoleculeArchives can be loaded
- * using the Mars command {@link ImportMoleculeArchiveCommand} through the 
+ * using the Mars command {@link ImportVirtualStoreCommand} through the 
  * GUI or in scripts.
  * </p>
  * @author Karl Duderstadt

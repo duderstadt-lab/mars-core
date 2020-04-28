@@ -46,7 +46,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
-import de.mpg.biochem.mars.molecule.commands.ImportMoleculeArchiveCommand;
+import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
 import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 

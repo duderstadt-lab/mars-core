@@ -57,7 +57,7 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * be activated if a directory is provided.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * {@link ImportVirtualStoreCommand}, which automatically
 	 * detect the type and open the archive accordingly.
 	 * <p>
 	 * @param file The file or directory to load the archive from.
@@ -80,7 +80,7 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * 
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportMoleculeArchiveCommand}, which automatically
+	 * {@link ImportVirtualStoreCommand}, which automatically
 	 * detect the type and open the archive accordingly.
 	 * <p>
 	 * @param name The name of the archive.

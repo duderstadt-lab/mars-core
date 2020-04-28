@@ -46,9 +46,9 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 			mnemonic = 's'),
 		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Import archive", weight = 1, mnemonic = 'o')})
+		@Menu(label = "Import virtual store", weight = 1, mnemonic = 'v')})
 public class ImportVirtualStoreCommand extends DynamicCommand {    
-    @Parameter(label="MoleculeArchive (.yama)", style="file")
+    @Parameter(label="MoleculeArchive (.yama.store)", style="directory")
     private File file;
     
 	@Override
