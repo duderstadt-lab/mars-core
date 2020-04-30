@@ -175,7 +175,15 @@
 			<artifactId>decimal4j</artifactId>
 			<version>${decimal4j.version}</version>
 		</dependency>
-
+		<dependency>
+				<groupId>io.scif</groupId>
+				<artifactId>scifio-ome-xml</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>io.scif</groupId>
+		    <artifactId>scifio-bf-compat</artifactId>
+		    <scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
