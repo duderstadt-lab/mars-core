@@ -596,8 +596,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					//Integrate intensity
 					if (integrate) {
 						//I think they need to be shifted for just the integration step. Otherwise, leave them.
-						double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
-						peak.setIntensity(intensity[0]);
+						try {
+							double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
+							peak.setIntensity(intensity[0]);
+						} catch (ArrayIndexOutOfBoundsException exception) {
+							System.out.println("Houston, we have a problem. You are way out of bounds!");
+							System.out.println("Attempted to integrate pixel position x " + peak.getX() + " y " + peak.getY());
+							peak.setIntensity(Double.NaN);
+						}
 					}
 					
 					newList.add(peak);
@@ -677,7 +683,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		}
 		
 		//Infinite Mirror images to prevent out of bounds issues
-		private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
+		private float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
 			//First for x if needed
 			if (x < subregion.x) {
 				int before = subregion.x - x;
@@ -703,7 +709,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					beyond = subregion.height - beyond % subregion.height;
 				y = subregion.y + subregion.height - beyond;  
 			}
-			
+
 			return proc.getf(x, y);
 		}
 		
