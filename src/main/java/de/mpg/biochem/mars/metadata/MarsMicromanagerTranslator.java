@@ -39,6 +39,7 @@ import io.scif.ome.services.OMEMetadataService;
 
 import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -121,6 +122,8 @@ public class MarsMicromanagerTranslator {
 			store.setInstrumentID(instrumentID, 0);
 			final Vector<Position> positions = meta.getPositions();
 
+			System.out.println("populating metadata Using the mars metadata translator " + meta.get(0).getPlaneCount());
+			
 			for (int i = 0; i < positions.size(); i++) {
 				final Position p = positions.get(i);
 				if (p.time != null) {
@@ -176,19 +179,18 @@ public class MarsMicromanagerTranslator {
 					{
 						store.setPlaneDeltaT(new Time(p.timestamps[nextStamp++],
 							UNITS.SECOND), i, q);
-					
+						
 						//DROP-IN
-						HashMap<String, String> frameMetaTable = (HashMap<String, String>)meta.getTable().get("MMAllFileKey-" + tiff);
+						HashMap<String, String> planeMetaTable = (HashMap<String, String>)meta.getTable().get(p.getPlaneMapKey(meta, i, q));
 						
-						//meta.getTable().get("FrameKey-" + + "-" + + "-" + + "_MMALL");
+						ArrayList<MapPair> planeParameterList = new ArrayList<MapPair>();
+						for (String planeParameterKey : planeMetaTable.keySet()) 
+							planeParameterList.add(new MapPair(planeParameterKey, planeMetaTable.get(planeParameterKey))); 
 						
-						MapAnnotation mapA = new MapAnnotation();
-						 
-						 mapA.getValue().add(new MapPair("My", "VALUE"));
-						    
-						    
+						store.setMapAnnotationValue(planeParameterList, q);
+						store.setMapAnnotationID(p.getPlaneMapKey(meta, i, q), q);
 						
-						store.setPlaneAnnotationRef(mapA.getAnnotator(), i, q, 0);
+						store.setPlaneAnnotationRef(p.getPlaneMapKey(meta, i, q), i, q, 0);
 						//
 					}
 				}

@@ -522,8 +522,6 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 				}
 
 				if (token.startsWith("\"FrameKey")) {
-					String frameMapKey = token;
-					
 					int dash = token.indexOf("-") + 1;
 					int nextDash = token.indexOf("-", dash);
 					slice[2] = Integer.parseInt(token.substring(dash, nextDash));
@@ -539,11 +537,8 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					boolean valueArray = false;
 					int nestedCount = 0;
 					
-					
 					// DROP-IN
 					HashMap<String, String> planeMetaTable = new HashMap<String, String>();
-					
-					String FrameKeyName = frameMapKey;
 					//
 					
 					while (!token.startsWith("}") || nestedCount > 0) {
@@ -587,10 +582,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 						meta.getTable().put(key, value);
 						
 						// DROP-IN
-						if (key.startsWith("FrameKey"))
-							FrameKeyName = key;
-						
-						frameMetaTable.put(key, value);
+						planeMetaTable.put(key, value);
 						//
 
 						if (key.equals("Exposure-ms")) {
@@ -643,7 +635,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					}
 					
 					// DROP-IN
-					meta.getTable().put("MMAllFileKey-", planeMetaTable);
+					meta.getTable().put("MMAllFileKey-" + posIndex + "-" + slice[0] + "-" + slice[1] + "-" + slice[2], planeMetaTable);
 					//
 				}
 			}
@@ -935,6 +927,17 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 			}
 			return fileNameMap.size() == 0 ? tiffs.get((int) planeIndex) : null;
 		}
+		
+		//DROP-IN
+		public String getPlaneMapKey(final Metadata meta, final int imageIndex,
+			final long planeIndex)
+		{
+			final long[] zct = FormatTools.rasterToPosition(imageIndex, planeIndex,
+					meta, Index.expectedAxes);
+
+				return "MMAllFileKey-" + imageIndex + "-" + zct[0] + "-" + zct[1] + "-" + zct[2];
+		}
+		//
 	}
 
 	private static class Index {

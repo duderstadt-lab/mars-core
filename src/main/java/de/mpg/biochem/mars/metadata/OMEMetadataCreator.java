@@ -124,7 +124,6 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
             		metadata = format.createParser().parse(filePath);
             		break;
             	}
-            
             //for (String key : metadata.getTable().keySet())
             //	System.out.println(key);
             
@@ -136,8 +135,11 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
             OMEMetadata omeMeta = new OMEMetadata(getContext());
             translatorService.translate(metadata, omeMeta, true);
             
+            mString = omeMeta.getRoot().dumpXML();
+
             // Access some metadata from the OME trove. The below
     		// is just a small example of what the OME API provides.
+            /*
     		OMEXMLMetadata omexml = omeMeta.getRoot();
     		int iCount = omexml.getInstrumentCount();
     		for (int iIndex = 0; iIndex < iCount; iIndex++) {
@@ -152,12 +154,12 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
     				System.out.println("\t\tManufacturer = " + omexml.getObjectiveManufacturer(iIndex, oIndex));
     			}
     		}
-            
+            */
             // use FieldPrinter to traverse metadata tree and return as a String
-            String metadataTree = new FieldPrinter(metadata).toString();
+            //String metadataTree = new FieldPrinter(omeMeta).toString();
 
             // (optional) remove some of the tree formatting to make the metadata easier to read
-            mString = formatMetadata(metadataTree);
+            //mString = formatMetadata(metadataTree);
         }
         catch (final FormatException | IOException e) {
             log.error(e);
