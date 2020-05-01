@@ -29,9 +29,12 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.metadata.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
 import de.mpg.biochem.mars.molecule.commands.*;
@@ -47,15 +50,15 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * <p>
  * @author Karl Duderstadt
  */
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty SingleMoleculeArchive with the given name. 
 	 * 
 	 * @param name Name of the empty SingleMoleculeArchive to create.
 	 */
-	public SingleMoleculeArchive(String name) {
-		super(name);
+	public SingleMoleculeArchive(String name, Context context) {
+		super(name, context);
 	}
 	
 	/**
@@ -73,8 +76,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
-		super(file);
+	public SingleMoleculeArchive(File file, Context context) throws IOException, JsonParseException {
+		super(file, context);
 	}
 	
 	/**
@@ -100,8 +103,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public SingleMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public SingleMoleculeArchive(String name, File file, Context context) throws JsonParseException, IOException {
+		super(name, file, context);
 	}
 	
 	/**
@@ -118,8 +121,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public SingleMoleculeArchive(String name, MarsTable table, Context context) {
+		super(name, table, context);
 	}
 	
 	/**
@@ -139,15 +142,15 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	/**
 	 * Create SdmmImageMetadata record using JsonParser stream.
 	 */
-	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new SdmmImageMetadata(jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser, Context context) throws IOException {
+		return new MarsOMEMetadata(jParser, context);
 	}
 	
 	/**
 	 * Create empty SdmmImageMetadata record with the metaUID specified.
 	 */
-	public SdmmImageMetadata createMetadata(String metaUID) {
-		return new SdmmImageMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID, Context context) {
+		return new MarsOMEMetadata(metaUID, context);
 	}
 	
 	/**

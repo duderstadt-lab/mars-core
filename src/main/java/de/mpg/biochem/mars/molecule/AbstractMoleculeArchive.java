@@ -84,6 +84,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.stream.Collectors.toList;
 
+import org.scijava.Context;
+import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
 
 /**
@@ -151,8 +153,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	private MoleculeArchiveWindow win;
 	
-	//Services that the archive will need access to but that are not initialized..
+	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 	
 	//Can be a .yama file or a directory containing a virtual store
 	private File file;
@@ -216,7 +221,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param name The name archive.
 	 */
-	public AbstractMoleculeArchive(String name) {
+	public AbstractMoleculeArchive(String name, Context context) {
+		context.inject(this);
 		this.name = name;
 		this.virtual = false;
 		
@@ -234,7 +240,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public AbstractMoleculeArchive(File file) throws JsonParseException, IOException {
+	public AbstractMoleculeArchive(File file, Context context) throws JsonParseException, IOException {
+		context.inject(this);
 		this.name = file.getName();
 		this.file = file;
 		
@@ -269,10 +276,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public AbstractMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
+	public AbstractMoleculeArchive(String name, File file, Context context) throws JsonParseException, IOException {
+		context.inject(this);
 		this.name = name;
 		this.file = file;
-		this.moleculeArchiveService = moleculeArchiveService;
 		
 		if (file.isDirectory())
 			this.virtual = true;
@@ -301,28 +308,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public AbstractMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		this.name = name;
-		this.virtual = false;
-		this.moleculeArchiveService = moleculeArchiveService;
-		
-		initializeVariables();
-		
-		buildFromTable(table);
-	}
-	
-	/**
-	 * Constructor for building a molecule archive from a MarsTable.
-	 * The table provided must contain a molecule column. The integer values
-	 * in the molecule column determine the grouping for creation of 
-	 * molecule records.
-	 * 
-	 * No status update are provided during processing.
-	 * 
-	 * @param name The name of the archive.
-	 * @param table A MarsTable to build the archive from.
-	 */
-	public AbstractMoleculeArchive(String name, MarsTable table) {
+	public AbstractMoleculeArchive(String name, MarsTable table, Context context) {
+		context.inject(this);
 		this.name = name;
 		this.virtual = false;
 		
@@ -534,7 +521,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
 		//Also, the DataTable can be updated manually.
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
-		I meta = createMetadata(metaUID);
+		I meta = createMetadata(metaUID, context);
 		putMetadata(meta);
 
 		String[] headers = new String[results.getColumnCount() - 1];
@@ -869,7 +856,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					putMetadata(createMetadata(jParser));
+					putMetadata(createMetadata(jParser, context));
 				}
 			}
 			
@@ -1154,7 +1141,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					
 					JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 	
-					metadata = createMetadata(jParser);
+					metadata = createMetadata(jParser, context);
 	
 					fileLock.release();
 					raf.close();
@@ -2005,16 +1992,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
-	 * the current Context. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	public MoleculeArchiveService getMoleculeArchiveService() {
-		return moleculeArchiveService;
-	}
-	
-	/**
 	 * Create empty MoleculeArchiveProperties record.
 	 */
 	public abstract P createProperties();
@@ -2027,12 +2004,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Create MarsMetadata record using JsonParser stream.
 	 */
-	public abstract I createMetadata(JsonParser jParser) throws IOException;
+	public abstract I createMetadata(JsonParser jParser, Context context) throws IOException;
 	
 	/**
 	 * Create empty MarsMetadata record with the metaUID specified.
 	 */
-	public abstract I createMetadata(String metaUID);
+	public abstract I createMetadata(String metaUID, Context context);
 	
 	/**
 	 * Create empty Molecule record.

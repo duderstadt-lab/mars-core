@@ -29,10 +29,12 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.metadata.DefaultMarsMetadata;
+import de.mpg.biochem.mars.metadata.*;
 import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
@@ -40,15 +42,15 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * 
  * @author Karl Duderstadt
  */
-public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsMetadata, DefaultMoleculeArchiveProperties> {
+public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty DefaultMoleculeArchive with the given name. 
 	 * 
 	 * @param name Name of the empty DefaultMoleculeArchive to create.
 	 */
-	public DefaultMoleculeArchive(String name) {
-		super(name);
+	public DefaultMoleculeArchive(String name, Context context) {
+		super(name, context);
 	}
 	
 	/**
@@ -65,8 +67,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public DefaultMoleculeArchive(File file) throws IOException, JsonParseException {
-		super(file);
+	public DefaultMoleculeArchive(File file, Context context) throws IOException, JsonParseException {
+		super(file, context);
 	}
 	
 	/**
@@ -92,8 +94,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public DefaultMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public DefaultMoleculeArchive(String name, File file, Context context) throws JsonParseException, IOException {
+		super(name, file, context);
 	}
 	
 	/**
@@ -110,8 +112,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public DefaultMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public DefaultMoleculeArchive(String name, MarsTable table, Context context) {
+		super(name, table, context);
 	}
 	
 	/**
@@ -131,15 +133,15 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	/**
 	 * Create DefaultMarsMetadata record using JsonParser stream.
 	 */
-	public DefaultMarsMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new DefaultMarsMetadata(jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser, Context context) throws IOException {
+		return new MarsOMEMetadata(jParser, context);
 	}
 	
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
-	public DefaultMarsMetadata createMetadata(String metaUID) {
-		return new DefaultMarsMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID, Context context) {
+		return new MarsOMEMetadata(metaUID, context);
 	}
 	
 	/**

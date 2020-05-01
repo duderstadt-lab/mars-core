@@ -35,6 +35,9 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Set;
 
+import org.scijava.Context;
+import org.scijava.plugin.Parameter;
+
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -46,6 +49,10 @@ import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
+import io.scif.ome.services.OMEMetadataService;
+import io.scif.ome.services.OMEXMLService;
+import loci.common.services.ServiceException;
+import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * Abstract superclass for storage of metadata, which includes all information
@@ -66,8 +73,14 @@ import de.mpg.biochem.mars.util.MarsUtil;
  * @author Karl Duderstadt
  */
 public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
+	
+	@Parameter
+	private OMEXMLService omexmlService;
+	
 	//Processing log for the record
 	protected String log = "";
+	
+	protected OMEXMLMetadata store;
 
 	protected String Microscope = "unknown";
 	
@@ -80,16 +93,14 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
     
-    //Used for making JsonParser instances...
-    //We make it static because we just need to it make parsers so we don't need multiple copies..
-	//Here json is always UTF encoded
     protected static JsonFactory jfactory = new JsonFactory();
     
     /**
 	 * Constructor for creating an empty MarsMetadata record. 
 	 */
-    public AbstractMarsMetadata() {
+    public AbstractMarsMetadata(Context context) {
     	super();
+    	context.inject(this);
     }
     
     /**
@@ -98,8 +109,14 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 * 
 	 * @param UID The unique identifier for this record.
 	 */
-    public AbstractMarsMetadata(String UID) {
+    public AbstractMarsMetadata(String UID, Context context) {
     	super(UID);
+    	context.inject(this);
+    }
+    
+    public AbstractMarsMetadata(String UID, OMEXMLMetadata store) {
+    	super(UID);
+    	this.store = store;
     }
 	
     /**
@@ -110,15 +127,16 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 * @param jParser A JsonParser at the start of the record.
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
-	public AbstractMarsMetadata(JsonParser jParser) throws IOException {
+	public AbstractMarsMetadata(JsonParser jParser, Context context) throws IOException {
 		super();
+		context.inject(this);
 		fromJSON(jParser);
 	}
 	
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
-
+		
 		//Add to output map
 		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {
 			if(Microscope != null)
@@ -146,7 +164,11 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 				jGenerator.writeEndArray();
 			}
 	 	}, IOException.class));
-		
+		outputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jGenerator -> {
+			if(Microscope != null)
+	  			jGenerator.writeStringField("OMEXMLMetadataDump", store.dumpXML());
+	 	}, IOException.class));
+
 		//Add to input map
 		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
 	    	Microscope = jParser.getText();
@@ -164,6 +186,13 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				MarsBdvSource source = new MarsBdvSource(jParser);
 				bdvSources.put(source.getName(), source);
+			}
+		}, IOException.class));
+		inputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jParser -> {
+	        try {
+	    	   store = omexmlService.createOMEXMLMetadata(jParser.getText());
+			} catch (ServiceException e) {
+				e.printStackTrace();
 			}
 		}, IOException.class));
 	}
@@ -321,5 +350,10 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 */
 	public String getLog() {
 		return log;
+	}
+
+	@Override
+	public OMEXMLMetadata getOMEXMLMetadata() {
+		return store;
 	}
 }

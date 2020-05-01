@@ -35,6 +35,7 @@ import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * MarsImageMetadata records store image metadata and all information
@@ -55,6 +56,8 @@ import de.mpg.biochem.mars.table.MarsTable;
  * @author Karl Duderstadt
  */
 public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
+	
+	OMEXMLMetadata getOMEXMLMetadata();
 	
 	/**
 	 * Set the name of the microscope used for data collection.

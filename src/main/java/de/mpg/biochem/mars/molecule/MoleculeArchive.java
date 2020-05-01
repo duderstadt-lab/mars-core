@@ -33,6 +33,8 @@ import java.util.LinkedHashSet;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -551,14 +553,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	MoleculeArchiveProperties properties();
 	
 	/**
-	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
-	 * the current Context. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	MoleculeArchiveService getMoleculeArchiveService();
-	
-	/**
 	 * Update the {@link MoleculeArchiveProperties}. Updates the global tag 
 	 * list using the tagIndex and updates the record numbers. 
 	 * If in virtual mode, this saves the properties to the virtual store.
@@ -597,7 +591,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return MarsMetadata record created using JsonParser stream.
 	 */
-	public I createMetadata(JsonParser jParser) throws IOException;
+	public I createMetadata(JsonParser jParser, Context context) throws IOException;
 	
 	/**
 	 * Create empty MarsMetadata record with the metaUID specified.
@@ -605,7 +599,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param metaUID The metaUID to use during creation of the empty MarsMetadata record.
 	 * @return MarsMetadata record.
 	 */
-	public I createMetadata(String metaUID);
+	public I createMetadata(String metaUID, Context context);
 	
 	/**
 	 * Create empty Molecule record.
