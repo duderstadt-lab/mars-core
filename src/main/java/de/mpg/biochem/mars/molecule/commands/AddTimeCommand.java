@@ -40,6 +40,7 @@ import org.scijava.ui.UIService;
 
 import java.util.HashMap;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;

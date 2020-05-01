@@ -24,35 +24,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing;
+package de.mpg.biochem.mars.metadata;
 
-public class PeakLink {
-	Peak from;
-	Peak to;
-	double distanceSq;
-	int slice;
-	int sliceDifference;
-	public PeakLink(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
-		this.from = from;
-		this.to = to;
-		this.distanceSq = distanceSq;
-		this.slice = slice;
-		this.sliceDifference = sliceDifference;
+import java.io.IOException;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsUtil;
+
+public class MarsOMEMetadata extends AbstractMarsMetadata {
+	
+    public MarsOMEMetadata() {
+    	super();
+    }
+    
+    public MarsOMEMetadata(String UID) {
+    	super(UID);
+    }
+    
+    public MarsOMEMetadata(String UID, MarsTable dataTable) {
+    	super(UID, dataTable);
+    }
+	
+	public MarsOMEMetadata(JsonParser jParser) throws IOException {
+		super(jParser);
 	}
 	
-	public void reset(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
-		this.from = from;
-		this.to = to;
-		this.distanceSq = distanceSq;
-		this.slice = slice;
-		this.sliceDifference = sliceDifference;
-	}
-	
-	public Peak getFrom() {
-		return from;
-	}
-	
-	public Peak getTo() {
-		return to;
+	@Override
+	protected void createIOMaps() {
+		super.createIOMaps();
+
+		//Add to output map
+		outputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jGenerator -> {
+			if(Microscope != null)
+	  			jGenerator.writeStringField("OMEXMLMetadataDump", Microscope);
+	 	}, IOException.class));
+		
+		//Add to input map
+		inputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jParser -> {
+	    	Microscope = jParser.getText();
+		}, IOException.class));
 	}
 }

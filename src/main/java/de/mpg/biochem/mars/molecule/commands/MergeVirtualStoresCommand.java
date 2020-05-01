@@ -65,9 +65,9 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsUtil;
-import de.mpg.biochem.mars.molecule.*;
 
 @Plugin(type = Command.class, label = "Merge Virtual Stores", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

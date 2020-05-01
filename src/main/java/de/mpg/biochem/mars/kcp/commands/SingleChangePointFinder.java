@@ -25,7 +25,7 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.kcp.KCP;
 import de.mpg.biochem.mars.kcp.Segment;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;

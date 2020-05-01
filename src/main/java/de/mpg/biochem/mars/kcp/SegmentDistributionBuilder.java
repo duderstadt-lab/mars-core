@@ -43,12 +43,12 @@ import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
-import de.mpg.biochem.mars.ImageProcessing.Peak;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
+import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
 
 import org.scijava.table.*;

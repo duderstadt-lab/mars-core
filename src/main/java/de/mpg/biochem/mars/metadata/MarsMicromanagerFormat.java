@@ -80,7 +80,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * 
  * @author Karl Duderstadt
  */
-@Plugin(type = Format.class, name = "Micro-Manager-All")
+@Plugin(type = Format.class, name = "MarsMicromanager")
 public class MarsMicromanagerFormat extends AbstractFormat {
 
 	// -- Constants --

@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing.commands;
+package de.mpg.biochem.mars.image.commands;
 
 import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
@@ -43,7 +43,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.ImageProcessing.DiscoidalAveragingFilter;
+import de.mpg.biochem.mars.image.DiscoidalAveragingFilter;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;

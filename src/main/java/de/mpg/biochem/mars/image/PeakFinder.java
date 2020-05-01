@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing;
+package de.mpg.biochem.mars.image;
 
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -56,7 +56,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 import net.imglib2.KDTree;
 
-public class BigDataPeakFinder<T extends RealType<T>> {
+public class PeakFinder<T extends RealType<T>> {
 	
 	//private static TextWindow log_window;
 	
@@ -68,7 +68,6 @@ public class BigDataPeakFinder<T extends RealType<T>> {
 	private boolean useDiscoidalAveraging = true;
 	private int DSinnerRadius = 1;
 	private int DSouterRadius = 3;
-	private PeakFactory peakFactory;
 	
 	// This is very similar to a factory class
 	// When the Peakfinder is created all the main variables are set...
@@ -76,24 +75,22 @@ public class BigDataPeakFinder<T extends RealType<T>> {
 	// Can include a full list of all peaks
 	//Any prefiltering like DS should happen before the image is passed to the PeakFinder...
 	
-	public BigDataPeakFinder(double threshold, int minimumDistance, int DSinnerRadius, int DSouterRadius, boolean findNegativePeaks, PeakFactory peakFactory) {
+	public PeakFinder(double threshold, int minimumDistance, int DSinnerRadius, int DSouterRadius, boolean findNegativePeaks) {
 		this.useDiscoidalAveraging = true;
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
 		this.DSinnerRadius = DSinnerRadius;
 		this.DSouterRadius = DSouterRadius;
 		this.findNegativePeaks = findNegativePeaks;
-		this.peakFactory = peakFactory;
 		
 		//log_window = new TextWindow("PeakFinder_Log", "", 400, 600);
 	}
 	
-	public BigDataPeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks, PeakFactory peakFactory) {
+	public PeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks) {
 		this.useDiscoidalAveraging = false;
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
 		this.findNegativePeaks = findNegativePeaks;
-		this.peakFactory = peakFactory;
 		
 		//log_window = new TextWindow("PeakFinder_Log", "", 400, 600);
 	}
@@ -194,7 +191,7 @@ public class BigDataPeakFinder<T extends RealType<T>> {
 			 double pixel = roiCursor.next().getRealDouble();
 			
 			 if ( pixel > t ) {
-				 possiblePeaks.add(peakFactory.createPeak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
+				 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
 	         }
 		}
 		

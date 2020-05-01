@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.metadata;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,6 +41,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
+import de.mpg.biochem.mars.molecule.MarsBdvSource;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
@@ -97,19 +100,6 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 */
     public AbstractMarsMetadata(String UID) {
     	super(UID);
-    }
-    
-    /**
-	 * Constructor for creating a new record with the
-	 * specified UID and the {@link MarsTable} given
-	 * as the DataTable. 
-	 * 
-	 * @param UID The unique identifier for this record.
-	 * @param dataTable The {@link MarsTable} to use for 
-	 * initialization.
-	 */
-    public AbstractMarsMetadata(String UID, MarsTable dataTable) {
-    	super(UID, dataTable);
     }
 	
     /**

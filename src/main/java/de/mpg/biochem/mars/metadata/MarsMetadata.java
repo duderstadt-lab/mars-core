@@ -24,11 +24,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.metadata;
 
 import java.util.Collection;
 import java.util.Set;
 
+import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import de.mpg.biochem.mars.molecule.MarsBdvSource;
+import de.mpg.biochem.mars.molecule.MarsRecord;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 
 /**

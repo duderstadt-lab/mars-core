@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**

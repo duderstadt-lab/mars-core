@@ -37,8 +37,6 @@ import io.scif.io.Location;
 import io.scif.ome.OMEMetadata;
 import io.scif.ome.services.OMEMetadataService;
 
-import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -47,6 +45,7 @@ import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.*;
 import loci.formats.ome.OMEXMLMetadata;
 import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
@@ -189,7 +188,6 @@ public class MarsMicromanagerTranslator {
 						
 						store.setMapAnnotationValue(planeParameterList, q);
 						store.setMapAnnotationID(p.getPlaneMapKey(meta, i, q), q);
-						
 						store.setPlaneAnnotationRef(p.getPlaneMapKey(meta, i, q), i, q, 0);
 						//
 					}

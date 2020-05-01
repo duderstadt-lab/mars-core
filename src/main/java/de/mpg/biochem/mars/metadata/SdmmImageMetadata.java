@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.metadata;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -71,8 +71,8 @@ import net.imagej.Dataset;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
-import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
-import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
+import de.mpg.biochem.mars.image.MoleculeIntegrator;
+import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;

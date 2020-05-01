@@ -32,6 +32,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
 public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {

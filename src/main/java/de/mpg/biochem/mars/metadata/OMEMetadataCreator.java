@@ -109,8 +109,6 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 	@Override
 	public void run() {	
 		
-		//final Dataset img = ij.scifio().datasetIO().open("http://imagej.net/images/FluorescentCells.jpg");
-		
 		// we need the file path to determine the file format
         final String filePath = dataset.getSource();
 
@@ -120,63 +118,18 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
         	Metadata metadata = null;
         	
             for (Format format : formatService.getAllFormats())
-            	if (format.getFormatName().equals("Micro-Manager-All")) {
+            	if (format.getFormatName().equals("MarsMicromanager")) {
             		metadata = format.createParser().parse(filePath);
             		break;
             	}
-            //for (String key : metadata.getTable().keySet())
-            //	System.out.println(key);
             
-            //((MicromanagerAllFormat.Metadata) metadata).getPositions().get(0).time = "0";
-            
-            //for (ImageMetadata position : metadata.get(0))
-            //	position
-
             OMEMetadata omeMeta = new OMEMetadata(getContext());
             translatorService.translate(metadata, omeMeta, true);
             
             mString = omeMeta.getRoot().dumpXML();
-
-            // Access some metadata from the OME trove. The below
-    		// is just a small example of what the OME API provides.
-            /*
-    		OMEXMLMetadata omexml = omeMeta.getRoot();
-    		int iCount = omexml.getInstrumentCount();
-    		for (int iIndex = 0; iIndex < iCount; iIndex++) {
-    			System.out.println("Instrument #" + iIndex + ":");
-    			System.out.println("\tID = " + omexml.getInstrumentID(iIndex));
-    			int oCount = omexml.getObjectiveCount(iIndex);
-    			for (int oIndex = 0; oIndex < oCount; oIndex++) {
-    				System.out.println("\tObjective #" + oIndex + ":");
-    				System.out.println("\t\tID = " + omexml.getObjectiveID(iIndex, oIndex));
-    				System.out.println("\t\tLensNA = " + omexml.getObjectiveLensNA(iIndex, oIndex));
-    				System.out.println("\t\tModel = " + omexml.getObjectiveModel(iIndex, oIndex));
-    				System.out.println("\t\tManufacturer = " + omexml.getObjectiveManufacturer(iIndex, oIndex));
-    			}
-    		}
-            */
-            // use FieldPrinter to traverse metadata tree and return as a String
-            //String metadataTree = new FieldPrinter(omeMeta).toString();
-
-            // (optional) remove some of the tree formatting to make the metadata easier to read
-            //mString = formatMetadata(metadataTree);
         }
         catch (final FormatException | IOException e) {
             log.error(e);
         }
 	}
-	
-	/**
-     * This function makes the metadata easier to read by removing some of the tree formatting from FieldPrinter.
-     * @param metadataTree raw metadata string returned by FieldPrinter().toString()
-     * @return formatted version of metadataTree
-     */
-    private String formatMetadata(String metadataTree) {
-
-        // remove ending braces | replace ", " between OME fields
-        String tmp = metadataTree.replaceAll("(\\t+}\\n)|(,\\s)", "\n");
-
-        // remove beginning braces | remove indenting
-        return tmp.replaceAll("(\\t+\\{\\n)|(\\t+)", "");
-    }
 }

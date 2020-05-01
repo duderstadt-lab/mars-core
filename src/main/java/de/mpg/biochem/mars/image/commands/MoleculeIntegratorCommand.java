@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing.commands;
+package de.mpg.biochem.mars.image.commands;
 
 import java.awt.Rectangle;
 import java.io.IOException;
@@ -57,8 +57,9 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.ImageProcessing.FPeak;
-import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
+import de.mpg.biochem.mars.image.FPeak;
+import de.mpg.biochem.mars.image.MoleculeIntegrator;
+import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;

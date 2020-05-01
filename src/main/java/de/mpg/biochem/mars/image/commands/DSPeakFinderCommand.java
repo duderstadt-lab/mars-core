@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing.commands;
+package de.mpg.biochem.mars.image.commands;
 
 import ij.ImagePlus;
 import ij.Prefs;
@@ -49,9 +49,9 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.RealRect;
 
-import de.mpg.biochem.mars.ImageProcessing.Peak;
-import de.mpg.biochem.mars.ImageProcessing.PeakFinder;
-import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
+import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.image.PeakFinder;
+import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;

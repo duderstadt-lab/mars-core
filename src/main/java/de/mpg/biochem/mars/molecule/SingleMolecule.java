@@ -28,6 +28,7 @@ package de.mpg.biochem.mars.molecule;
 
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
 
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;

@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing.commands;
+package de.mpg.biochem.mars.image.commands;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;

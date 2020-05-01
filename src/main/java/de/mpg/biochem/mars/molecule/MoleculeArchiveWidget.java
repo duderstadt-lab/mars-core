@@ -38,6 +38,8 @@ import org.scijava.plugin.Plugin;
 import org.scijava.widget.*;
 import org.scijava.widget.WidgetModel;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+
 import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**

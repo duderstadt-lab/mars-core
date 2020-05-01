@@ -40,6 +40,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsPosition;
@@ -72,9 +74,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	//Parameter map for record properties
 	protected LinkedHashMap<String, Double> Parameters;
 	
-	//Table housing main record data.
-	protected MarsTable dataTable;
-	
 	//Regions of interest map
 	protected LinkedHashMap<String, MarsRegion> regionsOfInterest;
 	
@@ -88,7 +87,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
-		dataTable = new MarsTable();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 	}
@@ -100,43 +98,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param UID The unique identifier for this MarsRecord.
 	 */
 	public AbstractMarsRecord(String UID) {
-		this();
-		this.UID = UID;
-	}
-	
-	/**
-	 * Constructor for loading a MarsRecord record from a file. Typically,
-	 * used when streaming records into memory when loading a {@link MoleculeArchive}
-	 * or when a record is retrieved from the virtual store. 
-	 * 
-	 * @param jParser A JsonParser at the start of the MarsRecord.
-	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
-	 */
-	//public AbstractMarsRecord(JsonParser jParser) throws IOException {
-	//	this();
-		
-		//This is a problem because it calls create maps overriden in subclasses from a superclass 
-		//constructor....!!!!!!!!!! We work around the issue for the moment...
-	//	fromJSON(jParser);
-	//}
-	
-	/**
-	 * Constructor for creating a new record with the
-	 * specified UID and the {@link MarsTable} given
-	 * as the DataTable. 
-	 * 
-	 * @param UID The unique identifier for this record.
-	 * @param dataTable The {@link MarsTable} to use for 
-	 * initialization.
-	 */
-	public AbstractMarsRecord(String UID, MarsTable dataTable) {
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 		this.UID = UID;
-		this.dataTable = dataTable;
+		
 	}
 	
 	@Override
@@ -166,12 +134,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 				for (String name:Parameters.keySet())
 					jGenerator.writeNumberField(name, Parameters.get(name));
 				jGenerator.writeEndObject();
-			}
-		}, IOException.class));
-		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
-			if (dataTable.getColumnCount() > 0) {
-				jGenerator.writeFieldName("DataTable");
-				dataTable.toJSON(jGenerator);
 			}
 		}, IOException.class));
 		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
@@ -220,10 +182,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
     				Parameters.put(subfieldname, jParser.getDoubleValue());
     			}
 	    	}
-		}, IOException.class));
-		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
-			dataTable.fromJSON(jParser);
-		}, IOException.class));		
+		}, IOException.class));	
 		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				MarsRegion regionOfInterest = new MarsRegion(jParser);
@@ -285,7 +244,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public void addTag(String tag) {
 		Tags.add(tag);
 		if (parent != null) {
-			parent.getProperties().addTag(tag);
+			parent.properties().addTag(tag);
 		}
 	}
 	
@@ -357,7 +316,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
 		if (parent != null) {
-			parent.getProperties().addParameter(parameter);
+			parent.properties().addParameter(parameter);
 		}
 	}
 	
@@ -410,32 +369,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public LinkedHashMap<String, Double> getParameters() {
 		return Parameters;
-	}
-	
-	/**
-	 * Get the {@link MarsTable} DataTable holding the primary data for
-	 * this record.
-	 * 
-	 * @return The primary DataTable for this record.
-	 */
-	public MarsTable getDataTable() {
-		return dataTable;
-	}
-	
-	/**
-	 * Set the {@link MarsTable} holding the primary data for
-	 * this record. Usually this is tracking or intensity 
-	 * as a function of time.
-	 * 
-	 * @param table The {@link MarsTable} to add or update in the 
-	 * record.
-	 */
-	public void setDataTable(MarsTable table) {
-		//This means we are resetting all the data...
-		dataTable.clear();
-		
-		//Now set to new table
-		dataTable = table;
 	}
 	
 	/**

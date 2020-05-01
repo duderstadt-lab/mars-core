@@ -24,28 +24,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.image;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonParser;
-
-import de.mpg.biochem.mars.table.MarsTable;
-
-public class DefaultMarsMetadata extends AbstractMarsMetadata {
-    public DefaultMarsMetadata() {
-    	super();
-    }
-    
-    public DefaultMarsMetadata(String UID) {
-    	super(UID);
-    }
-    
-    public DefaultMarsMetadata(String UID, MarsTable dataTable) {
-    	super(UID, dataTable);
-    }
+public class PeakLink {
+	Peak from;
+	Peak to;
+	double distanceSq;
+	int slice;
+	int sliceDifference;
+	public PeakLink(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
+		this.from = from;
+		this.to = to;
+		this.distanceSq = distanceSq;
+		this.slice = slice;
+		this.sliceDifference = sliceDifference;
+	}
 	
-	public DefaultMarsMetadata(JsonParser jParser) throws IOException {
-		super(jParser);
+	public void reset(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
+		this.from = from;
+		this.to = to;
+		this.distanceSq = distanceSq;
+		this.slice = slice;
+		this.sliceDifference = sliceDifference;
+	}
+	
+	public Peak getFrom() {
+		return from;
+	}
+	
+	public Peak getTo() {
+		return to;
 	}
 }

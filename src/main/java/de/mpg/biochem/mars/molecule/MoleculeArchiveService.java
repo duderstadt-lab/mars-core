@@ -49,6 +49,7 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })

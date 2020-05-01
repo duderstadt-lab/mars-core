@@ -39,6 +39,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
@@ -71,6 +73,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	//UID of metadata associated wit this molecule.
 	protected String metadataUID;
 	
+	//Table housing main record data.
+	protected MarsTable dataTable;
+	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
 	//XColumn is at index 0
@@ -83,6 +88,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule() {
 		super();
+		dataTable = new MarsTable();
 		segmentTables = new LinkedHashMap<>();
 	}
 	
@@ -122,7 +128,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * initialization.
 	 */
 	public AbstractMolecule(String UID, MarsTable dataTable) {
-		super(UID, dataTable);
+		super(UID);
+		this.dataTable = dataTable;
 		segmentTables = new LinkedHashMap<>();
 	}
 	
@@ -131,6 +138,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		super.createIOMaps();
 		
 		//Add to output map
+		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
+			if (dataTable.getColumnCount() > 0) {
+				jGenerator.writeFieldName("DataTable");
+				dataTable.toJSON(jGenerator);
+			}
+		}, IOException.class));
 		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
 			if (metadataUID != null)
 				jGenerator.writeStringField("ImageMetadataUID", metadataUID);
@@ -161,6 +174,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 	}, IOException.class));
 		
 		//Add to input map
+		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
+			dataTable.fromJSON(jParser);
+		}, IOException.class));	
 		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
 	    	metadataUID = jParser.getText();
 		}, IOException.class));
@@ -224,6 +240,32 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		    	}
 	    	}
 		}, IOException.class));
+	}
+	
+	/**
+	 * Get the {@link MarsTable} DataTable holding the primary data for
+	 * this record.
+	 * 
+	 * @return The primary DataTable for this record.
+	 */
+	public MarsTable getDataTable() {
+		return dataTable;
+	}
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * record.
+	 */
+	public void setDataTable(MarsTable table) {
+		//This means we are resetting all the data...
+		dataTable.clear();
+		
+		//Now set to new table
+		dataTable = table;
 	}
 	
 	/**

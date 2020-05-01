@@ -29,45 +29,23 @@ package de.mpg.biochem.mars.metadata;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.molecule.AbstractMarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil;
 
-public class OMEMarsMetadata extends AbstractMarsMetadata {
-	
-	
-	
-    public OMEMarsMetadata() {
+public class DefaultMarsMetadata extends AbstractMarsMetadata {
+    public DefaultMarsMetadata() {
     	super();
     }
     
-    public OMEMarsMetadata(String UID) {
+    public DefaultMarsMetadata(String UID) {
     	super(UID);
     }
     
-    public OMEMarsMetadata(String UID, MarsTable dataTable) {
+    public DefaultMarsMetadata(String UID, MarsTable dataTable) {
     	super(UID, dataTable);
     }
 	
-	public OMEMarsMetadata(JsonParser jParser) throws IOException {
+	public DefaultMarsMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
-	}
-	
-	@Override
-	protected void createIOMaps() {
-		super.createIOMaps();
-
-		//Add to output map
-		outputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jGenerator -> {
-			if(Microscope != null)
-	  			jGenerator.writeStringField("OMEXMLMetadataDump", Microscope);
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jParser -> {
-	    	Microscope = jParser.getText();
-		}, IOException.class));
 	}
 }

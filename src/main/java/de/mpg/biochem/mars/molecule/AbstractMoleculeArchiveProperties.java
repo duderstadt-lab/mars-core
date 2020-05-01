@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**

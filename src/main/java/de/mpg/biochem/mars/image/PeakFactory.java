@@ -1,4 +1,4 @@
-package de.mpg.biochem.mars.ImageProcessing;
+package de.mpg.biochem.mars.image;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
