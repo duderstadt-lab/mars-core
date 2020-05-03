@@ -31,23 +31,30 @@ import java.io.IOException;
 import org.scijava.Context;
 
 import com.fasterxml.jackson.core.JsonParser;
+
+import de.mpg.biochem.mars.table.MarsTable;
 import ome.xml.meta.OMEXMLMetadata;
 
 public class MarsOMEMetadata extends AbstractMarsMetadata {
 	
-    public MarsOMEMetadata(Context context) {
+    public MarsOMEMetadata(final Context context) {
     	super(context);
     }
     
-    public MarsOMEMetadata(String UID, Context context) {
-    	super(UID, context);
+    public MarsOMEMetadata(final Context context, String UID) {
+    	super(context, UID);
     }
     
-    public MarsOMEMetadata(String UID, OMEXMLMetadata store) {
-    	super(UID, store);
+    public MarsOMEMetadata(final Context context, String UID, OMEXMLMetadata store) {
+    	super(context, UID, store);
     }
 	
-	public MarsOMEMetadata(JsonParser jParser, Context context) throws IOException {
-		super(jParser, context);
+	public MarsOMEMetadata(final Context context, JsonParser jParser) throws IOException {
+		super(context, jParser);
+	}
+	
+	//Dummy method. Please remove...
+	public MarsTable getDataTable() {
+		return new MarsTable();
 	}
 }

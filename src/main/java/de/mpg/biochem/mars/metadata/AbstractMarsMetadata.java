@@ -72,7 +72,7 @@ import ome.xml.meta.OMEXMLMetadata;
  * </p>
  * @author Karl Duderstadt
  */
-public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
+public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
 	
 	@Parameter
 	private OMEXMLService omexmlService;
@@ -98,7 +98,7 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
     /**
 	 * Constructor for creating an empty MarsMetadata record. 
 	 */
-    public AbstractMarsMetadata(Context context) {
+    public AbstractMarsMetadata(final Context context) {
     	super();
     	context.inject(this);
     }
@@ -109,13 +109,14 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 * 
 	 * @param UID The unique identifier for this record.
 	 */
-    public AbstractMarsMetadata(String UID, Context context) {
+    public AbstractMarsMetadata(final Context context, String UID) {
     	super(UID);
     	context.inject(this);
     }
     
-    public AbstractMarsMetadata(String UID, OMEXMLMetadata store) {
+    public AbstractMarsMetadata(final Context context, String UID, OMEXMLMetadata store) {
     	super(UID);
+    	context.inject(this);
     	this.store = store;
     }
 	
@@ -127,7 +128,7 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 * @param jParser A JsonParser at the start of the record.
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
-	public AbstractMarsMetadata(JsonParser jParser, Context context) throws IOException {
+	public AbstractMarsMetadata(final Context context, JsonParser jParser) throws IOException {
 		super();
 		context.inject(this);
 		fromJSON(jParser);
@@ -195,6 +196,10 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 				e.printStackTrace();
 			}
 		}, IOException.class));
+	}
+	
+	public int getFrameCount() {
+		return store.getTiffDataCount(0);
 	}
 	
 	/**

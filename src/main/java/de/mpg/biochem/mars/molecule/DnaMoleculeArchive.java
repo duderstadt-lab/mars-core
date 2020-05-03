@@ -29,28 +29,30 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
 	
-	public DnaMoleculeArchive(String name) {
-		super(name);
+	public DnaMoleculeArchive(final Context context, String name) {
+		super(context, name);
 	}
 	
-	public DnaMoleculeArchive(File file) throws IOException, JsonParseException {
-		super(file);
+	public DnaMoleculeArchive(final Context context, File file) throws IOException, JsonParseException {
+		super(context, file);
 	}
 	
-	public DnaMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public DnaMoleculeArchive(final Context context, String name, MarsTable table) {
+		super(context, name, table);
 	}
 	
-	public DnaMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public DnaMoleculeArchive(final Context context, String name, File file) throws JsonParseException, IOException {
+		super(context, name, file);
 	}
 	
 	public SingleMoleculeArchiveProperties createProperties() {
@@ -61,12 +63,12 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Sdm
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new SdmmImageMetadata(jParser);
+	public MarsOMEMetadata createMetadata(final Context context, JsonParser jParser) throws IOException {
+		return new MarsOMEMetadata(context, jParser);
 	}
 	
-	public SdmmImageMetadata createMetadata(String metaUID) {
-		return new SdmmImageMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(final Context context,String metaUID) {
+		return new MarsOMEMetadata(context, metaUID);
 	}
 	
 	public DnaMolecule createMolecule() {

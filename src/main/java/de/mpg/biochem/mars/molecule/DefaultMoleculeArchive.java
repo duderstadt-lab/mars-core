@@ -49,8 +49,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * 
 	 * @param name Name of the empty DefaultMoleculeArchive to create.
 	 */
-	public DefaultMoleculeArchive(String name, Context context) {
-		super(name, context);
+	public DefaultMoleculeArchive(final Context context, String name) {
+		super(context, name);
 	}
 	
 	/**
@@ -67,8 +67,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public DefaultMoleculeArchive(File file, Context context) throws IOException, JsonParseException {
-		super(file, context);
+	public DefaultMoleculeArchive(final Context context, File file) throws IOException, JsonParseException {
+		super(context, file);
 	}
 	
 	/**
@@ -94,8 +94,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public DefaultMoleculeArchive(String name, File file, Context context) throws JsonParseException, IOException {
-		super(name, file, context);
+	public DefaultMoleculeArchive(final Context context, String name, File file) throws JsonParseException, IOException {
+		super(context, name, file);
 	}
 	
 	/**
@@ -112,8 +112,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public DefaultMoleculeArchive(String name, MarsTable table, Context context) {
-		super(name, table, context);
+	public DefaultMoleculeArchive(final Context context, String name, MarsTable table) {
+		super(context, name, table);
 	}
 	
 	/**
@@ -133,15 +133,15 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	/**
 	 * Create DefaultMarsMetadata record using JsonParser stream.
 	 */
-	public MarsOMEMetadata createMetadata(JsonParser jParser, Context context) throws IOException {
-		return new MarsOMEMetadata(jParser, context);
+	public MarsOMEMetadata createMetadata(final Context context, JsonParser jParser) throws IOException {
+		return new MarsOMEMetadata(context, jParser);
 	}
 	
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
-	public MarsOMEMetadata createMetadata(String metaUID, Context context) {
-		return new MarsOMEMetadata(metaUID, context);
+	public MarsOMEMetadata createMetadata(final Context context, String metaUID) {
+		return new MarsOMEMetadata(context, metaUID);
 	}
 	
 	/**

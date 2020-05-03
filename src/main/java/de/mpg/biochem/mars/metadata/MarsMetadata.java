@@ -59,6 +59,8 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	OMEXMLMetadata getOMEXMLMetadata();
 	
+	int getFrameCount();
+	
 	/**
 	 * Set the name of the microscope used for data collection.
 	 * This is just for record keeping. There are no predefined
@@ -193,4 +195,7 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * @return True if a source with the name given is found.
 	 */
 	boolean hasBdvSource(String name);
+	
+	//Place holder, remove me..
+	MarsTable getDataTable();
 }

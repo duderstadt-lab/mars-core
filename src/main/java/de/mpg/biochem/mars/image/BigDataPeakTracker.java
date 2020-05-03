@@ -471,9 +471,9 @@ public class BigDataPeakTracker {
 		//fail-safe in case somehow a peak is linked to itself?
 		//Fixes some kind of bug observed very very rarely that 
 		//prevents creation of an archive...
-		int slices = archive.getMetadata(0).getDataTable().getRowCount();
+		int frames = archive.getMetadata(0).getFrameCount();
 		int count = 0;
-		while (peak.getForwardLink() != null && count < slices) {
+		while (peak.getForwardLink() != null && count < frames) {
 			peak = peak.getForwardLink();
 			addPeakToTable(table, peak, peak.getSlice());
 			count++;

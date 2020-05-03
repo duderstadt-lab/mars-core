@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
+import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -86,6 +87,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 
 	@Parameter
     private UIService uiService;
@@ -369,7 +373,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
 			try {
-				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(newVirtualDirectory);
+				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(context, newVirtualDirectory);
 				newArchive.logln(log);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

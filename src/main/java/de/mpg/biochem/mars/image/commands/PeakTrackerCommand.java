@@ -35,6 +35,7 @@ import ij.process.ImageProcessor;
 
 import org.scijava.module.MutableModuleItem;
 import org.decimal4j.util.DoubleRounder;
+import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -51,7 +52,7 @@ import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
-import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
@@ -135,6 +136,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
+		
+		@Parameter
+		private Context context;
 		
 		//INPUT IMAGE
 		@Parameter(label = "Image to search for Peaks")
@@ -420,10 +424,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    	num++;
 		    }
 		    
-		    archive = new SingleMoleculeArchive(newName + ".yama");
+		    archive = new SingleMoleculeArchive(context, newName + ".yama");
 		    
-		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putMetadata(metaData);
+		    //SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
+		    
+		    //Add the OMEXMLMetadata to this construtor...
+		    
+		    MarsOMEMetadata metadata = new MarsOMEMetadata(context);
+			archive.putMetadata(metadata);
 		    
 		    tracker.track(PeakStack, archive);
 		    

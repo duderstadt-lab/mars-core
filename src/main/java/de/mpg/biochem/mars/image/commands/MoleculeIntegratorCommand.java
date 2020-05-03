@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.decimal4j.util.DoubleRounder;
+import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -59,7 +60,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.image.FPeak;
 import de.mpg.biochem.mars.image.MoleculeIntegrator;
-import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -106,6 +107,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 	
 	//INPUT IMAGE
 	@Parameter(label = "Image for Integration")
@@ -385,10 +389,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    	newName = "archive" + num;
 		    	num++;
 		    }
-	        archive = new SingleMoleculeArchive(newName + ".yama");
+	        archive = new SingleMoleculeArchive(context, newName + ".yama");
 	        
-		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putMetadata(metaData);
+		    //SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
+	        
+	        //Pass store into the MarsOMEMetadata ...
+	        
+	        MarsOMEMetadata metadata = new MarsOMEMetadata(context);
+			archive.putMetadata(metadata);
 			
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
@@ -449,7 +457,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	}
 	        	
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
-	        	molecule.setMetadataUID(metaData.getUID());
+	        	molecule.setMetadataUID(metadata.getUID());
 	        	
 	        	archive.put(molecule);
 	        	

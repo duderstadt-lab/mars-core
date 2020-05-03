@@ -33,6 +33,7 @@ import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
+import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -77,6 +78,9 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
     private MoleculeArchiveService moleculeArchiveService;
 	
 	@Parameter
+	private Context context;
+	
+	@Parameter
 	private MarsTableService resultsTableService;
 	
     @Parameter
@@ -112,12 +116,12 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
+		String log = LogBuilder.buildTitleBlock("Building MoleculeArchive from Table");
 
 		builder.addParameter("From Table", table.getName());
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new SingleMoleculeArchive(name, table, moleculeArchiveService);
+		archive = new SingleMoleculeArchive(context, name, table);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
@@ -128,7 +132,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
         logService.info(LogBuilder.endBlock(true));
         
         log += "\n" + LogBuilder.endBlock(true);
-        archive.addLogMessage(log);
+        archive.logln(log);
 	}
     
     public AbstractMoleculeArchive getArchive() {

@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
+import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -82,6 +83,9 @@ public class MergeCommand extends DynamicCommand {
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 	
 	@Parameter
     private UIService uiService;
@@ -208,7 +212,7 @@ public class MergeCommand extends DynamicCommand {
 						String fieldName = jParser.getCurrentName();
 						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
-								metadataList.add(mergedArchiveType.createMetadata(jParser));
+								metadataList.add(mergedArchiveType.createMetadata(context, jParser));
 							}
 						}
 						

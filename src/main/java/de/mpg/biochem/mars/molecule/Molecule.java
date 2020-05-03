@@ -31,7 +31,7 @@ import java.util.Set;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.metadata.SdmmImageMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;

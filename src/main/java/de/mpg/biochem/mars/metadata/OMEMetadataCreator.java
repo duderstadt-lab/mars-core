@@ -36,6 +36,7 @@ import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.UIService;
 
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import java.util.HashMap;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import ij.ImageJ;
 
 import java.io.IOException;
 
@@ -56,7 +58,19 @@ import io.scif.FieldPrinter;
 import io.scif.ome.OMEMetadata;
 
 import net.imagej.Dataset;
+import net.imagej.ImgPlus;
 import ome.xml.meta.OMEXMLMetadata;
+
+import ij.ImagePlus;
+import io.scif.Metadata;
+import io.scif.filters.AbstractMetadataWrapper;
+import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.formats.OMETIFFFormat;
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.axis.AxisType;
+import net.imagej.display.ImageDisplay;
 
 import org.scijava.ItemIO;
 import org.scijava.command.Command;
@@ -110,26 +124,27 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 	public void run() {	
 		
 		// we need the file path to determine the file format
-        final String filePath = dataset.getSource();
-
-        // catch any Format or IO exceptions
-        try {
+        //final String filePath = dataset.getSource();
         	
-        	Metadata metadata = null;
-        	
-            for (Format format : formatService.getAllFormats())
-            	if (format.getFormatName().equals("MarsMicromanager")) {
-            		metadata = format.createParser().parse(filePath);
-            		break;
-            	}
-            
-            OMEMetadata omeMeta = new OMEMetadata(getContext());
-            translatorService.translate(metadata, omeMeta, true);
-            
-            mString = omeMeta.getRoot().dumpXML();
-        }
-        catch (final FormatException | IOException e) {
-            log.error(e);
-        }
+    	ImgPlus<?> imp = dataset.getImgPlus();
+    	
+    	if (!(imp instanceof SCIFIOImgPlus)) {
+			uiService.showDialog("This image has not been opened with SCIFIO.", DialogPrompt.MessageType.ERROR_MESSAGE);
+			return;
+		}
+    	
+    	SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
+		Metadata metadata = sciImp.getMetadata();
+    	
+        //for (Format format : formatService.getAllFormats())
+        //	if (format.getFormatName().equals("MarsMicromanager")) {
+        //		metadata = format.createParser().parse(filePath);
+        //		break;
+        //	}
+        
+        OMEMetadata omeMeta = new OMEMetadata(getContext());
+        translatorService.translate(metadata, omeMeta, true);
+        
+        mString = omeMeta.getRoot().dumpXML();
 	}
 }
