@@ -237,7 +237,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 				positions.add(p);
 				parsePosition(jsonData[pos], source, pos);
 			}
-
+			
 			translatorService.translate(source, dest, true);
 		}
 

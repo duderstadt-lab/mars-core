@@ -45,14 +45,14 @@ import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.*;
+import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.Metadata;
+import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.Position;
 import loci.formats.ome.OMEXMLMetadata;
 import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
 import ome.units.quantity.Time;
-import ome.xml.model.MapAnnotation;
 import ome.xml.model.MapPair;
 
 import ome.xml.model.primitives.Timestamp;
@@ -120,8 +120,6 @@ public class MarsMicromanagerTranslator {
 				omexmlMetadataService.createLSID("Instrument", 0);
 			store.setInstrumentID(instrumentID, 0);
 			final Vector<Position> positions = meta.getPositions();
-
-			System.out.println("populating metadata Using the mars metadata translator " + meta.get(0).getPlaneCount());
 			
 			for (int i = 0; i < positions.size(); i++) {
 				final Position p = positions.get(i);

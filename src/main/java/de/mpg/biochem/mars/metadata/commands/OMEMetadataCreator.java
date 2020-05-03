@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.metadata;
+package de.mpg.biochem.mars.metadata.commands;
 
 import org.decimal4j.util.DoubleRounder;
 
@@ -53,7 +53,6 @@ import io.scif.services.TranslatorService;
 import io.scif.Format;
 import io.scif.FormatException;
 import io.scif.ImageMetadata;
-import io.scif.Metadata;
 import io.scif.FieldPrinter;
 import io.scif.ome.OMEMetadata;
 
@@ -124,7 +123,7 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 	public void run() {	
 		
 		// we need the file path to determine the file format
-        //final String filePath = dataset.getSource();
+        final String filePath = dataset.getSource();
         	
     	ImgPlus<?> imp = dataset.getImgPlus();
     	
@@ -133,17 +132,46 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 			return;
 		}
     	
+    	//System.out.println("dataset has properties");
+    	//for (String key : dataset.getProperties().keySet())
+    	//	System.out.println(key);
+    	
+    	Metadata globalMeta = (Metadata)dataset.getProperties().get("scifio.metadata.global");
+    	System.out.println("globalMeta " + globalMeta.toString());
+    	System.out.println("globalMeta ImageCount " + globalMeta.getImageCount());
+    	
     	SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
 		Metadata metadata = sciImp.getMetadata();
+		
+		// Why the fuck this is needed ? - @hadim
+		while ((metadata instanceof AbstractMetadataWrapper)) {
+			metadata = ((AbstractMetadataWrapper) metadata).unwrap();
+		}
+		
+		System.out.println("metadata " + metadata.toString());
+		System.out.println("metadata ImageCount " + metadata.getImageCount());
     	
-        //for (Format format : formatService.getAllFormats())
-        //	if (format.getFormatName().equals("MarsMicromanager")) {
-        //		metadata = format.createParser().parse(filePath);
-        //		break;
-        //	}
+		Metadata metadata2 = null;
+		
+        for (Format format : formatService.getAllFormats())
+        	if (format.getFormatName().equals("MarsMicromanager")) {
+        		try {
+					metadata2 = format.createParser().parse(filePath);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (FormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        		break;
+        	}
+        
+        System.out.println("metadata2 " + metadata2.toString());
+        System.out.println("metadata2 ImageCount " + metadata2.getImageCount());
         
         OMEMetadata omeMeta = new OMEMetadata(getContext());
-        translatorService.translate(metadata, omeMeta, true);
+        translatorService.translate(metadata2, omeMeta, true);
         
         mString = omeMeta.getRoot().dumpXML();
 	}
