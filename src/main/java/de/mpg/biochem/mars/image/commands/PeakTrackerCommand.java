@@ -57,11 +57,17 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
+import io.scif.Format;
+import io.scif.FormatException;
+import io.scif.Metadata;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.services.FormatService;
+import io.scif.services.TranslatorService;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
@@ -93,6 +99,7 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -127,6 +134,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 	    @Parameter
 	    private StatusService statusService;
+	    
+	    @Parameter
+	    private TranslatorService translatorService;
+	    
+	    @Parameter
+	    private FormatService formatService;
 	    
 		@Parameter
 	    private MarsTableService resultsTableService;
@@ -177,10 +190,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private boolean preview = false;
 		
 		@Parameter(visibility = ItemVisibility.MESSAGE)
-		private String slicePeakCount = "count: 0";
+		private String framePeakCount = "count: 0";
 		
-		@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
-		private int previewSlice;
+		@Parameter(label = "Preview frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+		private int previewFrame;
 		
 		@Parameter(label="Find negative peaks")
 		private boolean findNegativePeaks = false;
@@ -212,8 +225,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Max difference y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		@Parameter(label="Max difference slice")
-		private int PeakTracker_maxDifferenceSlice = 1;
+		@Parameter(label="Max difference frame")
+		private int PeakTracker_maxDifferenceFrame = 1;
 
 		@Parameter(label="Minimum track length")
 		private int PeakTracker_minTrajectoryLength = 100;
@@ -247,12 +260,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		//instance of a PeakTracker used for linking all the peaks between detected in each frame.
 		private PeakTracker tracker;
 		
-		//A map with peak lists for each slice for an image stack
+		//A map with peak lists for each frame for an image stack
 		private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
-		
-		//A map that will hold all the metadata from individual frames as they are processed
-		//this will contain the 'label' information from each image header
-		private ConcurrentMap<Integer, String> metaDataStack;
 		
 		//box region for analysis added to the image.
 		private Rectangle rect;
@@ -293,9 +302,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 			imgHeight.setValue(this, rect.height);
 			
-			final MutableModuleItem<Integer> preSlice = getInfo().getMutableInput("previewSlice", Integer.class);
-			preSlice.setValue(this, image.getCurrentSlice());
-			preSlice.setMaximumValue(image.getStackSize());
+			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
+			preFrame.setValue(this, image.getCurrentSlice());
+			preFrame.setMaximumValue(image.getStackSize());
 		}
 		@Override
 		public void run() {
@@ -309,17 +318,40 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
-			String label = image.getStack().getSliceLabel(1);
+			/*String label = image.getStack().getFrameLabel(1);
 			if (label == null) {
 				metaDataLogMessage = "No ImageMetadata was found in image header so the format was switched to None.";
     			imageFormat = "None";
     		} else if (imageFormat.equals("MicroManager") && label.indexOf("{") == -1) {
     			metaDataLogMessage = "Images did not appear to have a MicroManager image format so the format was switched to None.";
     			imageFormat = "None";
-			} else if (imageFormat.equals("NorPix") && label.indexOf("DateTime: ") == -1) {
+			} */
+			
+			//For testing we assume we opened a metadata image for now...
+			//Let's see if we can open the image using SCIFIO
+			//if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null)
+			String filePath = image.getOriginalFileInfo().directory;
+			
+			Metadata MMmetadata = null;
+			
+	        for (Format format : formatService.getAllFormats()) {
+	        	if (format.getFormatName().equals("MarsMicromanager")) {
+	        		try {
+						MMmetadata = format.createParser().parse(filePath);
+					} catch (IOException | FormatException e) {
+						e.printStackTrace();
+					}
+	        		break;
+	        	}
+	        }
+			
+	        OMEMetadata omeMeta = new OMEMetadata(getContext());
+	        translatorService.translate(MMmetadata, omeMeta, true);
+    		
+    		/*else if (imageFormat.equals("NorPix") && label.indexOf("DateTime: ") == -1) {
 				metaDataLogMessage = "Images did not appear to have a NorPix image format so the format was switched to None.";
     			imageFormat = "None";
-			}
+			}*/
 			
 			boolean[] vary = new boolean[5];
 			vary[0] = true;
@@ -344,8 +376,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 			
 			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
-			
-			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 			
 			//Need to determine the number of threads
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -376,9 +406,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        progressThread.start();
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-		        //peaks with the slice number as a key in the map for each list...
+		        //peaks with the frame number as a key in the map for each list...
 		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> peaks = findPeaksInSlice(i);
+		        	ArrayList<Peak> peaks = findPeaksInFrame(i);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (peaks.size() > 0)
 		        		PeakStack.put(i, peaks);
@@ -398,14 +428,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    
-		    //Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
+		    //Now we have filled the PeakStack with all the peaks found and fitted for each frame and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
 		    maxDifference[0] = Double.NaN;
 		    maxDifference[1] = Double.NaN;
 		    maxDifference[2] = PeakTracker_maxDifferenceX;
 			maxDifference[3] = PeakTracker_maxDifferenceY;
 			maxDifference[4] = Double.NaN;
-			maxDifference[5] = PeakTracker_maxDifferenceSlice;
+			maxDifference[5] = PeakTracker_maxDifferenceFrame;
 			
 			ckMaxDifference = new boolean[3];
 			ckMaxDifference[0] = false;
@@ -426,11 +456,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    
 		    archive = new SingleMoleculeArchive(context, newName + ".yama");
 		    
-		    //SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-		    
-		    //Add the OMEXMLMetadata to this construtor...
-		    
-		    MarsOMEMetadata metadata = new MarsOMEMetadata(context);
+		    MarsOMEMetadata metadata = new MarsOMEMetadata(context, omeMeta.getRoot());
 			archive.putMetadata(metadata);
 		    
 		    tracker.track(PeakStack, archive);
@@ -489,27 +515,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 		}
 		
-		private ArrayList<Peak> findPeaksInSlice(int slice) {
+		private ArrayList<Peak> findPeaksInFrame(int frame) {
 			ImageStack stack = image.getImageStack();
-			ImageProcessor processor = stack.getProcessor(slice);
-			
-			//IT IS REALLY IMPORTANT THAT THE LABEL IS RETRIEVED 
-			//RIGHT AFTER RUNNING GET PROCESSOR ON THE SAME SLICE
-			//The get processor method will load in all the info
-			//Then the getSliceLabel will retrieve it
-			//If you are working in virtual memory the slice label won't be set properly until
-			//the get Processor method has been run...
-			
-			//First we add the header information to the metadata map 
-			//to generate the metadata table later in the molecule archive.
-			if (!imageFormat.equals("None")) {
-				String label = stack.getSliceLabel(slice);
-				metaDataStack.put(slice, label);
-			}
-			
-			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
-			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor.duplicate()), slice));
+			int index = image.getStackIndex(1, 1, frame);
+			ImageProcessor processor = stack.getProcessor(index);
+
+			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
+			//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + frame, processor.duplicate()), frame));
 			
 			//After fitting some peaks may have moved within the mininmum distance
 			//So we remove these always favoring the ones having lower fit error in x and y
@@ -518,7 +531,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return peaks;
 		}
 
-		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
+		public ArrayList<Peak> findPeaks(ImagePlus imp, int frame) {
 			ArrayList<Peak> peaks;
 			
 			DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
@@ -537,15 +550,15 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				opService.filter().dog(dog, converted, sigma2, sigma1);
 
 		        if (useROI) {
-			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), slice);
+			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), frame);
 				} else {
-					peaks = finder.findPeaks(dog, slice);
+					peaks = finder.findPeaks(dog, frame);
 				}
 			} else {
 				if (useROI) {
-			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), slice);
+			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), frame);
 				} else {
-					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), slice);
+					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), frame);
 				}
 			}
 			
@@ -770,12 +783,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setSlice(previewSlice);
+				image.setSlice(previewFrame);
 				image.deleteRoi();
-				ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
-				ArrayList<Peak> peaks = findPeaks(selectedImage, previewSlice);
+				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
+				ArrayList<Peak> peaks = findPeaks(selectedImage, previewFrame);
 				
-				final MutableModuleItem<String> preSliceCount = getInfo().getMutableInput("slicePeakCount", String.class);
+				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("framePeakCount", String.class);
 				if (!peaks.isEmpty()) {
 					Polygon poly = new Polygon();
 					
@@ -788,9 +801,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					PointRoi peakRoi = new PointRoi(poly);
 					image.setRoi(peakRoi);
 					
-					preSliceCount.setValue(this, "count: " + peaks.size());
+					preFrameCount.setValue(this, "count: " + peaks.size());
 				} else {
-					preSliceCount.setValue(this, "count: 0");
+					preFrameCount.setValue(this, "count: 0");
 				}
 			}
 		}
@@ -826,7 +839,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Verbose output", String.valueOf(verbose));
 			builder.addParameter("Max difference x", String.valueOf(PeakTracker_maxDifferenceX));
 			builder.addParameter("Max difference y", String.valueOf(PeakTracker_maxDifferenceY));
-			builder.addParameter("Max difference slice", String.valueOf(PeakTracker_maxDifferenceSlice));
+			builder.addParameter("Max difference frame", String.valueOf(PeakTracker_maxDifferenceFrame));
 			builder.addParameter("Minimum track length", String.valueOf(PeakTracker_minTrajectoryLength));
 			builder.addParameter("Integrate", String.valueOf(integrate));
 			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
@@ -960,12 +973,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return PeakTracker_maxDifferenceY;
 		}
 		
-		public void setMaxDifferenceSlice(int PeakTracker_maxDifferenceSlice) {
-			this.PeakTracker_maxDifferenceSlice = PeakTracker_maxDifferenceSlice;
+		public void setMaxDifferenceFrame(int PeakTracker_maxDifferenceFrame) {
+			this.PeakTracker_maxDifferenceFrame = PeakTracker_maxDifferenceFrame;
 		}
 		
-		public int getMaxDifferenceSlice() {
-			return PeakTracker_maxDifferenceSlice;
+		public int getMaxDifferenceFrame() {
+			return PeakTracker_maxDifferenceFrame;
 		}
 		
 		public void setMinimumTrackLength(int PeakTracker_minTrajectoryLength) {

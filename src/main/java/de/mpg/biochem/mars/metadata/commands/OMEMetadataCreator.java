@@ -31,6 +31,7 @@ import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
@@ -41,6 +42,7 @@ import org.scijava.ui.UIService;
 
 import java.util.HashMap;
 
+import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -59,8 +61,10 @@ import io.scif.ome.OMEMetadata;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import ome.xml.meta.OMEXMLMetadata;
-
+import ome.xml.model.enums.DimensionOrder;
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.ImageProcessor;
 import io.scif.Metadata;
 import io.scif.filters.AbstractMetadataWrapper;
 import io.scif.img.SCIFIOImgPlus;
@@ -92,6 +96,9 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
     // for determining the Format of the input image
     @Parameter
     private FormatService formatService;
+    
+    @Parameter
+    private ConvertService convert;
     
     @Parameter
     private TranslatorService translatorService;
@@ -132,47 +139,47 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 			return;
 		}
     	
-    	//System.out.println("dataset has properties");
-    	//for (String key : dataset.getProperties().keySet())
-    	//	System.out.println(key);
+    	//for (int d = 0; d < dataset.numDimensions(); d++) {
+    	//	System.out.println("\t" + d + ": " + dataset.axis(d).type() + " " + dataset.dimension(d));
+    	//}
     	
-    	Metadata globalMeta = (Metadata)dataset.getProperties().get("scifio.metadata.global");
-    	System.out.println("globalMeta " + globalMeta.toString());
-    	System.out.println("globalMeta ImageCount " + globalMeta.getImageCount());
     	
-    	SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
-		Metadata metadata = sciImp.getMetadata();
+    	//ImagePlus img = convert.convert(dataset, ImagePlus.class);
+    	
+    	//System.out.println("dimensions " + img.getNDimensions());
+    	//System.out.println("Frames " + img.getNFrames());
+    	//System.out.println("Slices " + img.getNSlices());
+    	
+    	//Metadata globalMeta = (Metadata)dataset.getProperties().get("scifio.metadata.global");
+    	//gets the same object as below..
+    	
+    	//SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
+		//Metadata metadata = sciImp.getMetadata();
 		
 		// Why the fuck this is needed ? - @hadim
-		while ((metadata instanceof AbstractMetadataWrapper)) {
-			metadata = ((AbstractMetadataWrapper) metadata).unwrap();
-		}
+		//while ((metadata instanceof AbstractMetadataWrapper)) {
+		//	metadata = ((AbstractMetadataWrapper) metadata).unwrap();
+		//}
 		
-		System.out.println("metadata " + metadata.toString());
-		System.out.println("metadata ImageCount " + metadata.getImageCount());
+		//The Positions are completely squashed... If I just retreive the metadata..
     	
-		Metadata metadata2 = null;
+    	
+		Metadata metadata = null;
 		
-        for (Format format : formatService.getAllFormats())
+        for (Format format : formatService.getAllFormats()) {
         	if (format.getFormatName().equals("MarsMicromanager")) {
         		try {
-					metadata2 = format.createParser().parse(filePath);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (FormatException e) {
-					// TODO Auto-generated catch block
+					metadata = format.createParser().parse(filePath);
+				} catch (IOException | FormatException e) {
 					e.printStackTrace();
 				}
         		break;
         	}
-        
-        System.out.println("metadata2 " + metadata2.toString());
-        System.out.println("metadata2 ImageCount " + metadata2.getImageCount());
-        
+        }
+		
         OMEMetadata omeMeta = new OMEMetadata(getContext());
-        translatorService.translate(metadata2, omeMeta, true);
-        
+        translatorService.translate(metadata, omeMeta, true);
+    	
         mString = omeMeta.getRoot().dumpXML();
 	}
 }

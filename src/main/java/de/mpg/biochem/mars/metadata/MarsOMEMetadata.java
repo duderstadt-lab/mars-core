@@ -45,8 +45,8 @@ public class MarsOMEMetadata extends AbstractMarsMetadata {
     	super(context, UID);
     }
     
-    public MarsOMEMetadata(final Context context, String UID, OMEXMLMetadata store) {
-    	super(context, UID, store);
+    public MarsOMEMetadata(final Context context, OMEXMLMetadata store) {
+    	super(context, store);
     }
 	
 	public MarsOMEMetadata(final Context context, JsonParser jParser) throws IOException {

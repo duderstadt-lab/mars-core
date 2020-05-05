@@ -52,6 +52,7 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import io.scif.ome.services.OMEMetadataService;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
+import ome.units.UNITS;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
@@ -114,8 +115,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     	context.inject(this);
     }
     
-    public AbstractMarsMetadata(final Context context, String UID, OMEXMLMetadata store) {
-    	super(UID);
+    public AbstractMarsMetadata(final Context context, OMEXMLMetadata store) {
+    	super();
     	context.inject(this);
     	this.store = store;
     }
@@ -360,5 +361,13 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	@Override
 	public OMEXMLMetadata getOMEXMLMetadata() {
 		return store;
+	}
+	
+	public double getDeltaT(int z, int c, int t) {
+		return getDeltaT(1, t);
+	}
+	
+	public double getDeltaT(int imageIndex, int planeIndex) {
+		return store.getPlaneDeltaT(imageIndex, planeIndex).value(UNITS.SECOND).doubleValue();
 	}
 }
