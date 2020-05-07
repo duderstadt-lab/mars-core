@@ -30,8 +30,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -91,6 +93,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//Date and time when the data was collected...
 	protected String CollectionDate = "unknown";
 	
+	protected Map<Integer[], Integer> planeIndex;
+	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
     
@@ -119,6 +123,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     	super();
     	context.inject(this);
     	this.store = store;
+    	buildPlaneIndex();
     }
 	
     /**
@@ -322,16 +327,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	/**
 	 * Add to the log that contains the history of processing steps
 	 * conducted on this dataset and the associated molecule records
-	 * contained in the same {@link MoleculeArchive}.
-	 */
-	@Deprecated
-	public void addLogMessage(String str) {
-		log += str + "\n";
-	}
-	
-	/**
-	 * Add to the log that contains the history of processing steps
-	 * conducted on this dataset and the associated molecule records
 	 * contained in the same {@link MoleculeArchive}. Start a new line
 	 * after adding the message.
 	 */
@@ -357,14 +352,39 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	public String getLog() {
 		return log;
 	}
+	
+	protected void buildPlaneIndex() {
+		planeIndex = new HashMap<Integer[], Integer>();
+		if (store != null) {
+			for (int imageIndex=0; imageIndex<store.getImageCount(); imageIndex++)
+				for (int planeIndex=0; planeIndex<store.getPlaneCount(imageIndex); planeIndex++) {
+					int[] izct = new int[4];
+					izct[0] = imageIndex;
+					izct[1] = store.getPlaneTheZ(imageIndex, planeIndex).getNumberValue().intValue();
+					izct[2] = store.getPlaneTheC(imageIndex, planeIndex).getNumberValue().intValue();
+					izct[3] = store.getPlaneTheT(imageIndex, planeIndex).getNumberValue().intValue();
+				}
+		}
+		planeIndex
+	}
 
 	@Override
 	public OMEXMLMetadata getOMEXMLMetadata() {
 		return store;
 	}
 	
-	public double getDeltaT(int z, int c, int t) {
-		return getDeltaT(1, t);
+	public int getPlane(int imageIndex, int z, int c, int t) {
+		int[] zct;
+		z = zct[0];
+		c = zct[1];
+		t = zct[2];
+	}
+	
+	public double getDeltaT(int imageIndex, int z, int c, int t) {
+		//We need to transform form zct to planes!!
+		store.plane
+		
+		return getDeltaT(imageIndex, t);
 	}
 	
 	public double getDeltaT(int imageIndex, int planeIndex) {

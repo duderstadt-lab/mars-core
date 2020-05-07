@@ -114,16 +114,6 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * 
 	 * @param str Message to add to the log.
 	 */
-	@Deprecated
-	void addLogMessage(String str);
-	
-	/**
-	 * Add to the log that contains the history of processing steps
-	 * conducted on this dataset and the associated molecule records
-	 * contained in the same {@link MoleculeArchive}.
-	 * 
-	 * @param str Message to add to the log.
-	 */
 	void log(String str);
 	
 	/**
@@ -195,7 +185,4 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * @return True if a source with the name given is found.
 	 */
 	boolean hasBdvSource(String name);
-	
-	//Place holder, remove me..
-	MarsTable getDataTable();
 }

@@ -52,9 +52,4 @@ public class MarsOMEMetadata extends AbstractMarsMetadata {
 	public MarsOMEMetadata(final Context context, JsonParser jParser) throws IOException {
 		super(context, jParser);
 	}
-	
-	//Dummy method. Please remove...
-	public MarsTable getDataTable() {
-		return new MarsTable();
-	}
 }
