@@ -63,12 +63,12 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, M
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	public MarsOMEMetadata createMetadata(final Context context, JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(context, jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
+		return new MarsOMEMetadata(getContext(), jParser);
 	}
 	
-	public MarsOMEMetadata createMetadata(final Context context, String metaUID) {
-		return new MarsOMEMetadata(context, metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID) {
+		return new MarsOMEMetadata(getContext(), metaUID);
 	}
 	
 	public ArchMolecule createMolecule() {

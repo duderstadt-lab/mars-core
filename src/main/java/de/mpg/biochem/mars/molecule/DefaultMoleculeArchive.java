@@ -133,15 +133,15 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	/**
 	 * Create DefaultMarsMetadata record using JsonParser stream.
 	 */
-	public MarsOMEMetadata createMetadata(final Context context, JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(context, jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
+		return new MarsOMEMetadata(getContext(), jParser);
 	}
 	
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
-	public MarsOMEMetadata createMetadata(final Context context, String metaUID) {
-		return new MarsOMEMetadata(context, metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID) {
+		return new MarsOMEMetadata(getContext(), metaUID);
 	}
 	
 	/**
