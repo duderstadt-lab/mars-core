@@ -568,6 +568,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	void updateProperties();
 	
+	Context getContext();
+	
 	/**
 	 * Create empty MoleculeArchiveProperties record.
 	 * 
@@ -591,7 +593,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return MarsMetadata record created using JsonParser stream.
 	 */
-	public I createMetadata(final Context context, JsonParser jParser) throws IOException;
+	public I createMetadata(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create empty MarsMetadata record with the metaUID specified.
@@ -599,7 +601,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param metaUID The metaUID to use during creation of the empty MarsMetadata record.
 	 * @return MarsMetadata record.
 	 */
-	public I createMetadata(final Context context, String metaUID);
+	public I createMetadata(String metaUID);
 	
 	/**
 	 * Create empty Molecule record.

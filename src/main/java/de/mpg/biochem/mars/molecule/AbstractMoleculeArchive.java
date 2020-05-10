@@ -1991,6 +1991,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 	}
 	
+	public Context getContext() {
+		return context;
+	}
+	
 	/**
 	 * Create empty MoleculeArchiveProperties record.
 	 */
@@ -2004,12 +2008,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Create MarsMetadata record using JsonParser stream.
 	 */
-	public abstract I createMetadata(final Context context, JsonParser jParser) throws IOException;
+	public abstract I createMetadata(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create empty MarsMetadata record with the metaUID specified.
 	 */
-	public abstract I createMetadata(final Context context, String metaUID);
+	public abstract I createMetadata(String metaUID);
 	
 	/**
 	 * Create empty Molecule record.
