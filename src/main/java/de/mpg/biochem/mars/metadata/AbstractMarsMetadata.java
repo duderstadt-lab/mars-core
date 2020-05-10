@@ -93,7 +93,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//Date and time when the data was collected...
 	protected String CollectionDate = "unknown";
 	
-	protected Map<Integer[], Integer> planeIndex;
+	protected Map<Integer[], Integer> ZCTtoPlaneMap;
 	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
@@ -354,18 +354,18 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	}
 	
 	protected void buildPlaneIndex() {
-		planeIndex = new HashMap<Integer[], Integer>();
+		ZCTtoPlaneMap = new HashMap<Integer[], Integer>();
 		if (store != null) {
 			for (int imageIndex=0; imageIndex<store.getImageCount(); imageIndex++)
 				for (int planeIndex=0; planeIndex<store.getPlaneCount(imageIndex); planeIndex++) {
-					int[] izct = new int[4];
+					Integer[] izct = new Integer[4];
 					izct[0] = imageIndex;
 					izct[1] = store.getPlaneTheZ(imageIndex, planeIndex).getNumberValue().intValue();
 					izct[2] = store.getPlaneTheC(imageIndex, planeIndex).getNumberValue().intValue();
 					izct[3] = store.getPlaneTheT(imageIndex, planeIndex).getNumberValue().intValue();
+					ZCTtoPlaneMap.put(izct, planeIndex);
 				}
 		}
-		planeIndex
 	}
 
 	@Override
@@ -373,18 +373,22 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return store;
 	}
 	
-	public int getPlane(int imageIndex, int z, int c, int t) {
-		int[] zct;
-		z = zct[0];
-		c = zct[1];
-		t = zct[2];
+	public int getPlaneIndex(int imageIndex, int z, int c, int t) {
+		Integer[] izct=  new Integer[4];
+		izct[0] = imageIndex;
+		izct[0] = z;
+		izct[1] = c;
+		izct[2] = t;
+		
+		return getPlaneIndex(izct);
+	}
+	
+	public int getPlaneIndex(Integer[] izct) {
+		return ZCTtoPlaneMap.get(izct);
 	}
 	
 	public double getDeltaT(int imageIndex, int z, int c, int t) {
-		//We need to transform form zct to planes!!
-		store.plane
-		
-		return getDeltaT(imageIndex, t);
+		return getDeltaT(imageIndex, getPlaneIndex(imageIndex, z, c, t));
 	}
 	
 	public double getDeltaT(int imageIndex, int planeIndex) {
