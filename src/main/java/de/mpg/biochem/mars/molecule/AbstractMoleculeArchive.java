@@ -521,7 +521,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//This will basically be empty, but as further processing steps occurs the log will be filled in
 		//Also, the DataTable can be updated manually.
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
-		I meta = createMetadata(context, metaUID);
+		I meta = createMetadata(metaUID);
 		putMetadata(meta);
 
 		String[] headers = new String[results.getColumnCount() - 1];
@@ -856,7 +856,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					putMetadata(createMetadata(context, jParser));
+					putMetadata(createMetadata(jParser));
 				}
 			}
 			
@@ -1141,7 +1141,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					
 					JsonParser jParser = jfactory.createParser(Channels.newInputStream(raf.getChannel()));
 	
-					metadata = createMetadata(context, jParser);
+					metadata = createMetadata(jParser);
 	
 					fileLock.release();
 					raf.close();
