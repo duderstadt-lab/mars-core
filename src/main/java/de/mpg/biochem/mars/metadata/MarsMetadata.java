@@ -35,6 +35,7 @@ import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+import ome.units.UNITS;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
@@ -58,6 +59,12 @@ import ome.xml.meta.OMEXMLMetadata;
 public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	OMEXMLMetadata getOMEXMLMetadata();
+	
+	void setOMEXMLMetadata(OMEXMLMetadata omexmlMetadata);
+	
+	int getPlaneIndex(int imageIndex, int z, int c, int t);
+	
+	int getPlaneIndex(Integer[] izct);
 	
 	int getFrameCount();
 	

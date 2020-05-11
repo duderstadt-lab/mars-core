@@ -93,7 +93,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//Date and time when the data was collected...
 	protected String CollectionDate = "unknown";
 	
-	protected Map<Integer[], Integer> ZCTtoPlaneMap;
+	protected Map<Integer[], MarsOMEPlane> ZCTtoPlaneMap;
 	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
@@ -122,8 +122,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     public AbstractMarsMetadata(final Context context, OMEXMLMetadata store) {
     	super();
     	context.inject(this);
-    	this.store = store;
-    	buildPlaneIndex();
+    	setOMEXMLMetadata(store);
     }
 	
     /**
@@ -138,6 +137,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		super();
 		context.inject(this);
 		fromJSON(jParser);
+		buildPlaneIndex();
 	}
 	
 	@Override
@@ -353,8 +353,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return log;
 	}
 	
-	protected void buildPlaneIndex() {
-		ZCTtoPlaneMap = new HashMap<Integer[], Integer>();
+	protected void initializePlaneMap() {
+		IZCTtoPlaneMap = new HashMap<Integer[], MarsOMEPlane>();
 		if (store != null) {
 			for (int imageIndex=0; imageIndex<store.getImageCount(); imageIndex++)
 				for (int planeIndex=0; planeIndex<store.getPlaneCount(imageIndex); planeIndex++) {
@@ -363,7 +363,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 					izct[1] = store.getPlaneTheZ(imageIndex, planeIndex).getNumberValue().intValue();
 					izct[2] = store.getPlaneTheC(imageIndex, planeIndex).getNumberValue().intValue();
 					izct[3] = store.getPlaneTheT(imageIndex, planeIndex).getNumberValue().intValue();
-					ZCTtoPlaneMap.put(izct, planeIndex);
+					IZCTtoPlaneMap.put(izct, planeIndex);
 				}
 		}
 	}
@@ -373,8 +373,13 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return store;
 	}
 	
+	public void setOMEXMLMetadata(OMEXMLMetadata omexmlMetadata) {
+		store = omexmlMetadata;
+		initializePlaneMap();
+	}
+	
 	public int getPlaneIndex(int imageIndex, int z, int c, int t) {
-		Integer[] izct=  new Integer[4];
+		Integer[] izct = new Integer[4];
 		izct[0] = imageIndex;
 		izct[0] = z;
 		izct[1] = c;
@@ -383,15 +388,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return getPlaneIndex(izct);
 	}
 	
-	public int getPlaneIndex(Integer[] izct) {
+	public MarsOMEPlane getPlane(Integer[] izct) {
 		return ZCTtoPlaneMap.get(izct);
 	}
-	
-	public double getDeltaT(int imageIndex, int z, int c, int t) {
-		return getDeltaT(imageIndex, getPlaneIndex(imageIndex, z, c, t));
-	}
-	
-	public double getDeltaT(int imageIndex, int planeIndex) {
-		return store.getPlaneDeltaT(imageIndex, planeIndex).value(UNITS.SECOND).doubleValue();
+
+	public MarsOMEPlane getPlane(int plane) {
+		return
 	}
 }

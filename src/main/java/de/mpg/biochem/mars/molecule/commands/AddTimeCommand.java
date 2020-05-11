@@ -98,17 +98,11 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
+			if (meta.getOMEXMLMetadata() != null)
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
-			} else {
-				logService.error("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
-				logService.error(LogBuilder.endBlock(false));
+			else {
 				archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
 				archive.logln(LogBuilder.endBlock(false));
-				
-				//Unlock the window so it can be changed
-			    if (!uiService.isHeadless())
-					archive.getWindow().unlock();
 				return;
 			}
 		}
@@ -159,9 +153,9 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (meta.getDataTable().get("Time (s)") != null && meta.getDataTable().get("slice") != null) {
+			if (meta.getOMEXMLMetadata() != null)
 				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
-			} else {
+			else {
 				archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
 				archive.logln(LogBuilder.endBlock(false));
 				return;
@@ -187,19 +181,15 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			archive.put(molecule);
 		});
 		
-	    archive.addLogMessage(LogBuilder.endBlock(true));
-	    archive.addLogMessage("  ");
+	    archive.logln(LogBuilder.endBlock(true));
+	    archive.logln("  ");
 	}
 	
 	private static HashMap<Double, Double> getSliceToTimeMap(MarsMetadata metadata) {
 		HashMap<Double, Double> sliceToTime = new HashMap<Double, Double>();
 		
-		//First we retrieve columns from image metadata
-		DoubleColumn metaSlice = (DoubleColumn) metadata.getDataTable().get("slice"); 
-		DoubleColumn metaTime = (DoubleColumn) metadata.getDataTable().get("Time (s)"); 
-		
-		for (int i=0;i<metaSlice.size();i++) {
-			sliceToTime.put(metaSlice.get(i), metaTime.get(i));
+		for (int frame=0; frame<metadata.getFrameCount(); frame++) {
+			sliceToTime.put((double)frame, metadata.getDeltaT(0, 0, 0, frame));
 		}
 		return sliceToTime;
 	}

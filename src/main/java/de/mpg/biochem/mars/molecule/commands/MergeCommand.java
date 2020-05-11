@@ -212,7 +212,7 @@ public class MergeCommand extends DynamicCommand {
 						String fieldName = jParser.getCurrentName();
 						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
-								metadataList.add(mergedArchiveType.createMetadata(context, jParser));
+								metadataList.add(mergedArchiveType.createMetadata(jParser));
 							}
 						}
 						

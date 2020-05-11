@@ -131,9 +131,9 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
 			//Let's find the last slice
-			MarsTable metaDataTable = meta.getDataTable();
+			//MarsTable metaDataTable = meta.getDataTable();
 			
-			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
+			int slices = meta.getFrameCount();
 			
 			HashMap<Integer, DoubleColumn> xValuesColumns = new HashMap<Integer, DoubleColumn>();
 			HashMap<Integer, DoubleColumn> yValuesColumns = new HashMap<Integer, DoubleColumn>();
@@ -323,7 +323,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			builder.addParameter("mode", mode);
 			log += builder.buildParameterList();
 			
-			archive.addLogMessage(log);
+			archive.logln(log);
 			
 			//We will want to calculate the background for each dataset 
 			//in the archive separately
