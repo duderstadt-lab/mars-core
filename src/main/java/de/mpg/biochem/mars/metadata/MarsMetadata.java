@@ -35,8 +35,6 @@ import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
-import ome.units.UNITS;
-import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * MarsImageMetadata records store image metadata and all information
@@ -58,15 +56,11 @@ import ome.xml.meta.OMEXMLMetadata;
  */
 public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
-	OMEXMLMetadata getOMEXMLMetadata();
+	MarsOMEPlane getPlane(int imageIndex, int planeIndex);
 	
-	void setOMEXMLMetadata(OMEXMLMetadata omexmlMetadata);
+	MarsOMEPlane getPlane(Integer[] index);
 	
-	int getPlaneIndex(int imageIndex, int z, int c, int t);
-	
-	int getPlaneIndex(Integer[] izct);
-	
-	int getFrameCount();
+	int getFrameCount(int imageIndex);
 	
 	/**
 	 * Set the name of the microscope used for data collection.

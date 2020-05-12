@@ -185,8 +185,8 @@ public class MarsMicromanagerTranslator {
 							planeParameterList.add(new MapPair(planeParameterKey, planeMetaTable.get(planeParameterKey))); 
 						
 						store.setMapAnnotationValue(planeParameterList, q);
-						store.setMapAnnotationID(p.getPlaneMapKey(meta, i, q), q);
-						store.setPlaneAnnotationRef(p.getPlaneMapKey(meta, i, q), i, q, 0);
+						store.setMapAnnotationID("MMAllFileKey-" + i + "-" + q, q);
+						store.setPlaneAnnotationRef("MMAllFileKey-" + i + "-" + q, i, q, 0);
 						//
 					}
 				}

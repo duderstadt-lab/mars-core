@@ -153,12 +153,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	private MoleculeArchiveWindow win;
 	
-	@Parameter
-	private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-	private Context context;
-	
 	//Can be a .yama file or a directory containing a virtual store
 	private File file;
 	
@@ -221,8 +215,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param name The name archive.
 	 */
-	public AbstractMoleculeArchive(final Context context, String name) {
-		context.inject(this);
+	public AbstractMoleculeArchive(String name) {
 		this.name = name;
 		this.virtual = false;
 		
@@ -240,8 +233,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public AbstractMoleculeArchive(final Context context, File file) throws JsonParseException, IOException {
-		context.inject(this);
+	public AbstractMoleculeArchive(File file) throws JsonParseException, IOException {
 		this.name = file.getName();
 		this.file = file;
 		
@@ -276,8 +268,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public AbstractMoleculeArchive(final Context context, String name, File file) throws JsonParseException, IOException {
-		context.inject(this);
+	public AbstractMoleculeArchive(String name, File file) throws JsonParseException, IOException {
 		this.name = name;
 		this.file = file;
 		
@@ -308,8 +299,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public AbstractMoleculeArchive(final Context context, String name, MarsTable table) {
-		context.inject(this);
+	public AbstractMoleculeArchive(String name, MarsTable table) {
 		this.name = name;
 		this.virtual = false;
 		
@@ -837,11 +827,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			jParser.nextToken();
 			archiveProperties.fromJSON(jParser);
-		} else {
-			if (moleculeArchiveService != null)
-				moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
+		} else
 			return;
-		}
 
 		int numMolecules = archiveProperties.getNumberOfMolecules();
 		
@@ -865,8 +852,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					put(createMolecule(jParser));
 					molNum++;
-					if (moleculeArchiveService != null)
-						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
 				}
 			}
 			
@@ -1881,17 +1866,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	/**
 	 * Add a log message to all metadata records. Used by Mars commands 
-	 * to keep a record of the sequence of processing steps during analysis.
-	 * 
-	 * @param message The String message to add to all metadata logs.
-	 */
-	@Deprecated
-	public void addLogMessage(String message) {
-		logln(message);
-	}
-	
-	/**
-	 * Add a log message to all metadata records. Used by Mars commands 
 	 * to keep a record of the sequence of processing steps during analysis. Start
 	 * a new line after adding the message.
 	 * 
@@ -1931,18 +1905,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		if (getWindow() != null)
 			getWindow().log(message);
-	}
-	
-	/**
-	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
-	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
-	 * tags, and parameters. Deprecated
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	@Deprecated
-	public P getProperties() {
-		return archiveProperties;
 	}
 	
 	/**
@@ -1989,10 +1951,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 		}
-	}
-	
-	public Context getContext() {
-		return context;
 	}
 	
 	/**

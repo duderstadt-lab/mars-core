@@ -37,19 +37,15 @@ import ome.xml.meta.OMEXMLMetadata;
 
 public class MarsOMEMetadata extends AbstractMarsMetadata {
 	
-    public MarsOMEMetadata(final Context context) {
-    	super(context);
+    public MarsOMEMetadata() {
+    	super();
     }
     
-    public MarsOMEMetadata(final Context context, String UID) {
-    	super(context, UID);
-    }
-    
-    public MarsOMEMetadata(final Context context, OMEXMLMetadata store) {
-    	super(context, store);
+    public MarsOMEMetadata(String UID) {
+    	super(UID);
     }
 	
-	public MarsOMEMetadata(final Context context, JsonParser jParser) throws IOException {
-		super(context, jParser);
+	public MarsOMEMetadata(JsonParser jParser) throws IOException {
+		super(jParser);
 	}
 }

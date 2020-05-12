@@ -57,8 +57,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * 
 	 * @param name Name of the empty SingleMoleculeArchive to create.
 	 */
-	public SingleMoleculeArchive(final Context context, String name) {
-		super(context, name);
+	public SingleMoleculeArchive(String name) {
+		super(name);
 	}
 	
 	/**
@@ -76,8 +76,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public SingleMoleculeArchive(final Context context, File file) throws IOException, JsonParseException {
-		super(context, file);
+	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
+		super(file);
 	}
 	
 	/**
@@ -103,8 +103,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public SingleMoleculeArchive(final Context context, String name, File file) throws JsonParseException, IOException {
-		super(context, name, file);
+	public SingleMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super(name, file);
 	}
 	
 	/**
@@ -121,8 +121,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public SingleMoleculeArchive(final Context context, String name, MarsTable table) {
-		super(context, name, table);
+	public SingleMoleculeArchive(String name, MarsTable table) {
+		super(name, table);
 	}
 	
 	/**
@@ -143,14 +143,14 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * Create SdmmImageMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(getContext(), jParser);
+		return new MarsOMEMetadata(jParser);
 	}
 	
 	/**
 	 * Create empty SdmmImageMetadata record with the metaUID specified.
 	 */
 	public MarsOMEMetadata createMetadata(String metaUID) {
-		return new MarsOMEMetadata(getContext(), metaUID);
+		return new MarsOMEMetadata(metaUID);
 	}
 	
 	/**

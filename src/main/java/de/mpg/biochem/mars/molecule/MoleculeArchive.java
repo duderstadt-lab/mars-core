@@ -508,15 +508,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void naturalOrderSortMoleculeIndex();
 	
 	/**
-	 * Add a Log message to all MARSImageMetadata records. Used by all processing plugins 
-	 * so there is a record of the sequence of processing steps during analysis.
-	 * 
-	 * @param message The String message to add to all MARSImageMetadata logs.
-	 */
-	@Deprecated
-	void addLogMessage(String message);
-	
-	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing plugins 
 	 * so there is a record of the sequence of processing steps during analysis. Do not
 	 * start a new line after adding the message.
@@ -533,16 +524,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param message The String message to add to all MarsImageMetadata logs.
 	 */
 	void logln(String str);
-	
-	/**
-	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
-	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
-	 * Deprecated - use properties() instead. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	@Deprecated
-	MoleculeArchiveProperties getProperties();
 	
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
@@ -567,8 +548,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * or corresponding menu item in the MoleculeArchiveWindow.
 	 */
 	void updateProperties();
-	
-	Context getContext();
 	
 	/**
 	 * Create empty MoleculeArchiveProperties record.

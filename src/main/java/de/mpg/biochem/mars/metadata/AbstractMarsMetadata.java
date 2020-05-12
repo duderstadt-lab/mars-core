@@ -29,13 +29,17 @@ package de.mpg.biochem.mars.metadata;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
@@ -46,16 +50,27 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat.Position;
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
-import io.scif.ome.services.OMEMetadataService;
-import io.scif.ome.services.OMEXMLService;
-import loci.common.services.ServiceException;
+import io.scif.common.DateTools;
+import io.scif.io.Location;
+import net.imagej.axis.Axes;
+import net.imagej.axis.CalibratedAxis;
+import net.imagej.axis.DefaultLinearAxis;
 import ome.units.UNITS;
+import ome.units.quantity.ElectricPotential;
+import ome.units.quantity.Length;
+import ome.units.quantity.Temperature;
+import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
+import ome.xml.model.MapPair;
+import ome.xml.model.enums.DetectorType;
+import ome.xml.model.primitives.Timestamp;
 
 /**
  * Abstract superclass for storage of metadata, which includes all information
@@ -77,15 +92,12 @@ import ome.xml.meta.OMEXMLMetadata;
  */
 public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
 	
-	@Parameter
-	private OMEXMLService omexmlService;
-	
 	//Processing log for the record
 	protected String log = "";
-	
-	protected OMEXMLMetadata store;
 
 	protected String Microscope = "unknown";
+	
+	protected String instrumentID = "";
 	
 	//Directory where the images are stored..
 	protected String SourceDirectory = "unknown";
@@ -93,7 +105,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//Date and time when the data was collected...
 	protected String CollectionDate = "unknown";
 	
-	protected Map<Integer[], MarsOMEPlane> ZCTtoPlaneMap;
+	protected Map<Integer, Image> images = new ConcurrentHashMap<Integer, Image>();
 	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
@@ -103,9 +115,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     /**
 	 * Constructor for creating an empty MarsMetadata record. 
 	 */
-    public AbstractMarsMetadata(final Context context) {
+    public AbstractMarsMetadata() {
     	super();
-    	context.inject(this);
     }
     
     /**
@@ -114,15 +125,18 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * 
 	 * @param UID The unique identifier for this record.
 	 */
-    public AbstractMarsMetadata(final Context context, String UID) {
+    public AbstractMarsMetadata(String UID) {
     	super(UID);
-    	context.inject(this);
     }
     
-    public AbstractMarsMetadata(final Context context, OMEXMLMetadata store) {
-    	super();
-    	context.inject(this);
-    	setOMEXMLMetadata(store);
+    /**
+	 * Constructor for creating a MarsMetadata record using OMEXMLMetadata.
+	 * 
+	 * @param OMEXMLMetadata The OMEXMLMetadata to use.
+	 */
+    public AbstractMarsMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
+    	super(UID);
+    	populateMetadata(omexmlMetadata);
     }
 	
     /**
@@ -133,11 +147,16 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * @param jParser A JsonParser at the start of the record.
 	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
 	 */
-	public AbstractMarsMetadata(final Context context, JsonParser jParser) throws IOException {
+	public AbstractMarsMetadata(JsonParser jParser) throws IOException {
 		super();
-		context.inject(this);
 		fromJSON(jParser);
-		buildPlaneIndex();
+	}
+	
+	public void populateMetadata(OMEXMLMetadata md) {
+		instrumentID = md.getInstrumentID(0);
+		
+		for (int imageIndex = 0; imageIndex < md.getImageCount(); imageIndex++)
+			images.put(imageIndex, new Image(imageIndex, md));
 	}
 	
 	@Override
@@ -171,11 +190,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				jGenerator.writeEndArray();
 			}
 	 	}, IOException.class));
-		outputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jGenerator -> {
-			if(Microscope != null)
-	  			jGenerator.writeStringField("OMEXMLMetadataDump", store.dumpXML());
-	 	}, IOException.class));
-
+		
+		
 		//Add to input map
 		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
 	    	Microscope = jParser.getText();
@@ -195,17 +211,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				bdvSources.put(source.getName(), source);
 			}
 		}, IOException.class));
-		inputMap.put("OMEXMLMetadataDump", MarsUtil.catchConsumerException(jParser -> {
-	        try {
-	    	   store = omexmlService.createOMEXMLMetadata(jParser.getText());
-			} catch (ServiceException e) {
-				e.printStackTrace();
-			}
-		}, IOException.class));
-	}
-	
-	public int getFrameCount() {
-		return store.getTiffDataCount(0);
+		
 	}
 	
 	/**
@@ -353,46 +359,108 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return log;
 	}
 	
-	protected void initializePlaneMap() {
-		IZCTtoPlaneMap = new HashMap<Integer[], MarsOMEPlane>();
-		if (store != null) {
-			for (int imageIndex=0; imageIndex<store.getImageCount(); imageIndex++)
-				for (int planeIndex=0; planeIndex<store.getPlaneCount(imageIndex); planeIndex++) {
-					Integer[] izct = new Integer[4];
-					izct[0] = imageIndex;
-					izct[1] = store.getPlaneTheZ(imageIndex, planeIndex).getNumberValue().intValue();
-					izct[2] = store.getPlaneTheC(imageIndex, planeIndex).getNumberValue().intValue();
-					izct[3] = store.getPlaneTheT(imageIndex, planeIndex).getNumberValue().intValue();
-					IZCTtoPlaneMap.put(izct, planeIndex);
-				}
-		}
-	}
-
-	@Override
-	public OMEXMLMetadata getOMEXMLMetadata() {
-		return store;
+	public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
+		return images.get(imageIndex).getPlane(planeIndex);
 	}
 	
-	public void setOMEXMLMetadata(OMEXMLMetadata omexmlMetadata) {
-		store = omexmlMetadata;
-		initializePlaneMap();
+	public int getFrameCount(int imageIndex) {
+		return images.get(imageIndex).getFrameCount();
 	}
 	
-	public int getPlaneIndex(int imageIndex, int z, int c, int t) {
-		Integer[] izct = new Integer[4];
-		izct[0] = imageIndex;
-		izct[0] = z;
-		izct[1] = c;
-		izct[2] = t;
+	private static class Image extends AbstractJsonConvertibleRecord {
+		private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
 		
-		return getPlaneIndex(izct);
-	}
-	
-	public MarsOMEPlane getPlane(Integer[] izct) {
-		return ZCTtoPlaneMap.get(izct);
-	}
+		private Timestamp imageAquisitionDate;
+		private String imageName;
+		private String imageDescription;
+		private List<String> channelNames = new ArrayList<String>();
+		private List<String> channelBinning = new ArrayList<String>();
+		private List<String> channelGain = new ArrayList<String>();
+		private List<ElectricPotential> channelVoltage = new ArrayList<ElectricPotential>();
+		
+		private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
+		
+		private String detectorSerialNumber, detectorModel, detectorManufacturer;
+		private Temperature temperature;
+		private DetectorType detectorType;
+		
+		private int frames;
+		
+		Image(int imageIndex, OMEXMLMetadata md) {
+			
+			imageAquisitionDate = md.getImageAcquisitionDate(imageIndex);
+			imageName = md.getImageName(imageIndex);
+			imageDescription = md.getImageDescription(imageIndex);
+			
+			for (int channelIndex=0; channelIndex < md.getChannelCount(imageIndex); channelIndex++) {
+				channelNames.add(md.getChannelName(imageIndex, channelIndex));
+				md.getDetectorSettingsBinning(imageIndex, channelIndex);
+				md.getDetectorSettingsGain(imageIndex, channelIndex);
+				md.getDetectorSettingsVoltage(imageIndex, channelIndex);
+				md.getDetectorSettingsID(imageIndex, channelIndex);
+			}
+			
+			pixelsPhysicalSizeX = md.getPixelsPhysicalSizeX(imageIndex);
+			pixelsPhysicalSizeY = md.getPixelsPhysicalSizeY(imageIndex);
+			pixelsPhysicalSizeZ = md.getPixelsPhysicalSizeZ(imageIndex);
+			
+			//Build Planes
+			for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
+				marsOMEPlanes.put(planeIndex, new MarsOMEPlane(imageIndex, planeIndex, md));
+			
+			detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
+			detectorModel = md.getDetectorModel(0, imageIndex);
+			detectorManufacturer = md.getDetectorManufacturer(0, imageIndex);
+			detectorType = md.getDetectorType(0, imageIndex);
+			temperature = md.getImagingEnvironmentTemperature(imageIndex);
+			
+			//Build look-up from image/plane to MapAnnotation
+			if (md.getMapAnnotationCount() > 0) {
+				Map<Integer, List<MapPair>> planeToMapAnnotation = new HashMap<Integer, List<MapPair>>();
+				for (int i=0; i<md.getMapAnnotationCount(); i++) {
+					String[] strList = md.getMapAnnotationID(i).split("-");
+					int iIndex = Integer.valueOf(strList[1]);
+					int pIndex = Integer.valueOf(strList[2]);
+					
+					if (iIndex == imageIndex) 
+						planeToMapAnnotation.put(pIndex, md.getMapAnnotationValue(i));
+				}
+				
+				for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
+					marsOMEPlanes.get(planeIndex).setCustomFields();
+			}
+		}
+		
+		MarsOMEPlane getPlane(int planeIndex) {
+			marsOMEPlanes.get(planeIndex);
+		}
+		
+		int getFrameCount() {
+			return frames;
+		}
 
-	public MarsOMEPlane getPlane(int plane) {
-		return
+		@Override
+		protected void createIOMaps() {
+			outputMap.put("ImageAcquisitionDate", MarsUtil.catchConsumerException(jGenerator -> {
+				jGenerator.writeStringField("ImageAcquisitionDate", imageAcquisitionDate);
+		 	}, IOException.class));
+			
+			outputMap.put("Planes", MarsUtil.catchConsumerException(jGenerator -> {
+				if (marsOMEPlanes.size() > 0) {
+					jGenerator.writeArrayFieldStart("Planes");
+					for (MarsOMEPlane plane : marsOMEPlanes.values()) {
+						plane.toJSON(jGenerator);
+					}
+					jGenerator.writeEndArray();
+				}
+		 	}, IOException.class));
+			
+			inputMap.put("Planes", MarsUtil.catchConsumerException(jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsOMEPlane plane = new MarsOMEPlane(jParser);
+					marsOMEPlanes.put(plane.getIndex(), plane);
+				}
+		 	}, IOException.class));
+		}
 	}
 }

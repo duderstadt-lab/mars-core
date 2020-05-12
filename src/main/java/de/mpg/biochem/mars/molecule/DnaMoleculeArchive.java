@@ -39,20 +39,20 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
 	
-	public DnaMoleculeArchive(final Context context, String name) {
-		super(context, name);
+	public DnaMoleculeArchive(String name) {
+		super(name);
 	}
 	
-	public DnaMoleculeArchive(final Context context, File file) throws IOException, JsonParseException {
-		super(context, file);
+	public DnaMoleculeArchive(File file) throws IOException, JsonParseException {
+		super(file);
 	}
 	
-	public DnaMoleculeArchive(final Context context, String name, MarsTable table) {
-		super(context, name, table);
+	public DnaMoleculeArchive(String name, MarsTable table) {
+		super(name, table);
 	}
 	
-	public DnaMoleculeArchive(final Context context, String name, File file) throws JsonParseException, IOException {
-		super(context, name, file);
+	public DnaMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super(name, file);
 	}
 	
 	public SingleMoleculeArchiveProperties createProperties() {
@@ -64,11 +64,11 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Mar
 	}
 	
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(getContext(), jParser);
+		return new MarsOMEMetadata(jParser);
 	}
 	
 	public MarsOMEMetadata createMetadata(String metaUID) {
-		return new MarsOMEMetadata(getContext(), metaUID);
+		return new MarsOMEMetadata(metaUID);
 	}
 	
 	public DnaMolecule createMolecule() {
