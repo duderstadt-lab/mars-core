@@ -39,13 +39,11 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 	private double yDrift;
 	private double zDrift;
 	
-	private Map<String, String> customFields;
+	private Map<String, String> customFields = new HashMap<String, String>();
 
 	public MarsOMEPlane(int imageIndex, int planeIndex, OMEXMLMetadata md) {
 		super();
-		
-		customFields = new HashMap<String, String>();
-		
+
 		this.imageIndex = imageIndex;
 		this.planeIndex = planeIndex;
 		this.c = md.getTiffDataFirstC(imageIndex, planeIndex);
@@ -64,7 +62,6 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 	
 	public MarsOMEPlane(JsonParser jParser) throws IOException {
 		super();
-		customFields = new HashMap<String, String>();
 		fromJSON(jParser);
 	}
 	
@@ -199,16 +196,16 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 		return customFields.get(field);
 	}
 	
+	public void setCustomFields(Map<String, String> customFields) {
+		this.customFields = customFields;
+	}
+	
 	public float getDeltaT() {
 		return dt;
 	}
 	
-	public Integer[] getIndex() {
-		Integer[] imageAndPlane = new Integer[2];
-		imageAndPlane[0] = this.imageIndex;
-		imageAndPlane[1] = this.planeIndex;
-		
-		return imageAndPlane;
+	public int getPlaneIndex() {
+		return planeIndex;
 	}
 	
 	public double getXDrift() {

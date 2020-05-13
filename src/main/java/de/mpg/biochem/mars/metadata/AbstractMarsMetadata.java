@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -69,6 +70,7 @@ import ome.units.quantity.Temperature;
 import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
+import ome.xml.model.enums.Binning;
 import ome.xml.model.enums.DetectorType;
 import ome.xml.model.primitives.Timestamp;
 
@@ -190,7 +192,13 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				jGenerator.writeEndArray();
 			}
 	 	}, IOException.class));
-		
+		outputMap.put("Images", MarsUtil.catchConsumerException(jGenerator -> {
+			jGenerator.writeArrayFieldStart("Images");
+			for (int imageIndex=0; imageIndex<images.size(); imageIndex++) {
+				images.get(imageIndex).toJSON(jGenerator);
+			}
+			jGenerator.writeEndArray();
+	 	}, IOException.class));
 		
 		//Add to input map
 		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
@@ -211,6 +219,12 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				bdvSources.put(source.getName(), source);
 			}
 		}, IOException.class));
+		inputMap.put("Images", MarsUtil.catchConsumerException(jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				Image image = new Image(jParser);
+				images.put(image.getImageIndex(), image);
+			}
+	 	}, IOException.class));
 		
 	}
 	
@@ -371,12 +385,14 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
 		
 		private Timestamp imageAquisitionDate;
+		private int imageIndex;
 		private String imageName;
 		private String imageDescription;
 		private List<String> channelNames = new ArrayList<String>();
-		private List<String> channelBinning = new ArrayList<String>();
-		private List<String> channelGain = new ArrayList<String>();
+		private List<Binning> channelBinning = new ArrayList<Binning>();
+		private List<Double> channelGain = new ArrayList<Double>();
 		private List<ElectricPotential> channelVoltage = new ArrayList<ElectricPotential>();
+		private List<String> channelDetectorSettingsID = new ArrayList<String>();
 		
 		private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
 		
@@ -386,18 +402,23 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		
 		private int frames;
 		
+		Image(JsonParser jParser) throws IOException {
+			super();
+			fromJSON(jParser);
+		}
+		
 		Image(int imageIndex, OMEXMLMetadata md) {
-			
+			this.imageIndex = imageIndex;
 			imageAquisitionDate = md.getImageAcquisitionDate(imageIndex);
 			imageName = md.getImageName(imageIndex);
 			imageDescription = md.getImageDescription(imageIndex);
 			
 			for (int channelIndex=0; channelIndex < md.getChannelCount(imageIndex); channelIndex++) {
 				channelNames.add(md.getChannelName(imageIndex, channelIndex));
-				md.getDetectorSettingsBinning(imageIndex, channelIndex);
-				md.getDetectorSettingsGain(imageIndex, channelIndex);
-				md.getDetectorSettingsVoltage(imageIndex, channelIndex);
-				md.getDetectorSettingsID(imageIndex, channelIndex);
+				channelBinning.add(md.getDetectorSettingsBinning(imageIndex, channelIndex));
+				channelGain.add(md.getDetectorSettingsGain(imageIndex, channelIndex));
+				channelVoltage.add(md.getDetectorSettingsVoltage(imageIndex, channelIndex));
+				channelDetectorSettingsID.add(md.getDetectorSettingsID(imageIndex, channelIndex));
 			}
 			
 			pixelsPhysicalSizeX = md.getPixelsPhysicalSizeX(imageIndex);
@@ -416,18 +437,21 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 			
 			//Build look-up from image/plane to MapAnnotation
 			if (md.getMapAnnotationCount() > 0) {
-				Map<Integer, List<MapPair>> planeToMapAnnotation = new HashMap<Integer, List<MapPair>>();
 				for (int i=0; i<md.getMapAnnotationCount(); i++) {
 					String[] strList = md.getMapAnnotationID(i).split("-");
 					int iIndex = Integer.valueOf(strList[1]);
-					int pIndex = Integer.valueOf(strList[2]);
+					int planeIndex = Integer.valueOf(strList[2]);
 					
-					if (iIndex == imageIndex) 
-						planeToMapAnnotation.put(pIndex, md.getMapAnnotationValue(i));
+					if (iIndex == imageIndex) {
+						List<MapPair> omeFieldsList = md.getMapAnnotationValue(i);
+						
+						Map<String, String> fieldsMap = new HashMap<String, String>(); 
+						for (MapPair pair : omeFieldsList)
+							fieldsMap.put(pair.getName(), pair.getValue());
+						
+						marsOMEPlanes.get(planeIndex).setCustomFields(fieldsMap);
+					}
 				}
-				
-				for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
-					marsOMEPlanes.get(planeIndex).setCustomFields();
 			}
 		}
 		
@@ -438,11 +462,35 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		int getFrameCount() {
 			return frames;
 		}
+		
+		int getImageIndex() {
+			return imageIndex;
+		}
 
 		@Override
 		protected void createIOMaps() {
+			private int imageIndex;
+			private String imageName;
+			private String imageDescription;
+			private List<String> channelNames = new ArrayList<String>();
+			private List<Binning> channelBinning = new ArrayList<Binning>();
+			private List<Double> channelGain = new ArrayList<Double>();
+			private List<ElectricPotential> channelVoltage = new ArrayList<ElectricPotential>();
+			private List<String> channelDetectorSettingsID = new ArrayList<String>();
+			
+			private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
+			
+			private String detectorSerialNumber, detectorModel, detectorManufacturer;
+			private Temperature temperature;
+			private DetectorType detectorType;
+			
+			private int frames;
+			
+			
+			
+			
 			outputMap.put("ImageAcquisitionDate", MarsUtil.catchConsumerException(jGenerator -> {
-				jGenerator.writeStringField("ImageAcquisitionDate", imageAcquisitionDate);
+				jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.toString());
 		 	}, IOException.class));
 			
 			outputMap.put("Planes", MarsUtil.catchConsumerException(jGenerator -> {
@@ -455,10 +503,14 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				}
 		 	}, IOException.class));
 			
+			inputMap.put("ImageAcquisitionDate", MarsUtil.catchConsumerException(jParser -> {
+				imageAquisitionDate = new Timestamp(jParser.getText());
+		 	}, IOException.class));
+			
 			inputMap.put("Planes", MarsUtil.catchConsumerException(jParser -> {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					MarsOMEPlane plane = new MarsOMEPlane(jParser);
-					marsOMEPlanes.put(plane.getIndex(), plane);
+					marsOMEPlanes.put(plane.getPlaneIndex(), plane);
 				}
 		 	}, IOException.class));
 		}
