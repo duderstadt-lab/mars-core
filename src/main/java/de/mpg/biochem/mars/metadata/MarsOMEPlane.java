@@ -221,10 +221,54 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 		return dt.value(UNITS.SECOND).doubleValue();
 	}
 	
+	public int getImageIndex() {
+		return imageIndex;
+	}
+	
 	public int getPlaneIndex() {
 		return planeIndex;
 	}
 	
+	public int getC() {
+		return c.getValue();
+	}
+	
+	public int getZ() {
+		return z.getValue();
+	}
+	
+	public int getT() {
+		return t.getValue();
+	}
+	
+	public int getIFD() {
+		return ifd.getValue();
+	}
+	
+	public String getFilename() {
+		return filename;
+	}
+	
+	public String getUUID() {
+		return uuid;
+	}
+	
+	public double getExposureTimeInSeconds() {
+		return exposureTime.value(UNITS.SECOND).doubleValue();
+	}
+
+	public double getPosX() {
+		return posX;
+	}
+	
+	public double getPosY() {
+		return posY;
+	}
+	
+	public double getPosZ() {
+		return posZ;
+	}
+
 	public double getXDrift() {
 		return xDrift;
 	}
