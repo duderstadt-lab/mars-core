@@ -67,11 +67,15 @@ import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
-import ome.units.quantity.Time;
+import ome.units.unit.Unit;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
 import ome.xml.model.enums.Binning;
 import ome.xml.model.enums.DetectorType;
+import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.handlers.BinningEnumHandler;
+import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
+import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.primitives.Timestamp;
 
 /**
@@ -164,67 +168,67 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
+
+		setJsonField("Microscope",
+			jGenerator -> {
+				if(Microscope != null)
+		  			jGenerator.writeStringField("Microscope", Microscope);
+		 	},
+			jParser -> Microscope = jParser.getText());
 		
-		//Add to output map
-		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {
-			if(Microscope != null)
-	  			jGenerator.writeStringField("Microscope", Microscope);
-	 	}, IOException.class));
-		outputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (SourceDirectory != null)
-	  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
-	 	}, IOException.class));
-		outputMap.put("CollectionDate", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (CollectionDate != null)
-	  			jGenerator.writeStringField("CollectionDate", CollectionDate);
-	 	}, IOException.class));
-		outputMap.put("Log", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (!log.equals("")) {
-	  			jGenerator.writeStringField("Log", log);
-	  		}
-	 	}, IOException.class));
-		outputMap.put("BdvSources", MarsUtil.catchConsumerException(jGenerator -> {
-			if (bdvSources.size() > 0) {
-				jGenerator.writeArrayFieldStart("BdvSources");
-				for (MarsBdvSource source : bdvSources.values()) {
-					source.toJSON(jGenerator);
+		setJsonField("SourceDirectory", 
+			jGenerator -> {
+		  		if (SourceDirectory != null)
+		  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
+			},
+			jParser -> SourceDirectory = jParser.getText());
+				
+		setJsonField("CollectionDate", 
+			jGenerator -> {
+		  		if (CollectionDate != null)
+		  			jGenerator.writeStringField("CollectionDate", CollectionDate);
+	 		},
+			jParser -> CollectionDate = jParser.getText());
+						
+		setJsonField("Log", 
+			jGenerator -> {
+		  		if (!log.equals("")) {
+		  			jGenerator.writeStringField("Log", log);
+		  		}
+		 	}, 
+			jParser -> log = jParser.getText());
+		
+		setJsonField("BdvSources", 
+			jGenerator -> {
+				if (bdvSources.size() > 0) {
+					jGenerator.writeArrayFieldStart("BdvSources");
+					for (MarsBdvSource source : bdvSources.values()) {
+						source.toJSON(jGenerator);
+					}
+					jGenerator.writeEndArray();
+				}
+		 	}, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsBdvSource source = new MarsBdvSource(jParser);
+					bdvSources.put(source.getName(), source);
+				}
+			});
+		
+		setJsonField("Images", 
+			jGenerator -> {
+				jGenerator.writeArrayFieldStart("Images");
+				for (int imageIndex=0; imageIndex<images.size(); imageIndex++) {
+					images.get(imageIndex).toJSON(jGenerator);
 				}
 				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		outputMap.put("Images", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeArrayFieldStart("Images");
-			for (int imageIndex=0; imageIndex<images.size(); imageIndex++) {
-				images.get(imageIndex).toJSON(jGenerator);
-			}
-			jGenerator.writeEndArray();
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
-	    	Microscope = jParser.getText();
-		}, IOException.class));
-		inputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jParser -> {
-	    	SourceDirectory = jParser.getText();
-		}, IOException.class));
-		inputMap.put("CollectionDate", MarsUtil.catchConsumerException(jParser -> {
-	    	CollectionDate = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Log", MarsUtil.catchConsumerException(jParser -> {
-	    	log = jParser.getText();
-		}, IOException.class));
-		inputMap.put("BdvSources", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsBdvSource source = new MarsBdvSource(jParser);
-				bdvSources.put(source.getName(), source);
-			}
-		}, IOException.class));
-		inputMap.put("Images", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				Image image = new Image(jParser);
-				images.put(image.getImageIndex(), image);
-			}
-	 	}, IOException.class));
+		 	},
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					Image image = new Image(jParser);
+					images.put(image.getImageIndex(), image);
+				}
+		 	});
 		
 	}
 	
@@ -456,7 +460,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		}
 		
 		MarsOMEPlane getPlane(int planeIndex) {
-			marsOMEPlanes.get(planeIndex);
+			return marsOMEPlanes.get(planeIndex);
 		}
 		
 		int getFrameCount() {
@@ -469,50 +473,268 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 
 		@Override
 		protected void createIOMaps() {
-			private int imageIndex;
-			private String imageName;
-			private String imageDescription;
-			private List<String> channelNames = new ArrayList<String>();
-			private List<Binning> channelBinning = new ArrayList<Binning>();
-			private List<Double> channelGain = new ArrayList<Double>();
-			private List<ElectricPotential> channelVoltage = new ArrayList<ElectricPotential>();
-			private List<String> channelDetectorSettingsID = new ArrayList<String>();
 			
-			private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
+			UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
 			
-			private String detectorSerialNumber, detectorModel, detectorManufacturer;
-			private Temperature temperature;
-			private DetectorType detectorType;
+			setJsonField("ImageAcquisitionDate", 
+				jGenerator -> jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.toString()),
+				jParser -> imageAquisitionDate = new Timestamp(jParser.getText()));
 			
-			private int frames;
+			setJsonField("ImageIndex",
+				jGenerator -> jGenerator.writeNumberField("ImageIndex", imageIndex),
+				jParser -> imageIndex = jParser.getIntValue());
+			
+			setJsonField("ImageName", 
+				jGenerator -> jGenerator.writeStringField("ImageName", imageName),
+				jParser -> imageName = jParser.getText());
+			
+			setJsonField("ImageDescription", 
+				jGenerator -> jGenerator.writeStringField("ImageDescription", imageDescription),
+				jParser -> imageDescription = jParser.getText());
+			
+			//Dimensions !!!!!!!!!!!!!!!!!!!!!!!
 			
 			
 			
+			setJsonField("T", 
+				jGenerator -> jGenerator.writeStringField("T", String.valueOf(frames)),
+				jParser -> frames = jParser.getIntValue());
 			
-			outputMap.put("ImageAcquisitionDate", MarsUtil.catchConsumerException(jGenerator -> {
-				jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.toString());
-		 	}, IOException.class));
 			
-			outputMap.put("Planes", MarsUtil.catchConsumerException(jGenerator -> {
-				if (marsOMEPlanes.size() > 0) {
-					jGenerator.writeArrayFieldStart("Planes");
-					for (MarsOMEPlane plane : marsOMEPlanes.values()) {
-						plane.toJSON(jGenerator);
-					}
+			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			
+			setJsonField("ChannelNames", 
+				jGenerator -> {
+				if (channelNames.size() > 0) {
+					jGenerator.writeFieldName("ChannelNames");
+					jGenerator.writeStartArray();
+					Iterator<String> iterator = channelNames.iterator();
+					while(iterator.hasNext())
+						jGenerator.writeString(iterator.next());
 					jGenerator.writeEndArray();
-				}
-		 	}, IOException.class));
+				}},
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						channelNames.add(jParser.getText());
+					}
+			 	});
+				
+			setJsonField("ChannelBinning", 
+				jGenerator -> {
+					if (channelBinning.size() > 0) {
+						jGenerator.writeFieldName("ChannelBinning");
+						jGenerator.writeStartArray();
+						Iterator<Binning> iterator = channelBinning.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeString(iterator.next().getValue());
+						jGenerator.writeEndArray();
+					}
+				},
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						BinningEnumHandler handler = new BinningEnumHandler();
+						try {
+							channelBinning.add((Binning) handler.getEnumeration(jParser.getText()));
+						} catch (EnumerationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+			 	});
 			
-			inputMap.put("ImageAcquisitionDate", MarsUtil.catchConsumerException(jParser -> {
-				imageAquisitionDate = new Timestamp(jParser.getText());
-		 	}, IOException.class));
+			setJsonField("ChannelGain", 
+					jGenerator -> {
+						if (channelGain.size() > 0) {
+							jGenerator.writeFieldName("ChannelGain");
+							jGenerator.writeStartArray();
+							Iterator<Double> iterator = channelGain.iterator();
+							while(iterator.hasNext())
+								jGenerator.writeString(iterator.next().toString());
+							jGenerator.writeEndArray();
+						}
+					},
+					jParser -> {
+						while (jParser.nextToken() != JsonToken.END_ARRAY) {
+							channelGain.add(jParser.getDoubleValue());
+						}
+				 	});
 			
-			inputMap.put("Planes", MarsUtil.catchConsumerException(jParser -> {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					MarsOMEPlane plane = new MarsOMEPlane(jParser);
-					marsOMEPlanes.put(plane.getPlaneIndex(), plane);
-				}
-		 	}, IOException.class));
+			setJsonField("ChannelVoltage", 
+					jGenerator -> {
+						if (channelVoltage.size() > 0) {
+							jGenerator.writeFieldName("ChannelVoltage");
+							jGenerator.writeStartArray();
+							Iterator<ElectricPotential> iterator = channelVoltage.iterator();
+							while(iterator.hasNext())
+								jGenerator.writeString(iterator.next().value().toString());
+							jGenerator.writeEndArray();
+						}
+					},
+					jParser -> {
+						while (jParser.nextToken() != JsonToken.END_ARRAY) {
+							channelVoltage.add(new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
+						}
+				 	});
+			
+			setJsonField("ChannelDetectorSettingsID", 
+					jGenerator -> {
+						if (channelDetectorSettingsID.size() > 0) {
+							jGenerator.writeFieldName("ChannelDetectorSettingsID");
+							jGenerator.writeStartArray();
+							Iterator<String> iterator = channelDetectorSettingsID.iterator();
+							while(iterator.hasNext())
+								jGenerator.writeString(iterator.next());
+							jGenerator.writeEndArray();
+						}
+					},
+					jParser -> {
+						while (jParser.nextToken() != JsonToken.END_ARRAY) {
+							channelDetectorSettingsID.add(jParser.getText());
+						}
+				 	});
+			
+			setJsonField("PixelsPhysicalSizeX",
+				jGenerator -> {
+					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeX");
+					jGenerator.writeNumberField("value", pixelsPhysicalSizeX.value().doubleValue());
+					jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().toString());
+					jGenerator.writeEndObject();
+				},
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						pixelsPhysicalSizeX = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+			
+			setJsonField("PixelsPhysicalSizeY",
+					jGenerator -> {
+						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeY");
+						jGenerator.writeNumberField("value", pixelsPhysicalSizeY.value().doubleValue());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().toString());
+						jGenerator.writeEndObject();
+					},
+					jParser -> { 
+						double value = Double.NaN;
+						String units = "";
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    		String subfieldname = jParser.getCurrentName();
+				    		jParser.nextToken();
+				    		if (subfieldname.equals("value"))
+				    			value = jParser.getDoubleValue();
+				    		
+				    		if (subfieldname.equals("units"))
+				    			units = jParser.getText();
+				    	}
+						try {
+							pixelsPhysicalSizeY = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+						} catch (EnumerationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					});
+			
+			setJsonField("PixelsPhysicalSizeZ",
+					jGenerator -> {
+						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeZ");
+						jGenerator.writeNumberField("value", pixelsPhysicalSizeZ.value().doubleValue());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().toString());
+						jGenerator.writeEndObject();
+					},
+					jParser -> { 
+						double value = Double.NaN;
+						String units = "";
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    		String subfieldname = jParser.getCurrentName();
+				    		jParser.nextToken();
+				    		if (subfieldname.equals("value"))
+				    			value = jParser.getDoubleValue();
+				    		
+				    		if (subfieldname.equals("units"))
+				    			units = jParser.getText();
+				    	}
+						try {
+							pixelsPhysicalSizeZ = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+						} catch (EnumerationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					});
+			
+			setJsonField("DetectorSerialNumber", 
+					jGenerator -> jGenerator.writeStringField("DetectorSerialNumber", detectorSerialNumber),
+					jParser -> detectorSerialNumber = jParser.getText());
+			
+			setJsonField("DetectorModel", 
+					jGenerator -> jGenerator.writeStringField("DetectorModel", detectorModel),
+					jParser -> detectorModel = jParser.getText());
+			
+			setJsonField("DetectorManufacturer", 
+					jGenerator -> jGenerator.writeStringField("DetectorManufacturer", detectorManufacturer),
+					jParser -> detectorManufacturer = jParser.getText());
+			
+			setJsonField("DetectorType", 
+					jGenerator -> jGenerator.writeStringField("DetectorType", detectorType.getValue()),
+					jParser -> detectorType = DetectorType.valueOf(jParser.getText()));
+
+			setJsonField("Temperature",
+					jGenerator -> {
+						jGenerator.writeObjectFieldStart("Temperature");
+						jGenerator.writeNumberField("value", temperature.value().doubleValue());
+						jGenerator.writeStringField("units", temperature.unit().toString());
+						jGenerator.writeEndObject();
+					},
+					jParser -> { 
+						double value = Double.NaN;
+						String units = "";
+						while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    		String subfieldname = jParser.getCurrentName();
+				    		jParser.nextToken();
+				    		if (subfieldname.equals("value"))
+				    			value = jParser.getDoubleValue();
+				    		
+				    		if (subfieldname.equals("units"))
+				    			units = jParser.getText();
+				    	}
+						UnitsTemperatureEnumHandler handler = new UnitsTemperatureEnumHandler();
+						try {
+							temperature = new Temperature(value, (Unit<Temperature>) handler.getEnumeration(units));
+						} catch (EnumerationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					});			
+			
+			setJsonField("Planes", 
+				jGenerator -> {
+					if (marsOMEPlanes.size() > 0) {
+						jGenerator.writeArrayFieldStart("Planes");
+						for (MarsOMEPlane plane : marsOMEPlanes.values()) {
+							plane.toJSON(jGenerator);
+						}
+						jGenerator.writeEndArray();
+					}
+			 	},
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsOMEPlane plane = new MarsOMEPlane(jParser);
+						marsOMEPlanes.put(plane.getPlaneIndex(), plane);
+					}
+			 	});	
+			
 		}
 	}
 }

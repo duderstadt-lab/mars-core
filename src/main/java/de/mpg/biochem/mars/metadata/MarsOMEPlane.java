@@ -13,10 +13,16 @@ import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsUtil;
 import io.scif.io.Location;
 import ome.units.UNITS;
+import ome.units.quantity.Length;
 import ome.units.quantity.Time;
+import ome.units.unit.Unit;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
+import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.primitives.NonNegativeInteger;
+import ome.xml.model.primitives.Timestamp;
+
+import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 
 public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 
@@ -67,125 +73,136 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 	
 	@Override
 	protected void createIOMaps() {
-		//For now we add everything.. Maybe in the future the c, z, t can be excluded 
-		//and instead generated from the global axis information...
 		
-		//Ugh maybe make a shorter method for this...
-		//Add to output map
-		outputMap.put("image", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("image", imageIndex);
-	 	}, IOException.class));
-		outputMap.put("plane", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("plane", planeIndex);
-	 	}, IOException.class));
-		outputMap.put("C", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("C", c.getValue());
-	 	}, IOException.class));
-		outputMap.put("Z", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("Z", z.getValue());
-	 	}, IOException.class));
-		outputMap.put("T", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("T", t.getValue());
-	 	}, IOException.class));
-		outputMap.put("ifd", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("ifd", ifd.getValue());
-	 	}, IOException.class));
-		outputMap.put("filename", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeStringField("filename", filename);
-	 	}, IOException.class));
-		outputMap.put("uuid", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeStringField("uuid", uuid);
-	 	}, IOException.class));
-		outputMap.put("deltaT", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("deltaT", dt);
-	 	}, IOException.class));
-		outputMap.put("exposureTime", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("exposureTime", exposureTime);
-	 	}, IOException.class));
-		outputMap.put("posX", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("posX", posX);
-	 	}, IOException.class));
-		outputMap.put("posY", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("posY", posY);
-	 	}, IOException.class));
-		outputMap.put("posZ", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("posZ", posZ);
-	 	}, IOException.class));
-		outputMap.put("xDrift", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("xDrift", xDrift);
-	 	}, IOException.class));
-		outputMap.put("yDrift", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("yDrift", yDrift);
-	 	}, IOException.class));
-		outputMap.put("zDrift", MarsUtil.catchConsumerException(jGenerator -> {
-	  		jGenerator.writeNumberField("zDrift", zDrift);
-	 	}, IOException.class));
-		outputMap.put("CustomFields", MarsUtil.catchConsumerException(jGenerator -> {
-			if (customFields.size() > 0) {
-				jGenerator.writeArrayFieldStart("CustomFields");
-				for (String name : customFields.keySet()) {
-					jGenerator.writeStringField(name, customFields.get(name));
+		UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+
+		setJsonField("image", 
+			jGenerator -> jGenerator.writeNumberField("image", imageIndex),
+			jParser -> imageIndex = jParser.getIntValue());
+
+		setJsonField("plane", 
+			jGenerator -> jGenerator.writeNumberField("plane", planeIndex),
+			jParser -> planeIndex = jParser.getIntValue());
+
+		setJsonField("C", 
+			jGenerator -> jGenerator.writeNumberField("C", c.getValue()),
+			jParser -> c = new NonNegativeInteger(jParser.getIntValue()));
+		
+		setJsonField("Z", 
+			jGenerator -> jGenerator.writeNumberField("Z", z.getValue()),
+			jParser -> z = new NonNegativeInteger(jParser.getIntValue()));
+		
+		setJsonField("T", 
+			jGenerator -> jGenerator.writeNumberField("T", t.getValue()),
+			jParser -> t = new NonNegativeInteger(jParser.getIntValue()));
+		
+		setJsonField("ifd", 
+			jGenerator -> jGenerator.writeNumberField("ifd", ifd.getValue()),
+			jParser -> ifd = new NonNegativeInteger(jParser.getIntValue()));
+		
+		setJsonField("filename", 
+			jGenerator -> jGenerator.writeStringField("filename", filename),
+			jParser -> filename = jParser.getText());
+	 	
+		setJsonField("uuid", 
+			jGenerator -> jGenerator.writeStringField("uuid", uuid),
+			jParser -> uuid = jParser.getText());
+	 	
+	 	setJsonField("deltaT",
+				jGenerator -> {
+					jGenerator.writeObjectFieldStart("deltaT");
+					jGenerator.writeNumberField("value", dt.value().doubleValue());
+					jGenerator.writeStringField("units", dt.unit().toString());
+					jGenerator.writeEndObject();
+				},
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						dt = new Time(value, (Unit<Time>) timehandler.getEnumeration(units));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+	 	
+	 	setJsonField("exposureTime",
+				jGenerator -> {
+					jGenerator.writeObjectFieldStart("exposureTime");
+					jGenerator.writeNumberField("value", exposureTime.value().doubleValue());
+					jGenerator.writeStringField("units", exposureTime.unit().toString());
+					jGenerator.writeEndObject();
+				},
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						exposureTime = new Time(value, (Unit<Time>) timehandler.getEnumeration(units));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+			
+	 	setJsonField("posX",
+	 		jGenerator -> jGenerator.writeNumberField("posX", posX),
+	 		jParser -> posX = jParser.getFloatValue());
+	 	
+	 	setJsonField("posY",
+		 		jGenerator -> jGenerator.writeNumberField("posY", posY),
+		 		jParser -> posY = jParser.getFloatValue());
+	 	
+	 	setJsonField("posZ",
+		 		jGenerator -> jGenerator.writeNumberField("posZ", posZ),
+		 		jParser -> posZ = jParser.getFloatValue());
+	 	
+	 	setJsonField("xDrift", 
+	 		jGenerator -> jGenerator.writeNumberField("xDrift", xDrift),
+	 		jParser -> xDrift = jParser.getDoubleValue());
+	 	
+	 	setJsonField("yDrift", 
+		 		jGenerator -> jGenerator.writeNumberField("yDrift", yDrift),
+		 		jParser -> yDrift = jParser.getDoubleValue());
+	 	
+	 	setJsonField("zDrift", 
+		 		jGenerator -> jGenerator.writeNumberField("zDrift", zDrift),
+		 		jParser -> zDrift = jParser.getDoubleValue());
+	 	
+	 	setJsonField("CustomFields", 
+	 		jGenerator -> {
+				if (customFields.size() > 0) {
+					jGenerator.writeArrayFieldStart("CustomFields");
+					for (String name : customFields.keySet()) {
+						jGenerator.writeStringField(name, customFields.get(name));
+					}
+					jGenerator.writeEndArray();
 				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("image", MarsUtil.catchConsumerException(jParser -> {
-			imageIndex = jParser.getIntValue();
-	 	}, IOException.class));
-		inputMap.put("plane", MarsUtil.catchConsumerException(jParser -> {
-	  		planeIndex = jParser.getIntValue();
-	 	}, IOException.class));
-		inputMap.put("C",MarsUtil.catchConsumerException(jParser -> {
-	  		c = new NonNegativeInteger(jParser.getIntValue());
-	 	}, IOException.class));
-		inputMap.put("Z", MarsUtil.catchConsumerException(jParser -> {
-			z = new NonNegativeInteger(jParser.getIntValue());
-	 	}, IOException.class));
-		inputMap.put("T", MarsUtil.catchConsumerException(jParser -> {
-			t = new NonNegativeInteger(jParser.getIntValue());
-	 	}, IOException.class));
-		inputMap.put("ifd", MarsUtil.catchConsumerException(jParser -> {
-			ifd = new NonNegativeInteger(jParser.getIntValue());
-	 	}, IOException.class));
-		inputMap.put("filename", MarsUtil.catchConsumerException(jParser -> {
-	  		filename = jParser.getText();
-	 	}, IOException.class));
-		inputMap.put("uuid", MarsUtil.catchConsumerException(jParser -> {
-	  		uuid = jParser.getText();
-	 	}, IOException.class));
-		inputMap.put("deltaT", MarsUtil.catchConsumerException(jParser -> {
-	  		dt = jParser.getFloatValue();
-	 	}, IOException.class));
-		inputMap.put("exposureTime", MarsUtil.catchConsumerException(jParser -> {
-	  		exposureTime = jParser.getFloatValue();
-	 	}, IOException.class));
-		inputMap.put("posX", MarsUtil.catchConsumerException(jParser -> {
-	  		posX = jParser.getFloatValue();
-	 	}, IOException.class));
-		inputMap.put("posY", MarsUtil.catchConsumerException(jParser -> {
-	  		posY = jParser.getFloatValue();
-	 	}, IOException.class));
-		inputMap.put("posZ", MarsUtil.catchConsumerException(jParser -> {
-			posZ = jParser.getFloatValue();
-	 	}, IOException.class));
-		inputMap.put("xDrift", MarsUtil.catchConsumerException(jParser -> {
-	  		xDrift = jParser.getDoubleValue();
-	 	}, IOException.class));
-		inputMap.put("yDrift", MarsUtil.catchConsumerException(jParser -> {
-	  		yDrift = jParser.getDoubleValue();
-	 	}, IOException.class));
-		inputMap.put("zDrift", MarsUtil.catchConsumerException(jParser -> {
-	  		zDrift = jParser.getDoubleValue();
-	 	}, IOException.class));
-		inputMap.put("CustomFields", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-	    		String fieldname = jParser.getCurrentName();
-	    		jParser.nextToken();
-	    		customFields.put(fieldname, jParser.getText());
-			}
-	 	}, IOException.class));
+		 	}, 
+	 		jParser -> {
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String fieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		customFields.put(fieldname, jParser.getText());
+				}
+	 		});
 	}
 	
 	public void setField(String field, String value) {
@@ -200,8 +217,8 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 		this.customFields = customFields;
 	}
 	
-	public float getDeltaT() {
-		return dt;
+	public double getDeltaTinSeconds() {
+		return dt.value(UNITS.SECOND).doubleValue();
 	}
 	
 	public int getPlaneIndex() {

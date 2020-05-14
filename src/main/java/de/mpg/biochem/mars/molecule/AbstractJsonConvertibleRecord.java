@@ -36,7 +36,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
+import ome.xml.model.primitives.Timestamp;
 
 /**
  * Abstract superclass for JsonConvertibleRecords. Contains basic conversion 
@@ -143,6 +146,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		    	//Must just be a normal field... so it won't escape the loop prematurely.
 		    }
 		}
+	}
+	
+	protected void setJsonField(String field, ThrowingConsumer<JsonGenerator, IOException> output, ThrowingConsumer<JsonParser, IOException> input) {
+		outputMap.put(field, MarsUtil.catchConsumerException(output, IOException.class));
+		inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
 	}
 	
 	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
