@@ -55,15 +55,15 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
 
-@Plugin(type = Command.class, label = "Mean Squared Displacement Calculator", menu = {
+@Plugin(type = Command.class, label = "Variance Calculator", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Mean Squared Displacement Calculator", weight = 70, mnemonic = 'm')})
-public class MSDCalculatorCommand extends DynamicCommand implements Command, Initializable {
+		@Menu(label = "Variance Calculator", weight = 70, mnemonic = 'm')})
+public class VarianceCalculatorCommand extends DynamicCommand implements Command, Initializable {
 	@Parameter
 	private LogService logService;
 	
@@ -83,7 +83,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 	private String column;
     
     @Parameter(label="Parameter Name")
-    private String ParameterName = "column_MSD";
+    private String ParameterName = "column_Variance";
     
 	@Override
 	public void initialize() {
@@ -99,7 +99,7 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		//Build log message
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Mean Squared Displacement Calculator");
+		String log = LogBuilder.buildTitleBlock("Variance Calculator");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -111,21 +111,21 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		//Loop through each molecule and add MSD parameter for each
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			
-			molecule.setParameter(ParameterName, molecule.getDataTable().msd(column));
+			molecule.setParameter(ParameterName, molecule.getDataTable().variance(column));
 			
 			archive.put(molecule);
 		});
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage(LogBuilder.endBlock(true));
-	    archive.addLogMessage("   ");
+	    archive.logln(LogBuilder.endBlock(true));
+	    archive.logln("   ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 
@@ -138,12 +138,12 @@ public class MSDCalculatorCommand extends DynamicCommand implements Command, Ini
 		builder.addParameter("Parameter Name", ParameterName);
 	}
 	
-	public static double calcMSD(Molecule molecule, String column, String parameterName) {
-		double msd = molecule.getDataTable().msd(column);
+	public static double calcVariance(Molecule molecule, String column, String parameterName) {
+		double variance = molecule.getDataTable().variance(column);
 		
-		molecule.setParameter(parameterName, msd);
+		molecule.setParameter(parameterName, variance);
 		
-		return msd;
+		return variance;
 	}
 	
 	//Getters and Setters

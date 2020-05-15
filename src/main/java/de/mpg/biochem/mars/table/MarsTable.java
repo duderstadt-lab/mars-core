@@ -69,7 +69,6 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;
-import de.mpg.biochem.mars.util.MarsUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
@@ -1204,8 +1203,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param  column  Name of the column used to calculate the mean squared displacement.
 	 * @return The mean squared displacement for the column given. NaN is returned if all values are NaN or the column does not exist.
 	 */
-	public double msd(String column) {
-		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(column));
+	public double variance(String varianceColumn) {
+		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(varianceColumn));
 	}
 	
 	/**
@@ -1218,8 +1217,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param  upperBound  largest value included in the row selection range.
 	 * @return Mean squared displacement. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
-	public double msd(String msdColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
-		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(msdColumn, rowSelectionColumn, lowerBound, upperBound));
+	public double variance(String varianceColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
+		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(varianceColumn, rowSelectionColumn, lowerBound, upperBound));
 	}
 	
 	/**
@@ -1329,17 +1328,6 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		
 		return true;
 	}
-	
-	/**
-	 * Returns a stream of MarsTableRow. This is useful for performing operations on all rows
-	 * using Consumers. 
-	 * 
-	 * @return A stream of MarsTableRows.
-	 */
-	@Deprecated
-	public Stream<MarsTableRow> rowStream() {
-		return rows();
-    }
 	
 	/**
 	 * Returns a stream of MarsTableRow. This is useful for performing operations on all rows
