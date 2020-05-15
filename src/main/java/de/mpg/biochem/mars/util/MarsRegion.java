@@ -47,14 +47,14 @@ import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
 import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
-import de.mpg.biochem.mars.molecule.commands.MSDCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 
 /**
  * This class provides a simple region definition. Usually this a region in time or slice that is of interest
  * for further analysis. {@link Molecule}s and {@link MarsMetadata}s can contain a list of these regions, 
  * which are used when running several commands including {@link KCPCommand}, {@link SigmaCalculatorCommand}, 
- * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link MSDCalculatorCommand}.
+ * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link VarianceCalculatorCommand}.
  * <p>
  * Region definitions include name, start value, end value, column (Time (s) or slice or otherwise), color (in hex), and 
  * opacity (range 0 to 1). These values are used by mars-fx to draw regions on plots based on the start, end

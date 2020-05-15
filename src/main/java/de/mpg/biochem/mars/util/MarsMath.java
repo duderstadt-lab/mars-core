@@ -124,16 +124,16 @@ public class MarsMath {
 	  }
 	
 	//output[0] is force and output[1] is length
-	public static double[] calculateForceAndLength(double msd) {
+	public static double[] calculateForceAndLength(double variance) {
 		ForceCalculator calculator = new ForceCalculator(50*Math.pow(10, -9), 6.8*Math.pow(10, -6));
-		double[] output = calculator.calculate(msd);
+		double[] output = calculator.calculate(variance);
 		return output;
 	}
 	
 	//output[0] is force and output[1] is length
-	public static double[] calculateForceAndLength(double persistenceLength, double L0, double temperature, double msd) {
+	public static double[] calculateForceAndLength(double persistenceLength, double L0, double temperature, double variance) {
 		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0, temperature);
-		double[] output = calculator.calculate(msd);
+		double[] output = calculator.calculate(variance);
 		return output;
 	}
 }

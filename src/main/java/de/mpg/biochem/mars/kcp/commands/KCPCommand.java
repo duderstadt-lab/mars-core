@@ -254,15 +254,12 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		MarsTable datatable = molecule.getDataTable();
 		
 		MarsRecord regionRecord = null;
-		if (region) {
+		if (region || calcBackgroundSigma) {
 			if (regionSource.equals("Molecules")) {
 				regionRecord = molecule;
 			} else {
 				regionRecord = archive.getMetadata(molecule.getMetadataUID());
 			}
-			
-			if (!regionRecord.hasRegion(regionName))
-				return;
 		}
 		
 		//START NaN FIX

@@ -497,6 +497,63 @@ class MarsTableTest {
 	}
 	
 	/*
+	 * TEST variance()
+	 */
+
+	@Test
+	void variance() {
+		MarsTable table = buildTestArrayTable();
+		assertEquals(7684037.390989021, table.variance("col0"));
+	}
+	
+	@Test
+	void varianceNaNs() {
+		MarsTable table = buildTestArrayNaNsTable();
+		assertEquals(7684037.390989021, table.variance("col0"));
+	}
+	
+	@Test
+	void varianceAllNaNs() {
+		MarsTable table = buildTestArrayAllNaNsTable();
+		assertEquals(Double.NaN, table.variance("col0"));
+	}
+	
+	@Test
+	void varianceNoColumn() {
+		MarsTable table = buildTestArrayTable();
+		assertEquals(Double.NaN, table.variance("not here"));
+	}
+	
+	/*
+	 * TEST variance() for selected rows
+	 */
+
+	@Test
+	void varianceSelectedRows() {
+		MarsTable table = buildTestXYTable();
+		assertEquals(6526451.494029807, table.variance("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void varianceSelectedRowsNaNs() {
+		MarsTable table = buildTestXYNaNsTable();
+		assertEquals(6526451.494029807, table.variance("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void varianceSelectedRowsAllNaNs() {
+		MarsTable table = buildTestXYAllNaNsTable();
+		assertEquals(Double.NaN, table.variance("col1", "col0", 2, 4));
+	}
+	
+	@Test
+	void varianceSelectedRowsNoColumn() {
+		MarsTable table = buildTestXYTable();
+		assertEquals(Double.NaN, table.variance("Not a column", "col0", 2, 4));
+	}
+	
+	
+	/*
 	 * TEST sort()
 	 */
 	
