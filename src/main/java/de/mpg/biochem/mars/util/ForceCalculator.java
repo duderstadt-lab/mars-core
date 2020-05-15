@@ -40,7 +40,7 @@ public class ForceCalculator implements UnivariateFunction {
 	  
 	  BracketingNthOrderBrentSolver solver;
 	  
-	  double persistenceLength, L0, msd;
+	  double persistenceLength, L0, variance;
 	
 	  public ForceCalculator(double persistenceLength, double L0) {
 		  this.persistenceLength = persistenceLength;
@@ -57,8 +57,8 @@ public class ForceCalculator implements UnivariateFunction {
 		  solver = new BracketingNthOrderBrentSolver(relativeAccuracy, absoluteAccuracy, maxOrder);
 	  }
 	  
-	  public double[] calculate(double msd) {
-		    this.msd = msd;
+	  public double[] calculate(double variance) {
+		    this.variance = variance;
 			double length = Double.NaN;
 			try {
 				//the length must be longer than 0.1 nm and shorter than 1/10000 th of full length
@@ -84,7 +84,7 @@ public class ForceCalculator implements UnivariateFunction {
 	   }
 	   
 	   public double getEquipartitionForce(double length) {
-		   return (kB*temperature*length)/msd;
+		   return (kB*temperature*length)/variance;
 	   }
 	   
 	   private static class LocalException extends RuntimeException {
