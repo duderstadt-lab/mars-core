@@ -113,7 +113,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements Command
 		
 		archive.logln(log);
 		
-		//Loop through each molecule and add MSD parameter for each
+		//Loop through each molecule and add Variance parameter for each
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			

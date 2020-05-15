@@ -78,7 +78,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 /**
  * Mars implementation of a scijava results table. All numbers are stored as doubles (as {@link org.scijava.table.DoubleColumn}).
  * Convenience methods and constructors are provided for common operations 
- * (min, max, mean, std, msd, linearRegression, sorting, filtering, etc),
+ * (min, max, mean, std, variance, linearRegression, sorting, filtering, etc),
  * for saving and opening tables in csv or json format, and retrieval of values
  * in many formats. Throughout ({@link org.apache.commons.math3}) is used for common operations where possible.
  * <p>
@@ -1198,24 +1198,24 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	}
 	
 	/**
-	 * Calculates the mean squared displacement for the column given. NaN values are ignored. 
+	 * Calculates the variance for the column given. NaN values are ignored. 
 	 * 
-	 * @param  column  Name of the column used to calculate the mean squared displacement.
-	 * @return The mean squared displacement for the column given. NaN is returned if all values are NaN or the column does not exist.
+	 * @param  column  Name of the column used to calculate the variance.
+	 * @return The variance for the column given. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double variance(String varianceColumn) {
 		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(varianceColumn));
 	}
 	
 	/**
-	 * Calculates the mean squared displacement for the msdColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
+	 * Calculates the variance for the varianceColumn within the range given for a rowSelectionColumn (inclusive of bounds). 
 	 * NaN values are ignored. If no values exist for the bounds provided NaN is returned.
 	 * 
-	 * @param  msdColumn  Name of the column used to calculate the mean squared displacement.
+	 * @param  varianceColumn  Name of the column used to calculate the variance.
 	 * @param  rowSelectionColumn  name of the column used for filtering a range of values.
 	 * @param  lowerBound  smallest value included in the row selection range.
 	 * @param  upperBound  largest value included in the row selection range.
-	 * @return Mean squared displacement. NaN is returned if all values are NaN or one of the columns does not exist.
+	 * @return Variance. NaN is returned if all values are NaN or one of the columns does not exist.
 	 */
 	public double variance(String varianceColumn, String rowSelectionColumn, double lowerBound, double upperBound) {
 		return StatUtils.populationVariance(this.getColumnAsDoublesNoNaNs(varianceColumn, rowSelectionColumn, lowerBound, upperBound));

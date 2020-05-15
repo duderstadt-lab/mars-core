@@ -120,7 +120,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * Add or update a parameter value. Parameters are used to store single 
 	 * values associated with the record. For example, this can be the 
 	 * start and stop times for a region of interest. Or calculated features
-	 * such as the slope or MSD. Storing parameters with the record data
+	 * such as the slope or variance. Storing parameters with the record data
 	 * allows for easier and more efficient processing and data extraction.
 	 *  
 	 * @param parameter The string parameter name.
