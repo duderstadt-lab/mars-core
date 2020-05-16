@@ -35,6 +35,7 @@ import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * MarsImageMetadata records store image metadata and all information
@@ -56,11 +57,13 @@ import de.mpg.biochem.mars.table.MarsTable;
  */
 public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
+	void populateMetadata(OMEXMLMetadata md);
+	
+	MarsOMEImage getImage(int imageIndex);
+	
 	MarsOMEPlane getPlane(int imageIndex, int planeIndex);
 	
-	MarsOMEPlane getPlane(Integer[] index);
-	
-	int getFrameCount(int imageIndex);
+	MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T);
 	
 	/**
 	 * Set the name of the microscope used for data collection.
@@ -79,13 +82,6 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * @return Name of the microscope used for collection.
 	 */
 	String getMicroscopeName();
-	
-	/**
-	 * Set the Date when these data were collected.
-	 * 
-	 * @param str Date when metadata was collected.
-	 */
-	void setCollectionDate(String str);
 	
 	/**
 	 * Get the Date when these data were collected.

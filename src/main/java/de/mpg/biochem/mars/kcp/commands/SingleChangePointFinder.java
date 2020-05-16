@@ -130,7 +130,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
-			archive.addLogMessage(log);
+			archive.logln(log);
 			
 			//Build Collection of UIDs based on tags if they exist...
 	        ArrayList<String> UIDs;

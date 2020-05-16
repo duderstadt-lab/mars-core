@@ -389,13 +389,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    	newName = "archive" + num;
 		    	num++;
 		    }
-	        archive = new SingleMoleculeArchive(context, newName + ".yama");
+	        archive = new SingleMoleculeArchive(newName + ".yama");
 	        
 		    //SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
 	        
 	        //Pass store into the MarsOMEMetadata ...
 	        
-	        MarsOMEMetadata metadata = new MarsOMEMetadata(context);
+	        //FIX ME NEED TO FEED IN STORE HERE!!!!!!
+	        
+	        MarsOMEMetadata metadata = new MarsOMEMetadata();
 			archive.putMetadata(metadata);
 			
 			statusMessage = "Adding Molecules to Archive...";

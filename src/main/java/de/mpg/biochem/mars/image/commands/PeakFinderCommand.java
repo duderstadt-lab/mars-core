@@ -51,7 +51,6 @@ import org.scijava.util.RealRect;
 
 import de.mpg.biochem.mars.image.DogPeakFinder;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;

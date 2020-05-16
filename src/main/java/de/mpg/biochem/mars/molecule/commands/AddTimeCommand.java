@@ -98,13 +98,13 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (meta.getOMEXMLMetadata() != null)
-				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
-			else {
-				archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
-				archive.logln(LogBuilder.endBlock(false));
-				return;
-			}
+			//if (meta.getOMEXMLMetadata() != null)
+				metaToMap.put(meta.getUID(), getTtoTimeMap(meta));
+			//else {
+			//	archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+			//	archive.logln(LogBuilder.endBlock(false));
+			//	return;
+			//}
 		}
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
@@ -153,13 +153,13 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		HashMap<String, HashMap<Double, Double>> metaToMap = new HashMap<String, HashMap<Double, Double>>();
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (meta.getOMEXMLMetadata() != null)
-				metaToMap.put(meta.getUID(), getSliceToTimeMap(meta));
-			else {
-				archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
-				archive.logln(LogBuilder.endBlock(false));
-				return;
-			}
+			//if (meta.getOMEXMLMetadata() != null)
+				metaToMap.put(meta.getUID(), getTtoTimeMap(meta));
+			//else {
+			//	archive.logln("ImageMetadata " + meta.getUID() + " is missing a Time (s) or slice column. Aborting");
+			//	archive.logln(LogBuilder.endBlock(false));
+			//	return;
+			//}
 		}
 		
 		//Loop through each molecule and add a Time (s) column using the metadata information...
@@ -185,13 +185,13 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	    archive.logln("  ");
 	}
 	
-	private static HashMap<Double, Double> getSliceToTimeMap(MarsMetadata metadata) {
-		HashMap<Double, Double> sliceToTime = new HashMap<Double, Double>();
+	private static HashMap<Double, Double> getTtoTimeMap(MarsMetadata metadata) {
+		HashMap<Double, Double> TtoTime = new HashMap<Double, Double>();
 		
-		for (int frame=0; frame<metadata.getFrameCount(); frame++) {
-			sliceToTime.put((double)frame, metadata.getDeltaT(0, 0, 0, frame));
+		for (int t=0; t<metadata.getImage(0).getSizeT(); t++) {
+			TtoTime.put((double)t, metadata.getPlane(0, 0, 0, t).getDeltaTinSeconds());
 		}
-		return sliceToTime;
+		return TtoTime;
 	}
 	
 	public void setArchive(SingleMoleculeArchive archive) {

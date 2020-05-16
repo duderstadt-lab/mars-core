@@ -323,9 +323,9 @@ public class PeakTracker {
 		//fail-safe in case somehow a peak is linked to itself?
 		//Fixes some kind of bug observed very very rarely that 
 		//prevents creation of an archive...
-		int frames = archive.getMetadata(0).getFrameCount();
+		int sizeT = archive.getMetadata(0).getImage(0).getSizeT();
 		int count = 0;
-		while (peak.getForwardLink() != null && count < frames) {
+		while (peak.getForwardLink() != null && count < sizeT) {
 			peak = peak.getForwardLink();
 			addPeakToTable(table, peak, peak.getSlice());
 			count++;

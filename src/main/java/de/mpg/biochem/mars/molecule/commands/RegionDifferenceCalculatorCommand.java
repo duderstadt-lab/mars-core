@@ -135,7 +135,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		if (regionSource.equals("Molecules")) {
 			//Loop through each molecule and add reversal difference value to parameters for each molecule
@@ -193,8 +193,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
-	    archive.addLogMessage("   ");
+	    archive.logln("\n" + LogBuilder.endBlock(true));
+	    archive.logln("   ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 

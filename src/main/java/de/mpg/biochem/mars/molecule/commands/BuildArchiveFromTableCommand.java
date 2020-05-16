@@ -121,7 +121,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		builder.addParameter("From Table", table.getName());
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new SingleMoleculeArchive(context, name, table);
+		archive = new SingleMoleculeArchive(name, table);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();

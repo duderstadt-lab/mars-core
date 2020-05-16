@@ -373,7 +373,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true) + "\n";
 			try {
-				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(context, newVirtualDirectory);
+				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(newVirtualDirectory);
 				newArchive.logln(log);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

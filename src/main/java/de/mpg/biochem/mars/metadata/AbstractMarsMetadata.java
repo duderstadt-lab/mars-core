@@ -367,4 +367,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return images.get(imageIndex).getPlane(planeIndex);
 	}
 	
+	public String getCollectionDate() {
+		return images.get(0).getAquisitionDate().getValue();
+	}
 }

@@ -44,6 +44,10 @@ public class MarsOMEMetadata extends AbstractMarsMetadata {
     public MarsOMEMetadata(String UID) {
     	super(UID);
     }
+    
+    public MarsOMEMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
+    	super(UID, omexmlMetadata);
+    }
 	
 	public MarsOMEMetadata(JsonParser jParser) throws IOException {
 		super(jParser);

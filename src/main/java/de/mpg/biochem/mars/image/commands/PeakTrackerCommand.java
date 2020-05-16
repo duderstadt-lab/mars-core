@@ -57,6 +57,7 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.Format;
 import io.scif.FormatException;
 import io.scif.Metadata;
@@ -454,9 +455,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    	num++;
 		    }
 		    
-		    archive = new SingleMoleculeArchive(context, newName + ".yama");
+		    archive = new SingleMoleculeArchive(newName + ".yama");
 		    
-		    MarsOMEMetadata metadata = new MarsOMEMetadata(context, omeMeta.getRoot());
+		    //SHOULD the Metadata UID be unique for each dataset?? Use dumpXML() but that would be too slow
+		    //MarsMath.getFNV1aBase58(str) ...
+		    
+		    MarsOMEMetadata metadata = new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeMeta.getRoot());
 			archive.putMetadata(metadata);
 		    
 		    tracker.track(PeakStack, archive);
