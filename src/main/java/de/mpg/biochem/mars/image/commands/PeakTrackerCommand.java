@@ -49,7 +49,6 @@ import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.mars.image.DogPeakFinder;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
