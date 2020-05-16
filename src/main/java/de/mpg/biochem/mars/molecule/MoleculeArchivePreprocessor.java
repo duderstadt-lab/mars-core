@@ -27,14 +27,14 @@
 package de.mpg.biochem.mars.molecule;
 
 import org.scijava.module.Module;
-import org.scijava.module.process.AbstractPostprocessorPlugin;
-import org.scijava.module.process.PostprocessorPlugin;
+import org.scijava.module.process.AbstractPreprocessorPlugin;
+import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
 
-@Plugin(type = PostprocessorPlugin.class)
-public class MoleculeArchivePostprocessor extends AbstractPostprocessorPlugin {
+@Plugin(type = PreprocessorPlugin.class)
+public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
@@ -44,18 +44,10 @@ public class MoleculeArchivePostprocessor extends AbstractPostprocessorPlugin {
 	
 	@Override
 	public void process(final Module module) {
-		for (String key:module.getOutputs().keySet()) {
-			Object obj = module.getOutputs().get(key);
-			if (obj instanceof MoleculeArchive) {
-				moleculeArchiveService.addArchive((MoleculeArchive<?,?,?>)obj); 
-				scriptService.addAlias(((MoleculeArchive<?,?,?>)obj).getClass());
-			}
-		}
-		
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj instanceof MoleculeArchive) {
-				((MoleculeArchive<?,?,?>)obj).unlock(); 
+				((MoleculeArchive<?,?,?>)obj).lock(); 
 			}
 		}
 	}
