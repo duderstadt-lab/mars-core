@@ -2,6 +2,7 @@ package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
-public class MarsOMEImage extends AbstractJsonConvertibleRecord {
+public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel {
 	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
 	
 	private String id;
@@ -413,6 +414,64 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord {
 				}
 		 	});	
 		
+	}
+	
+	@Override
+	public String toString() {
+		return "Image : " + this.imageName;
+	}
+
+	@Override
+	public Iterable<List<String>> getInformationsRow() {
+		List<List<String>> rows = new ArrayList<>();
+
+		rows.add(Arrays.asList("Name", this.imageName));
+		rows.add(Arrays.asList("ID", this.id));
+		rows.add(Arrays.asList("Pixel ID", this.pixelID));
+
+		if (this.pixelsPhysicalSizeX.value(UNITS.MICROMETER).doubleValue() > -1) {
+			rows.add(Arrays.asList("Physical Size X", this.pixelsPhysicalSizeX.value(UNITS.MICROMETER).doubleValue() + " µm"));
+		} else {
+			rows.add(Arrays.asList("Physical Size X", ""));
+		}
+
+		if (this.pixelsPhysicalSizeY.value(UNITS.MICROMETER).doubleValue() > -1) {
+			rows.add(Arrays.asList("Physical Size Y", this.pixelsPhysicalSizeY.value(UNITS.MICROMETER).doubleValue() + " µm"));
+		} else {
+			rows.add(Arrays.asList("Physical Size Y", ""));
+		}
+
+		if (this.pixelsPhysicalSizeZ.value(UNITS.MICROMETER).doubleValue() > -1) {
+			rows.add(Arrays.asList("Physical Size Z", this.pixelsPhysicalSizeZ.value(UNITS.MICROMETER).doubleValue() + " µm"));
+		} else {
+			rows.add(Arrays.asList("Physical Size Z", ""));
+		}
+
+		/*
+		if (this.timeIncrement > -1) {
+			rows.add(Arrays.asList("Time Increment", this.timeIncrement + " s"));
+		} else {
+			rows.add(Arrays.asList("Time Increment", ""));
+		}
+*/
+		rows.add(Arrays.asList("Size X", this.sizeX.toString()));
+		rows.add(Arrays.asList("Size Y", this.sizeY.toString()));
+		rows.add(Arrays.asList("Size Z", this.sizeZ.toString()));
+		rows.add(Arrays.asList("Size Channel", this.sizeC.toString()));
+		rows.add(Arrays.asList("Size Time", this.sizeT.toString()));
+
+		for (int i = 0; i < channels.size(); i++) {
+			Channel channel = channels.get(i);
+			
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - name ", channel.getName()));
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - id ", channel.getID()));
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Binning ", channel.getBinning().getValue()));
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Gain ", String.valueOf(channel.getGain())));
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
+			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
+		}
+
+		return rows;
 	}
 	
 	public static class Channel extends AbstractJsonConvertibleRecord {

@@ -2,6 +2,7 @@ package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ import ome.xml.model.primitives.Timestamp;
 
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 
-public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
+public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements GenericModel {
 
 	private int imageIndex;
 	private int planeIndex;
@@ -203,6 +204,58 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord {
 		    		customFields.put(fieldname, jParser.getText());
 				}
 	 		});
+	}
+	
+	@Override
+	public String toString() {
+		return "TiffData : C = " + c + " | Z = " + z + " | T = " + t;
+	}
+
+	@Override
+	public Iterable<List<String>> getInformationsRow() {
+		List<List<String>> rows = new ArrayList<>();
+
+		rows.add(Arrays.asList("TiffData ID", Integer.toString(this.planeIndex)));
+		rows.add(Arrays.asList("IFD", this.ifd.toString()));
+
+		rows.add(Arrays.asList("C position", this.c.toString()));
+		rows.add(Arrays.asList("Z position", this.z.toString()));
+		rows.add(Arrays.asList("T position", this.t.toString()));
+
+		if (this.getDeltaTinSeconds() >= 0) {
+			rows.add(Arrays.asList("dt", getDeltaTinSeconds() + " s"));
+		} else {
+			rows.add(Arrays.asList("dt", ""));
+		}
+
+		if (this.getExposureTimeInSeconds() >= 0) {
+			rows.add(Arrays.asList("Exposure time", this.getExposureTimeInSeconds() + " ms"));
+		} else {
+			rows.add(Arrays.asList("Exposure time", ""));
+		}
+
+		if (this.posX >= 0) {
+			rows.add(Arrays.asList("Position X", this.posX + " µm"));
+		} else {
+			rows.add(Arrays.asList("Position X", ""));
+		}
+
+		if (this.posY >= 0) {
+			rows.add(Arrays.asList("Position Y", this.posY + " µm"));
+		} else {
+			rows.add(Arrays.asList("Position Y", ""));
+		}
+
+		if (this.posZ >= 0) {
+			rows.add(Arrays.asList("Position Z", this.posZ + " µm"));
+		} else {
+			rows.add(Arrays.asList("Position Z", ""));
+		}
+
+		rows.add(Arrays.asList("Filename", this.filename));
+		rows.add(Arrays.asList("UUID", this.uuid));
+
+		return rows;
 	}
 	
 	public void setField(String field, String value) {

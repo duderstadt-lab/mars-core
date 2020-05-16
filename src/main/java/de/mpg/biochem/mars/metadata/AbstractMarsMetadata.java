@@ -298,6 +298,10 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return images.get(imageIndex);
 	}
 	
+	public int getImageCount() {
+		return images.size();
+	}
+	
 	/**
 	 * Get the Source Directory where the images are stored.
 	 */

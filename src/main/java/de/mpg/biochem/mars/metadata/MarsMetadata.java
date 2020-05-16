@@ -65,6 +65,8 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T);
 	
+	int getImageCount();
+	
 	/**
 	 * Set the name of the microscope used for data collection.
 	 * This is just for record keeping. There are no predefined
