@@ -43,9 +43,11 @@ import org.scijava.ui.UIService;
 import java.util.HashMap;
 
 import de.mpg.biochem.mars.metadata.MarsMicromanagerFormat;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsMath;
 import ij.ImageJ;
 
 import java.io.IOException;
@@ -123,8 +125,11 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
     private Dataset dataset;
 
     // output metadata string
-    @Parameter(label = "Metadata", type = ItemIO.OUTPUT)
-    private String mString;
+    @Parameter(label = "OME archive", type = ItemIO.OUTPUT)
+    private SingleMoleculeArchive archive;
+    
+    //@Parameter(label = "XML String", type = ItemIO.OUTPUT)
+    //private String mString;
 	
 	@Override
 	public void run() {	
@@ -179,7 +184,16 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 		
         OMEMetadata omeMeta = new OMEMetadata(getContext());
         translatorService.translate(metadata, omeMeta, true);
+        
+        OMEXMLMetadata omeXMLMetadata = omeMeta.getRoot();
+        
+        MarsOMEMetadata meta = new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeXMLMetadata);
     	
-        mString = omeMeta.getRoot().dumpXML();
+        //Now create dummy archive to see if the mars-fx gui is working..
+        archive = new SingleMoleculeArchive("Hellow World OME Archive");
+        archive.putMetadata(meta);
+        
+        archive.put(new SingleMolecule(MarsMath.getUUID58(), new MarsTable("a table")));
+
 	}
 }
