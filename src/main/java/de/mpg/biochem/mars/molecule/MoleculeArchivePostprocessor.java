@@ -54,7 +54,7 @@ public class MoleculeArchivePostprocessor extends AbstractPostprocessorPlugin {
 		
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
-			if (obj instanceof MoleculeArchive) {
+			if (obj != null && obj instanceof MoleculeArchive) {
 				((MoleculeArchive<?,?,?>)obj).unlock(); 
 			}
 		}
