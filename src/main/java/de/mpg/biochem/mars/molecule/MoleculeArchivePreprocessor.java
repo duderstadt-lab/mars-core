@@ -31,6 +31,7 @@ import org.scijava.module.process.AbstractPreprocessorPlugin;
 import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.script.ScriptModule;
 import org.scijava.script.ScriptService;
 
 @Plugin(type = PreprocessorPlugin.class)
@@ -39,14 +40,11 @@ public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
 	
-	@Parameter
-	private ScriptService scriptService;
-	
 	@Override
 	public void process(final Module module) {
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
-			if (obj instanceof MoleculeArchive) {
+			if (obj != null && obj instanceof MoleculeArchive) {
 				((MoleculeArchive<?,?,?>)obj).lock(); 
 			}
 		}
