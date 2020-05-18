@@ -62,6 +62,7 @@ import net.imagej.axis.Axes;
 import net.imagej.axis.CalibratedAxis;
 import net.imagej.axis.DefaultLinearAxis;
 import net.imglib2.Interval;
+import ome.xml.model.primitives.NonNegativeInteger;
 
 import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
@@ -936,6 +937,30 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					meta, Index.expectedAxes);
 
 				return "MMAllFileKey-" + imageIndex + "-" + zct[0] + "-" + zct[1] + "-" + zct[2];
+		}
+		
+		public NonNegativeInteger getTheZ(final Metadata meta, final int imageIndex,
+				final long planeIndex) {
+			final long[] zct = FormatTools.rasterToPosition(imageIndex, planeIndex,
+					meta, Index.expectedAxes);
+			
+			return new NonNegativeInteger((int)zct[0]);
+		}
+		
+		public NonNegativeInteger getTheC(final Metadata meta, final int imageIndex,
+				final long planeIndex) {
+			final long[] zct = FormatTools.rasterToPosition(imageIndex, planeIndex,
+					meta, Index.expectedAxes);
+			
+			return new NonNegativeInteger((int)zct[1]);
+		}
+		
+		public NonNegativeInteger getTheT(final Metadata meta, final int imageIndex,
+				final long planeIndex) {
+			final long[] zct = FormatTools.rasterToPosition(imageIndex, planeIndex,
+					meta, Index.expectedAxes);
+			
+			return new NonNegativeInteger((int)zct[2]);
 		}
 		//
 	}

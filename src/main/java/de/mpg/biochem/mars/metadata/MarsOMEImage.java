@@ -86,7 +86,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		//Build Planes
 		for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
-			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(imageIndex, planeIndex, md));
+			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(imageIndex, planeIndex, md, this));
 		
 		detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
 		detectorModel = md.getDetectorModel(0, imageIndex);
@@ -467,7 +467,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - id ", channel.getID()));
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Binning ", channel.getBinning().getValue()));
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Gain ", String.valueOf(channel.getGain())));
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
+			if (channel.getVoltage() != null)
+				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
 		}
 

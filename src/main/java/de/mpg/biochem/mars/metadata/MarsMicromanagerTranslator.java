@@ -54,7 +54,7 @@ import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
 import ome.units.quantity.Time;
 import ome.xml.model.MapPair;
-
+import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.Timestamp;
 
 /**
@@ -176,6 +176,10 @@ public class MarsMicromanagerTranslator {
 					{
 						store.setPlaneDeltaT(new Time(p.timestamps[nextStamp++],
 							UNITS.SECOND), i, q);
+						
+						store.setPlaneTheC(p.getTheC(meta, i, q), i, q);
+						store.setPlaneTheZ(p.getTheZ(meta, i, q), i, q);
+						store.setPlaneTheT(p.getTheT(meta, i, q), i, q);
 						
 						//DROP-IN
 						HashMap<String, String> planeMetaTable = (HashMap<String, String>)meta.getTable().get(p.getPlaneMapKey(meta, i, q));

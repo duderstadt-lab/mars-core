@@ -27,6 +27,7 @@ import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 
 public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements GenericModel {
 
+	private MarsOMEImage image;
 	private int imageIndex;
 	private int planeIndex;
 	private NonNegativeInteger c;
@@ -48,8 +49,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	
 	private Map<String, String> customFields = new HashMap<String, String>();
 
-	public MarsOMEPlane(int imageIndex, int planeIndex, OMEXMLMetadata md) {
+	public MarsOMEPlane(int imageIndex, int planeIndex, OMEXMLMetadata md, MarsOMEImage image) {
 		super();
+		
+		this.image = image;
 
 		this.imageIndex = imageIndex;
 		this.planeIndex = planeIndex;
@@ -216,7 +219,8 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		List<List<String>> rows = new ArrayList<>();
 
 		rows.add(Arrays.asList("TiffData ID", Integer.toString(this.planeIndex)));
-		rows.add(Arrays.asList("IFD", this.ifd.toString()));
+		if (ifd != null)
+			rows.add(Arrays.asList("IFD", this.ifd.toString()));
 
 		rows.add(Arrays.asList("C position", this.c.toString()));
 		rows.add(Arrays.asList("Z position", this.z.toString()));
@@ -268,6 +272,14 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	
 	public void setCustomFields(Map<String, String> customFields) {
 		this.customFields = customFields;
+	}
+	
+	public MarsOMEImage getImage() {
+		return image;
+	}
+	
+	public void setImage(MarsOMEImage image) {
+		this.image = image;
 	}
 	
 	public double getDeltaTinSeconds() {
