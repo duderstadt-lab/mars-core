@@ -54,9 +54,9 @@ import ome.xml.model.primitives.Timestamp;
  */
 public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	
-	protected LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
+	private LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
 	
-	protected HashMap<String, Predicate<JsonParser>> inputMap;
+	private HashMap<String, Predicate<JsonParser>> inputMap;
 	
 	//IOMaps are created during the first call to toJSON or fromJSON lazily
 	//This ensures subclasses overriding createIOMaps have been fully 
@@ -149,8 +149,11 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	}
 	
 	protected void setJsonField(String field, ThrowingConsumer<JsonGenerator, IOException> output, ThrowingConsumer<JsonParser, IOException> input) {
-		outputMap.put(field, MarsUtil.catchConsumerException(output, IOException.class));
-		inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
+		if (output != null)
+			outputMap.put(field, MarsUtil.catchConsumerException(output, IOException.class));
+		
+		if (input != null)
+			inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
 	}
 	
 	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
