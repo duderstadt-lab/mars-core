@@ -192,9 +192,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		setJsonField("Images", 
 			jGenerator -> {
 				jGenerator.writeArrayFieldStart("Images");
-				for (int imageIndex=0; imageIndex<images.size(); imageIndex++) {
+				for (int imageIndex=0; imageIndex<images.size(); imageIndex++)
 					images.get(imageIndex).toJSON(jGenerator);
-				}
 				jGenerator.writeEndArray();
 		 	},
 			jParser -> {
@@ -203,7 +202,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 					images.put(image.getImageIndex(), image);
 				}
 		 	});
-		
 	}
 	
 	/**

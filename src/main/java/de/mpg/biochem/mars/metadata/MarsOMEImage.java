@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
@@ -29,7 +30,7 @@ import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
-public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel {
+public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel, JsonConvertibleRecord {
 	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
 	
 	private String id;
@@ -61,6 +62,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	public MarsOMEImage(int imageIndex, OMEXMLMetadata md) {
+		super();
+		
 		this.imageIndex = imageIndex;
 		id = md.getImageID(imageIndex);
 		pixelID = md.getPixelsID(imageIndex);
@@ -208,11 +211,14 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 
 	@Override
 	protected void createIOMaps() {
-		
+
 		UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
-		
+
 		setJsonField("ImageAcquisitionDate", 
-			jGenerator -> jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.toString()),
+			jGenerator -> {
+				if (imageAquisitionDate != null)
+					jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.getValue());
+			},
 			jParser -> imageAquisitionDate = new Timestamp(jParser.getText()));
 		
 		setJsonField("ImageIndex",
@@ -237,7 +243,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		setJsonField("Channels", 
 			jGenerator -> {
-				if (marsOMEPlanes.size() > 0) {
+				if (channels.size() > 0) {
 					jGenerator.writeArrayFieldStart("Channels");
 					for (Channel channel : channels)
 						channel.toJSON(jGenerator);
@@ -250,35 +256,55 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		 	});	
 		
 		setJsonField("DimensionOrder",
-			jGenerator -> jGenerator.writeStringField("DimensionOrder", dimensionOrder.getValue()),
+			jGenerator -> { 
+				if (dimensionOrder != null)
+					jGenerator.writeStringField("DimensionOrder", dimensionOrder.getValue());
+			},
 			jParser -> dimensionOrder = DimensionOrder.valueOf(jParser.getText()));
 		
 		setJsonField("SizeC",
-				jGenerator -> jGenerator.writeNumberField("SizeC", sizeC.getValue()),
+				jGenerator -> { 
+					if (sizeC != null)
+						jGenerator.writeNumberField("SizeC", sizeC.getValue());
+				},
 				jParser -> sizeC = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("SizeT",
-				jGenerator -> jGenerator.writeNumberField("SizeT", sizeT.getValue()),
+		setJsonField("SizeT", 
+				jGenerator -> {
+					if (sizeT != null)
+						jGenerator.writeNumberField("SizeT", sizeT.getValue());
+				},
 				jParser -> sizeT = new PositiveInteger(jParser.getIntValue()));
 		
 		setJsonField("SizeX",
-				jGenerator -> jGenerator.writeNumberField("SizeX", sizeX.getValue()),
+				jGenerator -> {
+					if (sizeX != null)
+						jGenerator.writeNumberField("SizeX", sizeX.getValue());
+				},
 				jParser -> sizeX = new PositiveInteger(jParser.getIntValue()));
 		
 		setJsonField("SizeY",
-				jGenerator -> jGenerator.writeNumberField("SizeY", sizeY.getValue()),
+				jGenerator -> {
+					if (sizeY != null)
+						jGenerator.writeNumberField("SizeY", sizeY.getValue());
+				},
 				jParser -> sizeY = new PositiveInteger(jParser.getIntValue()));
 		
 		setJsonField("SizeZ",
-				jGenerator -> jGenerator.writeNumberField("SizeY", sizeY.getValue()),
-				jParser -> sizeY = new PositiveInteger(jParser.getIntValue()));
+				jGenerator -> {
+					if (sizeZ != null)
+						jGenerator.writeNumberField("SizeZ", sizeZ.getValue());
+				},
+				jParser -> sizeZ = new PositiveInteger(jParser.getIntValue()));
 		
 		setJsonField("PixelsPhysicalSizeX",
 			jGenerator -> {
-				jGenerator.writeObjectFieldStart("PixelsPhysicalSizeX");
-				jGenerator.writeNumberField("value", pixelsPhysicalSizeX.value().doubleValue());
-				jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().toString());
-				jGenerator.writeEndObject();
+				if (pixelsPhysicalSizeX != null) {
+					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeX");
+					jGenerator.writeNumberField("value", pixelsPhysicalSizeX.value().doubleValue());
+					jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().toString());
+					jGenerator.writeEndObject();
+				}
 			},
 			jParser -> { 
 				double value = Double.NaN;
@@ -302,10 +328,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		setJsonField("PixelsPhysicalSizeY",
 				jGenerator -> {
-					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeY");
-					jGenerator.writeNumberField("value", pixelsPhysicalSizeY.value().doubleValue());
-					jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().toString());
-					jGenerator.writeEndObject();
+					if (pixelsPhysicalSizeY != null) {
+						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeY");
+						jGenerator.writeNumberField("value", pixelsPhysicalSizeY.value().doubleValue());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().toString());
+						jGenerator.writeEndObject();
+					}
 				},
 				jParser -> { 
 					double value = Double.NaN;
@@ -329,10 +357,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		setJsonField("PixelsPhysicalSizeZ",
 				jGenerator -> {
-					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeZ");
-					jGenerator.writeNumberField("value", pixelsPhysicalSizeZ.value().doubleValue());
-					jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().toString());
-					jGenerator.writeEndObject();
+					if (pixelsPhysicalSizeZ != null) {
+						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeZ");
+						jGenerator.writeNumberField("value", pixelsPhysicalSizeZ.value().doubleValue());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().toString());
+						jGenerator.writeEndObject();
+					}
 				},
 				jParser -> { 
 					double value = Double.NaN;
@@ -367,15 +397,20 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				jParser -> detectorManufacturer = jParser.getText());
 		
 		setJsonField("DetectorType", 
-				jGenerator -> jGenerator.writeStringField("DetectorType", detectorType.getValue()),
+				jGenerator -> {
+					if (detectorType != null)
+						jGenerator.writeStringField("DetectorType", detectorType.getValue());
+				},
 				jParser -> detectorType = DetectorType.valueOf(jParser.getText()));
 
 		setJsonField("Temperature",
 				jGenerator -> {
-					jGenerator.writeObjectFieldStart("Temperature");
-					jGenerator.writeNumberField("value", temperature.value().doubleValue());
-					jGenerator.writeStringField("units", temperature.unit().toString());
-					jGenerator.writeEndObject();
+					if (temperature != null) {
+						jGenerator.writeObjectFieldStart("Temperature");
+						jGenerator.writeNumberField("value", temperature.value().doubleValue());
+						jGenerator.writeStringField("units", temperature.unit().toString());
+						jGenerator.writeEndObject();
+					}
 				},
 				jParser -> { 
 					double value = Double.NaN;
@@ -484,6 +519,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		private String detectorSettingsID;
 		
 		Channel(OMEXMLMetadata md, int imageIndex, int channelIndex) {
+			super();
+			
 			name = md.getChannelName(imageIndex, channelIndex);
 			id = md.getChannelID(imageIndex, channelIndex);
 			binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);
@@ -533,7 +570,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				jParser -> id = jParser.getText());
 			
 			setJsonField("Binning", 
-				jGenerator -> jGenerator.writeStringField("Binning", binning.getValue()),
+				jGenerator -> {
+						if (binning != null)
+							jGenerator.writeStringField("Binning", binning.getValue());
+					},
 				jParser -> { 
 					BinningEnumHandler handler = new BinningEnumHandler();
 					try {
@@ -545,12 +585,18 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				});
 
 			setJsonField("Gain",
-				jGenerator -> jGenerator.writeNumberField("Gain", gain.doubleValue()),
+				jGenerator -> { 
+					if (gain != null)
+						jGenerator.writeNumberField("Gain", gain.doubleValue());
+				},
 				jParser -> gain = jParser.getDoubleValue());
 			
 			//Should we keep track of the units here ???
 			setJsonField("Voltage",
-					jGenerator -> jGenerator.writeNumberField("Voltage", voltage.value().doubleValue()),
+					jGenerator -> {
+						if (voltage != null)
+							jGenerator.writeNumberField("Voltage", voltage.value().doubleValue());
+					},
 					jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
 			
 			setJsonField("DetectorSettingsID",

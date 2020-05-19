@@ -89,35 +89,55 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 			jParser -> planeIndex = jParser.getIntValue());
 
 		setJsonField("C", 
-			jGenerator -> jGenerator.writeNumberField("C", c.getValue()),
+			jGenerator -> {
+				if (c != null)
+					jGenerator.writeNumberField("C", c.getValue());
+			},
 			jParser -> c = new NonNegativeInteger(jParser.getIntValue()));
 		
 		setJsonField("Z", 
-			jGenerator -> jGenerator.writeNumberField("Z", z.getValue()),
+			jGenerator -> {
+				if (z != null)
+					jGenerator.writeNumberField("Z", z.getValue());	
+			},
 			jParser -> z = new NonNegativeInteger(jParser.getIntValue()));
 		
 		setJsonField("T", 
-			jGenerator -> jGenerator.writeNumberField("T", t.getValue()),
+			jGenerator -> {
+				if (t != null)
+					jGenerator.writeNumberField("T", t.getValue());
+			},
 			jParser -> t = new NonNegativeInteger(jParser.getIntValue()));
 		
 		setJsonField("ifd", 
-			jGenerator -> jGenerator.writeNumberField("ifd", ifd.getValue()),
+			jGenerator -> {
+				if (ifd != null)
+					jGenerator.writeNumberField("ifd", ifd.getValue());
+			},
 			jParser -> ifd = new NonNegativeInteger(jParser.getIntValue()));
 		
 		setJsonField("filename", 
-			jGenerator -> jGenerator.writeStringField("filename", filename),
+			jGenerator -> {
+				if (filename != null)
+					jGenerator.writeStringField("filename", filename);
+			},
 			jParser -> filename = jParser.getText());
 	 	
 		setJsonField("uuid", 
-			jGenerator -> jGenerator.writeStringField("uuid", uuid),
+			jGenerator -> {
+				if (uuid != null)
+					jGenerator.writeStringField("uuid", uuid);
+			},
 			jParser -> uuid = jParser.getText());
 	 	
 	 	setJsonField("deltaT",
 				jGenerator -> {
-					jGenerator.writeObjectFieldStart("deltaT");
-					jGenerator.writeNumberField("value", dt.value().doubleValue());
-					jGenerator.writeStringField("units", dt.unit().toString());
-					jGenerator.writeEndObject();
+					if (dt != null) {
+						jGenerator.writeObjectFieldStart("deltaT");
+						jGenerator.writeNumberField("value", dt.value().doubleValue());
+						jGenerator.writeStringField("units", dt.unit().toString());
+						jGenerator.writeEndObject();
+					}
 				},
 				jParser -> { 
 					double value = Double.NaN;
@@ -141,10 +161,12 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	 	
 	 	setJsonField("exposureTime",
 				jGenerator -> {
-					jGenerator.writeObjectFieldStart("exposureTime");
-					jGenerator.writeNumberField("value", exposureTime.value().doubleValue());
-					jGenerator.writeStringField("units", exposureTime.unit().toString());
-					jGenerator.writeEndObject();
+					if (exposureTime != null) {
+						jGenerator.writeObjectFieldStart("exposureTime");
+						jGenerator.writeNumberField("value", exposureTime.value().doubleValue());
+						jGenerator.writeStringField("units", exposureTime.unit().toString());
+						jGenerator.writeEndObject();
+					}
 				},
 				jParser -> { 
 					double value = Double.NaN;
@@ -193,11 +215,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	 	setJsonField("CustomFields", 
 	 		jGenerator -> {
 				if (customFields.size() > 0) {
-					jGenerator.writeArrayFieldStart("CustomFields");
-					for (String name : customFields.keySet()) {
+					jGenerator.writeObjectFieldStart("CustomFields");
+					for (String name : customFields.keySet())
 						jGenerator.writeStringField(name, customFields.get(name));
-					}
-					jGenerator.writeEndArray();
+					jGenerator.writeEndObject();
 				}
 		 	}, 
 	 		jParser -> {
