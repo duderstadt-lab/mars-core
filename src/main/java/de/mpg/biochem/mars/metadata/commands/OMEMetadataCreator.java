@@ -192,7 +192,7 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
         //Now create dummy archive to see if the mars-fx gui is working..
         archive = new SingleMoleculeArchive("Hellow World OME Archive");
         archive.putMetadata(meta);
-        
+
         archive.put(new SingleMolecule(MarsMath.getUUID58(), new MarsTable("a table")));
 
 	}

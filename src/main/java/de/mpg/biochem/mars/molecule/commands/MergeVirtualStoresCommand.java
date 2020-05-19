@@ -134,7 +134,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveDirectoryList) {
 				try {
-					archiveTypes.add(MarsUtil.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json")));
+					archiveTypes.add(moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json")));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -152,7 +152,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			for (File virtualDirectory: archiveDirectoryList) {
-				MoleculeArchive<?,?,?> archive = MarsUtil.createMoleculeArchive(archiveType, virtualDirectory);
+				MoleculeArchive<?,?,?> archive = moleculeArchiveService.createArchive(archiveType, virtualDirectory);
 				
 				if (archive.isSMILEInputEncoding() && !smileEncoding) {
 					logService.error("IO encoding was set to JSON but " + virtualDirectory.getName() + " has Smile format. All virtual stores to be merged must have the format specified. Aborting...");
@@ -167,7 +167,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
+			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();			
 		
 			//Build JSON factory with specified encoding.

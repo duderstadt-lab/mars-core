@@ -74,22 +74,20 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	protected String metadataUID;
 	
 	//Table housing main record data.
-	protected MarsTable dataTable;
+	protected MarsTable dataTable = new MarsTable();
 	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
 	//XColumn is at index 0
 	//YColumn is at index 1
 	//RegionName is at index 2
-	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables;
+	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables = new LinkedHashMap<>();
 	
 	/**
 	 * Constructor for creating an empty Molecule record. 
 	 */
 	public AbstractMolecule() {
 		super();
-		dataTable = new MarsTable();
-		segmentTables = new LinkedHashMap<>();
 	}
 	
 	/**
@@ -103,7 +101,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(JsonParser jParser) throws IOException {
 		super();
-		segmentTables = new LinkedHashMap<>();
 		fromJSON(jParser);
 	}
 	
@@ -115,7 +112,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(String UID) {
 		super(UID);
-		segmentTables = new LinkedHashMap<>();
 	}
 
 	/**
@@ -129,8 +125,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(String UID, MarsTable dataTable) {
 		super(UID);
-		this.dataTable = dataTable;
-		segmentTables = new LinkedHashMap<>();
+		setDataTable(dataTable);
 	}
 	
 	@Override

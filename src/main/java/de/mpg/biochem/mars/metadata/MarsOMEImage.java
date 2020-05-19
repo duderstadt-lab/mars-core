@@ -24,9 +24,12 @@ import ome.xml.model.enums.Binning;
 import ome.xml.model.enums.DetectorType;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.UnitsLength;
+import ome.xml.model.enums.UnitsTemperature;
 import ome.xml.model.enums.handlers.BinningEnumHandler;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
+import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
@@ -40,7 +43,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	private int imageIndex;
 	private String imageName;
 	private String imageDescription;
-	private List<Channel> channels;
+	private List<Channel> channels = new ArrayList<>();
 	
 	private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
 	
@@ -71,7 +74,6 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		imageName = md.getImageName(imageIndex);
 		imageDescription = md.getImageDescription(imageIndex);
 		
-		channels = new ArrayList<>();
 		for (int channelIndex=0; channelIndex < md.getChannelCount(imageIndex); channelIndex++)
 			channels.add(new Channel(md, imageIndex, channelIndex));
 
@@ -219,7 +221,11 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				if (imageAquisitionDate != null)
 					jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.getValue());
 			},
-			jParser -> imageAquisitionDate = new Timestamp(jParser.getText()));
+			jParser -> {
+				System.out.println("Parsing imageAquisitionDate");
+				imageAquisitionDate = new Timestamp(jParser.getText());
+				System.out.println("Parsing imageAquisitionDate Done");
+			});
 		
 		setJsonField("ImageIndex",
 			jGenerator -> jGenerator.writeNumberField("ImageIndex", imageIndex),
@@ -302,7 +308,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				if (pixelsPhysicalSizeX != null) {
 					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeX");
 					jGenerator.writeNumberField("value", pixelsPhysicalSizeX.value().doubleValue());
-					jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().toString());
+					jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().getSymbol());
 					jGenerator.writeEndObject();
 				}
 			},
@@ -319,9 +325,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		    			units = jParser.getText();
 		    	}
 				try {
-					pixelsPhysicalSizeX = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+					pixelsPhysicalSizeX = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
 				} catch (EnumerationException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			});
@@ -331,7 +336,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					if (pixelsPhysicalSizeY != null) {
 						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeY");
 						jGenerator.writeNumberField("value", pixelsPhysicalSizeY.value().doubleValue());
-						jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().toString());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().getSymbol());
 						jGenerator.writeEndObject();
 					}
 				},
@@ -348,9 +353,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			    			units = jParser.getText();
 			    	}
 					try {
-						pixelsPhysicalSizeY = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+						pixelsPhysicalSizeY = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
 					} catch (EnumerationException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				});
@@ -360,7 +364,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					if (pixelsPhysicalSizeZ != null) {
 						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeZ");
 						jGenerator.writeNumberField("value", pixelsPhysicalSizeZ.value().doubleValue());
-						jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().toString());
+						jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().getSymbol());
 						jGenerator.writeEndObject();
 					}
 				},
@@ -377,9 +381,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			    			units = jParser.getText();
 			    	}
 					try {
-						pixelsPhysicalSizeZ = new Length(value, (Unit<Length>) unitshandler.getEnumeration(units));
+						pixelsPhysicalSizeZ = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
 					} catch (EnumerationException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				});
@@ -401,14 +404,21 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					if (detectorType != null)
 						jGenerator.writeStringField("DetectorType", detectorType.getValue());
 				},
-				jParser -> detectorType = DetectorType.valueOf(jParser.getText()));
+				jParser -> {
+					DetectorTypeEnumHandler handler = new DetectorTypeEnumHandler();
+					try {
+						detectorType = (DetectorType) handler.getEnumeration(jParser.getText());
+					} catch (EnumerationException e) {
+						e.printStackTrace();
+					}
+				});
 
 		setJsonField("Temperature",
 				jGenerator -> {
 					if (temperature != null) {
 						jGenerator.writeObjectFieldStart("Temperature");
 						jGenerator.writeNumberField("value", temperature.value().doubleValue());
-						jGenerator.writeStringField("units", temperature.unit().toString());
+						jGenerator.writeStringField("units", temperature.unit().getSymbol());
 						jGenerator.writeEndObject();
 					}
 				},
@@ -426,7 +436,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			    	}
 					UnitsTemperatureEnumHandler handler = new UnitsTemperatureEnumHandler();
 					try {
-						temperature = new Temperature(value, (Unit<Temperature>) handler.getEnumeration(units));
+						temperature = new Temperature(value, UnitsTemperatureEnumHandler.getBaseUnit((UnitsTemperature) handler.getEnumeration(units)));
 					} catch (EnumerationException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -444,7 +454,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		 	},
 			jParser -> {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					MarsOMEPlane plane = new MarsOMEPlane(jParser);
+					MarsOMEPlane plane = new MarsOMEPlane(jParser, this);
 					marsOMEPlanes.put(plane.getPlaneIndex(), plane);
 				}
 		 	});	
@@ -579,7 +589,6 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					try {
 						binning = (Binning) handler.getEnumeration(jParser.getText());
 					} catch (EnumerationException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				});

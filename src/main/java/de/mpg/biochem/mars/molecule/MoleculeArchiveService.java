@@ -26,6 +26,12 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,30 +55,23 @@ import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
 public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
-		
-    @Parameter
-    private UIService uiService;
     
     @Parameter
     private LogService logService;
-    
-    @Parameter
-    private EventService eventService;
-    
-    @Parameter
-    private PrefService prefService;
-    
-    @Parameter
-	private FormatService formatService;
-    
-    @Parameter
-    private StatusService statusService;
     
     @Parameter
     private ScriptService scriptService;
@@ -89,6 +88,102 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		scriptService.addAlias(MarsMetadata.class);
 		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
+	}
+	
+	public String getArchiveTypeFromYama(File file) throws JsonParseException, IOException {
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
+	    
+	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+	    
+		jParser.nextToken();
+		jParser.nextToken();
+		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+			jParser.nextToken();
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    String fieldname = jParser.getCurrentName();
+			    	
+			    if ("ArchiveType".equals(fieldname)) {
+			    	jParser.nextToken();
+			    	archiveType = jParser.getText();
+			    	break;
+			    }
+			}
+		} else {
+			System.out.println("The file " + file.getName() + " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
+			return null;
+		}
+		
+		jParser.close();
+		inputStream.close();
+		
+		return archiveType;
+	}
+	
+	public String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		
+		//Here we automatically detect the format of the JSON file
+		//Can be JSON text or Smile encoded binary file...
+		JsonFactory jsonF = new JsonFactory();
+		SmileFactory smileF = new SmileFactory(); 
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
+	    DataFormatMatcher match = det.findFormat(inputStream);
+	    JsonParser jParser = match.createParserWithMatch();
+	    
+	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+	    
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    String fieldname = jParser.getCurrentName();
+		    	
+		    if ("ArchiveType".equals(fieldname)) {
+		    	jParser.nextToken();
+		    	archiveType = jParser.getText();
+		    	break;
+		    }
+		}
+		
+		jParser.close();
+		inputStream.close();
+		
+		return archiveType;
+	}
+	
+	public MoleculeArchive<?,?,?> createArchive(String archiveType) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(String.class);
+			return (MoleculeArchive<?,?,?>)constructor.newInstance("archive");
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public MoleculeArchive<?,?,?> createArchive(String archiveType, File file) {
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(File.class);
+			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
+		} catch (ClassNotFoundException e) {
+			System.err.println(archiveType + " type not found. Is the class in the classpath?");
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public void addArchive(MoleculeArchive archive) {
@@ -178,26 +273,6 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public List<MoleculeArchive<?,?,?>> getArchives() { 
 		return (List) objectService.getObjects(MoleculeArchive.class);
-	}
-	
-	public UIService getUIService() {
-		return uiService; 
-	}
-	
-	public LogService getLogService() {
-		return logService;
-	}
-	
-	public StatusService getStatusService() {
-		return statusService;
-	}
-	
-	public PrefService getPrefService() {
-		return prefService;
-	}
-	
-	public FormatService getFormatService() {
-		return formatService;
 	}
 	
 	@Override

@@ -26,8 +26,12 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.metadata;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -197,11 +201,18 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				jGenerator.writeEndArray();
 		 	},
 			jParser -> {
+				System.out.println("Parsing Images");
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					MarsOMEImage image = new MarsOMEImage(jParser);
+					System.out.println("Done parsing image");
+					
+					if (images == null)
+						System.out.println("images null");
+					
 					images.put(image.getImageIndex(), image);
 				}
 		 	});
+		 	
 	}
 	
 	/**
@@ -264,14 +275,17 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
   		JsonGenerator jGenerator;
   		try {
   			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+  			jGenerator.useDefaultPrettyPrinter();
   			toJSON(jGenerator);
   			jGenerator.close();
+  			String output = stream.toString();
+  			stream.close();
+  			
+  			return output;
   		} catch (IOException e) {
-  			// TODO Auto-generated catch block
   			e.printStackTrace();
+  			return null;
   		}
-  		
-  		return stream.toString();
   	}
     
   	/**

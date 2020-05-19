@@ -135,7 +135,7 @@ public class MergeCommand extends DynamicCommand {
 			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveFileList) {
 				try {
-					archiveTypes.add(MarsUtil.getArchiveTypeFromYama(file));
+					archiveTypes.add(moleculeArchiveService.getArchiveTypeFromYama(file));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -153,7 +153,7 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
+			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
 			
 			//Initialize all file streams and parsers

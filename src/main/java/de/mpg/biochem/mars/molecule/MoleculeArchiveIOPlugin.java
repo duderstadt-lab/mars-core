@@ -95,7 +95,6 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		return supportsOpen(source);
 	}
 	
-	//This needs cleaning up but lets see if it is working first...
 	@Override
 	public MoleculeArchive open(final String source) throws IOException {
 		File file = new File(source);
@@ -104,13 +103,13 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		String archiveType;
 		
 		if (file.isDirectory())
-			archiveType = MarsUtil.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
+			archiveType = moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
 		else 
-			archiveType = MarsUtil.getArchiveTypeFromYama(file);
+			archiveType = moleculeArchiveService.getArchiveTypeFromYama(file);
 		
 		String name = file.getName();
 		
-		MoleculeArchive archive = MarsUtil.createMoleculeArchive(archiveType, file, moleculeArchiveService);
+		MoleculeArchive archive = moleculeArchiveService.createArchive(archiveType, file);
 		
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
@@ -120,7 +119,6 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		objectService.addObject(archive);
 		scriptService.addAlias(archive.getClass());
 		
-		//Why doesn't this happen somewhere else. How if ij.io().open is used in a script. It will also open the archive window.
 		if (!uiService.isHeadless())
 			uiService.show(archive.getName(), archive);
 

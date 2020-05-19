@@ -20,6 +20,7 @@ import ome.units.unit.Unit;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
 import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.Timestamp;
 
@@ -70,8 +71,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		this.posZ = -1;
 	}
 	
-	public MarsOMEPlane(JsonParser jParser) throws IOException {
+	public MarsOMEPlane(JsonParser jParser, MarsOMEImage image) throws IOException {
 		super();
+		this.image = image;
 		fromJSON(jParser);
 	}
 	
@@ -135,7 +137,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 					if (dt != null) {
 						jGenerator.writeObjectFieldStart("deltaT");
 						jGenerator.writeNumberField("value", dt.value().doubleValue());
-						jGenerator.writeStringField("units", dt.unit().toString());
+						jGenerator.writeStringField("units", dt.unit().getSymbol());
 						jGenerator.writeEndObject();
 					}
 				},
@@ -152,7 +154,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 			    			units = jParser.getText();
 			    	}
 					try {
-						dt = new Time(value, (Unit<Time>) timehandler.getEnumeration(units));
+						dt = new Time(value, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration(units)));
 					} catch (EnumerationException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -164,7 +166,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 					if (exposureTime != null) {
 						jGenerator.writeObjectFieldStart("exposureTime");
 						jGenerator.writeNumberField("value", exposureTime.value().doubleValue());
-						jGenerator.writeStringField("units", exposureTime.unit().toString());
+						jGenerator.writeStringField("units", exposureTime.unit().getSymbol());
 						jGenerator.writeEndObject();
 					}
 				},
@@ -181,7 +183,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 			    			units = jParser.getText();
 			    	}
 					try {
-						exposureTime = new Time(value, (Unit<Time>) timehandler.getEnumeration(units));
+						exposureTime = new Time(value, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration(units)));
 					} catch (EnumerationException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

@@ -800,12 +800,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			jGenerator.writeEndArray();
 		}
 		
-		jGenerator.writeArrayFieldStart("Molecules");
-		Iterator<String> iterator = moleculeIndex.iterator();
-		while (iterator.hasNext()) {
-			get(iterator.next()).toJSON(jGenerator);
+		if (moleculeIndex.size() > 0) {
+			jGenerator.writeArrayFieldStart("Molecules");
+			Iterator<String> iterator = moleculeIndex.iterator();
+			while (iterator.hasNext()) {
+				get(iterator.next()).toJSON(jGenerator);
+			}
+			jGenerator.writeEndArray();
 		}
-		jGenerator.writeEndArray();
 		
 		jGenerator.writeEndObject();
 	}
@@ -829,8 +831,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveProperties.fromJSON(jParser);
 		} else
 			return;
-
-		int numMolecules = archiveProperties.getNumberOfMolecules();
 		
 		String fieldBlockName = "";
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -841,19 +841,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    else 
 		    	fieldBlockName = fieldName;
 			
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			if ("Metadata".equals(fieldName))
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					putMetadata(createMetadata(jParser));
-				}
-			}
 			
-			if ("Molecules".equals(fieldName)) {
-				int molNum = 0;
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			if ("Molecules".equals(fieldName))
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					put(createMolecule(jParser));
-					molNum++;
-				}
-			}
 			
 			//SHOULD BE UNREACHABLE
 		    //This is only reached if there is an unexpected field added to the json record
