@@ -132,109 +132,105 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		//Add to output map
-		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
-			if (dataTable.getColumnCount() > 0) {
-				jGenerator.writeFieldName("DataTable");
-				dataTable.toJSON(jGenerator);
-			}
-		}, IOException.class));
-		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (metadataUID != null)
-				jGenerator.writeStringField("ImageMetadataUID", metadataUID);
-	 	}, IOException.class));
-		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (metadataUID != null)
-				jGenerator.writeStringField("MetadataUID", metadataUID);
-	 	}, IOException.class));
-		outputMap.put("SegmentTables", MarsUtil.catchConsumerException(jGenerator -> {
-			if (segmentTables.size() > 0) {
-				jGenerator.writeArrayFieldStart("SegmentTables");
-				for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
-					if (segmentTables.get(tableColumnNames).size() > 0) {
-						jGenerator.writeStartObject();
-						
-						jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
-						jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
-						jGenerator.writeStringField("RegionName", tableColumnNames.get(2));
-						
-						jGenerator.writeFieldName("Table");
-						segmentTables.get(tableColumnNames).toJSON(jGenerator);
-						
-						jGenerator.writeEndObject();
+		setJsonField("DataTable", 
+			jGenerator -> {
+					if (dataTable.getColumnCount() > 0) {
+						jGenerator.writeFieldName("DataTable");
+						dataTable.toJSON(jGenerator);
 					}
-				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
-			dataTable.fromJSON(jParser);
-		}, IOException.class));	
-		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("MetadataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String xColumnName = "";
-		    		String yColumnName = "";
-		    		String regionName = "";
-		    		
-				    ArrayList<String> tableColumnNames = new ArrayList<String>();
-		    	
-		    		//Needed for backwards compatibility when reverse order was used...
-				    if ("xColumnName".equals(jParser.getCurrentName())) {
-				    	jParser.nextToken();
-				    	xColumnName = jParser.getText();
-				    	
-				    	//Then move past the field and next name
-					    jParser.nextToken();
-					    jParser.nextToken();
-				    	yColumnName = jParser.getText();
-				    } else if ("yColumnName".equals(jParser.getCurrentName())) {
-				    	jParser.nextToken();
-				    	yColumnName = jParser.getText();
-				    	
-				    	//Then move past the field and next name
-					    jParser.nextToken();
-					    jParser.nextToken();
-				    	xColumnName = jParser.getText();
-				    } 
-				    
-				    tableColumnNames.add(xColumnName);
-			    	tableColumnNames.add(yColumnName);
-				    
-			    	//Move to next field
-			    	jParser.nextToken();
-			    	
-			    	if ("RegionName".equals(jParser.getCurrentName())) {
-			    		jParser.nextToken();
-			    		regionName = jParser.getText();
-			    		tableColumnNames.add(regionName);
+				}, 
+			jParser -> dataTable.fromJSON(jParser));	
+				
+		setJsonField("MetadataUID", 
+			jGenerator -> {
+					if (metadataUID != null)
+						jGenerator.writeStringField("MetadataUID", metadataUID);
+			 	}, 
+			jParser -> metadataUID = jParser.getText());
+			 	
+		setJsonField("SegmentTables", 
+			jGenerator -> {
+					if (segmentTables.size() > 0) {
+						jGenerator.writeArrayFieldStart("SegmentTables");
+						for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
+							if (segmentTables.get(tableColumnNames).size() > 0) {
+								jGenerator.writeStartObject();
+								
+								jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
+								jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
+								jGenerator.writeStringField("RegionName", tableColumnNames.get(2));
+								
+								jGenerator.writeFieldName("Table");
+								segmentTables.get(tableColumnNames).toJSON(jGenerator);
+								
+								jGenerator.writeEndObject();
+							}
+						}
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String xColumnName = "";
+			    		String yColumnName = "";
+			    		String regionName = "";
 			    		
-			    		//Move to table field
-			    		jParser.nextToken();
-			    	} else {
-			    		//Must not have a region name
-			    		tableColumnNames.add("");
+					    ArrayList<String> tableColumnNames = new ArrayList<String>();
+			    	
+			    		//Needed for backwards compatibility when reverse order was used...
+					    if ("xColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    } else if ("yColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    } 
+					    
+					    tableColumnNames.add(xColumnName);
+				    	tableColumnNames.add(yColumnName);
+					    
+				    	//Move to next field
+				    	jParser.nextToken();
+				    	
+				    	if ("RegionName".equals(jParser.getCurrentName())) {
+				    		jParser.nextToken();
+				    		regionName = jParser.getText();
+				    		tableColumnNames.add(regionName);
+				    		
+				    		//Move to table field
+				    		jParser.nextToken();
+				    	} else {
+				    		//Must not have a region name
+				    		tableColumnNames.add("");
+				    	}
+				    	
+				    	MarsTable segmenttable = new MarsTable(yColumnName + " vs " + xColumnName + " - " + regionName);
+				    	
+				    	segmenttable.fromJSON(jParser);
+				    	
+				    	segmentTables.put(tableColumnNames, segmenttable);
 			    	}
-			    	
-			    	MarsTable segmenttable = new MarsTable(yColumnName + " vs " + xColumnName + " - " + regionName);
-			    	
-			    	segmenttable.fromJSON(jParser);
-			    	
-			    	segmentTables.put(tableColumnNames, segmenttable);
 		    	}
-	    	}
-		}, IOException.class));
+			});
+		
+		
+		// FOR BACKWARDS COMPATIBILITY 
+		setJsonField("ImageMetadataUID", null, 
+				jParser -> metadataUID = jParser.getText());
+		
+		setJsonField("ImageMetaDataUID", null, 
+				jParser -> metadataUID = jParser.getText());
 	}
 	
 	/**
