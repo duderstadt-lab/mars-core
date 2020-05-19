@@ -109,92 +109,98 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	
 	@Override
 	protected void createIOMaps() {
-		//Output Map
-		outputMap.put("UID", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("UID", UID), IOException.class));
-		outputMap.put("Type", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
-		outputMap.put("Notes", MarsUtil.catchConsumerException(jGenerator -> {
+
+		setJsonField("UID",
+			jGenerator -> jGenerator.writeStringField("UID", UID),
+			jParser -> UID = jParser.getText());
+		
+		setJsonField("Type", 
+			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()),
+			null);
+		
+		setJsonField("Notes",
+			jGenerator -> {
 				if (Notes != null)
 					jGenerator.writeStringField("Notes", Notes);
-			}, IOException.class));
-		outputMap.put("Tags", MarsUtil.catchConsumerException(jGenerator -> {
-			if (Tags.size() > 0) {
-				jGenerator.writeFieldName("Tags");
-				jGenerator.writeStartArray();
-				Iterator<String> iterator = Tags.iterator();
-				while(iterator.hasNext())
-					jGenerator.writeString(iterator.next());
-				jGenerator.writeEndArray();
-			}
-		}, IOException.class));
-		outputMap.put("Parameters", MarsUtil.catchConsumerException(jGenerator -> {
-			if (Parameters.size() > 0) {
-				jGenerator.writeObjectFieldStart("Parameters");
-				for (String name:Parameters.keySet())
-					jGenerator.writeNumberField(name, Parameters.get(name));
-				jGenerator.writeEndObject();
-			}
-		}, IOException.class));
-		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (regionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("RegionsOfInterest");
-				for (String region : regionsOfInterest.keySet()) 
-					regionsOfInterest.get(region).toJSON(jGenerator);
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		outputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (positionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("PositionsOfInterest");
-				for (String position :positionsOfInterest.keySet()) 
-					positionsOfInterest.get(position).toJSON(jGenerator);
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
+				}, 
+			jParser -> Notes = jParser.getText());
 		
-		//Input Map
-		inputMap.put("UID", MarsUtil.catchConsumerException(jParser -> {
-	        UID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Notes", MarsUtil.catchConsumerException(jParser -> {
-	        Notes = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Tags", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-	            Tags.add(jParser.getText());
-	        }
-		}, IOException.class));
-		inputMap.put("Parameters", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-	    		String subfieldname = jParser.getCurrentName();
-	    		jParser.nextToken();
-	    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-    				String str = jParser.getValueAsString();
-    				if (Objects.equals(str, new String("Infinity"))) {
-    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("-Infinity"))) {
-    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("NaN"))) {
-    					Parameters.put(subfieldname, Double.NaN);
-    				}
-    			} else {
-    				Parameters.put(subfieldname, jParser.getDoubleValue());
-    			}
-	    	}
-		}, IOException.class));	
-		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsRegion regionOfInterest = new MarsRegion(jParser);
-		    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-	    	}
-	 	}, IOException.class));
-		inputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsPosition positionOfInterest = new MarsPosition(jParser);
-		    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-	    	}
-	 	}, IOException.class));
+		setJsonField("Tags", 
+			jGenerator -> {
+					if (Tags.size() > 0) {
+						jGenerator.writeFieldName("Tags");
+						jGenerator.writeStartArray();
+						Iterator<String> iterator = Tags.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeString(iterator.next());
+						jGenerator.writeEndArray();
+					}
+				}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		            Tags.add(jParser.getText());
+		        }
+			});
+				
+		setJsonField("Parameters", 
+			jGenerator -> {
+					if (Parameters.size() > 0) {
+						jGenerator.writeObjectFieldStart("Parameters");
+						for (String name:Parameters.keySet())
+							jGenerator.writeNumberField(name, Parameters.get(name));
+						jGenerator.writeEndObject();
+					}
+				},
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String subfieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+	    				String str = jParser.getValueAsString();
+	    				if (Objects.equals(str, new String("Infinity"))) {
+	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("-Infinity"))) {
+	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("NaN"))) {
+	    					Parameters.put(subfieldname, Double.NaN);
+	    				}
+	    			} else {
+	    				Parameters.put(subfieldname, jParser.getDoubleValue());
+	    			}
+		    	}
+			});
+				
+		setJsonField("RegionsOfInterest", 
+			jGenerator -> {
+					if (regionsOfInterest.size() > 0) {
+						jGenerator.writeArrayFieldStart("RegionsOfInterest");
+						for (String region : regionsOfInterest.keySet()) 
+							regionsOfInterest.get(region).toJSON(jGenerator);
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsRegion regionOfInterest = new MarsRegion(jParser);
+				    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+			    	}
+			 });
+				 	
+		setJsonField("PositionsOfInterest", 
+			jGenerator -> {
+					if (positionsOfInterest.size() > 0) {
+						jGenerator.writeArrayFieldStart("PositionsOfInterest");
+						for (String position :positionsOfInterest.keySet()) 
+							positionsOfInterest.get(position).toJSON(jGenerator);
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsPosition positionOfInterest = new MarsPosition(jParser);
+			    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+		    	}
+		 	});
 	}
 	
 	/**
