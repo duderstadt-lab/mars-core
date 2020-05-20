@@ -86,47 +86,46 @@ public class ArchMolecule extends AbstractMolecule {
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		//Add to output map
-		outputMap.put("ArchTables", MarsUtil.catchConsumerException(jGenerator -> {
-			if (archTables.keySet().size() > 0) {
-				jGenerator.writeArrayFieldStart("ArchTables");
-				for (int slice : archTables.keySet()) {
-						jGenerator.writeStartObject();
-						
-						jGenerator.writeNumberField("slice", slice);
-						
-						jGenerator.writeFieldName("Table");
-						archTables.get(slice).toJSON(jGenerator);
-						
-						jGenerator.writeEndObject();
+		setJsonField("ArchTables", 
+			jGenerator -> {
+				if (archTables.keySet().size() > 0) {
+					jGenerator.writeArrayFieldStart("ArchTables");
+					for (int slice : archTables.keySet()) {
+							jGenerator.writeStartObject();
+							
+							jGenerator.writeNumberField("slice", slice);
+							
+							jGenerator.writeFieldName("Table");
+							archTables.get(slice).toJSON(jGenerator);
+							
+							jGenerator.writeEndObject();
+					}
+					jGenerator.writeEndArray();
 				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("ArchTables", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		int slice = -1;
-		    	
-		    		//Needed for backwards compatibility when reverse order was used...
-				    if ("slice".equals(jParser.getCurrentName())) {
+		 	}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		int slice = -1;
+			    	
+			    		//Needed for backwards compatibility when reverse order was used...
+					    if ("slice".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	slice = jParser.getNumberValue().intValue();
+					    }
+					    
+				    	//Move to next field
 				    	jParser.nextToken();
-				    	slice = jParser.getNumberValue().intValue();
-				    }
-				    
-			    	//Move to next field
-			    	jParser.nextToken();
-			    	
-			    	MarsTable archTable = new MarsTable("ArchTable " + slice);
-			    	
-			    	archTable.fromJSON(jParser);
-			    	
-			    	if (slice != -1)
-			    		archTables.put(slice, archTable);
+				    	
+				    	MarsTable archTable = new MarsTable("ArchTable " + slice);
+				    	
+				    	archTable.fromJSON(jParser);
+				    	
+				    	if (slice != -1)
+				    		archTables.put(slice, archTable);
+			    	}
 		    	}
-	    	}
-		}, IOException.class));
+			});
+		
 	}
 }
