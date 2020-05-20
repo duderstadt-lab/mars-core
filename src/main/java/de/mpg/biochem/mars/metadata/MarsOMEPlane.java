@@ -281,6 +281,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 
 		rows.add(Arrays.asList("Filename", this.filename));
 		rows.add(Arrays.asList("UUID", this.uuid));
+		
+		for (String field : customFields.keySet())
+			rows.add(Arrays.asList(field, customFields.get(field)));
 
 		return rows;
 	}

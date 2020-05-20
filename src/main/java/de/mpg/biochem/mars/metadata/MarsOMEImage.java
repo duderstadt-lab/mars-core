@@ -516,6 +516,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
 		}
+		
+		//WE should add customfields for images as well here...
+		//for (String field : customFields.keySet())
+		//	rows.add(Arrays.asList(field, customFields.get(field)));
 
 		return rows;
 	}

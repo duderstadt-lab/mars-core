@@ -269,7 +269,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * 
 	 * @return Json string representation of the MarsMetadata record.
 	 */
-  	public String toJSONString() {
+  	public String dumpJSON() {
   		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
   		JsonGenerator jGenerator;
