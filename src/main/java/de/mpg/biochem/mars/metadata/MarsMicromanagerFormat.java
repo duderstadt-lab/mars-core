@@ -140,9 +140,9 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 		@Override
 		public void close(final boolean fileOnly) throws IOException {
 			super.close(fileOnly);
-			if (!fileOnly) {
-				positions = null;
-			}
+			//if (!fileOnly) {
+			//	positions = null;
+			//}
 		}
 
 	}
@@ -214,7 +214,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 
 		// -- Constants --
 
-		public static final String DATE_FORMAT = "EEE MMM dd HH:mm:ss zzz yyyy";
+		public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss Z";
 
 		// -- Fields --
 

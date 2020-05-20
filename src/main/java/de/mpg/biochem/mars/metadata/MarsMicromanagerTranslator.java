@@ -124,11 +124,10 @@ public class MarsMicromanagerTranslator {
 			for (int i = 0; i < positions.size(); i++) {
 				final Position p = positions.get(i);
 				if (p.time != null) {
-					final String date = //
-						DateTools.formatDate(p.time, MarsMicromanagerFormat.Parser.DATE_FORMAT);
-					if (date != null) {
+					final String date = DateTools.formatDate(p.time, MarsMicromanagerFormat.Parser.DATE_FORMAT);
+					
+					if (date != null)
 						store.setImageAcquisitionDate(new Timestamp(date), i);
-					}
 				}
 
 				if (positions.size() > 1) {
