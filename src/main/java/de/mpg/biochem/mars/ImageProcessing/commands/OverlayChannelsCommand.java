@@ -98,8 +98,8 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	@Parameter(label = "Transform Me")
 	private ImagePlus transformMe;
 
-	@Parameter(label= "Keep originals")
-	private boolean keep = true;
+	//@Parameter(label= "Keep originals")
+	//private boolean keep = true;
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String affineTitle =
@@ -202,7 +202,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 			images[0] = addToMe;
 			images[1] = new ImagePlus("transformed", newStack);
 
-			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
+			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, false);
 	        
 	        progressUpdating.set(false);
 	        
@@ -231,7 +231,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		if (transformMe.getOriginalFileInfo() != null && transformMe.getOriginalFileInfo().directory != null) {
 			builder.addParameter("Image 2 Directory", transformMe.getOriginalFileInfo().directory);
 		}
-		builder.addParameter("keep originals", String.valueOf(keep));
+		//builder.addParameter("keep originals", String.valueOf(keep));
 		builder.addParameter("Affine2D m00", String.valueOf(m00));
 		builder.addParameter("Affine2D m01", String.valueOf(m01));
 		builder.addParameter("Affine2D m02", String.valueOf(m02));
