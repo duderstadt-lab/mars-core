@@ -41,6 +41,7 @@ import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
@@ -62,12 +63,14 @@ import io.scif.FormatException;
 import io.scif.Metadata;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
+import io.scif.filters.AbstractMetadataWrapper;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
 import io.scif.ome.OMEMetadata;
 import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
+import net.imagej.Dataset;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
@@ -144,18 +147,25 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter
 	    private MarsTableService resultsTableService;
 		
+		@Parameter
+		private ConvertService convertService;
+		
 	    @Parameter
 	    private OpService opService;
 		
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
 		
-		@Parameter
-		private Context context;
+		//INPUT IMAGE AS DATASET
+		//@Parameter(label = "Image to search for Peaks")
+		//private Dataset dataset; 
 		
 		//INPUT IMAGE
+		//@Parameter(label = "Image to search for Peaks")
+		//private ImagePlus image; 
+		
 		@Parameter(label = "Image to search for Peaks")
-		private ImagePlus image; 
+		private ImageDisplay imageDisplay;
 		
 		//ROI SETTINGS
 		@Parameter(label="Use ROI", persist=false)
@@ -279,8 +289,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private ArrayList<int[]> innerOffsets;
 		private ArrayList<int[]> outerOffsets;
 		
+		private Dataset dataset;
+		private ImagePlus image;
+		
 		@Override
 		public void initialize() {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+			
 			if (image.getRoi() == null) {
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 				final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
@@ -318,40 +334,19 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
-			/*String label = image.getStack().getFrameLabel(1);
-			if (label == null) {
-				metaDataLogMessage = "No ImageMetadata was found in image header so the format was switched to None.";
-    			imageFormat = "None";
-    		} else if (imageFormat.equals("MicroManager") && label.indexOf("{") == -1) {
-    			metaDataLogMessage = "Images did not appear to have a MicroManager image format so the format was switched to None.";
-    			imageFormat = "None";
-			} */
 			
-			//For testing we assume we opened a metadata image for now...
-			//Let's see if we can open the image using SCIFIO
-			//if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null)
-			String filePath = image.getOriginalFileInfo().directory;
+			Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");
+	    	
+	    	//SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
+			//Metadata metadata = sciImp.getMetadata();
 			
-			Metadata MMmetadata = null;
-			
-	        for (Format format : formatService.getAllFormats()) {
-	        	if (format.getFormatName().equals("MarsMicromanager")) {
-	        		try {
-						MMmetadata = format.createParser().parse(filePath);
-					} catch (IOException | FormatException e) {
-						e.printStackTrace();
-					}
-	        		break;
-	        	}
-	        }
+			// unpack the metadata to allow for processing...
+			while ((metadata instanceof AbstractMetadataWrapper)) {
+				metadata = ((AbstractMetadataWrapper) metadata).unwrap();
+			}
 			
 	        OMEMetadata omeMeta = new OMEMetadata(getContext());
-	        translatorService.translate(MMmetadata, omeMeta, true);
-    		
-    		/*else if (imageFormat.equals("NorPix") && label.indexOf("DateTime: ") == -1) {
-				metaDataLogMessage = "Images did not appear to have a NorPix image format so the format was switched to None.";
-    			imageFormat = "None";
-			}*/
+	        translatorService.translate(metadata, omeMeta, true);
 			
 			boolean[] vary = new boolean[5];
 			vary[0] = true;
@@ -459,8 +454,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    //SHOULD the Metadata UID be unique for each dataset?? Use dumpXML() but that would be too slow
 		    //MarsMath.getFNV1aBase58(str) ...
 		    
-		    MarsOMEMetadata metadata = new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeMeta.getRoot());
-			archive.putMetadata(metadata);
+			archive.putMetadata(new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeMeta.getRoot()));
 		    
 		    tracker.track(PeakStack, archive);
 		    
@@ -813,7 +807,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		@Override
 		public void cancel() {
-			image.setRoi(startingRoi);
+			if (image !=  null)
+				image.setRoi(startingRoi);
 		}
 		
 		/** Called when the {@link #preview} parameter value changes. */
@@ -856,8 +851,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	    	return archive;
 	    }
 		
-		public void setImage(ImagePlus image) {
-			this.image = image;
+		public void setImage(Dataset dataset) {
+			this.dataset = dataset;
 		}
 		
 		public ImagePlus getImage() {
