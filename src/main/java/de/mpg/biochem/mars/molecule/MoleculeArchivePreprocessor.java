@@ -31,10 +31,9 @@ import org.scijava.module.process.AbstractPreprocessorPlugin;
 import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.script.ScriptModule;
-import org.scijava.script.ScriptService;
+import org.scijava.Priority;
 
-@Plugin(type = PreprocessorPlugin.class)
+@Plugin(type = PreprocessorPlugin.class, priority = Priority.VERY_LOW - 10)
 public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 
 	@Parameter
@@ -42,6 +41,7 @@ public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 	
 	@Override
 	public void process(final Module module) {
+		System.out.println("preprocessing");
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj != null && obj instanceof MoleculeArchive) {
