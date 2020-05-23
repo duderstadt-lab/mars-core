@@ -41,7 +41,6 @@ public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 	
 	@Override
 	public void process(final Module module) {
-		System.out.println("preprocessing");
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj != null && obj instanceof MoleculeArchive) {
