@@ -31,10 +31,9 @@ import org.scijava.module.process.AbstractPreprocessorPlugin;
 import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.script.ScriptModule;
-import org.scijava.script.ScriptService;
+import org.scijava.Priority;
 
-@Plugin(type = PreprocessorPlugin.class)
+@Plugin(type = PreprocessorPlugin.class, priority = Priority.VERY_LOW - 2)
 public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 
 	@Parameter
