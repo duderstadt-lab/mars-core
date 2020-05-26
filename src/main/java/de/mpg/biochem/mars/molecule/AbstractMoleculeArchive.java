@@ -66,7 +66,6 @@ import com.fasterxml.jackson.dataformat.smile.*;
 import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
 import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.kcp.commands.SegmentDistributionBuilderCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
