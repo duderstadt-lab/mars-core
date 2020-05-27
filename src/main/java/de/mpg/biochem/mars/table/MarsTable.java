@@ -33,6 +33,7 @@ import org.scijava.table.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -69,6 +70,7 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
@@ -412,6 +414,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param jGenerator JsonGenerator stream the table should be serialized to.
 	 * @throws IOException Thrown if unable to write to the JsonGenerator stream.
 	 */
+    @Override
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		jGenerator.writeStartObject();
 		if (getColumnCount() > 0) {
@@ -456,6 +459,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * @param jParser JsonParser stream to read objects and fields from.
 	 * @throws IOException Thrown if unable to read from the JsonParser stream.
 	 */
+    @Override
 	public void fromJSON(JsonParser jParser) throws IOException {			
     	//Then we move through fields
     	while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -1483,6 +1487,16 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	protected DoubleColumn createColumn(final String header) {
 		return new DoubleColumn(header);
 	}
+	
+	/**
+	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the record.
+	 */
+	@Override
+  	public String dumpJSON() {
+  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+  	}
 
 	/**
 	 * Create a copy of the MarsTable. 
