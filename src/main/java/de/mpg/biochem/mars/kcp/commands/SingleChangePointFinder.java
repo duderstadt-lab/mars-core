@@ -164,7 +164,6 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 	        		        while(progressUpdating.get()) {
 	        		        	Thread.sleep(100);
 	        		        	archive.getWindow().setProgress(numFinished.doubleValue() / UIDs.size());
-	        		        	System.out.println("" + numFinished.doubleValue());
 	        		        }
 	                    } catch (Exception e) {
 	                        e.printStackTrace();
