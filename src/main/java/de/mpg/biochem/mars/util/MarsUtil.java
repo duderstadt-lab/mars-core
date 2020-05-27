@@ -27,14 +27,18 @@
 package de.mpg.biochem.mars.util;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -44,6 +48,7 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 import java.nio.file.attribute.PosixFilePermission;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
@@ -57,6 +62,36 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public class MarsUtil {
+	
+	private static JsonFactory jfactory;
+	
+	/**
+	 * Return Json String in pretty print format.
+	 * 
+	 * @return Json string.
+	 */
+	public static String dumpJSON(ThrowingConsumer<JsonGenerator, IOException> throwingConsumer) {
+  		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+  		//Create a new jfactory. 
+  		if (jfactory == null) 
+  			jfactory = new JsonFactory();
+  		
+  		JsonGenerator jGenerator;
+  		try {
+  			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+  			jGenerator.useDefaultPrettyPrinter();
+  			throwingConsumer.accept(jGenerator);
+  			jGenerator.close();
+  			String output = stream.toString();
+  			stream.close();
+  			
+  			return output;
+  		} catch (IOException e) {
+  			e.printStackTrace();
+  			return null;
+  		}
+  	}
 
 	/**
 	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
