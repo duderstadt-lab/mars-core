@@ -470,6 +470,10 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		this.include = include;
 	}
 	
+	public String getIncludeTags() {
+		return include;
+	}
+	
 	public void setTags(String tags) {
 		this.tags = tags;
 	}
