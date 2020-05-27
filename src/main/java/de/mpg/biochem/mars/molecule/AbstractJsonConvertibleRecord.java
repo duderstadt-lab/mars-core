@@ -26,11 +26,14 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.molecule;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -155,6 +158,15 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		if (input != null)
 			inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
 	}
+	
+	/**
+	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the record.
+	 */
+  	public String dumpJSON() {
+  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+  	}
 	
 	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
 	//based on the Jackson streaming API.
