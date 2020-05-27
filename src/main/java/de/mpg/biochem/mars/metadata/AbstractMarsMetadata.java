@@ -85,8 +85,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
     
-    protected static JsonFactory jfactory = new JsonFactory();
-    
     /**
 	 * Constructor for creating an empty MarsMetadata record. 
 	 */
@@ -263,30 +261,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	public boolean hasBdvSource(String name) {
 		return bdvSources.containsKey(name);
 	}
-  	
-	/**
-	 * Get the record in Json string format.
-	 * 
-	 * @return Json string representation of the MarsMetadata record.
-	 */
-  	public String dumpJSON() {
-  		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-  		JsonGenerator jGenerator;
-  		try {
-  			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-  			jGenerator.useDefaultPrettyPrinter();
-  			toJSON(jGenerator);
-  			jGenerator.close();
-  			String output = stream.toString();
-  			stream.close();
-  			
-  			return output;
-  		} catch (IOException e) {
-  			e.printStackTrace();
-  			return null;
-  		}
-  	}
     
   	/**
 	 * Set the name of the microscope used for data collection.

@@ -1901,6 +1901,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
+	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the record.
+	 */
+  	public String dumpJSON() {
+  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+  	}
+	
+	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
 	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
 	 * tags, and parameters. 
