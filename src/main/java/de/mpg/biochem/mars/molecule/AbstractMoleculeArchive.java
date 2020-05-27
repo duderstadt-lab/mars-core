@@ -66,7 +66,6 @@ import com.fasterxml.jackson.dataformat.smile.*;
 import de.mpg.biochem.mars.image.MoleculeIntegrator;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.kcp.commands.SegmentDistributionBuilderCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
@@ -609,7 +608,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
-		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
+		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		        
 		        forkJoinPool.submit(() -> metadataIndex.parallelStream().forEach(metaUID -> { 
@@ -649,7 +648,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
-		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
+		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		   } catch (InterruptedException | ExecutionException e ) {
 		        // handle exceptions
@@ -923,7 +922,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	newTagSet.addAll(molecule.getTags());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
 	        	
-	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentTableNames());
+	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 	        	
 	        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
 	        	try {
@@ -1011,7 +1010,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
 		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
-		archiveProperties.addAllSegmentTableNames(molecule.getSegmentTableNames());
+		archiveProperties.addAllSegmentTableNames(molecule.getSegmentsTableNames());
 	}
 	
 	/**

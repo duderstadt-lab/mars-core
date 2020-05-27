@@ -384,9 +384,16 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		builder.addParameter("Y Column", Ycolumn);
 		builder.addParameter("Confidence value", String.valueOf(confidenceLevel));
 		builder.addParameter("Global sigma", String.valueOf(global_sigma));
+		builder.addParameter("Region Source", regionSource);
+		builder.addParameter("Calculate Sigma from background", String.valueOf(calcBackgroundSigma));
+		builder.addParameter("Background Region", backgroundRegion);
+		builder.addParameter("Analyze region", String.valueOf(region));
+		builder.addParameter("Region", regionName);
+		builder.addParameter("Include tags", include);
+		builder.addParameter("Tags", tags);
 		builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
 	}
-	
+
 	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
 		this.archive = archive;
 	}
@@ -425,6 +432,54 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	
 	public double getGlobalSigma() {
 		return global_sigma;
+	}
+	
+	public void setRegionSource(String regionSource) {
+		this.regionSource = regionSource;
+	}
+	
+	public String getRegionSource() {
+		return this.regionSource;
+	}
+	
+	public void setCalculateBackgroundSigma(boolean calcBackgroundSigma) {
+		this.calcBackgroundSigma = calcBackgroundSigma;
+	}
+	
+	public boolean getCalculateBackgroundSigma() {
+		return calcBackgroundSigma;
+	}
+	
+	public void setBackgroundRegion(String backgroundRegion) {
+		this.backgroundRegion = backgroundRegion;
+	}
+	
+	public String getBackgroundRegion() {
+		return backgroundRegion;
+	}
+	
+	public void setAnalyzeRegion(boolean region) {
+		this.region = region;
+	}
+	
+	public void setRegion(String regionName) {
+		this.regionName = regionName;
+	}
+	
+	public void setIncludeTags(String include) {
+		this.include = include;
+	}
+	
+	public String getIncludeTags() {
+		return include;
+	}
+	
+	public void setTags(String tags) {
+		this.tags = tags;
+	}
+	
+	public String getTags() {
+		return tags;
 	}
 	
 	public void setFitSteps(boolean step_analysis) {

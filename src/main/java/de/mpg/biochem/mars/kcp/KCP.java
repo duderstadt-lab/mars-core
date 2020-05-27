@@ -84,7 +84,7 @@ public class KCP {
 	// A = output[0] +/- output[1]
 	// B = output[2] +/- output[3]
 	// error is the STD here.
-	private double[] linearRegression(double[] xData, double[] yData, int offset, int length) {
+	private static double[] linearRegression(double[] xData, double[] yData, int offset, int length, boolean step_analysis) {
 		
 		double[] output = new double[4];
 
@@ -152,7 +152,7 @@ public class KCP {
 		ArrayList<Double> cur_X_llr = new ArrayList<Double>();
 		
 		//First we determine the fit for the null hypothesis...
-		double[] null_line = linearRegression(xData, yData, offset, length);
+		double[] null_line = linearRegression(xData, yData, offset, length, step_analysis);
 		double null_ll = log_likelihood(xData, yData, offset, length, null_line[0], null_line[2]);
 		
 		//current max log-likelihood ratio value and position.
@@ -162,9 +162,9 @@ public class KCP {
 		// Next we determine the fit for each pair of lines and store the log-likelihood
 		for (int w=2; w < length - 2 ; w++) {
 			//linear fit for first half
-			double[] segA_line = linearRegression(xData, yData, offset, w);
+			double[] segA_line = linearRegression(xData, yData, offset, w, step_analysis);
 			//linear fit for second half
-			double[] segB_line = linearRegression(xData, yData, offset + w, length - w);
+			double[] segB_line = linearRegression(xData, yData, offset + w, length - w, step_analysis);
 			
 			double ll_ratio = log_likelihood(xData, yData, offset, w, segA_line[0], segA_line[2]) + log_likelihood(xData, yData, offset + w, length - w, segB_line[0], segB_line[2]) - null_ll;
 			
@@ -187,10 +187,11 @@ public class KCP {
 		
 	}
 		
-	public MarsTable generate_segments(double[] xData, double[] yData, ArrayList<Integer> cp_positions) {
+	public static MarsTable generate_segments(double[] xData, double[] yData, ArrayList<Integer> cp_positions, boolean step_analysis) {
 		MarsTable segmentTable = new MarsTable();
 		for (int q = 0; q < cp_positions.size() - 1 ; q++) {
-			double[] segment = linearRegression(xData, yData, cp_positions.get(q), cp_positions.get(q+1) - cp_positions.get(q));
+			segmentTable.appendRow();
+			double[] segment = linearRegression(xData, yData, cp_positions.get(q), cp_positions.get(q+1) - cp_positions.get(q), step_analysis);
 			// First I add the end points of the linear fit for each pair of consecutive change points...
 			segmentTable.setValue("x1", q, xData[cp_positions.get(q)]);
 			segmentTable.setValue("y1", q, segment[0] + segment[2]*xData[cp_positions.get(q)]);
@@ -209,7 +210,7 @@ public class KCP {
 		ArrayList<Integer> cp_positions = binary_search();
 		ArrayList<Segment> segs = new ArrayList<Segment>();
 		for (int q = 0; q < cp_positions.size() - 1 ; q++) {
-			double[] linefit = linearRegression(xData, yData, cp_positions.get(q), cp_positions.get(q+1) - cp_positions.get(q));
+			double[] linefit = linearRegression(xData, yData, cp_positions.get(q), cp_positions.get(q+1) - cp_positions.get(q), step_analysis);
 			
 			Segment cur_segment = new Segment(xData[cp_positions.get(q)], linefit[0] + linefit[2]*xData[cp_positions.get(q)],
 					xData[cp_positions.get(q+1)], linefit[0] + linefit[2]*xData[cp_positions.get(q+1)], linefit[0], linefit[1], linefit[2], linefit[3]);

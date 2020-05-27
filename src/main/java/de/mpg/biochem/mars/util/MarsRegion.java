@@ -35,7 +35,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.image.MoleculeIntegrator;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.kcp.commands.SegmentDistributionBuilderCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;

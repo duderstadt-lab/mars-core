@@ -80,10 +80,10 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
     @Parameter(label="Y Column", choices = {"a", "b", "c"})
 	private String Ycolumn;
     
-	@Parameter(label = "Region:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All slices",
+	@Parameter(label = "Region type:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All",
 					"Defined below", "Defined in Molecules", "Defined in Metadata" })
-	private String region;
+	private String regionType;
 	
 	@Parameter(label="from")
 	private double from = 1;
@@ -129,7 +129,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		
 		ConcurrentMap<String, MarsRegion> regionMap = new ConcurrentHashMap<String, MarsRegion>();
 		
-		if (region.equals("Defined in Metadata")) {
+		if (regionType.equals("Defined in Metadata")) {
 			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
 				MarsMetadata metadata = archive.getMetadata(metaUID);
 				if (metadata.hasRegion(regionName))
@@ -142,12 +142,12 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 			Molecule molecule = archive.get(UID);
 			MarsTable datatable = molecule.getDataTable();
 			
-			if (region.equals("Defined below")) {
+			if (regionType.equals("Defined below")) {
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
-			} else if (region.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
+			} else if (regionType.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
 				MarsRegion regionOfInterest = molecule.getRegion(regionName);
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));				
-			} else if (region.equals("Defined in Metadata") && regionMap.containsKey(molecule.getMetadataUID())) {
+			} else if (regionType.equals("Defined in Metadata") && regionMap.containsKey(molecule.getMetadataUID())) {
 				MarsRegion regionOfInterest = regionMap.get(molecule.getMetadataUID());
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			} else {
@@ -172,11 +172,67 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("X Column", Xcolumn);
 		builder.addParameter("Y Column", Ycolumn);
-		builder.addParameter("Region", region);
+		builder.addParameter("Region type", regionType);
 		builder.addParameter("from", String.valueOf(from));
 		builder.addParameter("to", String.valueOf(to));
 		builder.addParameter("Region", regionName);
 		builder.addParameter("New parameter added", Ycolumn + "_sigma");
+	}
+	
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
+		this.archive = archive;
+	}
+	
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
+		return archive;
+	}
+	
+	public void setXcolumn(String Xcolumn) {
+		this.Xcolumn = Xcolumn;
+	}
+	
+	public String getXcolumn() {
+		return Xcolumn;
+	}
+    
+	public void setYcolumn(String Ycolumn) {
+		this.Ycolumn = Ycolumn;
+	}
+	
+	public String getYcolumn() {
+		return Ycolumn;
+	}
+	
+	public void setRegionType(String regionType) {
+		this.regionType = regionType;
+	}
+	
+	public String getRegionType() {
+		return this.regionType;
+	}
+	
+	public void setRegionName(String regionName) {
+		this.regionName = regionName;
+	}
+	
+	public String getRegionName() {
+		return regionName;
+	}
+	
+	public void setFrom(double from) {
+		this.from = from;
+	}
+	
+	public double getFrom() {
+		return from;
+	}
+	
+	public void setTo(double to) {
+		this.to = to;
+	}
+	
+	public double getTo() {
+		return to;
 	}
 }
 

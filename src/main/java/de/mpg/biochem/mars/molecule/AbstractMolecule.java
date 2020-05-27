@@ -474,7 +474,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * @return The Set of ArrayLists holding the x and y column names at
 	 * index positions 0 and 1, respectively.
 	 */
-	public Set<ArrayList<String>> getSegmentTableNames() {
+	public Set<ArrayList<String>> getSegmentsTableNames() {
 		return segmentTables.keySet();
 	}
 }

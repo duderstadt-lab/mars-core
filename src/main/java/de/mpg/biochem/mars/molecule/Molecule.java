@@ -217,5 +217,5 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * index positions 0 and 1, respectively. Additional a subregion can
 	 * be defined in position 2.
 	 */
-	Set<ArrayList<String>> getSegmentTableNames();
+	Set<ArrayList<String>> getSegmentsTableNames();
 }
