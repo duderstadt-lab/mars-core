@@ -49,14 +49,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 		@Parameter
 		private LogService logService;
 		
-	    @Parameter
-	    private StatusService statusService;
-		
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
-		
-		@Parameter
-	    private UIService uiService;
 	    
 	    @Parameter(label="MoleculeArchive")
 	  	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
@@ -67,33 +61,27 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 	    @Parameter(label="Y Column", choices = {"a", "b", "c"})
 		private String Ycolumn;
 	    
-	    //@Parameter(label="Confidence value")
-		private double confidenceLevel = 0.99;
+	    @Parameter(label="Analyze region")
+	    private boolean analyseRegion = false;
 	    
-	    //@Parameter(label="Global sigma")
-		private double global_sigma = 1;
-	    
-	    //@Parameter(label = "Region source:",
-		//		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
-		//				"Metadata" })
+	    @Parameter(label = "Region source:",
+				style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
+						"Metadata" })
 		private String regionSource;
 	    
-	    //@Parameter(label="Calculate from background")
-	    //private boolean calcBackgroundSigma = true;
-	    
-	    //@Parameter(label="Background region", required=false)
-		//private String backgroundRegion;
-	    
-	    //@Parameter(label="Analyze region")
-	    private boolean region = false;
-	    
-	    //@Parameter(label="Region", required=false)
+	    @Parameter(label="Region", required=false)
 		private String regionName;
 	    
-	    //@Parameter(label="Fit steps (zero slope)")
+	    @Parameter(label="Fit steps (zero slope)")
 		private boolean step_analysis = true;
 	    
-	    @Parameter(label="Position Name")
+	    @Parameter(label="Add segments table")
+		private boolean addSegmentsTable = true;
+	    
+	    @Parameter(label="Add position")
+		private boolean addPosition = true;
+	    
+	    @Parameter(label="Position")
 		private String positionName = "Change Here";
 	    
 		@Parameter(label = "Include:",
@@ -119,9 +107,6 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 		}
 		@Override
 		public void run() {		
-			//Lock the window so it can't be changed while processing
-			if (!uiService.isHeadless())
-				archive.getWindow().lock();
 			
 			//Build log message
 			LogBuilder builder = new LogBuilder();
@@ -130,7 +115,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
-			archive.addLogMessage(log);
+			archive.logln(log);
 			
 			//Build Collection of UIDs based on tags if they exist...
 	        ArrayList<String> UIDs;
@@ -178,7 +163,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 	                    try {
 	        		        while(progressUpdating.get()) {
 	        		        	Thread.sleep(100);
-	        		        	statusService.showStatus(numFinished.intValue(), UIDs.size(), "Finding Single Change Points for " + archive.getName());
+	        		        	archive.getWindow().setProgress(numFinished.doubleValue() / UIDs.size());
+	        		        	System.out.println("" + numFinished.doubleValue());
 	        		        }
 	                    } catch (Exception e) {
 	                        e.printStackTrace();
@@ -202,7 +188,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 		        
 		        progressUpdating.set(false);
 		        
-		        statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
+		        archive.getWindow().setProgress(1);
 		        
 		    } catch (InterruptedException | ExecutionException e) {
 		        // handle exceptions
@@ -218,18 +204,13 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    logService.info(LogBuilder.endBlock(true));
 		    archive.logln(LogBuilder.endBlock(true));
-		    
-			//Unlock the window so it can be changed
-		    if (!uiService.isHeadless())
-		    	archive.unlock();
-
 		}
 		
 		private void findChangePoints(Molecule molecule) {
 			MarsTable datatable = molecule.getDataTable();
 			
 			MarsRecord regionRecord = null;
-			if (region) {
+			if (analyseRegion) {
 				if (regionSource.equals("Molecules")) {
 					regionRecord = molecule;
 				} else {
@@ -264,79 +245,53 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			//END FIX
 			
 			for (int j=0;j<rowCount;j++) {
-				if (region) {
+				if (analyseRegion) {
 					if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getStart()) {
 						offset = j;
 					} else if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getEnd()) {
 						length = j - offset;
 					}
 				}
-				/*	
-				if (calcBackgroundSigma) {
-					if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getStart()) {
-						SigXstart = j;
-					} else if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getEnd()) {
-						SigXend = j;
-					}
-				}
-				*/
 			}
 			
 			if (length == 0) {
-				return;
-				
 				//This means the region probably doesn't exist...
 				//So we just add a single dummy row with All NaN values...
 				//Then we return...
-				//ArrayList<Segment> segs = new ArrayList<Segment>();
-				//Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
-				//segs.add(segment);
-				//molecule.putSegmentsTable(Xcolumn, Ycolumn, buildSegmentTable(segs));
-				//numFinished.incrementAndGet();
-				//return;
+				ArrayList<Segment> segs = new ArrayList<Segment>();
+				Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+				segs.add(segment);
+				molecule.putSegmentsTable(Xcolumn, Ycolumn, buildSegmentTable(segs));
+				numFinished.incrementAndGet();
+				return;
 			}
 			
-			//Use global sigma or use local sigma or calculate sigma (in this order of priority)
-			//double sigma = global_sigma;
-			/*
-			if (molecule.hasParameter(Ycolumn + "_sigma")) {
-				sigma = molecule.getParameter(Ycolumn + "_sigma");
-			} else if (molecule.hasRegion(backgroundRegion)) {
-				if (calcBackgroundSigma)
-					sigma = KCP.calc_sigma(yData, SigXstart, SigXend);
-			}
-			*/
-			
-			//double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
-			//double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
+			double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
+			double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
 	
-			int llr_max_row = changePoint(xData, yData, 0, xData.length);
+			int llr_max_row = changePoint(xRegion, yRegion, 0, xRegion.length);
 			
 			if (llr_max_row == -1)
 				return;
 			
-			//MarsPosition(String name, String column, double position, String color, double stroke)
-			double stroke = 1;
-			MarsPosition position = new MarsPosition(positionName, Xcolumn, xData[llr_max_row], "black", stroke);
-			molecule.putPosition(position);
-			/*
-			KCP change = new KCP(sigma, confidenceLevel, xRegion, yRegion, step_analysis);
-			try {
-				MarsTable segmentsTable = buildSegmentTable(change.generate_segments());
-				if (region)
+			if (addPosition) {
+				double stroke = 1;
+				MarsPosition position = new MarsPosition(positionName, Xcolumn, xRegion[llr_max_row], "black", stroke);
+				molecule.putPosition(position);
+			}
+			
+			if (addSegmentsTable) {
+				ArrayList<Integer> cp_positions = new ArrayList<Integer>();
+				cp_positions.add(0);
+				cp_positions.add(llr_max_row);
+				cp_positions.add(xRegion.length - 1);
+				MarsTable segmentsTable = KCP.generate_segments(xRegion, yRegion, cp_positions, step_analysis);
+				if (analyseRegion)
 					molecule.putSegmentsTable(Xcolumn, Ycolumn, regionName, segmentsTable);
 				else
 					molecule.putSegmentsTable(Xcolumn, Ycolumn, segmentsTable);
-			} catch (ArrayIndexOutOfBoundsException e) {
-				logService.error("Out of Bounds Exception");
-				logService.error("UID " + molecule.getUID() + " gave an error ");
-				logService.error("sigma " + sigma);
-				logService.error("confidenceLevel " + confidenceLevel);
-				logService.error("offset " + offset);
-				logService.error("length " + length);
-				e.printStackTrace();
 			}
-			*/
+			
 			archive.put(molecule);
 			
 			numFinished.incrementAndGet();
@@ -440,13 +395,12 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			}
 			
 			//I guess these pi terms cancel below so I could remove them but I will leave it for now...
-			return length*Math.log(1/global_sigma*Math.sqrt(2*Math.PI))-lineSum/(2*global_sigma*global_sigma);
+			return length*Math.log(1/Math.sqrt(2*Math.PI))-lineSum/(2.0);
 		}
 		
 		private MarsTable buildSegmentTable(ArrayList<Segment> segments) {
 			MarsTable output = new MarsTable();
 			
-			//Do i need to add these columns first? I can't remember...
 			output.add(new DoubleColumn("x1"));
 			output.add(new DoubleColumn("y1"));
 			output.add(new DoubleColumn("x2"));
@@ -476,9 +430,15 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			builder.addParameter("MoleculeArchive", archive.getName());
 			builder.addParameter("X Column", Xcolumn);
 			builder.addParameter("Y Column", Ycolumn);
-			//builder.addParameter("Confidence value", String.valueOf(confidenceLevel));
-			//builder.addParameter("Global sigma", String.valueOf(global_sigma));
-			//builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
+			builder.addParameter("Analyze region", String.valueOf(analyseRegion));
+			builder.addParameter("Region source", regionSource);
+			builder.addParameter("Region", regionName);
+			builder.addParameter("Fit steps (zero slope)", String.valueOf(step_analysis));
+			builder.addParameter("Add segments table", String.valueOf(addSegmentsTable));
+			builder.addParameter("Add position", String.valueOf(addPosition));
+			builder.addParameter("Position", positionName);
+			builder.addParameter("Include tags", include);
+			builder.addParameter("Tags", tags);
 		}
 		
 		public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
@@ -505,20 +465,68 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			return Ycolumn;
 		}
 		
-		public void setConfidenceLevel(double confidenceLevel) {
-			this.confidenceLevel = confidenceLevel;
+		public void setAnalyzeRegion(boolean analyseRegion) {
+			this.analyseRegion = analyseRegion;
 		}
 		
-		public double getConfidenceLevel() {
-			return confidenceLevel;
-		}
-		    
-		public void setGlobalSigma(double global_sigma) {
-			this.global_sigma = global_sigma;
+		public boolean getAnalyzeRegion() {
+			return analyseRegion;
 		}
 		
-		public double getGlobalSigma() {
-			return global_sigma;
+		public void setRegionSource(String regionSource) {
+			this.regionSource = regionSource;
+		}
+		
+		public String getRegionSource() {
+			return regionSource;
+		}
+	    
+		public void setRegion(String regionName) {
+			this.regionName = regionName;
+		}
+	    
+		public String getRegion() {
+			return regionName;
+		}
+		
+		public void setAddSegmentsTable(boolean addSegmentsTable) {
+			this.addSegmentsTable = addSegmentsTable;
+		}
+		
+		public boolean getAddSegmentsTable() {
+			return addSegmentsTable;
+		}
+		
+		public void setAddPosition(boolean addPosition) {
+			this.addPosition = addPosition;
+		}
+		
+		public boolean getAddPosition() {
+			return addPosition;
+		}
+		
+		public void setPosition(String positionName) {
+			this.positionName = positionName;
+		}
+		
+		public String getPosition() {
+			return positionName;
+		}
+
+		public void setIncludeTags(String include) {
+			this.include = include;
+		}
+		
+		public String getIncludeTags() {
+			return include;
+		}
+		
+		public void setTags(String tags) {
+			this.tags = tags;
+		}
+		
+		public String getTags() {
+			return tags;
 		}
 		
 		public void setFitSteps(boolean step_analysis) {
