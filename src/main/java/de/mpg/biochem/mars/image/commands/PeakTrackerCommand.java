@@ -33,6 +33,7 @@ import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
+import org.scijava.module.DefaultMutableModuleItem;
 import org.scijava.module.MutableModuleItem;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.Context;
@@ -156,14 +157,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
 		
-		//INPUT IMAGE AS DATASET
-		//@Parameter(label = "Image to search for Peaks")
-		//private Dataset dataset; 
-		
-		//INPUT IMAGE
-		//@Parameter(label = "Image to search for Peaks")
-		//private ImagePlus image; 
-		
 		@Parameter(label = "Image to search for Peaks")
 		private ImageDisplay imageDisplay;
 		
@@ -257,8 +250,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Microscope")
 		private String microscope;
 		
-		@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
-		private String imageFormat;
+		//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
+		//private String imageFormat;
 		
 		//OUTPUT PARAMETERS
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
@@ -292,6 +285,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private Dataset dataset;
 		private ImagePlus image;
 		
+		//private MutableModuleItem<String> positionSelection, channelSelection;
+		private MutableModuleItem<String> channelSelection;
+		
 		@Override
 		public void initialize() {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
@@ -304,6 +300,21 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			} else {
 				rect = image.getRoi().getBounds();
 				startingRoi = image.getRoi();
+			}
+			
+			//For now we ignore the possibility of different positions...
+			//positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
+			
+			//Check if there are different channels and add them to the dialog
+			channelSelection = new DefaultMutableModuleItem<String>(this, "Channel", String.class);
+			
+			//Add channels
+			long channelCount = dataset.getChannels();
+			if (channelCount > 1) {
+				ArrayList<String> channels = new ArrayList<String>();
+				for (int ch=0; ch<channelCount; ch++)
+					channels.add(String.valueOf(ch));
+				channelSelection.setChoices(channels);
 			}
 			
 			final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
@@ -843,7 +854,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
 			builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 			builder.addParameter("Microscope", microscope);
-			builder.addParameter("Format", imageFormat);
+			//builder.addParameter("Format", imageFormat);
 		}
 		
 		//Getters and Setters
@@ -1017,13 +1028,5 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		public String getMicroscope() {
 			return microscope;
-		}
-		
-		public void setImageFormat(String imageFormat) {
-			this.imageFormat = imageFormat;
-		}
-		
-		public String getImageFormat() {
-			return imageFormat;
 		}
 }
