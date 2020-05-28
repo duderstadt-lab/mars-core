@@ -114,7 +114,7 @@ import net.imagej.ops.OpService;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Image Processing", weight = 20,
+		@Menu(label = "Image", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Peak Finder", weight = 1, mnemonic = 'p')})
 public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable, Previewable {

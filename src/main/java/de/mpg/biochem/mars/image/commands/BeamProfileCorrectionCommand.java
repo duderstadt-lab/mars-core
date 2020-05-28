@@ -75,7 +75,7 @@ import ij.io.FileSaver;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Image Processing", weight = 20,
+		@Menu(label = "Image", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Beam Profile Corrector", weight = 20, mnemonic = 'b')})
 public class BeamProfileCorrectionCommand<T extends RealType< T >> extends DynamicCommand implements Command {
