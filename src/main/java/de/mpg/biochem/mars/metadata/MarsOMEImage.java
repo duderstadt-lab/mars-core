@@ -534,7 +534,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		Channel(OMEXMLMetadata md, int imageIndex, int channelIndex) {
 			super();
-			
+
 			name = md.getChannelName(imageIndex, channelIndex);
 			id = md.getChannelID(imageIndex, channelIndex);
 			binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);

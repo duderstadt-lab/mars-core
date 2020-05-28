@@ -155,7 +155,16 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
     	//System.out.println("Frames " + img.getNFrames());
     	//System.out.println("Slices " + img.getNSlices());
     	
-    	//Metadata globalMeta = (Metadata)dataset.getProperties().get("scifio.metadata.global");
+    	Metadata globalMeta = (Metadata)dataset.getProperties().get("scifio.metadata.global");
+    	
+    	System.out.println(globalMeta.getTable().get("SliceLabels"));
+    	
+    	//int count = 0;
+    	//for (String label : sliceLabels) {
+    	//	System.out.println("label " + count + " " + label);
+    	//	count++;
+    	//}
+    	
     	//gets the same object as below..
     	
     	//SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
@@ -167,7 +176,7 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
 		//}
 		
 		//The Positions are completely squashed... If I just retreive the metadata..
-    	
+    	/*
     	
 		Metadata metadata = null;
 		
@@ -194,6 +203,6 @@ public class OMEMetadataCreator extends DynamicCommand implements Command {
         archive.putMetadata(meta);
 
         archive.put(new SingleMolecule(MarsMath.getUUID58(), new MarsTable("a table")));
-
+*/
 	}
 }
