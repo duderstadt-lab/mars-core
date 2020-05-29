@@ -363,7 +363,6 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 			p.tiffs = new Vector<>();
 
 			// build list of TIFF files
-
 			buildTIFFList(meta, posIndex, parent + File.separator + p.baseTiff);
 
 			if (p.tiffs.size() == 0) {
@@ -674,7 +673,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 				{
 					for (int z = 0; z < meta.get(posIndex).getAxisLength(Axes.Z); z++) {
 						// file names are of format:
-						// img_<T>_<channel name>_<T>.tif
+						// img_<Z>_<channel name>_<T>.tif
 						filename.append(prefix);
 						if (!prefix.endsWith(File.separator) &&
 							!blocks[0].startsWith(File.separator))
@@ -692,9 +691,9 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 						filename.append("_");
 
 						String channel = p.channels[c];
-						if (channel.contains("-")) {
-							channel = channel.substring(0, channel.indexOf("-"));
-						}
+						//if (channel.contains("-")) {
+						//	channel = channel.substring(0, channel.indexOf("-"));
+						//}
 						filename.append(channel);
 						filename.append("_");
 
