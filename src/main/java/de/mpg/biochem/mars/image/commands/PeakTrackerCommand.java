@@ -179,6 +179,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="ROI height", persist=false)
 		private int height;
 		
+		@Parameter(label="Channel", choices = {"a", "b", "c"})
+		private String channel = "1";
+		
 		//PEAK FINDER SETTINGS		
 		@Parameter(label="Use DoG filter")
 		private boolean useDogFilter = true;
@@ -291,8 +294,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private Dataset dataset;
 		private ImagePlus image;
 		
-		//private MutableModuleItem<String> positionSelection, channelSelection;
-		//private MutableModuleItem<String> channelSelection;
+		//private MutableModuleItem<String> positionSelection;
+		//private MutableModuleItem<String> channelSelection = 
+		//		new DefaultMutableModuleItem<String>(this, "Channel", String.class);
 		
 		@Override
 		public void initialize() {
@@ -315,15 +319,18 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				startingRoi = image.getRoi();
 			}
 			
-			/*
-			//For now we ignore the possibility of different positions...
-			//positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
-			
-			//Check if there are different channels and add them to the dialog
-			channelSelection = new DefaultMutableModuleItem<String>(this, "Channel", String.class);
-			
-			//Add channels
+			final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
 			long channelCount = dataset.getChannels();
+			ArrayList<String> channels = new ArrayList<String>();
+			for (int ch=1; ch<=channelCount; ch++)
+				channels.add(String.valueOf(ch));
+			channelItems.setChoices(channels);
+			channelItems.setValue(this, String.valueOf(image.getChannel()));
+		
+			//Add positions
+			/*
+			positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
+			long PositionCount = dataset.getP
 			if (channelCount > 1) {
 				ArrayList<String> channels = new ArrayList<String>();
 				for (int ch=0; ch<channelCount; ch++)
@@ -351,7 +358,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		}
 		@Override
 		public void run() {
-
 			if (useROI) {
 				rect = new Rectangle(x0,y0,width - 1,height - 1);
 			} else {
@@ -364,9 +370,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			String metaDataLogMessage = "";
 			
 			Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");
-	    	
-	    	//SCIFIOImgPlus<?> sciImp = (SCIFIOImgPlus<?>) imp;
-			//Metadata metadata = sciImp.getMetadata();
 			
 			// unpack the metadata to allow for processing...
 			while ((metadata instanceof AbstractMetadataWrapper)) {
@@ -431,7 +434,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
 		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> peaks = findPeaksInFrame(i);
+		        	ArrayList<Peak> peaks = findPeaksInFrame(Integer.valueOf(channel), i);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (peaks.size() > 0)
 		        		PeakStack.put(i, peaks);
@@ -540,9 +543,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 		}
 		
-		private ArrayList<Peak> findPeaksInFrame(int frame) {
+		private ArrayList<Peak> findPeaksInFrame(int channel, int frame) {
 			ImageStack stack = image.getImageStack();
-			int index = image.getStackIndex(1, 1, frame);
+			int index = image.getStackIndex(channel, 1, frame);
 			ImageProcessor processor = stack.getProcessor(index);
 
 			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
@@ -808,7 +811,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setPosition(image.getChannel(), image.getCurrentSlice(), previewFrame);
+				image.setPosition(Integer.valueOf(channel), 1, previewFrame);
 				image.deleteRoi();
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewFrame);
@@ -855,6 +858,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("ROI y0", String.valueOf(y0));
 			builder.addParameter("ROI w", String.valueOf(width));
 			builder.addParameter("ROI h", String.valueOf(height));
+			builder.addParameter("Channel", channel);
 			builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 			builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
@@ -879,12 +883,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	    	return archive;
 	    }
 		
-		public void setImage(Dataset dataset) {
+		public void setDataset(Dataset dataset) {
 			this.dataset = dataset;
 		}
 		
-		public ImagePlus getImage() {
-			return image;
+		public Dataset getDataset() {
+			return dataset;
 		}
 		
 		public void setUseROI(boolean useROI) {
@@ -925,6 +929,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		public int getHeight() {
 			return height;
+		}
+		
+		public void setChannel(int channel) {
+			this.channel = String.valueOf(channel);
+		}
+		
+		public int getChannel() {
+			return Integer.valueOf(channel);
 		}
 		
 		public void setUseDogFiler(boolean useDogFilter) {
