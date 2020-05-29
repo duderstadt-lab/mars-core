@@ -256,7 +256,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		}
 
 		if (this.getExposureTimeInSeconds() >= 0) {
-			rows.add(Arrays.asList("Exposure time", this.getExposureTimeInSeconds() + " ms"));
+			rows.add(Arrays.asList("Exposure time", this.getExposureTimeInSeconds() + " s"));
 		} else {
 			rows.add(Arrays.asList("Exposure time", ""));
 		}
