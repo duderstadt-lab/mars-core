@@ -72,6 +72,7 @@ import io.scif.ome.OMEMetadata;
 import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
 import net.imagej.Dataset;
+import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
@@ -90,6 +91,8 @@ import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
 
 import org.scijava.table.DoubleColumn;
+import org.scijava.ui.DialogPrompt;
+import org.scijava.ui.UIService;
 import org.scijava.widget.NumberWidget;
 
 import io.scif.img.IO;
@@ -253,6 +256,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
 		//private String imageFormat;
 		
+		@Parameter
+		private UIService uiService;
+		
 		//OUTPUT PARAMETERS
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 		private SingleMoleculeArchive archive;
@@ -286,12 +292,19 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private ImagePlus image;
 		
 		//private MutableModuleItem<String> positionSelection, channelSelection;
-		private MutableModuleItem<String> channelSelection;
+		//private MutableModuleItem<String> channelSelection;
 		
 		@Override
 		public void initialize() {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
+			
+			ImgPlus<?> imp = dataset.getImgPlus();
+			
+			if (!(imp instanceof SCIFIOImgPlus)) {
+				uiService.showDialog("This image has not been opened with SCIFIO.", DialogPrompt.MessageType.ERROR_MESSAGE);
+				return;
+			}
 			
 			if (image.getRoi() == null) {
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
@@ -302,6 +315,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				startingRoi = image.getRoi();
 			}
 			
+			/*
 			//For now we ignore the possibility of different positions...
 			//positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
 			
@@ -316,6 +330,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					channels.add(String.valueOf(ch));
 				channelSelection.setChoices(channels);
 			}
+			getInfo().addInput(channelSelection);
+			*/
 			
 			final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
 			imgX0.setValue(this, rect.x);
@@ -331,10 +347,11 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
 			preFrame.setValue(this, image.getCurrentSlice());
-			preFrame.setMaximumValue(image.getStackSize());
+			preFrame.setMaximumValue(image.getNFrames());
 		}
 		@Override
 		public void run() {
+
 			if (useROI) {
 				rect = new Rectangle(x0,y0,width - 1,height - 1);
 			} else {
@@ -791,7 +808,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setSlice(previewFrame);
+				image.setPosition(image.getChannel(), image.getCurrentSlice(), previewFrame);
 				image.deleteRoi();
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewFrame);
