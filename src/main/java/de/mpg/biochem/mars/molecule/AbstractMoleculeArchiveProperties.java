@@ -84,6 +84,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public AbstractMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		this();
+		inputSchema = "no schema found";
 		fromJSON(jParser);
 	}
 	
