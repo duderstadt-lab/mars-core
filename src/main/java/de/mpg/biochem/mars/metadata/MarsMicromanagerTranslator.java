@@ -54,7 +54,6 @@ import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
 import ome.units.quantity.Time;
 import ome.xml.model.MapPair;
-import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.Timestamp;
 
 /**
@@ -153,7 +152,11 @@ public class MarsMicromanagerTranslator {
 				}
 				else {
 					log().warn("Expected positive value for PhysicalSizeX; got " +
-						p.pixelSize);
+						p.pixelSize + ". Setting to 1 pixel");
+					store.setPixelsPhysicalSizeX(//
+							new Length(1, UNITS.PIXEL), i);
+						store.setPixelsPhysicalSizeY(//
+							new Length(1, UNITS.PIXEL), i);
 				}
 				if (p.sliceThickness != null && p.sliceThickness > 0) {
 					store.setPixelsPhysicalSizeZ(//
