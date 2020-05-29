@@ -67,6 +67,7 @@ import ome.xml.model.primitives.NonNegativeInteger;
 import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
 import org.scijava.util.DigestUtils;
 import org.scijava.util.FileUtils;
 import org.xml.sax.Attributes;
@@ -217,12 +218,17 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 		public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss Z";
 
 		// -- Fields --
+		
+		@Parameter
+	    private PrefService prefService;
 
 		@Parameter
 		private TranslatorService translatorService;
 
 		@Parameter
 		private XMLService xmlService;
+		
+		private boolean swapZandTime = false;
 
 		// -- MicromanagerParser API methods --
 
@@ -364,7 +370,12 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 
 			// build list of TIFF files
 			buildTIFFList(meta, posIndex, parent + File.separator + p.baseTiff);
-
+			
+			if (p.tiffs.size() == 0) {
+				log().info("Failed to generate tif file names");
+			}
+			
+			/*
 			if (p.tiffs.size() == 0) {
 				final Vector<String> uniqueZ = new Vector<>();
 				final Vector<String> uniqueC = new Vector<>();
@@ -396,6 +407,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					throw new FormatException("Could not find TIFF files.");
 				}
 			}
+			*/
 		}
 
 		private void parsePosition(final String jsonData, final Metadata meta,
@@ -419,6 +431,8 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 			// }
 			//
 			// }
+			
+			boolean firstKeyFrame = true;
 
 			log().info("Populating metadata");
 
@@ -522,6 +536,19 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 				}
 
 				if (token.startsWith("\"FrameKey")) {
+					if (firstKeyFrame && prefService.getBoolean(MarsMicromanagerFormat.class, "CheckZvsTIME", true) &&  ms.getAxisLength(Axes.TIME) < ms.getAxisLength(Axes.Z)) {
+						log().info("Z > T and check is turned on. Swapping Z and T!");
+						
+						//Z is largers than TIME. Let's swap them!!
+						long frames = ms.getAxisLength(Axes.Z);
+						long sizeZ = ms.getAxisLength(Axes.TIME);
+						
+						ms.setAxisLength(Axes.TIME, frames);
+						ms.setAxisLength(Axes.Z, sizeZ);
+						swapZandTime = true;
+						firstKeyFrame = false;
+					}
+					
 					int dash = token.indexOf("-") + 1;
 					int nextDash = token.indexOf("-", dash);
 					slice[2] = Integer.parseInt(token.substring(dash, nextDash));
@@ -536,6 +563,14 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					String key = "", value = "";
 					boolean valueArray = false;
 					int nestedCount = 0;
+					
+					if (swapZandTime) {
+						int theT = slice[2];
+						int theZ = slice[0];
+						
+						slice[2] = theZ;
+						slice[0] = theT;
+					}
 					
 					// DROP-IN
 					HashMap<String, String> planeMetaTable = new HashMap<String, String>();
@@ -665,7 +700,7 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 					baseTiff.substring(0, baseTiff.lastIndexOf(File.separator) + 1);
 				baseTiff = baseTiff.substring(baseTiff.lastIndexOf(File.separator) + 1);
 			}
-
+			
 			final String[] blocks = baseTiff.split("_");
 			final StringBuilder filename = new StringBuilder();
 			for (int t = 0; t < meta.get(posIndex).getAxisLength(Axes.TIME); t++) {
@@ -683,26 +718,49 @@ public class MarsMicromanagerFormat extends AbstractFormat {
 						filename.append(blocks[0]);
 						filename.append("_");
 
-						int zeros = blocks[1].length() - String.valueOf(t).length();
-						for (int q = 0; q < zeros; q++) {
-							filename.append("0");
+						if (swapZandTime) {
+							int zeros = blocks[1].length() - String.valueOf(z).length();
+							for (int q = 0; q < zeros; q++) {
+								filename.append("0");
+							}
+							filename.append(z);
+							filename.append("_");
+	
+							String channel = p.channels[c];
+							//if (channel.contains("-")) {
+							//	channel = channel.substring(0, channel.indexOf("-"));
+							//}
+							filename.append(channel);
+							filename.append("_");
+	
+							zeros = blocks[3].length() - String.valueOf(t).length() - 4;
+							for (int q = 0; q < zeros; q++) {
+								filename.append("0");
+							}
+							filename.append(t);
+							filename.append(".tif");
+						} else {
+							int zeros = blocks[1].length() - String.valueOf(t).length();
+							for (int q = 0; q < zeros; q++) {
+								filename.append("0");
+							}
+							filename.append(t);
+							filename.append("_");
+	
+							String channel = p.channels[c];
+							//if (channel.contains("-")) {
+							//	channel = channel.substring(0, channel.indexOf("-"));
+							//}
+							filename.append(channel);
+							filename.append("_");
+	
+							zeros = blocks[3].length() - String.valueOf(z).length() - 4;
+							for (int q = 0; q < zeros; q++) {
+								filename.append("0");
+							}
+							filename.append(z);
+							filename.append(".tif");
 						}
-						filename.append(t);
-						filename.append("_");
-
-						String channel = p.channels[c];
-						//if (channel.contains("-")) {
-						//	channel = channel.substring(0, channel.indexOf("-"));
-						//}
-						filename.append(channel);
-						filename.append("_");
-
-						zeros = blocks[3].length() - String.valueOf(z).length() - 4;
-						for (int q = 0; q < zeros; q++) {
-							filename.append("0");
-						}
-						filename.append(z);
-						filename.append(".tif");
 
 						p.tiffs.add(filename.toString());
 						filename.delete(0, filename.length());
