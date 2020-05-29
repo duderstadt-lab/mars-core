@@ -48,8 +48,8 @@ import de.mpg.biochem.mars.util.MarsUtil;
 public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConvertibleRecord implements MoleculeArchiveProperties {
 	protected int numberOfMolecules;
 	protected int numMetadata;
-	protected String comments;
-	private static final String SCHEMA = "2020-05-29";
+	protected String comments, inputSchema;
+	public static final String SCHEMA = "2020-05-29";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -67,6 +67,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		numberOfMolecules = 0;
 		numMetadata = 0;
 		comments = "";
+		inputSchema = SCHEMA;
 		
 		tagSet = ConcurrentHashMap.newKeySet();
 		parameterSet = ConcurrentHashMap.newKeySet();
@@ -98,6 +99,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		setJsonField("Type", 
 			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()), 
 			null);
+		
+		setJsonField("Schema", 
+				jGenerator -> jGenerator.writeStringField("Schema", SCHEMA), 
+				jParser -> inputSchema = jParser.getText());
 			
 		setJsonField("numberOfMolecules", 
 			jGenerator -> jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), 
@@ -230,8 +235,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		
 	}
 	
-	public String getSchema() {
-		return SCHEMA;
+	public String getInputSchema() {
+		return inputSchema;
 	}
 	
 	/**

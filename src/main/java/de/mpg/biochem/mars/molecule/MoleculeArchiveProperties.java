@@ -33,7 +33,7 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
 
 public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
-	String getSchema();
+	String getInputSchema();
 	
 	void addTag(String tag);
 	
