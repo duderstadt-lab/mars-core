@@ -49,6 +49,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected int numberOfMolecules;
 	protected int numMetadata;
 	protected String comments;
+	private static final String SCHEMA = "2020-05-29";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -227,6 +228,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		    	}
 			});
 		
+	}
+	
+	public String getSchema() {
+		return SCHEMA;
 	}
 	
 	/**
