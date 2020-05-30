@@ -652,7 +652,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				
 				//Integrate intensity
 				if (integrate) {
-					//I think they need to be shifted for just the integration step. Otherwise, leave them.
+					//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
+					//Math.round() is be an alternative option...
 					double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
 					peak.setIntensity(intensity[0]);
 				}
