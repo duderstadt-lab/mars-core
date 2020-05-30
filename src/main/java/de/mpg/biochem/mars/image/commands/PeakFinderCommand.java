@@ -302,7 +302,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
 		preFrame.setValue(this, image.getCurrentSlice());
-		preFrame.setMaximumValue(image.getStackSize());
+		preFrame.setMaximumValue(image.getNFrames());
 	}
 	
 	@Override
