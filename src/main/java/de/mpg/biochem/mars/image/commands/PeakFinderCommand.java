@@ -359,7 +359,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	                    try {
 	        		        while(progressUpdating.get()) {
 	        		        	Thread.sleep(100);
-	        		        	statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle());
+	        		        	statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle());
 	        		        }
 	                    } catch (Exception e) {
 	                        e.printStackTrace();
