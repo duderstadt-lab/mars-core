@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.google.api.client.xml.Xml;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
@@ -32,6 +33,7 @@ import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
+import ome.xml.meta.OMEXMLMetadataRoot;
 
 public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel, JsonConvertibleRecord {
 	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
@@ -93,14 +95,18 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
 			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(imageIndex, planeIndex, md, this));
 		
-		detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
-		detectorModel = md.getDetectorModel(0, imageIndex);
-		detectorManufacturer = md.getDetectorManufacturer(0, imageIndex);
-		detectorType = md.getDetectorType(0, imageIndex);
-		temperature = md.getImagingEnvironmentTemperature(imageIndex);
+		if (md.getInstrumentCount() > 0) {
+			detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
+			detectorModel = md.getDetectorModel(0, imageIndex);
+			detectorManufacturer = md.getDetectorManufacturer(0, imageIndex);
+			detectorType = md.getDetectorType(0, imageIndex);
+		}
+		
+		if (((OMEXMLMetadataRoot) md.getRoot()).getImage(0).getImagingEnvironment() != null)
+			temperature = md.getImagingEnvironmentTemperature(imageIndex);
 		
 		//Build look-up from image/plane to MapAnnotation
-		if (md.getMapAnnotationCount() > 0) {
+		if (((OMEXMLMetadataRoot) md.getRoot()).getStructuredAnnotations() != null && md.getMapAnnotationCount() > 0) {
 			for (int i=0; i<md.getMapAnnotationCount(); i++) {
 				String[] strList = md.getMapAnnotationID(i).split("-");
 				int iIndex = Integer.valueOf(strList[1]);
@@ -534,13 +540,20 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		Channel(OMEXMLMetadata md, int imageIndex, int channelIndex) {
 			super();
-
-			name = md.getChannelName(imageIndex, channelIndex);
-			id = md.getChannelID(imageIndex, channelIndex);
-			binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);
-			gain = md.getDetectorSettingsGain(imageIndex, channelIndex);
-			voltage = md.getDetectorSettingsVoltage(imageIndex, channelIndex);
-			detectorSettingsID = md.getDetectorSettingsID(imageIndex, channelIndex);
+			
+			ome.xml.model.Channel ch = ((OMEXMLMetadataRoot) md.getRoot()).getImage(0).getPixels().getChannel(channelIndex);
+			
+			if (ch.getName() != null)
+				name = md.getChannelName(imageIndex, channelIndex);
+			if (ch.getID() != null)
+				id = md.getChannelID(imageIndex, channelIndex);
+			
+			if (ch.getDetectorSettings() != null) {
+				binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);
+				gain = md.getDetectorSettingsGain(imageIndex, channelIndex);
+				voltage = md.getDetectorSettingsVoltage(imageIndex, channelIndex);
+				detectorSettingsID = md.getDetectorSettingsID(imageIndex, channelIndex);
+			}
 		}
 		
 		Channel(JsonParser jParser) throws IOException {
