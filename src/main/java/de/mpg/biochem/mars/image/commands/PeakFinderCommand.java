@@ -27,6 +27,7 @@
 package de.mpg.biochem.mars.image.commands;
 
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
@@ -41,6 +42,7 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
@@ -63,6 +65,7 @@ import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
+import net.imagej.Dataset;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
@@ -134,10 +137,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
     @Parameter
     private OpService opService;
+    
+    @Parameter
+	private ConvertService convertService;
 	
 	//INPUT IMAGE
-	@Parameter(label = "Image to search for Peaks")
-	private ImagePlus image; 
+    @Parameter(label = "Image to search for Peaks")
+	private ImageDisplay imageDisplay;
 	
 	//ROI SETTINGS
 	@Parameter(label="Use ROI", persist=false)
@@ -155,8 +161,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="ROI height", persist=false)
 	private int height;
 	
+	@Parameter(label="Channel", choices = {"a", "b", "c"})
+	private String channel = "1";
+	
 	//PEAK FINDER SETTINGS
-
 	@Parameter(label="Use DoG filter")
 	private boolean useDogFilter = true;
 	
@@ -173,10 +181,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private boolean preview = false;
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String slicePeakCount = "count: 0";
+	private String framePeakCount = "count: 0";
 	
-	@Parameter(label = "Preview slice", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
-	private int previewSlice;
+	@Parameter(label = "Preview frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+	private int previewFrame;
 	
 	@Parameter(label="Find negative peaks")
 	private boolean findNegativePeaks = false;
@@ -193,8 +201,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Molecule names in ROIManager")
 	private boolean moleculeNames;
 	
-	@Parameter(label="Process all slices")
-	private boolean allSlices;
+	@Parameter(label="Process all frames")
+	private boolean allFrames;
 	
 	//PEAK FITTER
 	@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -239,7 +247,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
 	private PeakFitter fitter;
 	
-	//A map with peak lists for each slice for an image stack
+	//A map with peak lists for each frame for an image stack
 	private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
 	
 	//box region for analysis added to the image.
@@ -255,8 +263,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private ArrayList<int[]> innerOffsets;
 	private ArrayList<int[]> outerOffsets;
 	
+	private Dataset dataset;
+	private ImagePlus image;
+	
 	@Override
 	public void initialize() {
+		dataset = (Dataset) imageDisplay.getActiveView().getData();
+		image = convertService.convert(imageDisplay, ImagePlus.class);
+		
 		if (image.getRoi() == null) {
 			rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
@@ -265,6 +279,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			rect = image.getRoi().getBounds();
 			startingRoi = image.getRoi();
 		}
+		
+		final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
+		long channelCount = dataset.getChannels();
+		ArrayList<String> channels = new ArrayList<String>();
+		for (int ch=1; ch<=channelCount; ch++)
+			channels.add(String.valueOf(ch));
+		channelItems.setChoices(channels);
+		channelItems.setValue(this, String.valueOf(image.getChannel()));
 		
 		final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
 		imgX0.setValue(this, rect.x);
@@ -278,9 +300,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 		imgHeight.setValue(this, rect.height);
 		
-		final MutableModuleItem<Integer> preSlice = getInfo().getMutableInput("previewSlice", Integer.class);
-		preSlice.setValue(this, image.getCurrentSlice());
-		preSlice.setMaximumValue(image.getStackSize());
+		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
+		preFrame.setValue(this, image.getCurrentSlice());
+		preFrame.setMaximumValue(image.getStackSize());
 	}
 	
 	@Override
@@ -322,7 +344,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
-		if (allSlices) {
+		if (allFrames) {
 			PeakStack = new ConcurrentHashMap<>();
 			
 			//Need to determine the number of threads
@@ -348,8 +370,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		        progressThread.start();
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-		        //peaks with the slice number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> PeakStack.put(i, findPeaksInSlice(i)))).get();
+		        //peaks with the frame number as a key in the map for each list...
+		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getNFrames()).parallel().forEach(i -> PeakStack.put(i, findPeaksInFrame(Integer.valueOf(channel), i)))).get();
 		        	
 		        progressUpdating.set(false);
 		        
@@ -365,7 +387,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		 }
 			
 		} else {
-			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
+			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			peaks = findPeaks(selectedImage);
 			if (fitPeaks) {
 				peaks = fitPeaks(selectedImage.getProcessor(), peaks);
@@ -377,20 +399,20 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		if (generatePeakCountTable) {
 			logService.info("Generating peak count table..");
 			peakCount = new MarsTable("Peak Count - " + image.getTitle());
-			DoubleColumn sliceColumn = new DoubleColumn("slice");
+			DoubleColumn frameColumn = new DoubleColumn("T");
 			DoubleColumn countColumn = new DoubleColumn("peaks");
 			
-			if (allSlices) {
+			if (allFrames) {
 				for (int i=1;i <= PeakStack.size() ; i++) {
-					sliceColumn.addValue(i);
+					frameColumn.addValue(i);
 					countColumn.addValue(PeakStack.get(i).size());
 				}
 			} else {
-				sliceColumn.addValue(1);
+				frameColumn.addValue(1);
 				countColumn.addValue(peaks.size());
 			}
+			peakCount.add(frameColumn);
 			peakCount.add(countColumn);
-			peakCount.add(sliceColumn);
 			
 			//Make sure the output table has the correct name
 			getInfo().getMutableOutput("peakCount", MarsTable.class).setLabel(peakCount.getName());
@@ -403,6 +425,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 			
+			columns.add(new DoubleColumn("T"));
+			
 			if (verbose) {
 				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
 					columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
@@ -414,20 +438,18 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			if (integrate) 
 				columns.add(new DoubleColumn("Intensity"));
 			
-			columns.add(new DoubleColumn("slice"));
-			
-			if (allSlices) {
+			if (allFrames) {
 				for (int i=1;i<=PeakStack.size() ; i++) {
-					ArrayList<Peak> slicePeaks = PeakStack.get(i);
-					for (int j=0;j<slicePeaks.size();j++) {
+					ArrayList<Peak> framePeaks = PeakStack.get(i);
+					for (int j=0;j<framePeaks.size();j++) {
 						if (verbose && integrate)
-							slicePeaks.get(j).addToColumnsVerboseIntegration(columns);
+							framePeaks.get(j).addToColumnsVerboseIntegration(columns);
 						else if (verbose && !integrate)
-							slicePeaks.get(j).addToColumnsVerbose(columns);
+							framePeaks.get(j).addToColumnsVerbose(columns);
 						else if (!verbose && integrate)
-							slicePeaks.get(j).addToColumnsXYIntegration(columns);
+							framePeaks.get(j).addToColumnsXYIntegration(columns);
 						else 
-							slicePeaks.get(j).addToColumnsXY(columns);
+							framePeaks.get(j).addToColumnsXY(columns);
 						
 						columns.get(columns.size() - 1).add((double)i);
 					}
@@ -456,16 +478,16 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		if (addToRoiManager) {
 			logService.info("Adding Peaks to the RoiManger. This might take a while...");
-			if (allSlices) {
-				//loop through map and slices and add to Manager
+			if (allFrames) {
+				//loop through map and frames and add to Manager
 				//This is slow probably because of the continuous GUI updating, but I am not sure a solution
 				//There is only one add method for the RoiManager and you can only add one Roi at a time.
 				int peakNumber = 1;
 				for (int i=1;i <= PeakStack.size() ; i++) {
-					peakNumber = AddToManager(PeakStack.get(i),i, peakNumber);
+					peakNumber = AddToManager(PeakStack.get(i), Integer.valueOf(channel), i, peakNumber);
 				}
 			} else {
-				AddToManager(peaks,0);
+				AddToManager(peaks, Integer.valueOf(channel), 0);
 			}
 			statusService.showStatus("Done adding ROIs to Manger");
 		}
@@ -498,29 +520,33 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 	}
 	
-	private ArrayList<Peak> findPeaksInSlice(int slice) {
-		ArrayList<Peak> peaks = findPeaks(new ImagePlus("slice " + slice, image.getImageStack().getProcessor(slice)));
+	private ArrayList<Peak> findPeaksInFrame(int channel, int frame) {
+		ImageStack stack = image.getImageStack();
+		int index = image.getStackIndex(channel, 1, frame);
+		ImageProcessor processor = stack.getProcessor(index);
+		
+		ArrayList<Peak> peaks = findPeaks(new ImagePlus("frame " + frame, processor));
 		if (peaks.size() == 0)
 			return peaks;
 		if (fitPeaks) {
-			peaks = fitPeaks(image.getImageStack().getProcessor(slice), peaks);
+			peaks = fitPeaks(processor, peaks);
 			peaks = removeNearestNeighbors(peaks);
 		}
 		return peaks;
 	}
 	
-	private void AddToManager(ArrayList<Peak> peaks, int slice) {
-		AddToManager(peaks, slice, 0);
+	private void AddToManager(ArrayList<Peak> peaks, int channel, int frame) {
+		AddToManager(peaks, channel, frame, 0);
 	}
 	
-	private int AddToManager(ArrayList<Peak> peaks, int slice, int startingPeakNum) {
+	private int AddToManager(ArrayList<Peak> peaks, int channel, int frame, int startingPeakNum) {
 		if (roiManager == null)
 			roiManager = new RoiManager();
 		int pCount = startingPeakNum;
 		if (!peaks.isEmpty()) {
 			for (Peak peak : peaks) {
 				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0) + 0.5, peak.getDoublePosition(1) + 0.5);
-				if (slice == 0) {
+				if (frame == 0) {
 					if (moleculeNames)
 						peakRoi.setName("Molecule"+pCount);
 					else
@@ -532,7 +558,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 					else
 						peakRoi.setName(MarsMath.getUUID58());
 				}
-				peakRoi.setPosition(slice);
+				peakRoi.setPosition(channel, 1, frame);
 				roiManager.addRoi(peakRoi);
 				pCount++;
 			}
@@ -790,12 +816,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Override
 	public void preview() {	
 		if (preview) {
-			image.setSlice(previewSlice);
+			image.setPosition(Integer.valueOf(channel), 1, previewFrame);
 			image.deleteRoi();
-			ImagePlus selectedImage = new ImagePlus("current slice", image.getImageStack().getProcessor(image.getCurrentSlice()));
+			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
 			
-			final MutableModuleItem<String> preSliceCount = getInfo().getMutableInput("slicePeakCount", String.class);
+			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("framePeakCount", String.class);
 			if (!peaks.isEmpty()) {
 				Polygon poly = new Polygon();
 				
@@ -809,9 +835,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				image.setRoi(peakRoi);
 				
 				
-				preSliceCount.setValue(this, "count: " + peaks.size());
+				preFrameCount.setValue(this, "count: " + peaks.size());
 			} else {
-				preSliceCount.setValue(this, "count: 0");
+				preFrameCount.setValue(this, "count: 0");
 			}
 		}
 	}
@@ -845,7 +871,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		builder.addParameter("Generate peak count table", String.valueOf(generatePeakCountTable));
 		builder.addParameter("Generate peak table", String.valueOf(generatePeakTable));
 		builder.addParameter("Add to ROIManager", String.valueOf(addToRoiManager));
-		builder.addParameter("Process all slices", String.valueOf(allSlices));
+		builder.addParameter("Process all frames", String.valueOf(allFrames));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
@@ -863,12 +889,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return peakTable;
 	}
 	
-	public void setImage(ImagePlus image) {
-		this.image = image;
+	public void setDataset(Dataset dataset) {
+		this.dataset = dataset;
 	}
 	
-	public ImagePlus getImage() {
-		return image;
+	public Dataset getDataset() {
+		return dataset;
 	}
 	
 	public void setUseROI(boolean useROI) {
@@ -909,6 +935,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	public int getHeight() {
 		return height;
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = String.valueOf(channel);
+	}
+	
+	public int getChannel() {
+		return Integer.valueOf(channel);
 	}
 	
 	public void setUseDogFiler(boolean useDogFilter) {
@@ -975,12 +1009,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return addToRoiManager;
 	}
 
-	public void setProcessAllSlices(boolean allSlices) {
-		this.allSlices = allSlices;
+	public void setProcessAllFrames(boolean allFrames) {
+		this.allFrames = allFrames;
 	}
 	
-	public boolean getProcessAllSlices() {
-		return allSlices;
+	public boolean getProcessAllFrames() {
+		return allFrames;
 	}
 	
 	public void setFitPeaks(boolean fitPeaks) {
