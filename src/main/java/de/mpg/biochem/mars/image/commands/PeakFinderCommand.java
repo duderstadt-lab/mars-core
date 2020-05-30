@@ -425,8 +425,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 			
-			columns.add(new DoubleColumn("T"));
-			
 			if (verbose) {
 				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
 					columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
@@ -434,6 +432,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				columns.add(new DoubleColumn("x"));
 				columns.add(new DoubleColumn("y"));
 			}
+			
+			columns.add(new DoubleColumn("T"));
 			
 			if (integrate) 
 				columns.add(new DoubleColumn("Intensity"));
