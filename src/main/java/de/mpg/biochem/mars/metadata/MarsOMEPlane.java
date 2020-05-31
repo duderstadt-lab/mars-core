@@ -50,7 +50,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	
 	private Map<String, String> customFields = new HashMap<String, String>();
 
-	public MarsOMEPlane(int imageIndex, int planeIndex, OMEXMLMetadata md, MarsOMEImage image) {
+	public MarsOMEPlane(MarsOMEImage image, OMEXMLMetadata md, int imageIndex, int planeIndex) {
 		super();
 		
 		this.image = image;
@@ -66,6 +66,22 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 
 		this.dt = md.getPlaneDeltaT(imageIndex, planeIndex);
 		this.exposureTime = md.getPlaneExposureTime(imageIndex, planeIndex);
+		this.posX = -1;
+		this.posY = -1;
+		this.posZ = -1;
+	}
+	
+	public MarsOMEPlane(MarsOMEImage image, int imageIndex, int planeIndex, NonNegativeInteger Z, NonNegativeInteger C, NonNegativeInteger T) {
+		super();
+		
+		this.image = image;
+
+		this.imageIndex = imageIndex;
+		this.planeIndex = planeIndex;
+		this.c = C;
+		this.z = Z;
+		this.t = T;
+		
 		this.posX = -1;
 		this.posY = -1;
 		this.posZ = -1;
@@ -309,7 +325,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	public double getDeltaTinSeconds() {
-		return dt.value(UNITS.SECOND).doubleValue();
+		if (dt != null)
+			return dt.value(UNITS.SECOND).doubleValue();
+		else
+			return -1;
 	}
 	
 	public int getImageIndex() {
@@ -345,7 +364,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	public double getExposureTimeInSeconds() {
-		return exposureTime.value(UNITS.SECOND).doubleValue();
+		if (exposureTime != null)
+			return exposureTime.value(UNITS.SECOND).doubleValue();
+		else 
+			return -1;
 	}
 
 	public double getPosX() {

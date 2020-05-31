@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.google.api.client.xml.Xml;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
@@ -18,7 +17,6 @@ import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
-import ome.units.unit.Unit;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
 import ome.xml.model.enums.Binning;
@@ -31,9 +29,11 @@ import ome.xml.model.enums.handlers.BinningEnumHandler;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
+import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 import ome.xml.meta.OMEXMLMetadataRoot;
+import io.scif.util.FormatTools;
 
 public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel, JsonConvertibleRecord {
 	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
@@ -93,7 +93,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		//Build Planes
 		for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
-			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(imageIndex, planeIndex, md, this));
+			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, md, imageIndex, planeIndex));
+		
+		if (marsOMEPlanes.size() == 0)
+			createPlanesFromDimensions();
 		
 		if (md.getInstrumentCount() > 0) {
 			detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
@@ -105,7 +108,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		if (((OMEXMLMetadataRoot) md.getRoot()).getImage(0).getImagingEnvironment() != null)
 			temperature = md.getImagingEnvironmentTemperature(imageIndex);
 		
-		//Build look-up from image/plane to MapAnnotation
+		//Build look-up from image/plane to MapAnnotation if they exist.
 		if (((OMEXMLMetadataRoot) md.getRoot()).getStructuredAnnotations() != null && md.getMapAnnotationCount() > 0) {
 			for (int i=0; i<md.getMapAnnotationCount(); i++) {
 				String[] strList = md.getMapAnnotationID(i).split("-");
@@ -125,6 +128,75 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		}
 	}
 	
+	private void createPlanesFromDimensions() {
+		//Loop through all dimensions in nested loops and generate planes for all.
+		for (int z=0; z < sizeZ.getValue(); z++)
+			for (int c=0; c < sizeC.getValue(); c++)
+				for (int t=0; t < sizeT.getValue(); t++) {
+					int planeIndex = (int) getPlaneIndex(z, c, t);
+					marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, imageIndex, planeIndex, 
+							new NonNegativeInteger(z), 
+							new NonNegativeInteger(c),
+							new NonNegativeInteger(t)));
+				}
+	}
+	
+	//This must exist somewhere but I can't find it...
+	private long getPlaneIndex(int z, int c, int t) {
+		long[] length = new long[3];
+		long[] position = new long[3];
+		if (dimensionOrder.getValue().equals("XYCTZ")) {
+			length[0] = sizeC.getValue();
+			length[1] = sizeT.getValue();
+			length[2] = sizeZ.getValue();
+			
+			position[0] = c;
+			position[1] = t;
+			position[2] = z;
+		} else if (dimensionOrder.getValue().equals("XYCZT")) {
+			length[0] = sizeC.getValue();
+			length[1] = sizeZ.getValue();
+			length[2] = sizeT.getValue();
+			
+			position[0] = c;
+			position[1] = z;
+			position[2] = t;
+		} else if (dimensionOrder.getValue().equals("XYTCZ")) {
+			length[0] = sizeT.getValue();
+			length[1] = sizeC.getValue();
+			length[2] = sizeZ.getValue();
+			
+			position[0] = t;
+			position[1] = c;
+			position[2] = z;
+		} else if (dimensionOrder.getValue().equals("XYTZC")) {
+			length[0] = sizeT.getValue();
+			length[1] = sizeZ.getValue();
+			length[2] = sizeC.getValue();
+			
+			position[0] = t;
+			position[1] = z;
+			position[2] = c;
+		} else if (dimensionOrder.getValue().equals("XYZCT")) {
+			length[0] = sizeZ.getValue();
+			length[1] = sizeC.getValue();
+			length[2] = sizeT.getValue();
+			
+			position[0] = z;
+			position[1] = c;
+			position[2] = t;
+		} else if (dimensionOrder.getValue().equals("XYZTC")) {
+			length[0] = sizeZ.getValue();
+			length[1] = sizeT.getValue();
+			length[2] = sizeC.getValue();
+			
+			position[0] = z;
+			position[1] = t;
+			position[2] = c;
+		}
+		return FormatTools.positionToRaster(length, position);
+	}
+
 	public String getID() {
 		return id;
 	}
@@ -228,9 +300,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.getValue());
 			},
 			jParser -> {
-				System.out.println("Parsing imageAquisitionDate");
 				imageAquisitionDate = new Timestamp(jParser.getText());
-				System.out.println("Parsing imageAquisitionDate Done");
 			});
 		
 		setJsonField("ImageIndex",
@@ -514,16 +584,20 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		for (int i = 0; i < channels.size(); i++) {
 			Channel channel = channels.get(i);
 			
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - name ", channel.getName()));
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - id ", channel.getID()));
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Binning ", channel.getBinning().getValue()));
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Gain ", String.valueOf(channel.getGain())));
+			if (channel.getName() != null)
+				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - name ", channel.getName()));
+			if (channel.getID() != null)	
+				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - id ", channel.getID()));
+			if (channel.getBinning() != null)
+				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Binning ", channel.getBinning().getValue()));
+			if (channel.getGain() != null)
+				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Gain ", String.valueOf(channel.getGain())));
 			if (channel.getVoltage() != null)
 				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
 		}
 		
-		//WE should add customfields for images as well here...
+		//We should add customfields for images as well here.
 		//for (String field : customFields.keySet())
 		//	rows.add(Arrays.asList(field, customFields.get(field)));
 
@@ -573,7 +647,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			return binning;
 		}
 		
-		public double getGain() {
+		public Double getGain() {
 			return gain;
 		}
 		
