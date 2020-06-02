@@ -82,7 +82,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		for (int channelIndex=0; channelIndex < md.getChannelCount(imageIndex); channelIndex++)
 			channels.add(new Channel(md, imageIndex, channelIndex));
-
+		
 		pixelsPhysicalSizeX = md.getPixelsPhysicalSizeX(imageIndex);
 		pixelsPhysicalSizeY = md.getPixelsPhysicalSizeY(imageIndex);
 		pixelsPhysicalSizeZ = md.getPixelsPhysicalSizeZ(imageIndex);
@@ -598,19 +598,19 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("ID", this.id));
 		rows.add(Arrays.asList("Pixel ID", this.pixelID));
 
-		if (this.pixelsPhysicalSizeX.value(UNITS.MICROMETER).doubleValue() > -1) {
+		if (this.pixelsPhysicalSizeX != null) {
 			rows.add(Arrays.asList("Physical Size X", this.pixelsPhysicalSizeX.value().doubleValue() + " " + pixelsPhysicalSizeX.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size X", ""));
 		}
 
-		if (this.pixelsPhysicalSizeY.value(UNITS.MICROMETER).doubleValue() > -1) {
+		if (this.pixelsPhysicalSizeY != null) {
 			rows.add(Arrays.asList("Physical Size Y", this.pixelsPhysicalSizeY.value().doubleValue() + " " + pixelsPhysicalSizeY.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size Y", ""));
 		}
 
-		if (this.pixelsPhysicalSizeZ.value(UNITS.MICROMETER).doubleValue() > -1) {
+		if (this.pixelsPhysicalSizeZ != null) {
 			rows.add(Arrays.asList("Physical Size Z", this.pixelsPhysicalSizeZ.value().doubleValue() + " " + pixelsPhysicalSizeZ.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size Z", ""));
