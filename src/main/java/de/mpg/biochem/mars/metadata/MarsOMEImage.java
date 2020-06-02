@@ -599,25 +599,25 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("Pixel ID", this.pixelID));
 
 		if (this.pixelsPhysicalSizeX.value(UNITS.MICROMETER).doubleValue() > -1) {
-			rows.add(Arrays.asList("Physical Size X", this.pixelsPhysicalSizeX.value(UNITS.MICROMETER).doubleValue() + " µm"));
+			rows.add(Arrays.asList("Physical Size X", this.pixelsPhysicalSizeX.value().doubleValue() + " " + pixelsPhysicalSizeX.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size X", ""));
 		}
 
 		if (this.pixelsPhysicalSizeY.value(UNITS.MICROMETER).doubleValue() > -1) {
-			rows.add(Arrays.asList("Physical Size Y", this.pixelsPhysicalSizeY.value(UNITS.MICROMETER).doubleValue() + " µm"));
+			rows.add(Arrays.asList("Physical Size Y", this.pixelsPhysicalSizeY.value().doubleValue() + " " + pixelsPhysicalSizeY.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size Y", ""));
 		}
 
 		if (this.pixelsPhysicalSizeZ.value(UNITS.MICROMETER).doubleValue() > -1) {
-			rows.add(Arrays.asList("Physical Size Z", this.pixelsPhysicalSizeZ.value(UNITS.MICROMETER).doubleValue() + " µm"));
+			rows.add(Arrays.asList("Physical Size Z", this.pixelsPhysicalSizeZ.value().doubleValue() + " " + pixelsPhysicalSizeZ.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Physical Size Z", ""));
 		}
 		
 		if (this.timeIncrement != null) {
-			rows.add(Arrays.asList("Time Increment", getTimeIncrementInSeconds() + " s"));
+			rows.add(Arrays.asList("Time Increment", this.timeIncrement.value().doubleValue() + " " + timeIncrement.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Time Increment", ""));
 		}

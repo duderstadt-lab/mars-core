@@ -266,13 +266,13 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("T position", this.t.toString()));
 
 		if (this.getDeltaTinSeconds() >= 0) {
-			rows.add(Arrays.asList("dt", getDeltaTinSeconds() + " s"));
+			rows.add(Arrays.asList("dt", this.dt.value().doubleValue() + " " + this.dt.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("dt", ""));
 		}
 
 		if (this.getExposureTimeInSeconds() >= 0) {
-			rows.add(Arrays.asList("Exposure time", this.getExposureTimeInSeconds() + " s"));
+			rows.add(Arrays.asList("Exposure time", this.exposureTime.value().doubleValue() + " " + this.exposureTime.unit().getSymbol()));
 		} else {
 			rows.add(Arrays.asList("Exposure time", ""));
 		}
