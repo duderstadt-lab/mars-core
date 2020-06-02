@@ -27,25 +27,15 @@
 package de.mpg.biochem.mars.image;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.scijava.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
 
-//This is a class that contains all the information about peaks
-//here we implement RealLocalizable so that we can pass lists of peaks to
-//other imglib2 libraries that do cool things.
-//for example we pass Peaks to KDTree to make searching a list of peak positions in 2D much faster !
-//For the implementation to work all we have to do is provide the four methods at the bottom that provide the positions in x and y...
-
 public class Peak implements RealLocalizable {
-	//Used during peak linking to assign UID molecule numbers
 	String UID;
-
-	int t;
-	
-	//Used for multithreaded Peak linking..
+	double t;
 	Peak forwardLink, backwardLink;
-	
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue, Rsquared;
@@ -65,19 +55,15 @@ public class Peak implements RealLocalizable {
 		yError = errors[3];
 		sigmaError = errors[4];
 	}
-	public Peak(double x, double y, double height, double baseline, double sigma) {
+	public Peak(double x, double y, double height, double baseline, double sigma, double t) {
 		this.x = x;
 		this.y = y;
 		this.height = height;
 		this.baseline = baseline;
 		this.sigma = sigma;
+		this.t = t;
 	}
-	public Peak(double x, double y, double pixelValue) {
-		this.x = x;
-		this.y = y;
-		this.pixelValue = pixelValue;
-	}
-	public Peak(double x, double y, double pixelValue, int t) {
+	public Peak(double x, double y, double pixelValue, double t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
@@ -139,10 +125,10 @@ public class Peak implements RealLocalizable {
 	public String getUID() {
 		return UID;
 	}
-	public int getT() {
+	public double getT() {
 		return t;
 	}
-	public void setT(int t) {
+	public void setT(double t) {
 		this.t = t;
 	}
 	
@@ -163,34 +149,23 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = errors[4];
 	}
 	
-	public void addToColumnsXY(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(x);
-		columns.get(1).add(y);
-	}
-	
-	public void addToColumnsXYIntegration(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(x);
-		columns.get(1).add(y);
-		columns.get(2).add(intensity);
-	}
-	
-	public void addToColumnsVerbose(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(baseline);
-		columns.get(1).add(height);
-		columns.get(2).add(x);
-		columns.get(3).add(y);
-		columns.get(4).add(sigma);
-		columns.get(5).add(Rsquared);
-	}
-	
-	public void addToColumnsVerboseIntegration(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(baseline);
-		columns.get(1).add(height);
-		columns.get(2).add(x);
-		columns.get(3).add(y);
-		columns.get(4).add(sigma);
-		columns.get(5).add(Rsquared);
-		columns.get(6).add(intensity);
+	public void addToColumns(Map<String, DoubleColumn> columns) {
+		if (columns.containsKey("T"))
+			columns.get("T").add(t);
+		if (columns.containsKey("x"))
+			columns.get("x").add(x);
+		if (columns.containsKey("y"))
+			columns.get("y").add(y);
+		if (columns.containsKey("Intensity"))
+			columns.get("Intensity").add(intensity);
+		if (columns.containsKey("baseline"))
+			columns.get("baseline").add(baseline);
+		if (columns.containsKey("height"))
+			columns.get("height").add(height);
+		if (columns.containsKey("sigma"))
+			columns.get("sigma").add(sigma);
+		if (columns.containsKey("R2"))
+			columns.get("R2").add(Rsquared);
 	}
 	
 	//used for pixel sort in the peak finder

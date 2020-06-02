@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -57,7 +59,7 @@ public class PeakTracker {
 	double[] maxDifference;
 	boolean[] ckMaxDifference;
 	int minTrajectoryLength;
-	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "x", "y", "sigma", "R2"};
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
 	double searchRadius;
 	boolean PeakFitter_writeEverything = false;
 	boolean writeIntegration = false;
@@ -125,7 +127,7 @@ public class PeakTracker {
 			
 	        //This will spawn a bunch of threads that will find all possible links for peaks 
 			//within each T individually in parallel and put the results into the global map possibleLinks
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, PeakStack.size()).parallel().forEach(i -> findPossibleLinks(PeakStack, i))).get();
+	        forkJoinPool.submit(() -> IntStream.range(0, PeakStack.size()).parallel().forEach(t -> findPossibleLinks(PeakStack, t))).get();
 	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
@@ -245,8 +247,8 @@ public class PeakTracker {
 		int endT = t + (int)maxDifference[5];
 		
 		//Don't search past the last slice...
-		if (endT > PeakStack.size())
-			endT = PeakStack.size();
+		if (endT >= PeakStack.size())
+			endT = PeakStack.size() - 1;
 		
 		//Here we only need to loop until maxDifference[5] slices into the future...
 		for (int j = t + 1;j <= endT; j++) {
@@ -305,11 +307,23 @@ public class PeakTracker {
 		if (trajectoryLengths.get(startingPeak.getUID()).intValue() < minTrajectoryLength)
 			return;
 		
+		Map<String, DoubleColumn> columns = new LinkedHashMap<String, DoubleColumn>();
+		
+		columns.put("T", new DoubleColumn("T"));
+		columns.put("x", new DoubleColumn("x"));
+		columns.put("y", new DoubleColumn("y"));
+		
+		if (writeIntegration) 
+			columns.put("Intensity", new DoubleColumn("Intensity"));
+		
+		if (PeakFitter_writeEverything)
+			for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
+				columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
+		
 		//Now loop through all peaks connected to this starting peak and
 		//add them to a DataTable as we go
-		MarsTable table = buildResultsTable();
 		Peak peak = startingPeak;
-		addPeakToTable(table, peak, peak.getT());
+		peak.addToColumns(columns);
 		
 		//fail-safe in case somehow a peak is linked to itself?
 		//Fixes some kind of bug observed very very rarely that 
@@ -318,63 +332,17 @@ public class PeakTracker {
 		int count = 0;
 		while (peak.getForwardLink() != null && count < sizeT) {
 			peak = peak.getForwardLink();
-			addPeakToTable(table, peak, peak.getT());
+			peak.addToColumns(columns);
 			count++;
 		}
 
+		MarsTable table = new MarsTable();
+		for(String key : columns.keySet())
+			table.add(columns.get(key));
+		
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
 		mol.setMetadataUID(metaDataUID);
 		mol.setParameter("Channel", channel);
 		archive.put(mol);
-	}
-	
-	private MarsTable buildResultsTable() {
-		MarsTable molTable = new MarsTable();
-		
-		ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
-		
-		if (PeakFitter_writeEverything) {
-			for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
-				columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
-		} else {
-			columns.add(new DoubleColumn("x"));
-			columns.add(new DoubleColumn("y"));
-		}
-		if (writeIntegration) 
-			columns.add(new DoubleColumn("Intensity"));
-			
-		columns.add(new DoubleColumn("T"));
-		
-		for(DoubleColumn column : columns)
-			molTable.add(column);	
-		
-		return molTable;
-	}
-	private void addPeakToTable(MarsTable table, Peak peak, int t) {
-		table.appendRow();
-		int row = table.getRowCount() - 1;
-		if (PeakFitter_writeEverything) {
-			table.set(0, row, peak.getBaseline());
-			table.set(1, row, peak.getHeight());
-			table.set(2, row, peak.getX());
-			table.set(3, row, peak.getY());
-			table.set(4, row, peak.getSigma());
-			table.set(5, row, peak.getRSquared());
-			if (writeIntegration) {
-				table.set(6, row, peak.getIntensity());
-				table.set(7, row, (double)t);
-			} else {
-				table.set(6, row, (double)t);
-			}
-		} else {
-			table.set(0, row, peak.getX());
-			table.set(1, row, peak.getY());
-			if (writeIntegration) {
-				table.set(2, row, peak.getIntensity());
-				table.set(3, row, (double)t);
-			} else {
-				table.set(2, row, (double)t);
-			}
-		}
 	}
 }

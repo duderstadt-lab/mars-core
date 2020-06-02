@@ -76,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -94,6 +95,7 @@ import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -162,7 +164,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private int height;
 	
 	@Parameter(label="Channel", choices = {"a", "b", "c"})
-	private String channel = "1";
+	private String channel = "0";
 	
 	//PEAK FINDER SETTINGS
 	@Parameter(label="Use DoG filter")
@@ -181,10 +183,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	private boolean preview = false;
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String framePeakCount = "count: 0";
+	private String tPeakCount = "count: 0";
 	
-	@Parameter(label = "Frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
-	private int previewFrame;
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+	private int previewT;
 	
 	@Parameter(label="Find negative peaks")
 	private boolean findNegativePeaks = false;
@@ -257,7 +259,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 
-	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "x", "y", "sigma", "R2"};
+	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
 	
 	//For peak integration
 	private ArrayList<int[]> innerOffsets;
@@ -284,9 +286,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		long channelCount = dataset.getChannels();
 		ArrayList<String> channels = new ArrayList<String>();
 		for (int ch=1; ch<=channelCount; ch++)
-			channels.add(String.valueOf(ch));
+			channels.add(String.valueOf(ch - 1));
 		channelItems.setChoices(channels);
-		channelItems.setValue(this, String.valueOf(image.getChannel()));
+		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 		
 		final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
 		imgX0.setValue(this, rect.x);
@@ -300,9 +302,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 		imgHeight.setValue(this, rect.height);
 		
-		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
-		preFrame.setValue(this, image.getCurrentSlice());
-		preFrame.setMaximumValue(image.getNFrames());
+		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
+		preFrame.setValue(this, image.getFrame() - 1);
+		preFrame.setMaximumValue(image.getNFrames() - 1);
 	}
 	
 	@Override
@@ -369,9 +371,14 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 
 		        progressThread.start();
 		        
-		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
+		      //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getNFrames()).parallel().forEach(i -> PeakStack.put(i, findPeaksInFrame(Integer.valueOf(channel), i)))).get();
+		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(i -> { 
+		        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), i);
+		        	//Don't add to stack unless peaks were detected.
+		        	if (tpeaks.size() > 0)
+		        		PeakStack.put(i, tpeaks);
+		        })).get();
 		        	
 		        progressUpdating.set(false);
 		        
@@ -423,54 +430,31 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			//build a table with all peaks
 			peakTable = new MarsTable("Peaks - " + image.getTitle());
 			
-			ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
+			Map<String, DoubleColumn> columns = new LinkedHashMap<String, DoubleColumn>();
 			
-			if (verbose) {
-				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
-					columns.add(new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
-			} else {
-				columns.add(new DoubleColumn("x"));
-				columns.add(new DoubleColumn("y"));
-			}
-			
-			columns.add(new DoubleColumn("T"));
+			columns.put("T", new DoubleColumn("T"));
+			columns.put("x", new DoubleColumn("x"));
+			columns.put("y", new DoubleColumn("y"));
 			
 			if (integrate) 
-				columns.add(new DoubleColumn("Intensity"));
+				columns.put("Intensity", new DoubleColumn("Intensity"));
 			
-			if (allFrames) {
-				for (int i=1;i<=PeakStack.size() ; i++) {
+			if (verbose)
+				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
+					columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
+			
+			if (allFrames)
+				for (int i=0;i<PeakStack.size() ; i++) {
 					ArrayList<Peak> framePeaks = PeakStack.get(i);
-					for (int j=0;j<framePeaks.size();j++) {
-						if (verbose && integrate)
-							framePeaks.get(j).addToColumnsVerboseIntegration(columns);
-						else if (verbose && !integrate)
-							framePeaks.get(j).addToColumnsVerbose(columns);
-						else if (!verbose && integrate)
-							framePeaks.get(j).addToColumnsXYIntegration(columns);
-						else 
-							framePeaks.get(j).addToColumnsXY(columns);
-						
-						columns.get(columns.size() - 1).add((double)i);
-					}
+					for (int j=0;j<framePeaks.size();j++)
+						framePeaks.get(j).addToColumns(columns);
 				}
-			} else {
-				for (int j=0;j<peaks.size();j++) {
-					if (verbose && integrate)
-						peaks.get(j).addToColumnsVerboseIntegration(columns);
-					else if (verbose && !integrate)
-						peaks.get(j).addToColumnsVerbose(columns);
-					else if (!verbose && integrate)
-						peaks.get(j).addToColumnsXYIntegration(columns);
-					else 
-						peaks.get(j).addToColumnsXY(columns);
-					
-					columns.get(columns.size() - 1).add((double)image.getCurrentSlice());
-				}
-			}
+			else
+				for (int j=0;j<peaks.size();j++)
+					peaks.get(j).addToColumns(columns);
 			
-			for(DoubleColumn column : columns)
-				peakTable.add(column);	
+			for(String key : columns.keySet())
+				peakTable.add(columns.get(key));	
 			
 			//Make sure the output table has the correct name
 			getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable.getName());
@@ -520,7 +504,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 	}
 	
-	private ArrayList<Peak> findPeaksInFrame(int channel, int frame) {
+	private ArrayList<Peak> findPeaksInT(int channel, int frame) {
 		ImageStack stack = image.getImageStack();
 		int index = image.getStackIndex(channel, 1, frame);
 		ImageProcessor processor = stack.getProcessor(index);
@@ -817,12 +801,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Override
 	public void preview() {	
 		if (preview) {
-			image.setPosition(Integer.valueOf(channel), 1, previewFrame);
+			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			image.deleteRoi();
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
 			
-			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("framePeakCount", String.class);
+			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 			if (!peaks.isEmpty()) {
 				Polygon poly = new Polygon();
 				

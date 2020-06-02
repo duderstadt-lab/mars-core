@@ -350,7 +350,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			imgHeight.setValue(this, rect.height);
 			
 			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
-			preFrame.setValue(this, image.getCurrentSlice() - 1);
+			preFrame.setValue(this, image.getFrame() - 1);
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
 		@Override
@@ -430,7 +430,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(i -> { 
+		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(i -> { 
 		        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), i);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (peaks.size() > 0)
