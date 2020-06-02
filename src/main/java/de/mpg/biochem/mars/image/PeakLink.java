@@ -30,22 +30,22 @@ public class PeakLink {
 	Peak from;
 	Peak to;
 	double distanceSq;
-	int slice;
-	int sliceDifference;
-	public PeakLink(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
+	int t;
+	int tDifference;
+	public PeakLink(Peak from, Peak to, double distanceSq, int t, int tDifference) {
 		this.from = from;
 		this.to = to;
 		this.distanceSq = distanceSq;
-		this.slice = slice;
-		this.sliceDifference = sliceDifference;
+		this.t = t;
+		this.tDifference = tDifference;
 	}
 	
-	public void reset(Peak from, Peak to, double distanceSq, int slice, int sliceDifference) {
+	public void reset(Peak from, Peak to, double distanceSq, int t, int tDifference) {
 		this.from = from;
 		this.to = to;
 		this.distanceSq = distanceSq;
-		this.slice = slice;
-		this.sliceDifference = sliceDifference;
+		this.t = t;
+		this.tDifference = tDifference;
 	}
 	
 	public Peak getFrom() {

@@ -183,7 +183,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String framePeakCount = "count: 0";
 	
-	@Parameter(label = "Preview frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
+	@Parameter(label = "Frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
 	private int previewFrame;
 	
 	@Parameter(label="Find negative peaks")

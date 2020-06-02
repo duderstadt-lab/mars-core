@@ -180,7 +180,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private int height;
 		
 		@Parameter(label="Channel", choices = {"a", "b", "c"})
-		private String channel = "1";
+		private String channel = "0";
 		
 		//PEAK FINDER SETTINGS		
 		@Parameter(label="Use DoG filter")
@@ -199,10 +199,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private boolean preview = false;
 		
 		@Parameter(visibility = ItemVisibility.MESSAGE)
-		private String framePeakCount = "count: 0";
+		private String tPeakCount = "count: 0";
 		
-		@Parameter(label = "Preview frame", min = "1", style = NumberWidget.SCROLL_BAR_STYLE)
-		private int previewFrame;
+		@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+		private int previewT;
 		
 		@Parameter(label="Find negative peaks")
 		private boolean findNegativePeaks = false;
@@ -234,7 +234,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Max difference y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		@Parameter(label="Max difference frame")
+		@Parameter(label="Max difference T")
 		private int PeakTracker_maxDifferenceFrame = 1;
 
 		@Parameter(label="Minimum track length")
@@ -255,9 +255,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		@Parameter(label="Microscope")
 		private String microscope;
-		
-		//@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
-		//private String imageFormat;
 		
 		@Parameter
 		private UIService uiService;
@@ -323,9 +320,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			long channelCount = dataset.getChannels();
 			ArrayList<String> channels = new ArrayList<String>();
 			for (int ch=1; ch<=channelCount; ch++)
-				channels.add(String.valueOf(ch));
+				channels.add(String.valueOf(ch - 1));
 			channelItems.setChoices(channels);
-			channelItems.setValue(this, String.valueOf(image.getChannel()));
+			channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 		
 			//Add positions
 			/*
@@ -352,9 +349,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 			imgHeight.setValue(this, rect.height);
 			
-			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewFrame", Integer.class);
-			preFrame.setValue(this, image.getCurrentSlice());
-			preFrame.setMaximumValue(image.getNFrames());
+			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
+			preFrame.setValue(this, image.getCurrentSlice() - 1);
+			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
 		@Override
 		public void run() {
@@ -433,8 +430,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> peaks = findPeaksInFrame(Integer.valueOf(channel), i);
+		        forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(i -> { 
+		        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), i);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (peaks.size() > 0)
 		        		PeakStack.put(i, peaks);
@@ -487,7 +484,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    
 			archive.putMetadata(new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeMeta.getRoot()));
 		    
-		    tracker.track(PeakStack, archive);
+		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
 		    //Reorder Molecules to Natural Order, so there is a common order
 		    //if we have to recover..
@@ -543,14 +540,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 		}
 		
-		private ArrayList<Peak> findPeaksInFrame(int channel, int frame) {
+		private ArrayList<Peak> findPeaksInT(int channel, int t) {
 			ImageStack stack = image.getImageStack();
-			int index = image.getStackIndex(channel, 1, frame);
+			int index = image.getStackIndex(channel + 1, 1, t + 1);
 			ImageProcessor processor = stack.getProcessor(index);
 
 			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + frame, processor.duplicate()), frame));
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + t + 1, processor.duplicate()), t));
 			
 			//After fitting some peaks may have moved within the mininmum distance
 			//So we remove these always favoring the ones having lower fit error in x and y
@@ -559,7 +556,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return peaks;
 		}
 
-		public ArrayList<Peak> findPeaks(ImagePlus imp, int frame) {
+		public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
 			ArrayList<Peak> peaks;
 			
 			DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
@@ -578,15 +575,15 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				opService.filter().dog(dog, converted, sigma2, sigma1);
 
 		        if (useROI) {
-			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), frame);
+			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
 				} else {
-					peaks = finder.findPeaks(dog, frame);
+					peaks = finder.findPeaks(dog, t);
 				}
 			} else {
 				if (useROI) {
-			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), frame);
+			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
 				} else {
-					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), frame);
+					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), t);
 				}
 			}
 			
@@ -812,12 +809,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setPosition(Integer.valueOf(channel), 1, previewFrame);
+				image.setPosition(Integer.valueOf(channel + 1), 1, previewT + 1);
 				image.deleteRoi();
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-				ArrayList<Peak> peaks = findPeaks(selectedImage, previewFrame);
+				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
 				
-				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("framePeakCount", String.class);
+				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 				if (!peaks.isEmpty()) {
 					Polygon poly = new Polygon();
 					
@@ -870,7 +867,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Verbose output", String.valueOf(verbose));
 			builder.addParameter("Max difference x", String.valueOf(PeakTracker_maxDifferenceX));
 			builder.addParameter("Max difference y", String.valueOf(PeakTracker_maxDifferenceY));
-			builder.addParameter("Max difference frame", String.valueOf(PeakTracker_maxDifferenceFrame));
+			builder.addParameter("Max difference T", String.valueOf(PeakTracker_maxDifferenceFrame));
 			builder.addParameter("Minimum track length", String.valueOf(PeakTracker_minTrajectoryLength));
 			builder.addParameter("Integrate", String.valueOf(integrate));
 			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));

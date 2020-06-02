@@ -41,7 +41,7 @@ public class Peak implements RealLocalizable {
 	//Used during peak linking to assign UID molecule numbers
 	String UID;
 
-	int slice;
+	int t;
 	
 	//Used for multithreaded Peak linking..
 	Peak forwardLink, backwardLink;
@@ -77,11 +77,11 @@ public class Peak implements RealLocalizable {
 		this.y = y;
 		this.pixelValue = pixelValue;
 	}
-	public Peak(double x, double y, double pixelValue, int slice) {
+	public Peak(double x, double y, double pixelValue, int t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
-		this.slice = slice;
+		this.t = t;
 	}
 	public Peak(Peak peak) {
 		this.x = peak.x;
@@ -96,7 +96,7 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = peak.sigmaError;
 		this.pixelValue = peak.pixelValue;
 		this.UID = peak.UID;
-		this.slice = peak.slice;
+		this.t = peak.t;
 	}
 	
 	//Getters
@@ -139,11 +139,11 @@ public class Peak implements RealLocalizable {
 	public String getUID() {
 		return UID;
 	}
-	public int getSlice() {
-		return slice;
+	public int getT() {
+		return t;
 	}
-	public void setSlice(int slice) {
-		this.slice = slice;
+	public void setT(int t) {
+		this.t = t;
 	}
 	
 	//Setters
@@ -241,11 +241,11 @@ public class Peak implements RealLocalizable {
 		return Rsquared;
 	}
 	
-	public void reset(double x, double y, double pixelValue, int slice) {
+	public void reset(double x, double y, double pixelValue, int t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
-		this.slice = slice;
+		this.t = t;
 		
 		valid = true;
 		UID = null;
