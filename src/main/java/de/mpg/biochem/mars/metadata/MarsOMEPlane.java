@@ -250,7 +250,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	
 	@Override
 	public String toString() {
-		return "TiffData : C = " + c + " | Z = " + z + " | T = " + t;
+		return "C = " + c + " | Z = " + z + " | T = " + t;
 	}
 
 	@Override

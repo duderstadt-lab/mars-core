@@ -17,6 +17,7 @@ import ome.units.UNITS;
 import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
+import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.MapPair;
 import ome.xml.model.enums.Binning;
@@ -25,9 +26,11 @@ import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.enums.UnitsTemperature;
+import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.enums.handlers.BinningEnumHandler;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
+import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
@@ -41,6 +44,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	private String id;
 	private String pixelID;
 	
+	private Time timeIncrement;
 	private Timestamp imageAquisitionDate;
 	private int imageIndex;
 	private String imageName;
@@ -82,6 +86,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		pixelsPhysicalSizeX = md.getPixelsPhysicalSizeX(imageIndex);
 		pixelsPhysicalSizeY = md.getPixelsPhysicalSizeY(imageIndex);
 		pixelsPhysicalSizeZ = md.getPixelsPhysicalSizeZ(imageIndex);
+		
+		if (md.getPixelsTimeIncrement(imageIndex) != null)
+			timeIncrement = md.getPixelsTimeIncrement(imageIndex);
 		
 		dimensionOrder = md.getPixelsDimensionOrder(imageIndex);
 		
@@ -231,6 +238,17 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	
 	public Length getPixelsPhysicalSizeZ() {
 		return pixelsPhysicalSizeZ;
+	}
+	
+	public void setTimeIncrementInSeconds(double timeIncrementSeconds) {
+		this.timeIncrement = new Time(timeIncrementSeconds, UNITS.SECOND);
+	}
+	
+	public double getTimeIncrementInSeconds() {
+		if (timeIncrement != null)
+			return timeIncrement.value(UNITS.SECOND).doubleValue();
+		else
+			return -1;
 	}
 	
 	public String getDetectorSerialNumber() {
@@ -463,6 +481,36 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});
 		
+		setJsonField("TimeIncrement",
+				jGenerator -> {
+					if (timeIncrement != null) {
+						jGenerator.writeObjectFieldStart("TimeIncrement");
+						jGenerator.writeNumberField("value", timeIncrement.value().doubleValue());
+						jGenerator.writeStringField("units", timeIncrement.unit().getSymbol());
+						jGenerator.writeEndObject();
+					}
+				},
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+						timeIncrement = new Time(value, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration(units)));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+		
 		setJsonField("DetectorSerialNumber", 
 				jGenerator -> jGenerator.writeStringField("DetectorSerialNumber", detectorSerialNumber),
 				jParser -> detectorSerialNumber = jParser.getText());
@@ -567,19 +615,18 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		} else {
 			rows.add(Arrays.asList("Physical Size Z", ""));
 		}
-
-		/*
-		if (this.timeIncrement > -1) {
-			rows.add(Arrays.asList("Time Increment", this.timeIncrement + " s"));
+		
+		if (this.timeIncrement != null) {
+			rows.add(Arrays.asList("Time Increment", getTimeIncrementInSeconds() + " s"));
 		} else {
 			rows.add(Arrays.asList("Time Increment", ""));
 		}
-*/
+
 		rows.add(Arrays.asList("Size X", this.sizeX.toString()));
 		rows.add(Arrays.asList("Size Y", this.sizeY.toString()));
 		rows.add(Arrays.asList("Size Z", this.sizeZ.toString()));
-		rows.add(Arrays.asList("Size Channel", this.sizeC.toString()));
-		rows.add(Arrays.asList("Size Time", this.sizeT.toString()));
+		rows.add(Arrays.asList("Size C", this.sizeC.toString()));
+		rows.add(Arrays.asList("Size T", this.sizeT.toString()));
 
 		for (int i = 0; i < channels.size(); i++) {
 			Channel channel = channels.get(i);
