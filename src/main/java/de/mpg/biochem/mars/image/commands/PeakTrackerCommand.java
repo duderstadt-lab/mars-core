@@ -319,8 +319,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
 			long channelCount = dataset.getChannels();
 			ArrayList<String> channels = new ArrayList<String>();
-			for (int ch=1; ch<=channelCount; ch++)
-				channels.add(String.valueOf(ch - 1));
+			for (int ch=0; ch<channelCount; ch++)
+				channels.add(String.valueOf(ch));
 			channelItems.setChoices(channels);
 			channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 		
@@ -809,7 +809,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setPosition(Integer.valueOf(channel + 1), 1, previewT + 1);
+				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 				image.deleteRoi();
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
@@ -873,7 +873,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
 			builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 			builder.addParameter("Microscope", microscope);
-			//builder.addParameter("Format", imageFormat);
 		}
 		
 		//Getters and Setters

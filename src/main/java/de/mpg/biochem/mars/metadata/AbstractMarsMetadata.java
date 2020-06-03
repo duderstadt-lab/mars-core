@@ -353,6 +353,10 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return izctToPlaneMap.get(izct);
 	}
 	
+	public boolean hasPlane(int imageIndex, int planeIndex) {
+		return images.get(imageIndex).getPlanes().containsKey(planeIndex);
+	}
+	
 	public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
 		return images.get(imageIndex).getPlane(planeIndex);
 	}

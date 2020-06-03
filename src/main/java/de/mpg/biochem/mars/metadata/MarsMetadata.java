@@ -63,6 +63,8 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	MarsOMEPlane getPlane(int imageIndex, int planeIndex);
 	
+	boolean hasPlane(int imageIndex, int planeIndex);
+	
 	MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T);
 	
 	int getImageCount();

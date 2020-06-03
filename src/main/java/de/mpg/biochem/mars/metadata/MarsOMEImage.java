@@ -100,7 +100,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		
 		//Build Planes
 		for (int planeIndex = 0; planeIndex < md.getPlaneCount(imageIndex); planeIndex++)
-			marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, md, imageIndex, planeIndex));
+			if (md.getPlaneTheT(imageIndex, planeIndex) != null)
+				marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, md, imageIndex, planeIndex));
 		
 		if (marsOMEPlanes.size() == 0)
 			createPlanesFromDimensions();
@@ -129,7 +130,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					for (MapPair pair : omeFieldsList)
 						fieldsMap.put(pair.getName(), pair.getValue());
 					
-					marsOMEPlanes.get(planeIndex).setCustomFields(fieldsMap);
+					if (marsOMEPlanes.containsKey(planeIndex))
+						marsOMEPlanes.get(planeIndex).setCustomFields(fieldsMap);
 				}
 			}
 		}
@@ -275,11 +277,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return marsOMEPlanes.size();
 	}
 	
-	MarsOMEPlane getPlane(int planeIndex) {
+	public MarsOMEPlane getPlane(int planeIndex) {
 		return marsOMEPlanes.get(planeIndex);
 	}
 	
-	DimensionOrder getDimensionOrder() {
+	public Map<Integer, MarsOMEPlane> getPlanes() {
+		return marsOMEPlanes;
+	}
+	
+	public DimensionOrder getDimensionOrder() {
 		return dimensionOrder;
 	}
 	
