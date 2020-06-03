@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -281,8 +282,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return marsOMEPlanes.get(planeIndex);
 	}
 	
-	public Map<Integer, MarsOMEPlane> getPlanes() {
-		return marsOMEPlanes;
+	public boolean hasPlane(int planeIndex) {
+		return marsOMEPlanes.containsKey(planeIndex);
+	}
+	
+	public Stream<MarsOMEPlane> planes() {
+		return marsOMEPlanes.values().stream();
 	}
 	
 	public DimensionOrder getDimensionOrder() {

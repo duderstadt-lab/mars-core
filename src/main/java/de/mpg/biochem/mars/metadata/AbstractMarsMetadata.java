@@ -354,7 +354,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	}
 	
 	public boolean hasPlane(int imageIndex, int planeIndex) {
-		return images.get(imageIndex).getPlanes().containsKey(planeIndex);
+		return images.get(imageIndex).hasPlane(planeIndex);
 	}
 	
 	public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
