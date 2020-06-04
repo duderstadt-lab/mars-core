@@ -282,6 +282,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return marsOMEPlanes.get(planeIndex);
 	}
 	
+	public MarsOMEPlane getPlane(int z, int c, int t) {
+		return getPlane((int) getPlaneIndex(z, c, t));
+	}
+	
 	public boolean hasPlane(int planeIndex) {
 		return marsOMEPlanes.containsKey(planeIndex);
 	}
