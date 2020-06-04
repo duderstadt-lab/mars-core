@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -40,7 +40,7 @@ import ome.xml.meta.OMEXMLMetadataRoot;
 import io.scif.util.FormatTools;
 
 public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel, JsonConvertibleRecord {
-	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new ConcurrentHashMap<Integer, MarsOMEPlane>();
+	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new LinkedHashMap<Integer, MarsOMEPlane>();
 	
 	private String id;
 	private String pixelID;
@@ -132,7 +132,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 						fieldsMap.put(pair.getName(), pair.getValue());
 					
 					if (marsOMEPlanes.containsKey(planeIndex))
-						marsOMEPlanes.get(planeIndex).setCustomFields(fieldsMap);
+						marsOMEPlanes.get(planeIndex).setStringFields(fieldsMap);
 				}
 			}
 		}

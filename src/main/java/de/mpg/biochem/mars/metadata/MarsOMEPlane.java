@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +49,8 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	private double yDrift;
 	private double zDrift;
 	
-	private Map<String, String> customFields = new HashMap<String, String>();
+	private Map<String, String> stringFields = new LinkedHashMap<String, String>();
+	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
 
 	public MarsOMEPlane(MarsOMEImage image, OMEXMLMetadata md, int imageIndex, int planeIndex) {
 		super();
@@ -230,12 +232,12 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		 		jGenerator -> jGenerator.writeNumberField("zDrift", zDrift),
 		 		jParser -> zDrift = jParser.getDoubleValue());
 	 	
-	 	setJsonField("CustomFields", 
+	 	setJsonField("StringFields", 
 	 		jGenerator -> {
-				if (customFields.size() > 0) {
-					jGenerator.writeObjectFieldStart("CustomFields");
-					for (String name : customFields.keySet())
-						jGenerator.writeStringField(name, customFields.get(name));
+				if (stringFields.size() > 0) {
+					jGenerator.writeObjectFieldStart("StringFields");
+					for (String name : stringFields.keySet())
+						jGenerator.writeStringField(name, stringFields.get(name));
 					jGenerator.writeEndObject();
 				}
 		 	}, 
@@ -243,9 +245,27 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    		String fieldname = jParser.getCurrentName();
 		    		jParser.nextToken();
-		    		customFields.put(fieldname, jParser.getText());
+		    		stringFields.put(fieldname, jParser.getText());
 				}
 	 		});
+	 	
+	 	setJsonField("ValueFields", 
+		 		jGenerator -> {
+					if (stringFields.size() > 0) {
+						jGenerator.writeObjectFieldStart("ValueFields");
+						for (String name : valueFields.keySet())
+							jGenerator.writeNumberField(name, valueFields.get(name));
+						jGenerator.writeEndObject();
+					}
+			 	}, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		valueFields.put(fieldname, jParser.getDoubleValue());
+					}
+		 		});
+	 	
 	}
 	
 	@Override
@@ -298,22 +318,37 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("Filename", this.filename));
 		rows.add(Arrays.asList("UUID", this.uuid));
 		
-		for (String field : customFields.keySet())
-			rows.add(Arrays.asList(field, customFields.get(field)));
+		for (String field : stringFields.keySet())
+			rows.add(Arrays.asList(field, stringFields.get(field)));
+		
+		for (String field : valueFields.keySet())
+			rows.add(Arrays.asList(field, String.valueOf(valueFields.get(field))));
 
 		return rows;
 	}
 	
-	public void setField(String field, String value) {
-		customFields.put(field, value);
+	public void setField(String field, double value) {
+		valueFields.put(field, value);
 	}
 	
-	public String getField(String field) {
-		return customFields.get(field);
+	public double getField(String field) {
+		return valueFields.get(field);
 	}
 	
-	public void setCustomFields(Map<String, String> customFields) {
-		this.customFields = customFields;
+	public void setFields(Map<String, Double> valueFields) {
+		this.valueFields = valueFields;
+	}
+	
+	public void setStringField(String field, String value) {
+		stringFields.put(field, value);
+	}
+	
+	public String getStringField(String field) {
+		return stringFields.get(field);
+	}
+	
+	public void setStringFields(Map<String, String> stringFields) {
+		this.stringFields = stringFields;
 	}
 	
 	public MarsOMEImage getImage() {
