@@ -80,8 +80,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	
 	protected Map<Integer, MarsOMEImage> images = new ConcurrentHashMap<Integer, MarsOMEImage>();
 	
-	protected Map<Integer[], MarsOMEPlane> izctToPlaneMap = new ConcurrentHashMap<Integer[], MarsOMEPlane>(); 
-	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
     
@@ -110,7 +108,6 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     public AbstractMarsMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
     	super(UID);
     	populateMetadata(omexmlMetadata);
-    	buildIZCTtoPlaneMap();
     }
 	
     /**
@@ -124,28 +121,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	public AbstractMarsMetadata(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
-		buildIZCTtoPlaneMap();
 	}
 	
 	public void populateMetadata(OMEXMLMetadata md) {
 		for (int imageIndex = 0; imageIndex < md.getImageCount(); imageIndex++)
 			images.put(imageIndex, new MarsOMEImage(imageIndex, md));
-	}
-	
-	protected void buildIZCTtoPlaneMap() {
-		for (int imageIndex = 0; imageIndex < images.size(); imageIndex++) {
-			for (int planeIndex = 0; planeIndex > images.get(imageIndex).getPlaneCount(); planeIndex++) {
-				MarsOMEPlane plane = images.get(imageIndex).getPlane(planeIndex);
-				
-				Integer[] izct = new Integer[4];
-				izct[0] = imageIndex;
-				izct[1] = plane.getZ();
-				izct[2] = plane.getC();
-				izct[3] = plane.getT();
-				
-				izctToPlaneMap.put(izct, plane);
-			}	
-		}
 	}
 	
 	@Override
@@ -343,14 +323,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * @param C Channel.
 	 * @param T Time point.
 	 */
-	public MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T) {
-		Integer[] izct = new Integer[4];
-		izct[0] = imageIndex;
-		izct[1] = Z;
-		izct[2] = C;
-		izct[3] = T;
-		
-		return izctToPlaneMap.get(izct);
+	public MarsOMEPlane getPlane(int imageIndex, int z, int c, int t) {
+		return images.get(imageIndex).getPlane(z, c, t);
 	}
 	
 	public boolean hasPlane(int imageIndex, int planeIndex) {
