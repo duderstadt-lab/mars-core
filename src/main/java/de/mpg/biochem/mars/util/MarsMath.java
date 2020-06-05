@@ -100,6 +100,12 @@ public class MarsMath {
 		return uuid58;
 	}
 	
+	public static String getUUID58(String uuid) {
+		Base58UUID bu = new Base58UUID();
+		String uuid58 = bu.encode(UUID.fromString(uuid));
+		return uuid58;
+	}
+	
 	//method to retrieve the UUID from a base64 encoded UID
 	public static UUID getUUID(String uuid58) {
 		Base58UUID bu = new Base58UUID();
