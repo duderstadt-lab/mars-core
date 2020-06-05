@@ -54,18 +54,20 @@ import ij.IJ;
 import org.scijava.table.DoubleColumn;
 import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import ome.units.quantity.Length;
 
 public class PeakTracker {
-	double[] maxDifference;
-	boolean[] ckMaxDifference;
-	int minTrajectoryLength;
+	private double[] maxDifference;
+	private boolean[] ckMaxDifference;
+	private int minTrajectoryLength;
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
-	double searchRadius;
-	boolean PeakFitter_writeEverything = false;
-	boolean writeIntegration = false;
-	int minimumDistance;
+	private double searchRadius;
+	private boolean PeakFitter_writeEverything = false;
+	private boolean writeIntegration = false;
+	private int minimumDistance;
+	private double pixelSize = 1;
 	
-	String metaDataUID;
+	private String metaDataUID;
 	
 	//Stores the KDTree list for Peaks for each T.
 	private ConcurrentMap<Integer, KDTree<Peak>> KDTreeStack;
@@ -74,9 +76,10 @@ public class PeakTracker {
 	//Stores the list of possible links from each T as a list with the key of that T.
 	private ConcurrentMap<Integer, ArrayList<PeakLink>> possibleLinks;
 	
-	LogService logService;
+	private LogService logService;
 	
-	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, boolean writeIntegration, boolean PeakFitter_writeEverything, LogService logService) {
+	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference, int minimumDistance, int minTrajectoryLength, 
+			boolean writeIntegration, boolean PeakFitter_writeEverything, LogService logService, double pixelSize) {
 		this.logService = logService;
 		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
 		this.writeIntegration = writeIntegration;
@@ -84,6 +87,7 @@ public class PeakTracker {
 		this.ckMaxDifference = ckMaxDifference;
 		this.minimumDistance = minimumDistance;
 		this.minTrajectoryLength = minTrajectoryLength;
+		this.pixelSize = pixelSize;
 
 		if (maxDifference[2] >= maxDifference[3])
 			searchRadius = maxDifference[2];
@@ -339,6 +343,14 @@ public class PeakTracker {
 		MarsTable table = new MarsTable();
 		for(String key : columns.keySet())
 			table.add(columns.get(key));
+		
+		//Convert units
+		if (pixelSize != 1) {
+			table.rows().forEach(row -> { 
+				row.setValue("x", row.getValue("x")*pixelSize);
+				row.setValue("y", row.getValue("y")*pixelSize);
+			});
+		}
 		
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
 		mol.setMetadataUID(metaDataUID);

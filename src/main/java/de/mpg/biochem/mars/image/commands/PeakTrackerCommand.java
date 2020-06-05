@@ -71,6 +71,7 @@ import io.scif.img.SCIFIOImgPlus;
 import io.scif.ome.OMEMetadata;
 import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
+import io.scif.util.SCIFIOMetadataTools;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
@@ -121,6 +122,11 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+import ome.units.UNITS;
+import ome.units.quantity.Length;
+import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.UnitsLength;
+import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import net.imglib2.img.ImagePlusAdapter;
 
 @Plugin(type = Command.class, label = "Peak Tracker", menu = {
@@ -256,6 +262,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Microscope")
 		private String microscope;
 		
+		@Parameter(label = "Pixel length")
+		private double pixelLength = 1;
+		
+		@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm"})
+		private String pixelUnits = "pixel";
+		
 		@Parameter
 		private UIService uiService;
 		
@@ -366,15 +378,24 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
 			
-			Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");
-			
-			// unpack the metadata to allow for processing...
-			while ((metadata instanceof AbstractMetadataWrapper)) {
-				metadata = ((AbstractMetadataWrapper) metadata).unwrap();
-			}
+			Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");			
+			final Metadata trueSource = SCIFIOMetadataTools.unwrapMetadata(metadata);
 			
 	        OMEMetadata omeMeta = new OMEMetadata(getContext());
-	        translatorService.translate(metadata, omeMeta, true);
+	        translatorService.translate(trueSource, omeMeta, true);
+	        
+	        UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+	        
+	        try {
+	        	Length pixelSize = new Length(pixelLength, 
+					UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
+	        
+				omeMeta.getRoot().setPixelsPhysicalSizeX(pixelSize, 0);
+				omeMeta.getRoot().setPixelsPhysicalSizeY(pixelSize, 0);
+				
+			} catch (EnumerationException e1) {
+				e1.printStackTrace();
+			}
 			
 			boolean[] vary = new boolean[5];
 			vary[0] = true;
@@ -465,7 +486,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			ckMaxDifference[1] = false;
 			ckMaxDifference[2] = false;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, verbose, logService);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, 
+		    		PeakTracker_minTrajectoryLength, integrate, verbose, logService, pixelLength);
 		    
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -482,7 +504,13 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    //SHOULD the Metadata UID be unique for each dataset?? Use dumpXML() but that would be too slow
 		    //MarsMath.getFNV1aBase58(str) ...
 		    
-			archive.putMetadata(new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), omeMeta.getRoot()));
+		    String metaUID;
+		    if (omeMeta.getRoot().getUUID() != null)
+		    	metaUID = MarsMath.getUUID58(omeMeta.getRoot().getUUID());
+		    else
+		    	metaUID = MarsMath.getUUID58().substring(0, 10);
+		    
+			archive.putMetadata(new MarsOMEMetadata(metaUID, omeMeta.getRoot()));
 		    
 		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
