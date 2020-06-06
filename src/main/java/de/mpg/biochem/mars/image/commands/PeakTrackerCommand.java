@@ -54,6 +54,7 @@ import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
@@ -69,9 +70,11 @@ import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
 import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
 import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
 import io.scif.util.SCIFIOMetadataTools;
+import loci.common.services.ServiceException;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
@@ -124,6 +127,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
+import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
@@ -150,6 +154,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	    
 	    @Parameter
 	    private TranslatorService translatorService;
+	    
+	    @Parameter
+	    private OMEXMLService omexmlService;
 	    
 	    @Parameter
 	    private FormatService formatService;
@@ -303,6 +310,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private Dataset dataset;
 		private ImagePlus image;
 		
+		private OMEXMLMetadata omexmlMetadata;
+		
 		//private MutableModuleItem<String> positionSelection;
 		//private MutableModuleItem<String> channelSelection = 
 		//		new DefaultMutableModuleItem<String>(this, "Channel", String.class);
@@ -311,12 +320,28 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public void initialize() {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
-			
+
 			ImgPlus<?> imp = dataset.getImgPlus();
 			
 			if (!(imp instanceof SCIFIOImgPlus)) {
-				uiService.showDialog("This image has not been opened with SCIFIO.", DialogPrompt.MessageType.ERROR_MESSAGE);
-				return;
+				logService.info("This image has not been opened with SCIFIO. Falling back to IJ1 for metadata.");
+				try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService);
+				} catch (ServiceException e) {
+					e.printStackTrace();
+				}
+			} else {
+				//Attempt to read metadata
+				Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");			
+		        OMEMetadata omeMeta = new OMEMetadata(getContext());
+		        if (!translatorService.translate(metadata, omeMeta, true)) {
+		        	logService.info("Unable to extract OME Metadata");
+		        	
+		        	//fallback to IJ1 as well... or shoul
+		        	
+		 		} else {
+		 			omexmlMetadata = omeMeta.getRoot();
+		 		}
 			}
 			
 			if (image.getRoi() == null) {
@@ -377,12 +402,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
-			
-			Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");			
-			final Metadata trueSource = SCIFIOMetadataTools.unwrapMetadata(metadata);
-			
-	        OMEMetadata omeMeta = new OMEMetadata(getContext());
-	        translatorService.translate(trueSource, omeMeta, true);
 	        
 	        UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
 	        
@@ -390,8 +409,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	        	Length pixelSize = new Length(pixelLength, 
 					UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
 	        
-				omeMeta.getRoot().setPixelsPhysicalSizeX(pixelSize, 0);
-				omeMeta.getRoot().setPixelsPhysicalSizeY(pixelSize, 0);
+				omexmlMetadata.setPixelsPhysicalSizeX(pixelSize, 0);
+				omexmlMetadata.setPixelsPhysicalSizeY(pixelSize, 0);
 				
 			} catch (EnumerationException e1) {
 				e1.printStackTrace();
@@ -500,17 +519,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    }
 		    
 		    archive = new SingleMoleculeArchive(newName + ".yama");
-		    
-		    //SHOULD the Metadata UID be unique for each dataset?? Use dumpXML() but that would be too slow
-		    //MarsMath.getFNV1aBase58(str) ...
-		    
+
 		    String metaUID;
-		    if (omeMeta.getRoot().getUUID() != null)
-		    	metaUID = MarsMath.getUUID58(omeMeta.getRoot().getUUID());
+		    if (omexmlMetadata.getUUID() != null)
+		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
 		    else
 		    	metaUID = MarsMath.getUUID58().substring(0, 10);
 		    
-			archive.putMetadata(new MarsOMEMetadata(metaUID, omeMeta.getRoot()));
+			archive.putMetadata(new MarsOMEMetadata(metaUID, omexmlMetadata));
 		    
 		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
