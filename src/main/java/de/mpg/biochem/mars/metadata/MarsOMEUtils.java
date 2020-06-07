@@ -224,7 +224,7 @@ public class MarsOMEUtils {
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Migrated to OME format");
 		builder.addParameter("From format", format);
-		log += builder.buildParameterList();
+		log += builder.buildParameterList() + "\n";
 		log += LogBuilder.endBlock();
 		
 		marsOME.logln(log);
