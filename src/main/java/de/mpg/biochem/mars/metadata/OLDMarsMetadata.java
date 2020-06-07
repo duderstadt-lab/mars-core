@@ -52,7 +52,7 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 		protected String CollectionDate = "unknown";
 		
 		//Table housing main record data.
-		protected MarsTable dataTable;
+		protected MarsTable dataTable = new MarsTable("DataTable");
 		
 		//BDV views
 		protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
@@ -265,5 +265,11 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 		public boolean hasBdvSource(String name) {
 			// TODO Auto-generated method stub
 			return false;
+		}
+
+		@Override
+		public void setImage(MarsOMEImage image, int imageIndex) {
+			// TODO Auto-generated method stub
+			
 		}
 }

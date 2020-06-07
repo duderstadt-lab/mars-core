@@ -414,7 +414,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	public void setSizeZ(PositiveInteger sizeZ) {
-		this.sizeC = sizeZ;
+		this.sizeZ = sizeZ;
 	}
 	
 	public int getSizeZ() {
@@ -780,26 +780,32 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			rows.add(Arrays.asList("Time Increment", ""));
 		}
 
-		rows.add(Arrays.asList("Size X", this.sizeX.toString()));
-		rows.add(Arrays.asList("Size Y", this.sizeY.toString()));
-		rows.add(Arrays.asList("Size Z", this.sizeZ.toString()));
-		rows.add(Arrays.asList("Size C", this.sizeC.toString()));
-		rows.add(Arrays.asList("Size T", this.sizeT.toString()));
+		if (sizeX != null)
+			rows.add(Arrays.asList("Size X", this.sizeX.toString()));
+		if (sizeY != null)
+			rows.add(Arrays.asList("Size Y", this.sizeY.toString()));
+		if (sizeZ != null)
+			rows.add(Arrays.asList("Size Z", this.sizeZ.toString()));
+		if (sizeC != null)
+			rows.add(Arrays.asList("Size C", this.sizeC.toString()));
+		if (sizeT != null)
+			rows.add(Arrays.asList("Size T", this.sizeT.toString()));
 
-		for (int i = 0; i < channels.size(); i++) {
-			MarsOMEChannel channel = channels.get(i);
+		
+		for (MarsOMEChannel channel : channels.values()) {
+			int channelIndex = channel.getChannelIndex();
 			
 			if (channel.getName() != null)
-				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - name ", channel.getName()));
+				rows.add(Arrays.asList("Channel " + channelIndex + " - name ", channel.getName()));
 			if (channel.getID() != null)	
-				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - id ", channel.getID()));
+				rows.add(Arrays.asList("Channel " + channelIndex + " - id ", channel.getID()));
 			if (channel.getBinning() != null)
-				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Binning ", channel.getBinning().getValue()));
+				rows.add(Arrays.asList("Channel " + channelIndex + " - Binning ", channel.getBinning().getValue()));
 			if (channel.getGain() != null)
-				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Gain ", String.valueOf(channel.getGain())));
+				rows.add(Arrays.asList("Channel " + channelIndex + " - Gain ", String.valueOf(channel.getGain())));
 			if (channel.getVoltage() != null)
-				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
-			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
+				rows.add(Arrays.asList("Channel " + channelIndex + " - Voltage ", channel.getVoltage().value(UNITS.VOLT).doubleValue() + " V"));
+			rows.add(Arrays.asList("Channel " + channelIndex + " - DetectorSettingID ", channel.getDetectorSettingID()));
 		}
 		
 		for (String field : stringFields.keySet())

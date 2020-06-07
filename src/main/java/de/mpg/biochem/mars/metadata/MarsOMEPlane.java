@@ -284,10 +284,12 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("TiffData ID", Integer.toString(this.planeIndex)));
 		if (ifd != null)
 			rows.add(Arrays.asList("IFD", this.ifd.toString()));
-
-		rows.add(Arrays.asList("C position", this.c.toString()));
-		rows.add(Arrays.asList("Z position", this.z.toString()));
-		rows.add(Arrays.asList("T position", this.t.toString()));
+		if (c != null)
+			rows.add(Arrays.asList("C position", this.c.toString()));
+		if (z != null)
+			rows.add(Arrays.asList("Z position", this.z.toString()));
+		if (t != null)
+			rows.add(Arrays.asList("T position", this.t.toString()));
 
 		if (this.getDeltaTinSeconds() >= 0) {
 			rows.add(Arrays.asList("dt", this.dt.value().doubleValue() + " " + this.dt.unit().getSymbol()));

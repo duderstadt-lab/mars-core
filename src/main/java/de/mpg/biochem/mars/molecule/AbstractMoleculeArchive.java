@@ -840,7 +840,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    else 
 		    	fieldBlockName = fieldName;
 			
-			if ("Metadata".equals(fieldName))
+			if ("ImageMetaData".equals(fieldName) || "Metadata".equals(fieldName))
 				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					putMetadata(createMetadata(jParser));
 			

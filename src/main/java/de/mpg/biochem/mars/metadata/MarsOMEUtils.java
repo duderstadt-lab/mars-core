@@ -75,8 +75,9 @@ public class MarsOMEUtils {
 		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
 		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
 		image.setSizeZ(new PositiveInteger(1));
-		image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
+		//image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
 		
+		image.setName(oldMetadata.getSourceDirectory());
 		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
 		
 		MarsTable table = oldMetadata.getDataTable();
@@ -143,7 +144,8 @@ public class MarsOMEUtils {
 				channel.setChannelIndex(channelIndex);
 				channel.setName(channelNames.get(channelIndex));
 				try {
-					channel.setBinning((Binning) handler.getEnumeration(channelBinning.get(channelIndex)));
+					String binKey = channelBinning.get(channelIndex) + "x" + channelBinning.get(channelIndex);
+					channel.setBinning((Binning) handler.getEnumeration(binKey));
 				} catch (EnumerationException e) {
 					e.printStackTrace();
 				}
