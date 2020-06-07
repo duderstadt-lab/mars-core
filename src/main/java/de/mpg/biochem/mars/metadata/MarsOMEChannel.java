@@ -47,28 +47,56 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 		fromJSON(jParser);
 	}
 	
+	public void setChannelIndex(int channelIndex) {
+		this.channelIndex = channelIndex;
+	}
+	
 	public int getChannelIndex() {
 		return channelIndex;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
 	}
 	
 	public String getName() {
 		return name;
 	}
 	
+	public void setID(String id) {
+		this.id = id;
+	}
+	
 	public String getID() {
 		return id;
+	}
+	
+	public void setBinning(Binning binning) {
+		this.binning = binning;
 	}
 	
 	public Binning getBinning() {
 		return binning;
 	}
 	
+	public void setGain(Double gain) {
+		this.gain = gain;
+	}
+	
 	public Double getGain() {
 		return gain;
 	}
 	
+	public void setVoltage(ElectricPotential voltage) {
+		this.voltage = voltage;
+	}
+	
 	public ElectricPotential getVoltage() {
 		return voltage;
+	}
+	
+	public void setDetectorSettingsID(String detectorSettingsID) {
+		this.detectorSettingsID = detectorSettingsID;
 	}
 	
 	public String getDetectorSettingID() {
@@ -77,6 +105,10 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 	
 	@Override
 	protected void createIOMaps() {
+		
+		setJsonField("ChannelIndex", 
+				jGenerator -> jGenerator.writeNumberField("ChannelIndex", channelIndex),
+				jParser -> channelIndex = jParser.getIntValue());
 		
 		setJsonField("Name", 
 			jGenerator -> jGenerator.writeStringField("Name", name),

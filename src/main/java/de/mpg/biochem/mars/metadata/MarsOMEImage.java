@@ -262,6 +262,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return channels.get(channelIndex);
 	}
 	
+	public void setPixelsPhysicalSizeX(Length pixelsPhysicalSizeX) {
+		this.pixelsPhysicalSizeX = pixelsPhysicalSizeX;
+	}
+	
 	public Length getPixelsPhysicalSizeX() {
 		return pixelsPhysicalSizeX;
 	}
@@ -270,8 +274,16 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return pixelsPhysicalSizeY;
 	}
 	
+	public void setPixelsPhysicalSizeY(Length pixelsPhysicalSizeY) {
+		this.pixelsPhysicalSizeY = pixelsPhysicalSizeY;
+	}
+	
 	public Length getPixelsPhysicalSizeZ() {
 		return pixelsPhysicalSizeZ;
+	}
+	
+	public void setPixelsPhysicalSizeZ(Length pixelsPhysicalSizeZ) {
+		this.pixelsPhysicalSizeZ = pixelsPhysicalSizeZ;
 	}
 	
 	public void setTimeIncrementInSeconds(double timeIncrementSeconds) {
@@ -285,20 +297,40 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			return -1;
 	}
 	
+	public void setDetectorSerialNumber(String detectorSerialNumber) {
+		this.detectorSerialNumber = detectorSerialNumber;
+	}
+	
 	public String getDetectorSerialNumber() {
 		return detectorSerialNumber;
+	}
+	
+	public void setDetectorModel(String detectorModel) {
+		this.detectorModel = detectorModel;
 	}
 	
 	public String getDetectorModel() {
 		return detectorModel;
 	}
 	
+	public void setDetectorManufacturer(String detectorManufacturer) {
+		this.detectorManufacturer = detectorManufacturer;
+	}
+	
 	public String getDetectorManufacturer() {
 		return detectorManufacturer;
 	}
 	
+	public void setTemperature(Temperature temperature) {
+		this.temperature = temperature;
+	}
+	
 	public Temperature getTemperature() {
 		return temperature;
+	}
+	
+	public void setDetectorType(DetectorType detectorType) {
+		this.detectorType = detectorType;
 	}
 	
 	public DetectorType getDetectorType() {
@@ -341,28 +373,56 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return marsOMEPlanes.values().stream();
 	}
 	
+	public void setDimensionOrder(DimensionOrder dimensionOrder) {
+		this.dimensionOrder = dimensionOrder;
+	}
+	
 	public DimensionOrder getDimensionOrder() {
 		return dimensionOrder;
+	}
+	
+	public void setSizeC(PositiveInteger sizeC) {
+		this.sizeC = sizeC;
 	}
 	
 	public int getSizeC() {
 		return sizeC.getValue();
 	}
 	
+	public void setSizeT(PositiveInteger sizeT) {
+		this.sizeT = sizeT;
+	}
+	
 	public int getSizeT() {
 		return sizeT.getValue();
+	}
+	
+	public void setSizeX(PositiveInteger sizeX) {
+		this.sizeX = sizeX;
 	}
 	
 	public int getSizeX() {
 		return sizeX.getValue();
 	}
 	
+	public void setSizeY(PositiveInteger sizeY) {
+		this.sizeY = sizeY;
+	}
+	
 	public int getSizeY() {
 		return sizeY.getValue();
 	}
 	
+	public void setSizeZ(PositiveInteger sizeZ) {
+		this.sizeC = sizeZ;
+	}
+	
 	public int getSizeZ() {
 		return sizeZ.getValue();
+	}
+	
+	public void setImageIndex(int imageIndex) {
+		this.imageIndex = imageIndex;
 	}
 	
 	public int getImageIndex() {

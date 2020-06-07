@@ -367,6 +367,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		this.image = image;
 	}
 	
+	public void setDeltaT(Time dt) {
+		this.dt = dt;
+	}
+	
 	public double getDeltaTinSeconds() {
 		if (dt != null)
 			return dt.value(UNITS.SECOND).doubleValue();
@@ -374,36 +378,72 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 			return -1;
 	}
 	
+	public void setImageIndex(int imageIndex) {
+		this.imageIndex = imageIndex;
+	}
+	
 	public int getImageIndex() {
 		return imageIndex;
+	}
+	
+	public void setPlaneIndex(int planeIndex) {
+		this.planeIndex = planeIndex;
 	}
 	
 	public int getPlaneIndex() {
 		return planeIndex;
 	}
 	
+	public void setC(NonNegativeInteger c) {
+		this.c = c;
+	}
+	
 	public int getC() {
 		return c.getValue();
+	}
+	
+	public void setZ(NonNegativeInteger z) {
+		this.z = z;
 	}
 	
 	public int getZ() {
 		return z.getValue();
 	}
 	
+	public void setT(NonNegativeInteger t) {
+		this.t = t;
+	}
+	
 	public int getT() {
 		return t.getValue();
+	}
+	
+	public void setIFD(NonNegativeInteger ifd) {
+		this.ifd = ifd;
 	}
 	
 	public int getIFD() {
 		return ifd.getValue();
 	}
 	
+	public void setFilename(String filename) {
+		this.filename = filename;
+	}
+	
 	public String getFilename() {
 		return filename;
 	}
 	
+	public void setUUID(String uuid) {
+		this.uuid = uuid;
+	}
+	
 	public String getUUID() {
 		return uuid;
+	}
+	
+	public void setExposureTime(Time exposureTime) {
+		this.exposureTime = exposureTime;
 	}
 	
 	public double getExposureTimeInSeconds() {
@@ -412,13 +452,25 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		else 
 			return -1;
 	}
+	
+	public void setPosX(float posX) {
+		this.posX = posX;
+	}
 
 	public double getPosX() {
 		return posX;
 	}
 	
+	public void setPosY(float posY) {
+		this.posY = posY;
+	}
+	
 	public double getPosY() {
 		return posY;
+	}
+	
+	public void setPosZ(float posZ) {
+		this.posZ = posZ;
 	}
 	
 	public double getPosZ() {
