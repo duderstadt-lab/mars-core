@@ -51,6 +51,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 	
 	private Map<String, String> stringFields = new LinkedHashMap<String, String>();
 	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
+	
+	public MarsOMEPlane() {
+		super();
+	}
 
 	public MarsOMEPlane(MarsOMEImage image, OMEXMLMetadata md, int imageIndex, int planeIndex) {
 		super();

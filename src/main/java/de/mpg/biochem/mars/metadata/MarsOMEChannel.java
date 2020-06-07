@@ -42,11 +42,15 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 		}
 	}
 	
+	public MarsOMEChannel() {
+		super();
+	}
+	
 	public MarsOMEChannel(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
 	}
-	
+
 	public void setChannelIndex(int channelIndex) {
 		this.channelIndex = channelIndex;
 	}
