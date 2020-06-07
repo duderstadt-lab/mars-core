@@ -59,6 +59,8 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	
 	void populateMetadata(OMEXMLMetadata md);
 	
+	void setImage(MarsOMEImage image, int imageIndex);
+	
 	MarsOMEImage getImage(int imageIndex);
 	
 	MarsOMEPlane getPlane(int imageIndex, int planeIndex);

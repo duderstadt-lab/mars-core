@@ -50,7 +50,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	private int imageIndex;
 	private String imageName;
 	private String imageDescription;
-	private List<Channel> channels = new ArrayList<>();
+	private Map<Integer, MarsOMEChannel> channels = new LinkedHashMap<Integer, MarsOMEChannel>();
 	
 	private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
 	
@@ -65,6 +65,13 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	private PositiveInteger sizeX;
 	private PositiveInteger sizeY;
 	private PositiveInteger sizeZ;
+	
+	private Map<String, String> stringFields = new LinkedHashMap<String, String>();
+	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
+	
+	public MarsOMEImage() {
+		super();
+	}
 	
 	public MarsOMEImage(JsonParser jParser) throws IOException {
 		super();
@@ -82,7 +89,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		imageDescription = md.getImageDescription(imageIndex);
 		
 		for (int channelIndex=0; channelIndex < md.getChannelCount(imageIndex); channelIndex++)
-			channels.add(new Channel(md, imageIndex, channelIndex));
+			channels.put(channelIndex, new MarsOMEChannel(md, imageIndex, channelIndex));
 		
 		pixelsPhysicalSizeX = md.getPixelsPhysicalSizeX(imageIndex);
 		pixelsPhysicalSizeY = md.getPixelsPhysicalSizeY(imageIndex);
@@ -206,28 +213,52 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		}
 		return FormatTools.positionToRaster(length, position);
 	}
+	
+	public void setID(String id) {
+		this.id = id;
+	}
 
 	public String getID() {
 		return id;
+	}
+	
+	public void setPixelID(String pixelID) {
+		this.pixelID = pixelID;
 	}
 	
 	public String getPixelID() {
 		return pixelID;
 	}
 	
+	public void setAquisitionDate(Timestamp imageAquisitionDate) {
+		this.imageAquisitionDate = imageAquisitionDate;
+	}
+	
 	public Timestamp getAquisitionDate() {
 		return imageAquisitionDate;
+	}
+	
+	public void setName(String imageName) {
+		this.imageName = imageName;
 	}
 	
 	public String getName() {
 		return imageName;
 	}
 	
+	public void setDescription(String imageDescription) {
+		this.imageDescription = imageDescription;
+	}
+	
 	public String getDescription() {
 		return imageDescription;
 	}
 	
-	public Channel getChannel(int channelIndex) {
+	public void setChannel(MarsOMEChannel channel, int channelIndex) {
+		channels.put(channelIndex, channel);
+	}
+	
+	public MarsOMEChannel getChannel(int channelIndex) {
 		return channels.get(channelIndex);
 	}
 	
@@ -278,6 +309,14 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return marsOMEPlanes.size();
 	}
 	
+	public void setPlane(MarsOMEPlane plane, int planeIndex) {
+		marsOMEPlanes.put(planeIndex, plane);
+	}
+	
+	public void setPlane(MarsOMEPlane plane, int z, int c, int t) {
+		marsOMEPlanes.put((int) getPlaneIndex(z, c, t), plane);
+	}
+	
 	public MarsOMEPlane getPlane(int planeIndex) {
 		return marsOMEPlanes.get(planeIndex);
 	}
@@ -286,8 +325,16 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return getPlane((int) getPlaneIndex(z, c, t));
 	}
 	
+	public  Map<Integer, MarsOMEPlane> getPlanes() {
+		return marsOMEPlanes;
+	}
+	
 	public boolean hasPlane(int planeIndex) {
 		return marsOMEPlanes.containsKey(planeIndex);
+	}
+	
+	public boolean hasPlane(int z, int c, int t) {
+		return marsOMEPlanes.containsKey((int) getPlaneIndex(z, c, t));
 	}
 	
 	public Stream<MarsOMEPlane> planes() {
@@ -357,18 +404,20 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			jParser -> pixelID = jParser.getText());
 		
 		setJsonField("Channels", 
-			jGenerator -> {
-				if (channels.size() > 0) {
-					jGenerator.writeArrayFieldStart("Channels");
-					for (Channel channel : channels)
-						channel.toJSON(jGenerator);
-					jGenerator.writeEndArray();
-				}
-		 	},
-			jParser -> {
-				while (jParser.nextToken() != JsonToken.END_ARRAY)
-					channels.add(new Channel(jParser));
-		 	});	
+				jGenerator -> {
+					if (channels.size() > 0) {
+						jGenerator.writeArrayFieldStart("Channels");
+						for (MarsOMEChannel channel : channels.values())
+							channel.toJSON(jGenerator);
+						jGenerator.writeEndArray();
+					}
+			 	},
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsOMEChannel channel = new MarsOMEChannel(jParser);
+						channels.put(channel.getChannelIndex(), channel);
+					}
+			 	});	
 		
 		setJsonField("DimensionOrder",
 			jGenerator -> { 
@@ -580,7 +629,41 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-				});			
+				});	
+		
+		setJsonField("StringFields", 
+		 		jGenerator -> {
+					if (stringFields.size() > 0) {
+						jGenerator.writeObjectFieldStart("StringFields");
+						for (String name : stringFields.keySet())
+							jGenerator.writeStringField(name, stringFields.get(name));
+						jGenerator.writeEndObject();
+					}
+			 	}, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		stringFields.put(fieldname, jParser.getText());
+					}
+		 		});
+		 	
+	 	setJsonField("ValueFields", 
+		 		jGenerator -> {
+					if (stringFields.size() > 0) {
+						jGenerator.writeObjectFieldStart("ValueFields");
+						for (String name : valueFields.keySet())
+							jGenerator.writeNumberField(name, valueFields.get(name));
+						jGenerator.writeEndObject();
+					}
+			 	}, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		valueFields.put(fieldname, jParser.getDoubleValue());
+					}
+		 		});
 		
 		setJsonField("Planes", 
 			jGenerator -> {
@@ -644,7 +727,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		rows.add(Arrays.asList("Size T", this.sizeT.toString()));
 
 		for (int i = 0; i < channels.size(); i++) {
-			Channel channel = channels.get(i);
+			MarsOMEChannel channel = channels.get(i);
 			
 			if (channel.getName() != null)
 				rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - name ", channel.getName()));
@@ -659,113 +742,13 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			rows.add(Arrays.asList("Channel " + Integer.toString(i) + " - DetectorSettingID ", channel.getDetectorSettingID()));
 		}
 		
-		//We should add customfields for images as well here.
-		//for (String field : customFields.keySet())
-		//	rows.add(Arrays.asList(field, customFields.get(field)));
+		for (String field : stringFields.keySet())
+			rows.add(Arrays.asList(field, stringFields.get(field)));
+		
+		for (String field : valueFields.keySet())
+			rows.add(Arrays.asList(field, String.valueOf(valueFields.get(field))));
 
 		return rows;
-	}
-	
-	public static class Channel extends AbstractJsonConvertibleRecord {
-		private String name;
-		private String id;
-		private Binning binning;
-		private Double gain;
-		private ElectricPotential voltage;
-		private String detectorSettingsID;
-		
-		Channel(OMEXMLMetadata md, int imageIndex, int channelIndex) {
-			super();
-			
-			ome.xml.model.Channel ch = ((OMEXMLMetadataRoot) md.getRoot()).getImage(0).getPixels().getChannel(channelIndex);
-			
-			if (ch.getName() != null)
-				name = md.getChannelName(imageIndex, channelIndex);
-			if (ch.getID() != null)
-				id = md.getChannelID(imageIndex, channelIndex);
-			
-			if (ch.getDetectorSettings() != null) {
-				binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);
-				gain = md.getDetectorSettingsGain(imageIndex, channelIndex);
-				voltage = md.getDetectorSettingsVoltage(imageIndex, channelIndex);
-				detectorSettingsID = md.getDetectorSettingsID(imageIndex, channelIndex);
-			}
-		}
-		
-		Channel(JsonParser jParser) throws IOException {
-			super();
-			fromJSON(jParser);
-		}
-		
-		public String getName() {
-			return name;
-		}
-		
-		public String getID() {
-			return id;
-		}
-		
-		public Binning getBinning() {
-			return binning;
-		}
-		
-		public Double getGain() {
-			return gain;
-		}
-		
-		public ElectricPotential getVoltage() {
-			return voltage;
-		}
-		
-		public String getDetectorSettingID() {
-			return detectorSettingsID;
-		}
-		
-		@Override
-		protected void createIOMaps() {
-			
-			setJsonField("Name", 
-				jGenerator -> jGenerator.writeStringField("Name", name),
-				jParser -> name = jParser.getText());
-			
-			setJsonField("ID", 
-				jGenerator -> jGenerator.writeStringField("ID", id),
-				jParser -> id = jParser.getText());
-			
-			setJsonField("Binning", 
-				jGenerator -> {
-						if (binning != null)
-							jGenerator.writeStringField("Binning", binning.getValue());
-					},
-				jParser -> { 
-					BinningEnumHandler handler = new BinningEnumHandler();
-					try {
-						binning = (Binning) handler.getEnumeration(jParser.getText());
-					} catch (EnumerationException e) {
-						e.printStackTrace();
-					}
-				});
-
-			setJsonField("Gain",
-				jGenerator -> { 
-					if (gain != null)
-						jGenerator.writeNumberField("Gain", gain.doubleValue());
-				},
-				jParser -> gain = jParser.getDoubleValue());
-			
-			//Should we keep track of the units here ???
-			setJsonField("Voltage",
-					jGenerator -> {
-						if (voltage != null)
-							jGenerator.writeNumberField("Voltage", voltage.value().doubleValue());
-					},
-					jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
-			
-			setJsonField("DetectorSettingsID",
-					jGenerator -> jGenerator.writeStringField("DetectorSettingsID", detectorSettingsID),
-					jParser -> detectorSettingsID = jParser.getText());
-				
-		}
 	}
 }
 

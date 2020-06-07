@@ -260,6 +260,10 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		return Microscope;
 	}
 	
+	public void setImage(MarsOMEImage image, int imageIndex) {
+		images.put(imageIndex, image);
+	}
+	
 	public MarsOMEImage getImage(int imageIndex) {
 		return images.get(imageIndex);
 	}

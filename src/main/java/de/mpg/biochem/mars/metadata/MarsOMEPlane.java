@@ -339,12 +339,20 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		this.valueFields = valueFields;
 	}
 	
+	public Map<String, Double> getFields() {
+		return valueFields;
+	}
+	
 	public void setStringField(String field, String value) {
 		stringFields.put(field, value);
 	}
 	
 	public String getStringField(String field) {
 		return stringFields.get(field);
+	}
+	
+	public Map<String, String> getStringFields() {
+		return stringFields;
 	}
 	
 	public void setStringFields(Map<String, String> stringFields) {

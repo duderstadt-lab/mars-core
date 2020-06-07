@@ -326,7 +326,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			if (!(imp instanceof SCIFIOImgPlus)) {
 				logService.info("This image has not been opened with SCIFIO. Falling back to IJ1 for metadata.");
 				try {
-					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService);
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService, dataset);
 				} catch (ServiceException e) {
 					e.printStackTrace();
 				}
@@ -335,7 +335,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");			
 		        OMEMetadata omeMeta = new OMEMetadata(getContext());
 		        if (!translatorService.translate(metadata, omeMeta, true)) {
-		        	logService.info("Unable to extract OME Metadata");
+		        	logService.info("Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
 		        	
 		        	//fallback to IJ1 as well... or shoul
 		        	

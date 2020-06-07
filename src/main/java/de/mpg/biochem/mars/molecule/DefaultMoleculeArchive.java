@@ -131,10 +131,13 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	}
 	
 	/**
-	 * Create DefaultMarsMetadata record using JsonParser stream.
+	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	/**

@@ -140,14 +140,17 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	}
 	
 	/**
-	 * Create SdmmImageMetadata record using JsonParser stream.
+	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	/**
-	 * Create empty SdmmImageMetadata record with the metaUID specified.
+	 * Create empty MarsOMEMetadata record with the metaUID specified.
 	 */
 	public MarsOMEMetadata createMetadata(String metaUID) {
 		return new MarsOMEMetadata(metaUID);

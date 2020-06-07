@@ -49,7 +49,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected int numberOfMolecules;
 	protected int numMetadata;
 	protected String comments, inputSchema;
-	public static final String SCHEMA = "2020-05-29";
+	public static final String SCHEMA = "2020-06-07";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -67,7 +67,6 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		numberOfMolecules = 0;
 		numMetadata = 0;
 		comments = "";
-		inputSchema = SCHEMA;
 		
 		tagSet = ConcurrentHashMap.newKeySet();
 		parameterSet = ConcurrentHashMap.newKeySet();
@@ -84,7 +83,6 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public AbstractMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		this();
-		inputSchema = "no schema found";
 		fromJSON(jParser);
 	}
 	

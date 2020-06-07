@@ -35,6 +35,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
+import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
 public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
@@ -63,8 +65,14 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Mar
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
+	/**
+	 * Create MarsOMEMetadata record using JsonParser stream.
+	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateDNAMetadataToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	public MarsOMEMetadata createMetadata(String metaUID) {

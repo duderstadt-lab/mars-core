@@ -63,8 +63,14 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, M
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
+	/**
+	 * Create MarsOMEMetadata record using JsonParser stream.
+	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	public MarsOMEMetadata createMetadata(String metaUID) {
