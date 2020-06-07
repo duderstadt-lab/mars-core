@@ -1,5 +1,11 @@
 package de.mpg.biochem.mars.metadata;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import de.mpg.biochem.mars.table.MarsTable;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
@@ -8,6 +14,10 @@ import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
+import ome.xml.model.enums.Binning;
+import ome.xml.model.enums.DimensionOrder;
+import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.handlers.BinningEnumHandler;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
@@ -61,6 +71,13 @@ public class MarsOMEUtils {
 		
 		//Create MarsOMEImage and fill in all the planes and then add it to the MarsOMEMetadata...
 		MarsOMEImage image = new MarsOMEImage();
+		image.setImageIndex(0);
+		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
+		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
+		image.setSizeZ(new PositiveInteger(1));
+		image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
+		
+		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
 		
 		MarsTable table = oldMetadata.getDataTable();
 		
@@ -79,13 +96,8 @@ public class MarsOMEUtils {
 		//Check format
 		if (table.hasColumn("DateTime")) {
 			//Must be Norpix data...
-			image.setImageIndex(0);
-			image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
-			image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
 			image.setSizeC(new PositiveInteger(1));
-			image.setSizeZ(new PositiveInteger(1));
 			image.setSizeT(new PositiveInteger((int)table.getValue("slice", table.getRowCount() - 1))); 
-			image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
 			
 			MarsOMEChannel channel = new MarsOMEChannel();
 			channel.setChannelIndex(0);
@@ -107,11 +119,96 @@ public class MarsOMEUtils {
 				
 				image.setPlane(plane, 0, 0, t);
 			}
+		} else if (table.hasColumn("ChannelIndex")) {
+			//Must be Micromanager data.
+			Map<Integer, String> channelNames = new LinkedHashMap<Integer, String>();
+			Map<Integer, String> channelBinning = new LinkedHashMap<Integer, String>();
+			
+			table.rows().forEach(row -> {
+				int channelIndex = Integer.valueOf(row.getStringValue("ChannelIndex"));
+				channelBinning.put(channelIndex, row.getStringValue("Binning"));
+				channelNames.put(channelIndex, row.getStringValue("Channel"));
+			});
+			image.setSizeC(new PositiveInteger(channelNames.size()));
+			image.setSizeT(new PositiveInteger((int)table.getValue("Frame", table.getRowCount() - 1))); 
+			if (table.hasColumn("Width"))
+				image.setSizeX(new PositiveInteger(Integer.valueOf(table.getStringValue("Width", 0))));
+			if (table.hasColumn("Height"))
+				image.setSizeY(new PositiveInteger(Integer.valueOf(table.getStringValue("Height", 0))));
+			
+			BinningEnumHandler handler = new BinningEnumHandler();
+			
+			for (int channelIndex : channelNames.keySet()) {
+				MarsOMEChannel channel = new MarsOMEChannel();
+				channel.setChannelIndex(channelIndex);
+				channel.setName(channelNames.get(channelIndex));
+				try {
+					channel.setBinning((Binning) handler.getEnumeration(channelBinning.get(channelIndex)));
+				} catch (EnumerationException e) {
+					e.printStackTrace();
+				}
+				image.setChannel(channel, channelIndex);
+			}
+			
+			for (int rowIndex=0; rowIndex < table.getRowCount(); rowIndex++) {
+				MarsOMEPlane plane = new MarsOMEPlane();
+				plane.setImage(image);
+				plane.setImageIndex(0);
+				
+				int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
+				int t = Integer.valueOf(table.getStringValue("Frame", rowIndex));
+				
+				plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t)); 
+				plane.setZ(new NonNegativeInteger(0));
+				plane.setC(new NonNegativeInteger(c));
+				plane.setT(new NonNegativeInteger(t));
+				
+				for (String heading : table.getColumnHeadingList()) {
+					if (xDriftColumnName.equals(heading) || yDriftColumnName.equals(heading))
+						continue;
+					else if (heading.equals("FileName")) {
+						plane.setFilename(table.getStringValue(heading, rowIndex));
+						continue;
+					} else if (heading.equals("Time (s)")) {
+						plane.setDeltaT(new Time(table.getValue("Time (s)", rowIndex), UNITS.SECOND));
+						continue;
+					}
+					
+					//Add all unknown columns as StringFields
+					plane.setStringField(heading, table.getStringValue(heading, rowIndex));
+				}
+				
+				if (!xDriftColumnName.equals(""))
+					plane.setXDrift(table.getValue(xDriftColumnName, rowIndex));
+				if (!yDriftColumnName.equals(""))
+					plane.setYDrift(table.getValue(yDriftColumnName, rowIndex));
+				
+				image.setPlane(plane, 0, c, t);
+			}
 		} else {
-			//Build planes..
-			//oldMetadata.getDataTable().rows().forEach(row -> {
-				//Create Plane from row
-			//});
+			//Unknown. We should at least have a slice column..
+			//Have to guess the rest.
+			image.setSizeC(new PositiveInteger(1));
+			image.setSizeT(new PositiveInteger((int)table.getValue("slice", table.getRowCount() - 1))); 
+			
+			MarsOMEChannel channel = new MarsOMEChannel();
+			channel.setChannelIndex(0);
+			image.setChannel(channel, 0);
+			
+			for (int rowIndex=0; rowIndex < table.getRowCount(); rowIndex++) {
+				int slice = (int) table.getValue("slice", rowIndex);
+				int t = slice - 1;
+				MarsOMEPlane plane = new MarsOMEPlane(image, 0, rowIndex, new NonNegativeInteger(0), new NonNegativeInteger(0), new NonNegativeInteger(t));
+				
+				if (!xDriftColumnName.equals(""))
+					plane.setXDrift(table.getValue(xDriftColumnName, rowIndex));
+				if (!yDriftColumnName.equals(""))
+					plane.setYDrift(table.getValue(yDriftColumnName, rowIndex));
+				if (table.hasColumn("Time (s)"))
+					plane.setDeltaT(new Time(table.getValue("Time (s)", rowIndex), UNITS.SECOND));
+				
+				image.setPlane(plane, 0, 0, t);
+			}
 		}
 
 		marsOME.setImage(image, 0);

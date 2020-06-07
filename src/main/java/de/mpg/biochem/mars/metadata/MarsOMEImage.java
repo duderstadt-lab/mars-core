@@ -159,7 +159,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	//This must exist somewhere but I can't find it...
-	private long getPlaneIndex(int z, int c, int t) {
+	public long getPlaneIndex(int z, int c, int t) {
 		long[] length = new long[3];
 		long[] position = new long[3];
 		if (dimensionOrder.getValue().equals("XYCTZ")) {
