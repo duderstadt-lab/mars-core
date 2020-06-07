@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.LogBuilder;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
 import net.imagej.Dataset;
@@ -94,8 +95,11 @@ public class MarsOMEUtils {
 				yDriftColumnName = heading;
 		}
 		
+		String format = "Unknown";
+		
 		//Check format
 		if (table.hasColumn("DateTime")) {
+			format = "Norpix";
 			//Must be Norpix data...
 			image.setSizeC(new PositiveInteger(1));
 			image.setSizeT(new PositiveInteger((int)table.getValue("slice", table.getRowCount() - 1))); 
@@ -121,6 +125,7 @@ public class MarsOMEUtils {
 				image.setPlane(plane, 0, 0, t);
 			}
 		} else if (table.hasColumn("ChannelIndex")) {
+			format = "Micromanager";
 			//Must be Micromanager data.
 			Map<Integer, String> channelNames = new LinkedHashMap<Integer, String>();
 			Map<Integer, String> channelBinning = new LinkedHashMap<Integer, String>();
@@ -214,6 +219,15 @@ public class MarsOMEUtils {
 		}
 
 		marsOME.setImage(image, 0);
+		
+		//Build log message
+		LogBuilder builder = new LogBuilder();
+		String log = LogBuilder.buildTitleBlock("Migrated to OME format");
+		builder.addParameter("From format", format);
+		log += builder.buildParameterList();
+		log += LogBuilder.endBlock();
+		
+		marsOME.logln(log);
 		
 		return marsOME;
 	}
