@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -270,6 +271,10 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	
 	public int getImageCount() {
 		return images.size();
+	}
+	
+	public Stream<MarsOMEImage> images() {
+		return images.values().stream();
 	}
 	
 	/**

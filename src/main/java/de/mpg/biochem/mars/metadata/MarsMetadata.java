@@ -28,6 +28,7 @@ package de.mpg.biochem.mars.metadata;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
@@ -70,6 +71,8 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T);
 	
 	int getImageCount();
+	
+	Stream<MarsOMEImage> images();
 	
 	/**
 	 * Set the name of the microscope used for data collection.
