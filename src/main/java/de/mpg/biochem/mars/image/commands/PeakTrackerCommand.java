@@ -53,6 +53,7 @@ import de.mpg.biochem.mars.image.DogPeakFinder;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
@@ -310,7 +311,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private Dataset dataset;
 		private ImagePlus image;
 		
-		private OMEXMLMetadata omexmlMetadata;
+		private MarsOMEMetadata marsOMEMetadata;
 		
 		//private MutableModuleItem<String> positionSelection;
 		//private MutableModuleItem<String> channelSelection = 
@@ -323,8 +324,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 
 			ImgPlus<?> imp = dataset.getImgPlus();
 			
+			OMEXMLMetadata omexmlMetadata = null;
 			if (!(imp instanceof SCIFIOImgPlus)) {
-				logService.info("This image has not been opened with SCIFIO. Falling back to IJ1 for metadata.");
+				logService.info("This image has not been opened with SCIFIO.");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService, dataset);
 				} catch (ServiceException e) {
@@ -336,13 +338,18 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        OMEMetadata omeMeta = new OMEMetadata(getContext());
 		        if (!translatorService.translate(metadata, omeMeta, true)) {
 		        	logService.info("Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
-		        	
-		        	//fallback to IJ1 as well... or shoul
-		        	
 		 		} else {
 		 			omexmlMetadata = omeMeta.getRoot();
 		 		}
 			}
+			
+			String metaUID;
+		    if (omexmlMetadata.getUUID() != null)
+		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
+		    else
+		    	metaUID = MarsMath.getUUID58().substring(0, 10);
+		    
+		    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 			
 			if (image.getRoi() == null) {
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
@@ -390,6 +397,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			preFrame.setValue(this, image.getFrame() - 1);
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
+		
 		@Override
 		public void run() {
 			if (useROI) {
@@ -409,8 +417,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	        	Length pixelSize = new Length(pixelLength, 
 					UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
 	        
-				omexmlMetadata.setPixelsPhysicalSizeX(pixelSize, 0);
-				omexmlMetadata.setPixelsPhysicalSizeY(pixelSize, 0);
+	        	marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
+	        	marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
 				
 			} catch (EnumerationException e1) {
 				e1.printStackTrace();
@@ -519,14 +527,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    }
 		    
 		    archive = new SingleMoleculeArchive(newName + ".yama");
-
-		    String metaUID;
-		    if (omexmlMetadata.getUUID() != null)
-		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
-		    else
-		    	metaUID = MarsMath.getUUID58().substring(0, 10);
-		    
-			archive.putMetadata(new MarsOMEMetadata(metaUID, omexmlMetadata));
+			archive.putMetadata(marsOMEMetadata);
 		    
 		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
