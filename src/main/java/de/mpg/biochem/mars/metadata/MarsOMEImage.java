@@ -262,6 +262,14 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return channels.get(channelIndex);
 	}
 	
+	public  Map<Integer, MarsOMEChannel> getChannels() {
+		return channels;
+	}
+	
+	public Stream<MarsOMEChannel> channels() {
+		return channels.values().stream();
+	}
+	
 	public void setPixelsPhysicalSizeX(Length pixelsPhysicalSizeX) {
 		this.pixelsPhysicalSizeX = pixelsPhysicalSizeX;
 	}
