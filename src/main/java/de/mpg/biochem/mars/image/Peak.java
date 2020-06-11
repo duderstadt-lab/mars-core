@@ -26,22 +26,32 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.image;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 import org.scijava.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
 
 public class Peak implements RealLocalizable {
-	String UID;
-	double t;
+	String UID, colorName;
+	double t, c;
 	Peak forwardLink, backwardLink;
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue, Rsquared;
 	
-	double intensity;
+	double intensity, medianBackground;
 	boolean valid = true;
+	
+	public Peak(String UID) {
+		this.UID = UID;
+	}
+	
+	public Peak(String UID, double x, double y) {
+		this.UID = UID;
+		this.x = x;
+		this.y = y;
+	}
+	
 	public Peak(double[] values, double[] errors) {
 		baseline = values[0];
 		height = values[1];
@@ -82,18 +92,28 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = peak.sigmaError;
 		this.pixelValue = peak.pixelValue;
 		this.UID = peak.UID;
+		this.colorName = peak.colorName;
 		this.t = peak.t;
+		this.c = peak.c;
+		this.intensity = peak.intensity;
+		this.medianBackground = peak.medianBackground;
 	}
 	
 	//Getters
 	public double getX() {
 		return x;
 	}
+	public void setX(double x) {
+		this.x = x;
+	}
 	public double getXError() {
 		return xError;
 	}
 	public double getY() {
 		return y;
+	}
+	public void setY(double y) {
+		this.y = y;
 	}
 	public double getYError() {
 		return yError;
@@ -130,6 +150,20 @@ public class Peak implements RealLocalizable {
 	}
 	public void setT(double t) {
 		this.t = t;
+	}
+	public double getC() {
+		return c;
+	}
+	public void setC(double c) {
+		this.c = c;
+	}
+	
+	public void setColorName(String colorName) {
+		this.colorName = colorName;
+	}
+	
+	public String getColorName() {
+		return colorName;
 	}
 	
 	//Setters
@@ -208,6 +242,14 @@ public class Peak implements RealLocalizable {
 		return intensity;
 	}
 	
+	public void setMedianBackground(double medianBackground) {
+		this.medianBackground = medianBackground;
+	}
+	
+	public double getMedianBackground() {
+		return medianBackground;
+	}
+	
 	public void setRsquared(double Rsquared) {
 		this.Rsquared = Rsquared;
 	}
@@ -228,10 +270,10 @@ public class Peak implements RealLocalizable {
 		backwardLink = null;
 	}
 	
-	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
+	//Override from RealLocalizable interface. So peaks can be passed to KDTree and other imglib2 functions.
 	@Override
 	public int numDimensions() {
-		// We make no effort to think beyond 2 dimensions !
+		// We are simple minded and make no effort to think beyond 2 dimensions !
 		return 2;
 	}
 	@Override
