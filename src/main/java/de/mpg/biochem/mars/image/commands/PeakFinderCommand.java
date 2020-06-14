@@ -801,8 +801,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Override
 	public void preview() {	
 		if (preview) {
-			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			image.setOverlay(null);
 			image.deleteRoi();
+			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage);
 			
@@ -829,7 +830,10 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	
 	@Override
 	public void cancel() {
-		image.setRoi(startingRoi);
+		if (image !=  null) {
+			image.setOverlay(null);
+			image.setRoi(startingRoi);
+		}
 	}
 	
 	/** Called when the {@link #preview} parameter value changes. */

@@ -79,7 +79,6 @@ import loci.common.services.ServiceException;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
-import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
 import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
@@ -854,8 +853,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
-				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+				image.setOverlay(null);
 				image.deleteRoi();
+				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
 				
@@ -881,8 +881,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		@Override
 		public void cancel() {
-			if (image !=  null)
+			if (image !=  null) {
+				image.setOverlay(null);
 				image.setRoi(startingRoi);
+			}
 		}
 		
 		/** Called when the {@link #preview} parameter value changes. */
