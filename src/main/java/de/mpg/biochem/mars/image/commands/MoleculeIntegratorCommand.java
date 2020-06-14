@@ -309,7 +309,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
         	}
         });
 		
-		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius, longBoundingRegion, shortBoundingRegion);
+		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius);
 			
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
@@ -318,9 +318,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-	    try {
-	        //forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(planeIndex -> {
-	    	//IntStream.rangeClosed(1, image.getStackSize()).forEach(planeIndex -> {	
+	    try {	
 	    	forkJoinPool.submit(() -> marsOMEMetadata.getImage(0).planes().forEach(plane -> {	    		
 	    		ImageProcessor processor = image.getImageStack().getProcessor(plane.getPlaneIndex() + 1);
 
@@ -346,10 +344,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	progressInteger.incrementAndGet();
 	        	statusService.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0).getPlaneCount(), statusMessage);
 	        })).get();
-	        
-	        progressInteger.set(0);
-	        //statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
-	        
+
 	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	        
 	        //Let's make sure we create a unique archive name...
@@ -362,9 +357,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        archive = new SingleMoleculeArchive(newName + ".yama");
 			archive.putMetadata(marsOMEMetadata);
 			
-			//statusMessage = "Adding Molecules to Archive...";
-	        //progressInteger.set(0);
-	        //statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
+			statusMessage = "Adding Molecules to Archive...";
+	        progressInteger.set(0);
+	        statusService.showStatus(progressInteger.get(), shortIntegrationList.keySet().size(), statusMessage);
 			
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
 	        forkJoinPool.submit(() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> {
