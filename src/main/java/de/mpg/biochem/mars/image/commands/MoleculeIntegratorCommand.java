@@ -206,6 +206,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	private List<MutableModuleItem<String>> channelColors;
 	
 	private List<String> channelColorOptions = new ArrayList<String>( Arrays.asList("None", "FRET", "Short", "Long") );
+	private List<String> channelNames;
 	
 	@Override
 	public void initialize() {
@@ -241,14 +242,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    
 	    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 		
-	    List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(channel -> channel.getName()).collect(Collectors.toList());
-	    
+	    channelNames = marsOMEMetadata.getImage(0).channels().map(channel -> channel.getName()).collect(Collectors.toList());
 	    channelColors = new ArrayList<MutableModuleItem<String>>();
-	    
 	    channelNames.forEach(name -> {
 	    	final MutableModuleItem<String> channelChoice = new DefaultMutableModuleItem<String>(this, name, String.class);
 	    	channelChoice.setChoices(channelColorOptions);
-	    	
 	    	channelColors.add(channelChoice);
 	    });
 	}
@@ -319,17 +317,32 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 	    try {
 	    	
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(slice -> {
-	        	ImageProcessor processor = image.getStack().getProcessor(slice);
-					
-	        	integrator.integratePeaks(processor, IntensitiesStack.get(slice), color);
+	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(planeIndex -> {
+	        	ImageProcessor processor = image.getImageStack().getProcessor(planeIndex);
+	        	
+	        	int[] pos = image.convertIndexToPosition(planeIndex);
+	        	//(c, slice, frame)
+	        	String colorName = channelColors.get(pos[0]).getName();
+	        	if (channelColors.get(pos[0]).getValue(this).equals("FRET")) {
+	        		integrator.integratePeaks(processor, 
+	        				mapToAllPeaks.get(colorName + " " + fretShortName).get(pos[2]), shortBoundingRegion);
+	        		
+	        		integrator.integratePeaks(processor, 
+	        				mapToAllPeaks.get(colorName + " " + fretLongName).get(pos[2]), longBoundingRegion);
+	        	} else if (channelColors.get(pos[0]).getValue(this).equals("Short")) {
+	        		integrator.integratePeaks(processor, 
+	        				mapToAllPeaks.get(colorName).get(pos[2]), shortBoundingRegion);
+	        	} else if (channelColors.get(pos[0]).getValue(this).equals("Long")) {
+	        		integrator.integratePeaks(processor, 
+	        				mapToAllPeaks.get(colorName).get(pos[2]), longBoundingRegion);
+	        	}
 	        	
 	        	progressInteger.incrementAndGet();
 	        	statusService.showStatus(progressInteger.get(), image.getStackSize(), statusMessage);
 	        })).get();
 	        
 	        progressInteger.set(0);
-	        statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
+	        //statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
 	        
 	        logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	        
@@ -341,77 +354,76 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		    	num++;
 		    }
 	        archive = new SingleMoleculeArchive(newName + ".yama");
-	        
 			archive.putMetadata(marsOMEMetadata);
 			
-			statusMessage = "Adding Molecules to Archive...";
-	        progressInteger.set(0);
-	        statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
+			//statusMessage = "Adding Molecules to Archive...";
+	        //progressInteger.set(0);
+	        //statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
 			
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
-	        forkJoinPool.submit(() -> IntensitiesStack.get(1).keySet().parallelStream().forEach(UID -> {
+	        forkJoinPool.submit(() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> {
 	        	MarsTable table = new MarsTable();
-	        	ArrayList<DoubleColumn> columns = new ArrayList<DoubleColumn>();
-	    		
-	        	if (useLongWavelength) {
-	        		columns.add(new DoubleColumn("x_LONG"));
-		    		columns.add(new DoubleColumn("y_LONG"));
-	        	} 
 	        	
-	        	if (useShortWavelength) {
-	        		columns.add(new DoubleColumn("x_SHORT"));
-		    		columns.add(new DoubleColumn("y_SHORT"));
+	        	//Build columns
+	        	List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
+	        	columns.add(new DoubleColumn("T"));
+	        	
+	        	if (longIntegrationList.size() > 0) {
+	        		columns.add(new DoubleColumn("x_LONG"));
+	        		columns.add(new DoubleColumn("y_LONG"));
 	        	}
 	        	
-	    		columns.add(new DoubleColumn("slice"));
-	    		
-	    		for (String colorName : colorsSet) {
+	        	if (shortIntegrationList.size() > 0) {
+	        		columns.add(new DoubleColumn("x_SHORT"));
+	        		columns.add(new DoubleColumn("y_SHORT"));
+	        	} 
+	        	
+	    		for (String colorName : mapToAllPeaks.keySet()) {
 	    			columns.add(new DoubleColumn(colorName));
 	    			columns.add(new DoubleColumn(colorName + "_background"));
 	    		}
 	    		
 	    		for (DoubleColumn column : columns)
 	    			table.add(column);
-	        	
-	        	for (int slice=1; slice<=IntensitiesStack.size(); slice++) {
-	        		FPeak peak = IntensitiesStack.get(slice).get(UID);
-	        		
-	        		table.appendRow();
+
+		        for (int t=0; t<marsOMEMetadata.getImage(0).getSizeT(); t++) {
+		        	table.appendRow();
 	        		int row = table.getRowCount() - 1;
-	        		if (useLongWavelength) {
-	        			table.setValue("x_LONG", row, peak.getXLONG());
-		        		table.setValue("y_LONG", row, peak.getYLONG());
+	        		if (longIntegrationList.size() > 0) {
+	        			table.setValue("x_LONG", row, longIntegrationList.get(UID).getX());
+		        		table.setValue("y_LONG", row, longIntegrationList.get(UID).getY());
 	        		}
 	        		
-	        		if (useShortWavelength) {
-	        			table.setValue("x_SHORT", row, peak.getXSHORT());
-		        		table.setValue("y_SHORT", row, peak.getYSHORT());
+	        		if (shortIntegrationList.size() > 0) {
+	        			table.setValue("x_SHORT", row, shortIntegrationList.get(UID).getX());
+		        		table.setValue("y_SHORT", row, shortIntegrationList.get(UID).getY());
 	        		}
 	        		
-	        		table.set("slice", row, (double)slice);
-	        		
-	        		for (String colorName : colorsSet) {
-	        			if (peak.getIntensityList().containsKey(colorName)) {
-	        				table.setValue(colorName, row, peak.getIntensity(colorName)[0]);
-	        				table.setValue(colorName + "_background", row, peak.getIntensity(colorName)[1]);
+	        		table.set("T", row, (double)t);
+		        	
+		        	for (String colorName : mapToAllPeaks.keySet()) {
+		        		Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
+		        		
+	        			if (mapToAllPeaks.get(colorName).containsKey(t)) {
+	        				table.setValue(colorName, row, peak.getIntensity());
+	        				table.setValue(colorName + "_background", row, peak.getMedianBackground());
 	        			} else {
-	        				//Should we remove this part...
 	        				table.setValue(colorName, row, Double.NaN);
 	        				table.setValue(colorName + "_background", row, Double.NaN);
 	        			}
-	        		}
-	        	}
-	        	
+		        	}
+	    		}
+	    		
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
-	        	molecule.setMetadataUID(metadata.getUID());
+	        	molecule.setMetadataUID(marsOMEMetadata.getUID());
 	        	
 	        	archive.put(molecule);
 	        	
 		        progressInteger.incrementAndGet();
-		        statusService.showStatus(progressInteger.get(), IntensitiesStack.get(1).keySet().size(), statusMessage);
+		        statusService.showStatus(progressInteger.get(), shortIntegrationList.keySet().size(), statusMessage);
 	        })).get();
 	        
-	        statusService.showStatus(IntensitiesStack.get(1).keySet().size(), IntensitiesStack.get(1).keySet().size(), "Peak integration for " + image.getTitle() + " - Done!");
+	        statusService.showStatus(1, 1, "Peak integration for " + image.getTitle() + " - Done!");
 	        //statusService.showStatus("Peak integration for " + image.getTitle() + " - Done!");
 	    } catch (InterruptedException | ExecutionException e) {
 	    	// handle exceptions

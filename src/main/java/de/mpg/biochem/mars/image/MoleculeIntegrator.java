@@ -29,6 +29,7 @@ package de.mpg.biochem.mars.image;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
@@ -80,16 +81,11 @@ public class MoleculeIntegrator {
 		}
 	}
 	
-	public void integratePeaks(ImageProcessor ip, ConcurrentMap<String, FPeak> integrationList, String colorLONG, String colorSHORT) {
+	public void integratePeaks(ImageProcessor ip, Map<String, Peak> integrationList, Rectangle region) {
 		for (String UID : integrationList.keySet()) {
-			FPeak peak = integrationList.get(UID);
-			if (colorLONG != null) {
-				peak.setIntensity(colorLONG, integratePeak(ip, (int)peak.getXLONG(), (int)peak.getYLONG(), longBoundingRegion));
-			}
-			
-			if (colorSHORT != null) {
-				peak.setIntensity(colorSHORT, integratePeak(ip, (int)peak.getXSHORT(), (int)peak.getYSHORT(), shortBoundingRegion));
-			}
+			Peak peak = integrationList.get(UID);
+			double[] intensity = integratePeak(ip, (int)peak.getX(), (int)peak.getY(), region); 
+			peak.setIntensity(intensity[0]);
 		}
 	}
 	
