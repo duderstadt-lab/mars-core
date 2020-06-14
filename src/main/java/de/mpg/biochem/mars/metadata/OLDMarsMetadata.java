@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -271,5 +272,11 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 		public void setImage(MarsOMEImage image, int imageIndex) {
 			// TODO Auto-generated method stub
 			
+		}
+
+		@Override
+		public Stream<MarsOMEImage> images() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 }
