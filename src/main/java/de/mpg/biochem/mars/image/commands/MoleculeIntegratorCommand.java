@@ -248,6 +248,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    	final MutableModuleItem<String> channelChoice = new DefaultMutableModuleItem<String>(this, name, String.class);
 	    	channelChoice.setChoices(channelColorOptions);
 	    	channelColors.add(channelChoice);
+	    	getInfo().addInput(channelChoice);
 	    });
 	}
 	
@@ -368,16 +369,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
 	        	columns.add(new DoubleColumn("T"));
 	        	
-	        	if (longIntegrationList.size() > 0) {
-	        		columns.add(new DoubleColumn("x_LONG"));
-	        		columns.add(new DoubleColumn("y_LONG"));
-	        	}
-	        	
-	        	if (shortIntegrationList.size() > 0) {
-	        		columns.add(new DoubleColumn("x_SHORT"));
-	        		columns.add(new DoubleColumn("y_SHORT"));
-	        	} 
-	        	
 	    		for (String colorName : mapToAllPeaks.keySet()) {
 	    			columns.add(new DoubleColumn(colorName));
 	    			columns.add(new DoubleColumn(colorName + "_background"));
@@ -389,16 +380,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		        for (int t=0; t<marsOMEMetadata.getImage(0).getSizeT(); t++) {
 		        	table.appendRow();
 	        		int row = table.getRowCount() - 1;
-	        		if (longIntegrationList.size() > 0) {
-	        			table.setValue("x_LONG", row, longIntegrationList.get(UID).getX());
-		        		table.setValue("y_LONG", row, longIntegrationList.get(UID).getY());
-	        		}
-	        		
-	        		if (shortIntegrationList.size() > 0) {
-	        			table.setValue("x_SHORT", row, shortIntegrationList.get(UID).getX());
-		        		table.setValue("y_SHORT", row, shortIntegrationList.get(UID).getY());
-	        		}
-	        		
 	        		table.set("T", row, (double)t);
 		        	
 		        	for (String colorName : mapToAllPeaks.keySet()) {
@@ -416,6 +397,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    		
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
 	        	molecule.setMetadataUID(marsOMEMetadata.getUID());
+	        	if (longIntegrationList.containsKey(UID)) {
+	        		molecule.setParameter("x_LONG", longIntegrationList.get(UID).getX());
+	        		molecule.setParameter("y_LONG", longIntegrationList.get(UID).getY());
+	        	}
+        		
+        		if (shortIntegrationList.containsKey(UID)) {
+        			molecule.setParameter("x_SHORT", shortIntegrationList.get(UID).getX());
+        			molecule.setParameter("y_SHORT", shortIntegrationList.get(UID).getY());
+        		}
 	        	
 	        	archive.put(molecule);
 	        	
