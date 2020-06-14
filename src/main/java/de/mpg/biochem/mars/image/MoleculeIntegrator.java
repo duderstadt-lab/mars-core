@@ -43,17 +43,14 @@ import ij.process.ImageProcessor;
  * 
  */
 public class MoleculeIntegrator {
-	Rectangle longBoundingRegion, shortBoundingRegion;
 	int innerRadius, outerRadius;
 	
 	private ArrayList<int[]> innerOffsets;
 	private ArrayList<int[]> outerOffsets;
 
-	public MoleculeIntegrator (int innerRadius, int outerRadius, Rectangle longBoundingRegion, Rectangle shortBoundingRegion) {
+	public MoleculeIntegrator (int innerRadius, int outerRadius) {
 		this.innerRadius = innerRadius;
 		this.outerRadius = outerRadius;
-		this.longBoundingRegion = longBoundingRegion;
-		this.shortBoundingRegion = shortBoundingRegion;
 		
 		BuildOffsets();
 	}
