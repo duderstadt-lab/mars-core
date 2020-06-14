@@ -371,7 +371,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	
 	    		for (String colorName : mapToAllPeaks.keySet()) {
 	    			columns.add(new DoubleColumn(colorName));
-	    			columns.add(new DoubleColumn(colorName + "_background"));
+	    			columns.add(new DoubleColumn(colorName + " background"));
 	    		}
 	    		
 	    		for (DoubleColumn column : columns)
@@ -386,10 +386,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        			if (mapToAllPeaks.get(colorName).containsKey(t)) {
 	        				Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
 	        				table.setValue(colorName, row, peak.getIntensity());
-	        				table.setValue(colorName + "_background", row, peak.getMedianBackground());
+	        				table.setValue(colorName + " background", row, peak.getMedianBackground());
 	        			} else {
 	        				table.setValue(colorName, row, Double.NaN);
-	        				table.setValue(colorName + "_background", row, Double.NaN);
+	        				table.setValue(colorName + " background", row, Double.NaN);
 	        			}
 		        	}
 	    		}
@@ -481,6 +481,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		builder.addParameter("SHORT y0", String.valueOf(SHORTy0));
 		builder.addParameter("SHORT width", String.valueOf(SHORTwidth));
 		builder.addParameter("SHORT height", String.valueOf(SHORTheight));
+		builder.addParameter("FRET short wavelength name", fretShortName);
+		builder.addParameter("FRET short wavelength name", fretLongName);
+		channelColors.forEach(channel -> builder.addParameter(channel.getName(), channel.getValue(this)));
 	}
 	
 	//Getters and Setters
@@ -581,10 +584,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	public int getSHORTHeight() {
 		return SHORTheight;
-	}
-	
-	public void integrateChannel(int channelIndex) {
-		
 	}
 	
 	public void setRoiManager(RoiManager roiManager) {
