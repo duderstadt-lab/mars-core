@@ -206,7 +206,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	private List<MutableModuleItem<String>> channelColors;
 	
 	private List<String> channelColorOptions = new ArrayList<String>( Arrays.asList("None", "FRET", "Short", "Long") );
-	private List<String> channelNames;
 	
 	@Override
 	public void initialize() {
@@ -242,7 +241,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    
 	    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 		
-	    channelNames = marsOMEMetadata.getImage(0).channels().map(channel -> channel.getName()).collect(Collectors.toList());
+	    List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(channel -> channel.getName()).collect(Collectors.toList());
 	    channelColors = new ArrayList<MutableModuleItem<String>>();
 	    channelNames.forEach(name -> {
 	    	final MutableModuleItem<String> channelChoice = new DefaultMutableModuleItem<String>(this, name, String.class);
@@ -302,8 +301,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
         	else if (colorOption.equals("Long"))
         		mapToAllPeaks.put(channel.getName(), createColorIntegrationList(channel.getName(), longIntegrationList));
         	else if (colorOption.equals("FRET")) {
-        		mapToAllPeaks.put(channel.getName() + " " + fretShortName, createColorIntegrationList(fretShortName, shortIntegrationList));
-        		mapToAllPeaks.put(channel.getName() + " " + fretLongName, createColorIntegrationList(fretLongName, longIntegrationList));
+        		mapToAllPeaks.put(channel.getName() + " " + fretShortName, 
+        				createColorIntegrationList(channel.getName(), shortIntegrationList));
+
+        		mapToAllPeaks.put(channel.getName() + " " + fretLongName, 
+        				createColorIntegrationList(channel.getName(), longIntegrationList));
         	}
         });
 		
@@ -317,29 +319,32 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 	    try {
-	    	
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(planeIndex -> {
-	        	ImageProcessor processor = image.getImageStack().getProcessor(planeIndex);
-	        	
-	        	int[] pos = image.convertIndexToPosition(planeIndex);
-	        	//(c, slice, frame)
-	        	String colorName = channelColors.get(pos[0]).getName();
-	        	if (channelColors.get(pos[0]).getValue(this).equals("FRET")) {
+	        //forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(planeIndex -> {
+	    	//IntStream.rangeClosed(1, image.getStackSize()).forEach(planeIndex -> {	
+	    	forkJoinPool.submit(() -> marsOMEMetadata.getImage(0).planes().forEach(plane -> {	    		
+	    		ImageProcessor processor = image.getImageStack().getProcessor(plane.getPlaneIndex() + 1);
+
+	        	int c = plane.getC();
+	        	int t = plane.getT();
+
+	        	String colorName = channelColors.get(c).getName();
+
+	        	if (channelColors.get(c).getValue(this).equals("FRET")) {
 	        		integrator.integratePeaks(processor, 
-	        				mapToAllPeaks.get(colorName + " " + fretShortName).get(pos[2]), shortBoundingRegion);
+	        				mapToAllPeaks.get(colorName + " " + fretShortName).get(t), shortBoundingRegion);
 	        		
 	        		integrator.integratePeaks(processor, 
-	        				mapToAllPeaks.get(colorName + " " + fretLongName).get(pos[2]), longBoundingRegion);
-	        	} else if (channelColors.get(pos[0]).getValue(this).equals("Short")) {
+	        				mapToAllPeaks.get(colorName + " " + fretLongName).get(t), longBoundingRegion);
+	        	} else if (channelColors.get(c).getValue(this).equals("Short")) {
 	        		integrator.integratePeaks(processor, 
-	        				mapToAllPeaks.get(colorName).get(pos[2]), shortBoundingRegion);
-	        	} else if (channelColors.get(pos[0]).getValue(this).equals("Long")) {
+	        				mapToAllPeaks.get(colorName).get(t), shortBoundingRegion);
+	        	} else if (channelColors.get(c).getValue(this).equals("Long")) {
 	        		integrator.integratePeaks(processor, 
-	        				mapToAllPeaks.get(colorName).get(pos[2]), longBoundingRegion);
+	        				mapToAllPeaks.get(colorName).get(t), longBoundingRegion);
 	        	}
 	        	
 	        	progressInteger.incrementAndGet();
-	        	statusService.showStatus(progressInteger.get(), image.getStackSize(), statusMessage);
+	        	statusService.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0).getPlaneCount(), statusMessage);
 	        })).get();
 	        
 	        progressInteger.set(0);
@@ -383,9 +388,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        		table.set("T", row, (double)t);
 		        	
 		        	for (String colorName : mapToAllPeaks.keySet()) {
-		        		Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
-		        		
 	        			if (mapToAllPeaks.get(colorName).containsKey(t)) {
+	        				Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
 	        				table.setValue(colorName, row, peak.getIntensity());
 	        				table.setValue(colorName + "_background", row, peak.getMedianBackground());
 	        			} else {
@@ -414,7 +418,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        })).get();
 	        
 	        statusService.showStatus(1, 1, "Peak integration for " + image.getTitle() + " - Done!");
-	        //statusService.showStatus("Peak integration for " + image.getTitle() + " - Done!");
 	    } catch (InterruptedException | ExecutionException e) {
 	    	// handle exceptions
 	    	e.printStackTrace();

@@ -37,7 +37,7 @@ import ij.gui.Roi;
 import ij.process.ImageProcessor;
 
 /**
- * Class for calculating the integrated fluorescence given a peak list and image stack. 
+ * Class for calculating the integrated fluorescence given a peak list and image processor. 
  * 
  * @author Karl Duderstadt
  * 
@@ -86,6 +86,7 @@ public class MoleculeIntegrator {
 			Peak peak = integrationList.get(UID);
 			double[] intensity = integratePeak(ip, (int)peak.getX(), (int)peak.getY(), region); 
 			peak.setIntensity(intensity[0]);
+			peak.setMedianBackground(intensity[1]);
 		}
 	}
 	
