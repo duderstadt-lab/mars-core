@@ -633,7 +633,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		        
-		        forkJoinPool.submit(() -> metadataIndex.parallelStream().forEach(metaUID -> { 
+		        forkJoinPool.submit(() -> newMetadataIndex.parallelStream().forEach(metaUID -> { 
 		        	I metaData = getMetadata(metaUID);
 		        	newMetadataTagIndex.put(metaUID, metaData.getTags());
 		        })).get();
@@ -645,7 +645,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   }
 			
 		   this.moleculeIndex = (ArrayList<String>)newMoleculeIndex.stream().sorted().collect(toList());
-		   this.metadataIndex = (ArrayList<String>)metadataIndex.stream().sorted().collect(toList());
+		   this.metadataIndex = (ArrayList<String>)newMetadataIndex.stream().sorted().collect(toList());
 		   this.tagIndex = newTagIndex;
 		   this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
 		   this.metadataTagIndex = newMetadataTagIndex;
