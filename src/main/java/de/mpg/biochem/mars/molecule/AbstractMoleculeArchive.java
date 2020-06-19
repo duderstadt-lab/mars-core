@@ -1078,7 +1078,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			//there is only one copy and all changes have already been saved
 			//otherwise, we add it as a new record.
 			synchronized(metadataIndex) {	
-				metadataIndex.add(metadata.getUID());
+				if (!metadataIndex.contains(metadata.getUID()))
+					metadataIndex.add(metadata.getUID());
 			}
 			metadata.setParent(this);
 			metadatas.put(metadata.getUID(), metadata);
@@ -1101,9 +1102,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			if (metadataFile.exists())
 				metadataFile.delete();
 			virtualMetadataSet.remove(metaUID);
-		} else {
-			metadatas.remove(metaUID);
 		}
+		
+		if (metadatas.containsKey(metaUID))
+			metadatas.remove(metaUID);
+		
 	}
 
 	/**
