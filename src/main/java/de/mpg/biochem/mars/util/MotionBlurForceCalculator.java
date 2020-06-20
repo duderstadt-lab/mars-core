@@ -31,34 +31,38 @@ import org.apache.commons.math3.analysis.solvers.AllowedSolution;
 import org.apache.commons.math3.analysis.solvers.BracketingNthOrderBrentSolver;
 
 //From http://commons.apache.org/proper/commons-math/userguide/analysis.html
-public class ForceCalculator implements UnivariateFunction {
+public class MotionBlurForceCalculator implements UnivariateFunction {
 	  final double relativeAccuracy = 1.0e-12;
 	  final double absoluteAccuracy = 1.0e-9;
 	  final int    maxOrder         = 5;
-	  final double kB = 1.380648528*Math.pow(10,-23);
+	  final static double kB = 1.380648528*Math.pow(10,-23);
+	  final static double vicosityOfWater = 8.90*Math.pow(10,-4);// Pa·s
 	  double temperature = 296.15;
 	  
 	  BracketingNthOrderBrentSolver solver;
 	  
-	  double persistenceLength, L0, variance;
+	  double persistenceLength, L0, rawVariance, integrationTime, beadRadius, sa;
 	
-	  public ForceCalculator(double persistenceLength, double L0) {
+	  public MotionBlurForceCalculator(double persistenceLength, double L0, double integrationTime, double beadRadius) {
 		  this.persistenceLength = persistenceLength;
 		  this.L0 = L0;
+		  this.integrationTime = integrationTime;
 		  
 		  solver = new BracketingNthOrderBrentSolver(relativeAccuracy, absoluteAccuracy, maxOrder);
 	  }
 	  
-	  public ForceCalculator(double persistenceLength, double L0, double temperature) {
+	  public MotionBlurForceCalculator(double persistenceLength, double L0, double temperature, double integrationTime, double beadRadius) {
 		  this.temperature = temperature;
 		  this.persistenceLength = persistenceLength;
 		  this.L0 = L0;
+		  this.integrationTime = integrationTime;
+		  this.beadRadius = beadRadius;
 		  
 		  solver = new BracketingNthOrderBrentSolver(relativeAccuracy, absoluteAccuracy, maxOrder);
 	  }
 	  
-	  public double[] calculate(double variance) {
-		    this.variance = variance;
+	  public double[] calculate(double rawVariance) {
+		    this.rawVariance = rawVariance;
 			double length = Double.NaN;
 			try {
 				//the length must be longer than 0.1 nm and shorter than 1/10000 th of full length
@@ -67,15 +71,18 @@ public class ForceCalculator implements UnivariateFunction {
 				length = Double.NaN;
 			}
 		  
-			double[] output = new double[2];
+			double[] output = new double[3];
 			output[0] = getWLCForce(length);
 			output[1] = length;
+			output[2] = sa;
 			
 			return output;
 	  }
 	
 	   public double value(double length) {
-	     return getEquipartitionForce(length) - getWLCForce(length);
+		 double wlcForce = getWLCForce(length);   
+		 double equiForce = getEquipartitionForce(length, wlcForce);    
+	     return equiForce - wlcForce;
 	   }
 	   
 	   public double getWLCForce(double length) {
@@ -83,8 +90,13 @@ public class ForceCalculator implements UnivariateFunction {
 		   return a*(0.25*(Math.pow(1-length/L0,-2)) - 0.25 + length/L0);
 	   }
 	   
-	   public double getEquipartitionForce(double length) {
-		   return (kB*temperature*length)/variance;
+	   public double getEquipartitionForce(double length, double force) {
+		   //Update variance correction
+		   double alpha = (force*integrationTime)/(length*6*Math.PI*vicosityOfWater*beadRadius); 
+		   this.sa = (2/alpha) - (2/(alpha*alpha))*(1 - Math.exp(-alpha));
+		   double motionBlurCorrectedVariance = rawVariance/sa;
+		   
+		   return (kB*temperature*length)/motionBlurCorrectedVariance;
 	   }
 	   
 	   private static class LocalException extends RuntimeException {

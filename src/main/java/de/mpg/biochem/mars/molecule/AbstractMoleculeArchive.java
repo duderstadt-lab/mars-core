@@ -611,7 +611,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		        
-		        forkJoinPool.submit(() -> metadataIndex.parallelStream().forEach(metaUID -> { 
+		        forkJoinPool.submit(() -> newMetadataIndex.parallelStream().forEach(metaUID -> { 
 		        	I metaData = getMetadata(metaUID);
 		        	newMetadataTagIndex.put(metaUID, metaData.getTags());
 		        })).get();
@@ -623,7 +623,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   }
 			
 		   this.moleculeIndex = (ArrayList<String>)newMoleculeIndex.stream().sorted().collect(toList());
-		   this.metadataIndex = (ArrayList<String>)metadataIndex.stream().sorted().collect(toList());
+		   this.metadataIndex = (ArrayList<String>)newMetadataIndex.stream().sorted().collect(toList());
 		   this.tagIndex = newTagIndex;
 		   this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
 		   this.metadataTagIndex = newMetadataTagIndex;
@@ -1045,7 +1045,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			//there is only one copy and all changes have already been saved
 			//otherwise, we add it as a new record.
 			synchronized(metadataIndex) {	
-				metadataIndex.add(metadata.getUID());
+				if (!metadataIndex.contains(metadata.getUID()))
+					metadataIndex.add(metadata.getUID());
 			}
 			metadata.setParent(this);
 			metadatas.put(metadata.getUID(), metadata);
@@ -1068,9 +1069,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			if (metadataFile.exists())
 				metadataFile.delete();
 			virtualMetadataSet.remove(metaUID);
-		} else {
-			metadatas.remove(metaUID);
 		}
+		
+		if (metadatas.containsKey(metaUID))
+			metadatas.remove(metaUID);
+		
 	}
 
 	/**
