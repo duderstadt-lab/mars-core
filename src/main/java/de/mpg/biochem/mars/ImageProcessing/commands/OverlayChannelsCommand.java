@@ -202,7 +202,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 			images[0] = addToMe;
 			images[1] = new ImagePlus("transformed", newStack);
 
-			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, false);
+			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
 	        
 	        progressUpdating.set(false);
 	        
