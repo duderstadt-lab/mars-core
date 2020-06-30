@@ -98,8 +98,8 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	@Parameter(label = "Transform Me")
 	private ImagePlus transformMe;
 
-	//@Parameter(label= "Keep originals")
-	//private boolean keep = true;
+	@Parameter(label= "Keep originals")
+	private boolean keep = false;
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String affineTitle =
@@ -220,6 +220,14 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
 		logService.info(LogBuilder.endBlock(true));
+		
+		if (!keep) {
+			transformMe.changes = false;
+			transformMe.close();
+			
+			addToMe.changes = false;
+			addToMe.close();
+		}
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
