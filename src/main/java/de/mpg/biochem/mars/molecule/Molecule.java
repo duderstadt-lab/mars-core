@@ -87,7 +87,16 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * 
 	 * @return The primary DataTable for this molecule record.
 	 */
+	@Deprecated
 	MarsTable getDataTable();
+	
+	/**
+	 * Get the {@link MarsTable} DataTable holding the primary data for
+	 * this molecule record.
+	 * 
+	 * @return The primary DataTable for this molecule record.
+	 */
+	MarsTable getTable();
 	
 	/**
 	 * Set the {@link MarsTable} holding the primary data for
@@ -97,7 +106,18 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @param table The {@link MarsTable} to add or update in the 
 	 * molecule record.
 	 */
+	@Deprecated
 	void setDataTable(MarsTable table);
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this molecule record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * molecule record.
+	 */
+	void setTable(MarsTable table);
 	
 	/**
 	 * Add or update a Segments table ({@link MarsTable}) generated 

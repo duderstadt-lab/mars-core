@@ -239,7 +239,18 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * 
 	 * @return The primary DataTable for this record.
 	 */
+	@Deprecated
 	public MarsTable getDataTable() {
+		return dataTable;
+	}
+	
+	/**
+	 * Get the {@link MarsTable} holding the primary data for
+	 * this record.
+	 * 
+	 * @return The primary Table for this record.
+	 */
+	public MarsTable getTable() {
 		return dataTable;
 	}
 	
@@ -251,7 +262,24 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * @param table The {@link MarsTable} to add or update in the 
 	 * record.
 	 */
+	@Deprecated
 	public void setDataTable(MarsTable table) {
+		//This means we are resetting all the data...
+		dataTable.clear();
+		
+		//Now set to new table
+		dataTable = table;
+	}
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * record.
+	 */
+	public void setTable(MarsTable table) {
 		//This means we are resetting all the data...
 		dataTable.clear();
 		
