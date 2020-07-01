@@ -151,6 +151,8 @@ public class MergeCommand extends DynamicCommand {
 			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
 			
+			mergedProperties.setParent(mergedArchiveType);
+			
 			//Initialize all file streams and parsers
 			ArrayList<InputStream> fileInputStreams = new ArrayList<InputStream>();
 			ArrayList<JsonParser> jParsers = new ArrayList<JsonParser>();
