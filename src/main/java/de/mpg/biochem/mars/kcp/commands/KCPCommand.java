@@ -293,7 +293,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 				if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getStart()) {
 					offset = j;
 				} else if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getEnd()) {
-					length = j - offset;
+					length = j - offset + 1;
 				}
 			}
 				
