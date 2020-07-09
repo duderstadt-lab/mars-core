@@ -26,7 +26,6 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.image.commands;
 
-import net.imagej.Dataset;
 import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
 import net.imglib2.realtransform.AffineTransform2D;
@@ -51,7 +50,6 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
-import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
@@ -64,7 +62,6 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;
-import io.scif.services.TranslatorService;
 
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
@@ -84,7 +81,7 @@ import java.util.stream.IntStream;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Image", weight = 20,
+		@Menu(label = "Image Processing", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Overlay Channels", weight = 60, mnemonic = 'o')})
 public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T > > extends DynamicCommand implements Command {
@@ -95,39 +92,36 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	@Parameter
 	private StatusService statusService;
 	
-	@Parameter
-	private ConvertService convertService;
-	
 	@Parameter(label = "Add To Me")
-	private Dataset addToMe;
+	private ImagePlus addToMe;
 	
 	@Parameter(label = "Transform Me")
-	private Dataset transformMe;
+	private ImagePlus transformMe;
 
-	//@Parameter(label= "Keep originals")
-	//private boolean keep = true;
+	@Parameter(label= "Keep originals")
+	private boolean keep = false;
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String affineTitle =
 			"Affine2D Transformation Matrix:";
 	
 	@Parameter(label="m00")
-	private double m00 = 1;
+	private double m00;
 	
 	@Parameter(label="m01")
-	private double m01 = 0;
+	private double m01;
 	
 	@Parameter(label="m02")
-	private double m02 = 0;
+	private double m02;
 	
 	@Parameter(label="m10")
-	private double m10 = 0;
+	private double m10;
 	
 	@Parameter(label="m11")
-	private double m11 = 1;
+	private double m11;
 	
 	@Parameter(label="m12")
-	private double m12 = 0;
+	private double m12;
 	
 	@Parameter(label="Merged Image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
@@ -143,7 +137,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = LogBuilder.buildTitleBlock("Overlay Channels");
+		String log = builder.buildTitleBlock("Overlay Channels");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -160,10 +154,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
 		
-		ImagePlus transformMeIP = convertService.convert(transformMe, ij.ImagePlus.class);
-		ImagePlus addToMeIP = convertService.convert(addToMe, ij.ImagePlus.class);
-		
-		ImageStack oldStack = transformMeIP.getImageStack();
+		ImageStack oldStack = transformMe.getImageStack();
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
@@ -175,7 +166,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
                     try {
         		        while(progressUpdating.get()) {
         		        	Thread.sleep(100);
-        		        	statusService.showStatus(transformedImageMap.size(), transformMeIP.getStackSize(), "Transforming " + transformMeIP.getTitle());
+        		        	statusService.showStatus(transformedImageMap.size(), transformMe.getStackSize(), "Transforming " + transformMe.getTitle());
         		        }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -185,7 +176,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 
 	        progressThread.start();
 	        
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMeIP.getStackSize()).parallel().forEach(slice -> { 
+	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMe.getStackSize()).parallel().forEach(slice -> { 
 	        	ImagePlus sliceImage = new ImagePlus("slice "+slice, oldStack.getProcessor(slice));
 	        	
 	        	Img< T > img = ImagePlusAdapter.wrap(sliceImage);
@@ -199,7 +190,7 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	        
 	        //Now we have a map with all the transformed images. We just need to add them to a new stack
 	        //and then merge with the untransformed image.
-			ImageStack newStack = new ImageStack(transformMeIP.getWidth(), transformMeIP.getHeight());
+			ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe.getHeight());
 			
 			//I think this just works with references, so it should be super fast...
 			//otherwise the stack could be made in the parallel stream but might need 
@@ -208,14 +199,14 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 				newStack.addSlice(transformedImageMap.get(slice).getProcessor());
 			
 			ImagePlus[] images = new ImagePlus[2];
-			images[0] = addToMeIP;
+			images[0] = addToMe;
 			images[1] = new ImagePlus("transformed", newStack);
 
-			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, false);
+			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
 	        
 	        progressUpdating.set(false);
 	        
-	        statusService.showStatus(1, 1, "Transformations of " + transformMeIP.getTitle() + " - Done!");
+	        statusService.showStatus(1, 1, "Transformations of " + transformMe.getTitle() + " - Done!");
 	        
 	   } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
@@ -229,13 +220,26 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
 		logService.info(LogBuilder.endBlock(true));
+		
+		if (!keep) {
+			transformMe.changes = false;
+			transformMe.close();
+			
+			addToMe.changes = false;
+			addToMe.close();
+		}
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image 1", addToMe.getName());
-		builder.addParameter("Image 1 Directory", addToMe.getSource());
-		builder.addParameter("Image 2", transformMe.getName());
-		builder.addParameter("Image 2 Directory", transformMe.getSource());
+		builder.addParameter("Image 1", addToMe.getTitle());
+		if (addToMe.getOriginalFileInfo() != null && addToMe.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Image 1 Directory", addToMe.getOriginalFileInfo().directory);
+		}
+		builder.addParameter("Image 2", transformMe.getTitle());
+		if (transformMe.getOriginalFileInfo() != null && transformMe.getOriginalFileInfo().directory != null) {
+			builder.addParameter("Image 2 Directory", transformMe.getOriginalFileInfo().directory);
+		}
+		//builder.addParameter("keep originals", String.valueOf(keep));
 		builder.addParameter("Affine2D m00", String.valueOf(m00));
 		builder.addParameter("Affine2D m01", String.valueOf(m01));
 		builder.addParameter("Affine2D m02", String.valueOf(m02));
