@@ -40,6 +40,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -1564,6 +1565,22 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				return getMetadata(UID).hasTag(tag);
 		}
 		return false;
+	}
+	
+	/**
+	 * Add tags to molecules using UID to tag map. This offers optimal
+	 * performance by using multiple threads. Provides a way to add tags
+	 * resulting from machine learning using python.
+	 * 
+	 * @param UID The UID of the molecule to check.
+	 * @return Returns true if the molecule has no tags and false if it has tags.
+	 */
+	public void addMoleculeTags(HashMap<String, String> tagMap) {
+		tagMap.keySet().parallelStream().forEach(UID -> {
+			M molecule = get(UID);
+			molecule.addTag(tagMap.get(UID));
+			put(molecule);
+		});
 	}
 
 	/**

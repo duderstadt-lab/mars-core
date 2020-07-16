@@ -29,6 +29,7 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -292,6 +293,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return Returns true if the molecule has no tags and false if it has tags.
 	 */
 	boolean moleculeHasNoTags(String UID);
+	
+	/**
+	 * Add tags to molecules using UID to tag map. This offers optimal
+	 * performance by using multiple threads. Provides a way to add tags
+	 * resulting from machine learning using python.
+	 * 
+	 * @param UID The UID of the molecule to check.
+	 * @return Returns true if the molecule has no tags and false if it has tags.
+	 */
+	void addMoleculeTags(HashMap<String, String> tags);
 	
 	/**
 	 * Retrieve the list of tags for a molecule. Will retrieve
