@@ -1486,7 +1486,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				}
 		}
 		
-		double[][] molData = new double[UIDs.size()][rangeEnd - rangeStart - 1];
+		double[][] molData = new double[UIDs.size()][rangeEnd - rangeStart];
 		int length = rangeEnd - rangeStart;
 	
 		try {
