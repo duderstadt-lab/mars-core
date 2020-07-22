@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -262,6 +263,22 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The set of tags for the given metadata record.
 	 */
 	LinkedHashSet<String> getMetadataTagSet(String UID);
+	
+	/**
+	 * Utility function to generate batches of molecules 
+	 * data in an optimal format for machine learning
+	 * using keras. Region goes from rangeStart to 1 - rangeEnd.
+	 * 
+	 * @param UIDs The list of UIDs for the molecule to review data from.
+	 * @param timeColumn Name of the T column.
+	 * @param signalColumn Name of the signal column.
+	 * @param rangeStart Index of start of range in T column.
+	 * @param rangeEnd Index of end of range in T column.
+	 * @param tagsToLearn List of tags to use to build labels.
+	 * @param threads Number of thread to use when building data.
+	 * @return Returns batch of molecule data.
+	 */
+	List<double[][]> getMoleculeBatch(List<String> UIDs, String tColumn, String signalColumn, int rangeStart, int rangeEnd, List<String> tagsToLearn, int threads);
 	
 	/**
 	 * Check if a molecule record has a tag. This offers optimal
