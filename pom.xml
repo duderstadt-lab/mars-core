@@ -86,7 +86,7 @@
 
 	<properties>
 		<package-name>de.mpg.biochem.mars</package-name>
-		<license.licenseName>BSD-2</license.licenseName>
+		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
