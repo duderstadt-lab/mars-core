@@ -1476,16 +1476,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public List<double[][]> getMoleculeBatch(List<String> UIDs, String tColumn, String signalColumn, int rangeStart, int rangeEnd, List<String> tagsToLearn, int threads) {
 		ForkJoinPool forkJoinPool = new ForkJoinPool(threads);
 		
-		//First build the labels using the index
-		double[][] labels = new double[UIDs.size()][tagsToLearn.size()];
-		for (int i=0; i < UIDs.size() ; i++) {
-			for (String tag : tagsToLearn)
-				if (moleculeHasTag(UIDs.get(i), tag)) {
-					labels[i][tagsToLearn.indexOf(tag)] = 1;
-					break;
-				}
-		}
-		
 		double[][] molData = new double[UIDs.size()][rangeEnd - rangeStart];
 		int length = rangeEnd - rangeStart;
 	
@@ -1517,8 +1507,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		List<double[][]> dataBatch = new ArrayList<double[][]>();
 		dataBatch.add(molData);
-		dataBatch.add(labels);
 		
+		if (tagsToLearn != null && tagsToLearn.size() > 0) {
+			//First build the labels using the index
+			double[][] labels = new double[UIDs.size()][tagsToLearn.size()];
+			for (int i=0; i < UIDs.size() ; i++) {
+				for (String tag : tagsToLearn)
+					if (moleculeHasTag(UIDs.get(i), tag)) {
+						labels[i][tagsToLearn.indexOf(tag)] = 1;
+						break;
+					}
+			}
+			dataBatch.add(labels);
+		}
+				
 		return dataBatch;
 	}
 	
