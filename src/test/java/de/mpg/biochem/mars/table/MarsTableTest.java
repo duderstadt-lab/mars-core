@@ -1,6 +1,6 @@
 /*-
  * #%L
- * Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.
+ * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
  * %%
  * Copyright (C) 2018 - 2020 Karl Duderstadt
  * %%
