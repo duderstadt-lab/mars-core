@@ -23,7 +23,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>BSD-2</name>
+			<name>bsd_2</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
