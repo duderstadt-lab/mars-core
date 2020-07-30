@@ -14,7 +14,7 @@
 	<version>1.0.0-beta-4-SNAPSHOT</version>
 
 	<name>mars-core</name>
-	<description>Suite of core tools for processing single-molecule TIRF and FMT data in the Structure and Dynamics of Molecular Machines research group.</description>
+	<description>Molecule Archive Suite (Mars) - core data storage and processing algorithms.</description>
 	<url>http://biochem.mpg.de/duderstadt/</url>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
