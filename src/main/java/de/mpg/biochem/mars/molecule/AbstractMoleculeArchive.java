@@ -40,9 +40,11 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -1425,6 +1427,71 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
+	 * Utility function to generate batches of molecules 
+	 * data in an optimal format for machine learning
+	 * using keras. Region goes from rangeStart to 1 - rangeEnd.
+	 * 
+	 * @param UIDs The list of UIDs for the molecule to review data from.
+	 * @param timeColumn Name of the T column.
+	 * @param signalColumn Name of the signal column.
+	 * @param rangeStart Index of start of range in T column.
+	 * @param rangeEnd Index of end of range in T column.
+	 * @param tagsToLearn List of tags to use to build labels.
+	 * @param threads Number of thread to use when building data.
+	 * @return Returns batch of molecule data.
+	 */
+	public List<double[][]> getMoleculeBatch(List<String> UIDs, String tColumn, String signalColumn, int rangeStart, int rangeEnd, List<String> tagsToLearn, int threads) {
+		ForkJoinPool forkJoinPool = new ForkJoinPool(threads);
+		
+		double[][] molData = new double[UIDs.size()][rangeEnd - rangeStart];
+		int length = rangeEnd - rangeStart;
+	
+		try {
+	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(UID -> { 
+	        	M molecule = get(UID);
+	        	
+	        	MarsTable table = molecule.getDataTable();
+	        	
+	        	int molDataRow = UIDs.indexOf(UID);
+	        	
+	        	//could be moved into loop to improve performance.
+	        	//pre-fill will NaNs
+	        	for (int i=0; i<length; i++)
+	        		molData[molDataRow][i] = Double.NaN;
+	        	
+	        	for (int row=0; row < table.getRowCount(); row++) {
+	        		if (rangeStart <= table.getValue(tColumn, row) && table.getValue(tColumn, row) < rangeEnd) {
+	        			int index = (int)table.getValue(tColumn, row) - rangeStart;
+	        			molData[molDataRow][index] = table.getValue(signalColumn, row); 
+	        		}
+	        	}
+	        })).get();    
+		} catch (InterruptedException | ExecutionException e ) {
+	    	e.printStackTrace();
+		} finally {
+	      forkJoinPool.shutdown();
+		}
+		
+		List<double[][]> dataBatch = new ArrayList<double[][]>();
+		dataBatch.add(molData);
+		
+		if (tagsToLearn != null && tagsToLearn.size() > 0) {
+			//First build the labels using the index
+			double[][] labels = new double[UIDs.size()][tagsToLearn.size()];
+			for (int i=0; i < UIDs.size() ; i++) {
+				for (String tag : tagsToLearn)
+					if (moleculeHasTag(UIDs.get(i), tag)) {
+						labels[i][tagsToLearn.indexOf(tag)] = 1;
+						break;
+					}
+			}
+			dataBatch.add(labels);
+		}
+				
+		return dataBatch;
+	}
+	
+	/**
 	 * Check if a molecule record has a tag. This offers optimal
 	 * performance for virtual mode because only the tag index
 	 * is checked without retrieving all virtual records.
@@ -1531,6 +1598,22 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				return getMetadata(UID).hasTag(tag);
 		}
 		return false;
+	}
+	
+	/**
+	 * Add tags to molecules using UID to tag map. This offers optimal
+	 * performance by using multiple threads. Provides a way to add tags
+	 * resulting from machine learning using python.
+	 * 
+	 * @param UID The UID of the molecule to check.
+	 * @return Returns true if the molecule has no tags and false if it has tags.
+	 */
+	public void addMoleculeTags(HashMap<String, String> tagMap) {
+		tagMap.keySet().parallelStream().forEach(UID -> {
+			M molecule = get(UID);
+			molecule.addTag(tagMap.get(UID));
+			put(molecule);
+		});
 	}
 
 	/**
