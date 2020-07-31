@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
@@ -164,24 +165,6 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @return Returns the map of parameter names to values.
 	 */
 	LinkedHashMap<String, Double> getParameters();
-	
-	/**
-	 * Get the {@link MarsTable} DataTable holding the primary data for
-	 * this molecule record.
-	 * 
-	 * @return The primary DataTable for this molecule record.
-	 */
-	MarsTable getDataTable();
-	
-	/**
-	 * Set the {@link MarsTable} holding the primary data for
-	 * this molecule record. Usually this is tracking or intensity 
-	 * as a function of time.
-	 * 
-	 * @param table The {@link MarsTable} to add or update in the 
-	 * molecule record.
-	 */
-	void setDataTable(MarsTable table);
 	
 	public void putRegion(MarsRegion regionOfInterest);
 	

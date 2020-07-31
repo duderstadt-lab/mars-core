@@ -41,6 +41,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
+import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -62,6 +63,7 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsUtil;
@@ -83,6 +85,9 @@ public class MergeCommand extends DynamicCommand {
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 	
 	@Parameter
     private UIService uiService;
@@ -132,7 +137,7 @@ public class MergeCommand extends DynamicCommand {
 			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveFileList) {
 				try {
-					archiveTypes.add(MarsUtil.getArchiveTypeFromYama(file));
+					archiveTypes.add(moleculeArchiveService.getArchiveTypeFromYama(file));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -150,7 +155,7 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive<?,?,?> mergedArchiveType = MarsUtil.createMoleculeArchive(archiveType);
+			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
 			
 			mergedProperties.setParent(mergedArchiveType);

@@ -1,14 +1,13 @@
-/*-
- * #%L
- * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
- * %%
- * Copyright (C) 2018 - 2020 Karl Duderstadt
- * %%
+/*******************************************************************************
+ * Copyright (C) 2019, Duderstadt Lab
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
@@ -16,7 +15,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -24,36 +23,35 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-package de.mpg.biochem.mars.ImageProcessing;
+ ******************************************************************************/
+package de.mpg.biochem.mars.image;
 
-import java.util.ArrayList;
+import java.util.Map;
 
 import org.scijava.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
 
-//This is a class that contains all the information about peaks
-//here we implement RealLocalizable so that we can pass lists of peaks to
-//other imglib2 libraries that do cool things.
-//for example we pass Peaks to KDTree to make searching a list of peak positions in 2D much faster !
-//For the implementation to work all we have to do is provide the four methods at the bottom that provide the positions in x and y...
-
 public class Peak implements RealLocalizable {
-	//Used during peak linking to assign UID molecule numbers
-	String UID;
-
-	int slice;
-	
-	//Used for multithreaded Peak linking..
+	String UID, colorName;
+	double t, c;
 	Peak forwardLink, backwardLink;
-	
 	double x,y, height, baseline, sigma;
 	double xError,yError, heightError, baselineError, sigmaError;
 	double pixelValue, Rsquared;
 	
-	double intensity;
+	double intensity, medianBackground;
 	boolean valid = true;
+	
+	public Peak(String UID) {
+		this.UID = UID;
+	}
+	
+	public Peak(String UID, double x, double y) {
+		this.UID = UID;
+		this.x = x;
+		this.y = y;
+	}
+	
 	public Peak(double[] values, double[] errors) {
 		baseline = values[0];
 		height = values[1];
@@ -67,23 +65,19 @@ public class Peak implements RealLocalizable {
 		yError = errors[3];
 		sigmaError = errors[4];
 	}
-	public Peak(double x, double y, double height, double baseline, double sigma) {
+	public Peak(double x, double y, double height, double baseline, double sigma, double t) {
 		this.x = x;
 		this.y = y;
 		this.height = height;
 		this.baseline = baseline;
 		this.sigma = sigma;
+		this.t = t;
 	}
-	public Peak(double x, double y, double pixelValue) {
+	public Peak(double x, double y, double pixelValue, double t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
-	}
-	public Peak(double x, double y, double pixelValue, int slice) {
-		this.x = x;
-		this.y = y;
-		this.pixelValue = pixelValue;
-		this.slice = slice;
+		this.t = t;
 	}
 	public Peak(Peak peak) {
 		this.x = peak.x;
@@ -98,18 +92,28 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = peak.sigmaError;
 		this.pixelValue = peak.pixelValue;
 		this.UID = peak.UID;
-		this.slice = peak.slice;
+		this.colorName = peak.colorName;
+		this.t = peak.t;
+		this.c = peak.c;
+		this.intensity = peak.intensity;
+		this.medianBackground = peak.medianBackground;
 	}
 	
 	//Getters
 	public double getX() {
 		return x;
 	}
+	public void setX(double x) {
+		this.x = x;
+	}
 	public double getXError() {
 		return xError;
 	}
 	public double getY() {
 		return y;
+	}
+	public void setY(double y) {
+		this.y = y;
 	}
 	public double getYError() {
 		return yError;
@@ -141,11 +145,25 @@ public class Peak implements RealLocalizable {
 	public String getUID() {
 		return UID;
 	}
-	public int getSlice() {
-		return slice;
+	public double getT() {
+		return t;
 	}
-	public void setSlice(int slice) {
-		this.slice = slice;
+	public void setT(double t) {
+		this.t = t;
+	}
+	public double getC() {
+		return c;
+	}
+	public void setC(double c) {
+		this.c = c;
+	}
+	
+	public void setColorName(String colorName) {
+		this.colorName = colorName;
+	}
+	
+	public String getColorName() {
+		return colorName;
 	}
 	
 	//Setters
@@ -165,34 +183,23 @@ public class Peak implements RealLocalizable {
 		this.sigmaError = errors[4];
 	}
 	
-	public void addToColumnsXY(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(x);
-		columns.get(1).add(y);
-	}
-	
-	public void addToColumnsXYIntegration(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(x);
-		columns.get(1).add(y);
-		columns.get(2).add(intensity);
-	}
-	
-	public void addToColumnsVerbose(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(baseline);
-		columns.get(1).add(height);
-		columns.get(2).add(x);
-		columns.get(3).add(y);
-		columns.get(4).add(sigma);
-		columns.get(5).add(Rsquared);
-	}
-	
-	public void addToColumnsVerboseIntegration(ArrayList<DoubleColumn> columns) {
-		columns.get(0).add(baseline);
-		columns.get(1).add(height);
-		columns.get(2).add(x);
-		columns.get(3).add(y);
-		columns.get(4).add(sigma);
-		columns.get(5).add(Rsquared);
-		columns.get(6).add(intensity);
+	public void addToColumns(Map<String, DoubleColumn> columns) {
+		if (columns.containsKey("T"))
+			columns.get("T").add(t);
+		if (columns.containsKey("x"))
+			columns.get("x").add(x);
+		if (columns.containsKey("y"))
+			columns.get("y").add(y);
+		if (columns.containsKey("Intensity"))
+			columns.get("Intensity").add(intensity);
+		if (columns.containsKey("baseline"))
+			columns.get("baseline").add(baseline);
+		if (columns.containsKey("height"))
+			columns.get("height").add(height);
+		if (columns.containsKey("sigma"))
+			columns.get("sigma").add(sigma);
+		if (columns.containsKey("R2"))
+			columns.get("R2").add(Rsquared);
 	}
 	
 	//used for pixel sort in the peak finder
@@ -235,6 +242,14 @@ public class Peak implements RealLocalizable {
 		return intensity;
 	}
 	
+	public void setMedianBackground(double medianBackground) {
+		this.medianBackground = medianBackground;
+	}
+	
+	public double getMedianBackground() {
+		return medianBackground;
+	}
+	
 	public void setRsquared(double Rsquared) {
 		this.Rsquared = Rsquared;
 	}
@@ -243,11 +258,11 @@ public class Peak implements RealLocalizable {
 		return Rsquared;
 	}
 	
-	public void reset(double x, double y, double pixelValue, int slice) {
+	public void reset(double x, double y, double pixelValue, int t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
-		this.slice = slice;
+		this.t = t;
 		
 		valid = true;
 		UID = null;
@@ -255,10 +270,10 @@ public class Peak implements RealLocalizable {
 		backwardLink = null;
 	}
 	
-	//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
+	//Override from RealLocalizable interface. So peaks can be passed to KDTree and other imglib2 functions.
 	@Override
 	public int numDimensions() {
-		// We make no effort to think beyond 2 dimensions !
+		// We are simple minded and make no effort to think beyond 2 dimensions !
 		return 2;
 	}
 	@Override

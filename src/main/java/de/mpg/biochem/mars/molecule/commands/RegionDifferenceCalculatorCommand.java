@@ -47,14 +47,14 @@ import org.scijava.widget.ChoiceWidget;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
@@ -137,7 +137,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		if (!uiService.isHeadless())
 			archive.lock();
 		
-		archive.addLogMessage(log);
+		archive.logln(log);
 		
 		if (regionSource.equals("Molecules")) {
 			//Loop through each molecule and add reversal difference value to parameters for each molecule
@@ -195,8 +195,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
-	    archive.addLogMessage("\n" + LogBuilder.endBlock(true));
-	    archive.addLogMessage("   ");
+	    archive.logln("\n" + LogBuilder.endBlock(true));
+	    archive.logln("   ");
 	    
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless()) 

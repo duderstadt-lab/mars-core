@@ -67,10 +67,11 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.*;
 
-import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
-import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
+import de.mpg.biochem.mars.image.MoleculeIntegrator;
+import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
@@ -86,6 +87,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.stream.Collectors.toList;
 
+import org.scijava.Context;
+import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
 
 /**
@@ -152,9 +155,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	private String name;
 	
 	private MoleculeArchiveWindow win;
-	
-	//Services that the archive will need access to but that are not initialized..
-	private MoleculeArchiveService moleculeArchiveService;
 	
 	//Can be a .yama file or a directory containing a virtual store
 	private File file;
@@ -271,10 +271,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public AbstractMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
+	public AbstractMoleculeArchive(String name, File file) throws JsonParseException, IOException {
 		this.name = name;
 		this.file = file;
-		this.moleculeArchiveService = moleculeArchiveService;
 		
 		if (file.isDirectory())
 			this.virtual = true;
@@ -302,27 +301,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param table A MarsTable to build the archive from.
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
-	 */
-	public AbstractMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		this.name = name;
-		this.virtual = false;
-		this.moleculeArchiveService = moleculeArchiveService;
-		
-		initializeVariables();
-		
-		buildFromTable(table);
-	}
-	
-	/**
-	 * Constructor for building a molecule archive from a MarsTable.
-	 * The table provided must contain a molecule column. The integer values
-	 * in the molecule column determine the grouping for creation of 
-	 * molecule records.
-	 * 
-	 * No status update are provided during processing.
-	 * 
-	 * @param name The name of the archive.
-	 * @param table A MarsTable to build the archive from.
 	 */
 	public AbstractMoleculeArchive(String name, MarsTable table) {
 		this.name = name;
@@ -825,12 +803,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			jGenerator.writeEndArray();
 		}
 		
-		jGenerator.writeArrayFieldStart("Molecules");
-		Iterator<String> iterator = moleculeIndex.iterator();
-		while (iterator.hasNext()) {
-			get(iterator.next()).toJSON(jGenerator);
+		if (moleculeIndex.size() > 0) {
+			jGenerator.writeArrayFieldStart("Molecules");
+			Iterator<String> iterator = moleculeIndex.iterator();
+			while (iterator.hasNext()) {
+				get(iterator.next()).toJSON(jGenerator);
+			}
+			jGenerator.writeEndArray();
 		}
-		jGenerator.writeEndArray();
 		
 		jGenerator.writeEndObject();
 	}
@@ -852,13 +832,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			jParser.nextToken();
 			archiveProperties.fromJSON(jParser);
-		} else {
-			if (moleculeArchiveService != null)
-				moleculeArchiveService.getUIService().showDialog("No MoleculeArchiveProperties found. Are you sure this is a yama file?", MessageType.ERROR_MESSAGE);
+		} else
 			return;
-		}
-
-		int numMolecules = archiveProperties.getNumberOfMolecules();
 		
 		String fieldBlockName = "";
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -869,21 +844,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    else 
 		    	fieldBlockName = fieldName;
 			
-			if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			if ("ImageMetadata".equals(fieldName) || "ImageMetaData".equals(fieldName) || "Metadata".equals(fieldName))
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					putMetadata(createMetadata(jParser));
-				}
-			}
 			
-			if ("Molecules".equals(fieldName)) {
-				int molNum = 0;
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			if ("Molecules".equals(fieldName))
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					put(createMolecule(jParser));
-					molNum++;
-					if (moleculeArchiveService != null)
-						moleculeArchiveService.getStatusService().showStatus(molNum, numMolecules, "Loading molecules from " + file.getName());
-				}
-			}
 			
 			//SHOULD BE UNREACHABLE
 		    //This is only reached if there is an unexpected field added to the json record
@@ -2002,17 +1969,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	/**
 	 * Add a log message to all metadata records. Used by Mars commands 
-	 * to keep a record of the sequence of processing steps during analysis.
-	 * 
-	 * @param message The String message to add to all metadata logs.
-	 */
-	@Deprecated
-	public void addLogMessage(String message) {
-		logln(message);
-	}
-	
-	/**
-	 * Add a log message to all metadata records. Used by Mars commands 
 	 * to keep a record of the sequence of processing steps during analysis. Start
 	 * a new line after adding the message.
 	 * 
@@ -2055,16 +2011,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
-	 * This includes numbers of records, comments, file locations, and global lists of table columns, 
-	 * tags, and parameters. Deprecated
+	 * Get the record in Json string format.
 	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 * @return Json string representation of the record.
 	 */
-	@Deprecated
-	public P getProperties() {
-		return archiveProperties;
-	}
+  	public String dumpJSON() {
+  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+  	}
 	
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
@@ -2110,16 +2063,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 		}
-	}
-	
-	/**
-	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
-	 * the current Context. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	public MoleculeArchiveService getMoleculeArchiveService() {
-		return moleculeArchiveService;
 	}
 	
 	/**

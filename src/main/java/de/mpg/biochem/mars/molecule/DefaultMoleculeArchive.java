@@ -31,9 +31,12 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.metadata.*;
 import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
@@ -41,7 +44,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * 
  * @author Karl Duderstadt
  */
-public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, DefaultMarsMetadata, DefaultMoleculeArchiveProperties> {
+public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty DefaultMoleculeArchive with the given name. 
@@ -93,8 +96,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public DefaultMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public DefaultMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super(name, file);
 	}
 	
 	/**
@@ -111,8 +114,8 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public DefaultMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public DefaultMoleculeArchive(String name, MarsTable table) {
+		super(name, table);
 	}
 	
 	/**
@@ -130,17 +133,20 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	}
 	
 	/**
-	 * Create DefaultMarsMetadata record using JsonParser stream.
+	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
-	public DefaultMarsMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new DefaultMarsMetadata(jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
-	public DefaultMarsMetadata createMetadata(String metaUID) {
-		return new DefaultMarsMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID) {
+		return new MarsOMEMetadata(metaUID);
 	}
 	
 	/**

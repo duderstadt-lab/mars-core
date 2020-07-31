@@ -42,14 +42,14 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.SdmmImageMetadata;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 
@@ -81,17 +81,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private final String header =
 		"Region for background alignment:";
     
-    @Parameter(label="from slice")
+    @Parameter(label="from T")
     private int from = 1;
     
-    @Parameter(label="to slice")
+    @Parameter(label="to T")
 	private int to = 100;
-			
-    @Parameter(label="Metadata Background X (x_drift)")
-    private String meta_x = "x_drift";
-    
-    @Parameter(label="Metadata Background Y (y_drift)")
-    private String meta_y = "y_drift";
     
     @Parameter(label="Input X (x)")
     private String input_x = "x";
@@ -136,20 +130,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
-				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
-				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
-			} else {
-				logService.error("Metadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-				logService.error(LogBuilder.endBlock(false));
-				archive.logln("Metadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-				archive.logln(LogBuilder.endBlock(false));
-				
-				//Unlock the window so it can be changed
-			    if (!uiService.isHeadless())
-			    	archive.unlock();
-				return;
-			}
+			metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
+			metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
 		}
 
 		//Loop through each molecule and calculate drift corrected traces...
@@ -229,17 +211,38 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
-	private static HashMap<Double, Double> getSliceToColumnMap(MarsMetadata meta, String columnName, int from, int to) {
-		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
+	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta, int from, int to) {
+		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 		
-		MarsTable metaTable = meta.getDataTable();
-		
-		double meanBG = metaTable.mean(columnName, "slice", from, to);
-		
-		for (int i=0;i<metaTable.getRowCount();i++) {
-			sliceToColumn.put(metaTable.getValue("slice", i), metaTable.getValue(columnName, i) - meanBG);
+		double meanXbg = 0;
+		int count = 0;
+		for (int t=from; t<=to; t++) {
+			meanXbg += meta.getPlane(0, 0, 0, t).getXDrift();
+			count++;
 		}
-		return sliceToColumn;
+		meanXbg = meanXbg/count; 
+		
+		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
+			TtoColumn.put(meta.getPlane(0, 0, 0, t).getXDrift(), meta.getPlane(0, 0, 0, t).getXDrift() - meanXbg);
+		}
+		return TtoColumn;
+	}
+	
+	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta, int from, int to) {
+		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
+		
+		double meanYbg = 0;
+		int count = 0;
+		for (int t=from; t<=to; t++) {
+			meanYbg += meta.getPlane(0, 0, 0, t).getYDrift();
+			count++;
+		}
+		meanYbg = meanYbg/count; 
+		
+		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
+			TtoColumn.put(meta.getPlane(0, 0, 0, t).getYDrift(), meta.getPlane(0, 0, 0, t).getYDrift() - meanYbg);
+		}
+		return TtoColumn;
 	}
 	
 	public static void correctDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
@@ -269,15 +272,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			
 			for (String metaUID : archive.getMetadataUIDs()) {
 				MarsMetadata meta = archive.getMetadata(metaUID);
-				if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
-					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
-					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
-				} else {
-					archive.logln("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
-					archive.logln(LogBuilder.endBlock(false));
-
-					return;
-				}
+				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
+				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
 			}
 
 			//Loop through each molecule and calculate drift corrected traces...
@@ -346,16 +342,14 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				archive.put(molecule);
 			});
 			
-		    archive.addLogMessage(LogBuilder.endBlock(true));
-		    archive.addLogMessage("  ");
+		    archive.logln(LogBuilder.endBlock(true));
+		    archive.logln("  ");
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("from slice", String.valueOf(from));
-		builder.addParameter("to slice", String.valueOf(to));
-		builder.addParameter("Metadata Background X", meta_x);
-		builder.addParameter("Metadata Background Y", meta_y);
+		builder.addParameter("from T", String.valueOf(from));
+		builder.addParameter("to T", String.valueOf(to));
 		builder.addParameter("Input X", input_x);
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);
@@ -385,22 +379,6 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	
 	public int getToSlice() {
 		return to;
-	}
-	
-	public void setMetaX(String meta_x) {
-		this.meta_x = meta_x;
-	}
-    
-	public String getMetaX() {
-		return meta_x;
-	}
-	
-	public void setMetaY(String meta_y) {
-		this.meta_y = meta_y;
-	}
-    
-	public String getMetaY() {
-		return meta_y;
 	}
     
 	public void setInputX(String input_x) {

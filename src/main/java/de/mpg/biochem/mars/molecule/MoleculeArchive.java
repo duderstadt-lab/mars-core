@@ -37,9 +37,12 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
 /**
@@ -544,15 +547,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void naturalOrderSortMoleculeIndex();
 	
 	/**
-	 * Add a Log message to all MARSImageMetadata records. Used by all processing plugins 
-	 * so there is a record of the sequence of processing steps during analysis.
-	 * 
-	 * @param message The String message to add to all MARSImageMetadata logs.
-	 */
-	@Deprecated
-	void addLogMessage(String message);
-	
-	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing plugins 
 	 * so there is a record of the sequence of processing steps during analysis. Do not
 	 * start a new line after adding the message.
@@ -573,28 +567,10 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
 	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
-	 * Deprecated - use properties() instead. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	@Deprecated
-	MoleculeArchiveProperties getProperties();
-	
-	/**
-	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
-	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
 	 * 
 	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
 	 */
 	MoleculeArchiveProperties properties();
-	
-	/**
-	 * Convenience method to retrieve the {@link MoleculeArchiveService} for 
-	 * the current Context. 
-	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
-	 */
-	MoleculeArchiveService getMoleculeArchiveService();
 	
 	/**
 	 * Update the {@link MoleculeArchiveProperties}. Updates the global tag 

@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**
@@ -48,7 +50,8 @@ import de.mpg.biochem.mars.util.MarsUtil;
 public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConvertibleRecord implements MoleculeArchiveProperties {
 	protected int numberOfMolecules;
 	protected int numMetadata;
-	protected String comments;
+	protected String comments, inputSchema;
+	public static final String SCHEMA = "2020-06-07";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -85,22 +88,33 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		fromJSON(jParser);
 	}
 	
-	// JsonConveritableRecord methods...
-	
 	@Override
 	protected void createIOMaps() {
-		//Output Map
-		outputMap.put("ArchiveType", MarsUtil.catchConsumerException(jGenerator -> {
-			if (parent != null)
-				jGenerator.writeStringField("ArchiveType", parent.getClass().getName());
-		}, IOException.class));
-		outputMap.put("Type", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
-		outputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), IOException.class));
-		outputMap.put("numberOfMetadata", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeNumberField("numberOfMetadata", numMetadata), IOException.class));
-		outputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jGenerator -> {
+		
+		setJsonField("ArchiveType",
+			jGenerator -> {
+				if (parent != null)
+					jGenerator.writeStringField("ArchiveType", parent.getClass().getName());
+			}, null);
+			
+		setJsonField("Type", 
+			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()), 
+			null);
+		
+		setJsonField("Schema", 
+				jGenerator -> jGenerator.writeStringField("Schema", SCHEMA), 
+				jParser -> inputSchema = jParser.getText());
+			
+		setJsonField("numberOfMolecules", 
+			jGenerator -> jGenerator.writeNumberField("numberOfMolecules", numberOfMolecules), 
+			jParser -> numberOfMolecules = jParser.getValueAsInt());
+			
+		setJsonField("numberOfMetadata", 
+			jGenerator -> jGenerator.writeNumberField("numberOfMetadata", numMetadata),
+			jParser -> numMetadata = jParser.getIntValue());
+			
+		setJsonField("MoleculeDataTableColumnSet", 
+			jGenerator -> {
 				if (moleculeDataTableColumnSet.size() > 0) {
 					jGenerator.writeFieldName("MoleculeDataTableColumnSet");
 					jGenerator.writeStartArray();
@@ -109,8 +123,15 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 						jGenerator.writeString(iterator.next());	
 					jGenerator.writeEndArray();
 				}
-			}, IOException.class));
-		outputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jGenerator -> {
+			}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		    		moleculeDataTableColumnSet.add(jParser.getText());
+			});
+			
+			
+		setJsonField("MoleculeSegmentTableNames", 
+			jGenerator -> {
 				if (moleculeSegmentTableNames.size() > 0) {
 					jGenerator.writeFieldName("MoleculeSegmentTableNames");
 					jGenerator.writeStartArray();
@@ -127,8 +148,27 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 					}
 					jGenerator.writeEndArray();
 				}
-			}, IOException.class));
-		outputMap.put("MoleculeTagSet", MarsUtil.catchConsumerException(jGenerator -> {
+			}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	ArrayList<String> segemntTableName = new ArrayList<String>();
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    	//Then move past field Name - yColumnName...
+				    	jParser.nextToken();
+				    	
+				    	segemntTableName.add(jParser.getText());
+				    	
+				    	//Then move past the field and next field Name - xColumnName...
+				    	jParser.nextToken();
+				    	jParser.nextToken();
+				    	segemntTableName.add(jParser.getText());
+			    	}
+			    	moleculeSegmentTableNames.add(segemntTableName);
+		    	}
+			});
+			
+		setJsonField("MoleculeTagSet", 
+			jGenerator -> {
 				if (tagSet.size() > 0) {
 					jGenerator.writeFieldName("MoleculeTagSet");
 					jGenerator.writeStartArray();
@@ -137,8 +177,15 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 						jGenerator.writeString(iterator.next());	
 					jGenerator.writeEndArray();
 				}
-			}, IOException.class));
-		outputMap.put("MoleculeParameterSet", MarsUtil.catchConsumerException(jGenerator -> {
+			}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		            tagSet.add(jParser.getText());
+			});
+			
+			
+		setJsonField("MoleculeParameterSet", 
+			jGenerator -> {
 				if (parameterSet.size() > 0) {
 					jGenerator.writeFieldName("MoleculeParameterSet");
 					jGenerator.writeStartArray();
@@ -147,77 +194,50 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 						jGenerator.writeString(iterator.next());	
 					jGenerator.writeEndArray();
 				}
-			}, IOException.class));
-		outputMap.put("Comments", MarsUtil.catchConsumerException(jGenerator -> {
+			}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+		            parameterSet.add(jParser.getText());
+			});
+			
+		setJsonField("Comments", 
+			jGenerator -> {
 				if (!comments.equals(""))
 					jGenerator.writeStringField("Comments", comments);
-			}, IOException.class));
-
+			}, 
+			jParser -> comments = jParser.getText());
 		
-		//Input Map
-		inputMap.put("numberOfMolecules", MarsUtil.catchConsumerException(jParser -> {
-	        numberOfMolecules = jParser.getValueAsInt();
-		}, IOException.class));
-		inputMap.put("numImageMetaData", MarsUtil.catchConsumerException(jParser -> {
-	        numMetadata = jParser.getIntValue();
-		}, IOException.class));
-		inputMap.put("numImageMetadata", MarsUtil.catchConsumerException(jParser -> {
-	        numMetadata = jParser.getIntValue();
-		}, IOException.class));
-		inputMap.put("numberOfMetadata", MarsUtil.catchConsumerException(jParser -> {
-	        numMetadata = jParser.getIntValue();
-		}, IOException.class));
-		inputMap.put("MoleculeDataTableColumnSet", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
-	    		moleculeDataTableColumnSet.add(jParser.getText());
-		}, IOException.class));
 		
-		//Added for backward compatibility...
-		inputMap.put("moleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    	ArrayList<String> segemntTableName = new ArrayList<String>();
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    	//Then move past field Name - yColumnName...
-			    	jParser.nextToken();
-			    	
-			    	segemntTableName.add(jParser.getText());
-			    	
-			    	//Then move past the field and next field Name - xColumnName...
-			    	jParser.nextToken();
-			    	jParser.nextToken();
-			    	segemntTableName.add(jParser.getText());
+		//BACKWARDS COMPATABILITY - REMOVE ME WHEN READY
+		setJsonField("numImageMetaData", null,
+			jParser -> numMetadata = jParser.getIntValue());
+		
+		setJsonField("numImageMetadata", null,
+			jParser -> numMetadata = jParser.getIntValue());
+		
+		setJsonField("moleculeSegmentTableNames", null, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	ArrayList<String> segemntTableName = new ArrayList<String>();
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				    	//Then move past field Name - yColumnName...
+				    	jParser.nextToken();
+				    	
+				    	segemntTableName.add(jParser.getText());
+				    	
+				    	//Then move past the field and next field Name - xColumnName...
+				    	jParser.nextToken();
+				    	jParser.nextToken();
+				    	segemntTableName.add(jParser.getText());
+			    	}
+			    	moleculeSegmentTableNames.add(segemntTableName);
 		    	}
-		    	moleculeSegmentTableNames.add(segemntTableName);
-	    	}
-		}, IOException.class));
-		inputMap.put("MoleculeSegmentTableNames", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    	ArrayList<String> segemntTableName = new ArrayList<String>();
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    	//Then move past field Name - yColumnName...
-			    	jParser.nextToken();
-			    	
-			    	segemntTableName.add(jParser.getText());
-			    	
-			    	//Then move past the field and next field Name - xColumnName...
-			    	jParser.nextToken();
-			    	jParser.nextToken();
-			    	segemntTableName.add(jParser.getText());
-		    	}
-		    	moleculeSegmentTableNames.add(segemntTableName);
-	    	}
-		}, IOException.class));
-		inputMap.put("MoleculeTagSet", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
-	            tagSet.add(jParser.getText());
-		}, IOException.class));
-		inputMap.put("MoleculeParameterSet", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY)
-	            parameterSet.add(jParser.getText());
-		}, IOException.class));
-		inputMap.put("Comments", MarsUtil.catchConsumerException(jParser -> {
-	    	comments = jParser.getText();
-		}, IOException.class));
+			});
+		
+	}
+	
+	public String getInputSchema() {
+		return inputSchema;
 	}
 	
 	/**

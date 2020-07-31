@@ -53,5 +53,12 @@ public interface JsonConvertibleRecord {
 	 * @throws IOException Thrown if unable to read from JsonParser.
 	 * */
 	void fromJSON(JsonParser jParser) throws IOException;
+	
+	/**
+	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the MarsMetadata record.
+	 */
+	String dumpJSON();
 
 }

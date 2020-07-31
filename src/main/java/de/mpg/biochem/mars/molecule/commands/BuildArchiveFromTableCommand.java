@@ -35,6 +35,7 @@ import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
+import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -53,8 +54,8 @@ import org.scijava.widget.FileWidget;
 import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
@@ -77,6 +78,9 @@ import javax.swing.filechooser.FileSystemView;
 public class BuildArchiveFromTableCommand extends DynamicCommand {
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private Context context;
 	
 	@Parameter
 	private MarsTableService resultsTableService;
@@ -114,12 +118,12 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 		
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Building MoleculeArchive from Table");
+		String log = LogBuilder.buildTitleBlock("Building MoleculeArchive from Table");
 
 		builder.addParameter("From Table", table.getName());
 		builder.addParameter("Ouput Archive Name", name);
 		
-		archive = new SingleMoleculeArchive(name, table, moleculeArchiveService);
+		archive = new SingleMoleculeArchive(name, table);
 
 		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
 		log += builder.buildParameterList();
@@ -130,7 +134,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
         logService.info(LogBuilder.endBlock(true));
         
         log += "\n" + LogBuilder.endBlock(true);
-        archive.addLogMessage(log);
+        archive.logln(log);
 	}
     
     public AbstractMoleculeArchive getArchive() {

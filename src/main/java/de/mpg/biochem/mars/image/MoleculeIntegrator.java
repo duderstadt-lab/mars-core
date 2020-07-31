@@ -1,31 +1,3 @@
-/*-
- * #%L
- * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
- * %%
- * Copyright (C) 2018 - 2020 Karl Duderstadt
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
 /*******************************************************************************
  * Copyright (C) 2019, Duderstadt Lab
  * All rights reserved.
@@ -52,11 +24,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
-package de.mpg.biochem.mars.ImageProcessing;
+package de.mpg.biochem.mars.image;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
@@ -64,23 +37,20 @@ import ij.gui.Roi;
 import ij.process.ImageProcessor;
 
 /**
- * Class for calculating the integrated fluorescence given a peak list and image stack. 
+ * Class for calculating the integrated fluorescence given a peak list and image processor. 
  * 
  * @author Karl Duderstadt
  * 
  */
 public class MoleculeIntegrator {
-	Rectangle longBoundingRegion, shortBoundingRegion;
 	int innerRadius, outerRadius;
 	
 	private ArrayList<int[]> innerOffsets;
 	private ArrayList<int[]> outerOffsets;
 
-	public MoleculeIntegrator (int innerRadius, int outerRadius, Rectangle longBoundingRegion, Rectangle shortBoundingRegion) {
+	public MoleculeIntegrator (int innerRadius, int outerRadius) {
 		this.innerRadius = innerRadius;
 		this.outerRadius = outerRadius;
-		this.longBoundingRegion = longBoundingRegion;
-		this.shortBoundingRegion = shortBoundingRegion;
 		
 		BuildOffsets();
 	}
@@ -108,16 +78,12 @@ public class MoleculeIntegrator {
 		}
 	}
 	
-	public void integratePeaks(ImageProcessor ip, ConcurrentMap<String, FPeak> integrationList, String colorLONG, String colorSHORT) {
+	public void integratePeaks(ImageProcessor ip, Map<String, Peak> integrationList, Rectangle region) {
 		for (String UID : integrationList.keySet()) {
-			FPeak peak = integrationList.get(UID);
-			if (colorLONG != null) {
-				peak.setIntensity(colorLONG, integratePeak(ip, (int)peak.getXLONG(), (int)peak.getYLONG(), longBoundingRegion));
-			}
-			
-			if (colorSHORT != null) {
-				peak.setIntensity(colorSHORT, integratePeak(ip, (int)peak.getXSHORT(), (int)peak.getYSHORT(), shortBoundingRegion));
-			}
+			Peak peak = integrationList.get(UID);
+			double[] intensity = integratePeak(ip, (int)peak.getX(), (int)peak.getY(), region); 
+			peak.setIntensity(intensity[0]);
+			peak.setMedianBackground(intensity[1]);
 		}
 	}
 	

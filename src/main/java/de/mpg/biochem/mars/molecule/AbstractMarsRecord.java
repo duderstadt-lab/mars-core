@@ -42,6 +42,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsPosition;
@@ -74,9 +76,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	//Parameter map for record properties
 	protected LinkedHashMap<String, Double> Parameters;
 	
-	//Table housing main record data.
-	protected MarsTable dataTable;
-	
 	//Regions of interest map
 	protected LinkedHashMap<String, MarsRegion> regionsOfInterest;
 	
@@ -90,7 +89,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
-		dataTable = new MarsTable();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 	}
@@ -102,142 +100,109 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param UID The unique identifier for this MarsRecord.
 	 */
 	public AbstractMarsRecord(String UID) {
-		this();
-		this.UID = UID;
-	}
-	
-	/**
-	 * Constructor for loading a MarsRecord record from a file. Typically,
-	 * used when streaming records into memory when loading a {@link MoleculeArchive}
-	 * or when a record is retrieved from the virtual store. 
-	 * 
-	 * @param jParser A JsonParser at the start of the MarsRecord.
-	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
-	 */
-	//public AbstractMarsRecord(JsonParser jParser) throws IOException {
-	//	this();
-		
-		//This is a problem because it calls create maps overriden in subclasses from a superclass 
-		//constructor....!!!!!!!!!! We work around the issue for the moment...
-	//	fromJSON(jParser);
-	//}
-	
-	/**
-	 * Constructor for creating a new record with the
-	 * specified UID and the {@link MarsTable} given
-	 * as the DataTable. 
-	 * 
-	 * @param UID The unique identifier for this record.
-	 * @param dataTable The {@link MarsTable} to use for 
-	 * initialization.
-	 */
-	public AbstractMarsRecord(String UID, MarsTable dataTable) {
 		super();
 		Parameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 		this.UID = UID;
-		this.dataTable = dataTable;
+		
 	}
 	
 	@Override
 	protected void createIOMaps() {
-		//Output Map
-		outputMap.put("UID", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("UID", UID), IOException.class));
-		outputMap.put("Type", MarsUtil.catchConsumerException(jGenerator ->
-			jGenerator.writeStringField("Type", this.getClass().getName()), IOException.class));
-		outputMap.put("Notes", MarsUtil.catchConsumerException(jGenerator -> {
+
+		setJsonField("UID",
+			jGenerator -> jGenerator.writeStringField("UID", UID),
+			jParser -> UID = jParser.getText());
+		
+		setJsonField("Type", 
+			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()),
+			null);
+		
+		setJsonField("Notes",
+			jGenerator -> {
 				if (Notes != null)
 					jGenerator.writeStringField("Notes", Notes);
-			}, IOException.class));
-		outputMap.put("Tags", MarsUtil.catchConsumerException(jGenerator -> {
-			if (Tags.size() > 0) {
-				jGenerator.writeFieldName("Tags");
-				jGenerator.writeStartArray();
-				Iterator<String> iterator = Tags.iterator();
-				while(iterator.hasNext())
-					jGenerator.writeString(iterator.next());
-				jGenerator.writeEndArray();
-			}
-		}, IOException.class));
-		outputMap.put("Parameters", MarsUtil.catchConsumerException(jGenerator -> {
-			if (Parameters.size() > 0) {
-				jGenerator.writeObjectFieldStart("Parameters");
-				for (String name:Parameters.keySet())
-					jGenerator.writeNumberField(name, Parameters.get(name));
-				jGenerator.writeEndObject();
-			}
-		}, IOException.class));
-		outputMap.put("DataTable", MarsUtil.catchConsumerException(jGenerator -> {
-			if (dataTable.getColumnCount() > 0) {
-				jGenerator.writeFieldName("DataTable");
-				dataTable.toJSON(jGenerator);
-			}
-		}, IOException.class));
-		outputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (regionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("RegionsOfInterest");
-				for (String region : regionsOfInterest.keySet()) 
-					regionsOfInterest.get(region).toJSON(jGenerator);
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		outputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jGenerator -> {
-			if (positionsOfInterest.size() > 0) {
-				jGenerator.writeArrayFieldStart("PositionsOfInterest");
-				for (String position :positionsOfInterest.keySet()) 
-					positionsOfInterest.get(position).toJSON(jGenerator);
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
+				}, 
+			jParser -> Notes = jParser.getText());
 		
-		//Input Map
-		inputMap.put("UID", MarsUtil.catchConsumerException(jParser -> {
-	        UID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Notes", MarsUtil.catchConsumerException(jParser -> {
-	        Notes = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Tags", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-	            Tags.add(jParser.getText());
-	        }
-		}, IOException.class));
-		inputMap.put("Parameters", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-	    		String subfieldname = jParser.getCurrentName();
-	    		jParser.nextToken();
-	    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-    				String str = jParser.getValueAsString();
-    				if (Objects.equals(str, new String("Infinity"))) {
-    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("-Infinity"))) {
-    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
-    				} else if (Objects.equals(str, new String("NaN"))) {
-    					Parameters.put(subfieldname, Double.NaN);
-    				}
-    			} else {
-    				Parameters.put(subfieldname, jParser.getDoubleValue());
-    			}
-	    	}
-		}, IOException.class));
-		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
-			dataTable.fromJSON(jParser);
-		}, IOException.class));		
-		inputMap.put("RegionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsRegion regionOfInterest = new MarsRegion(jParser);
-		    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-	    	}
-	 	}, IOException.class));
-		inputMap.put("PositionsOfInterest", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsPosition positionOfInterest = new MarsPosition(jParser);
-		    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-	    	}
-	 	}, IOException.class));
+		setJsonField("Tags", 
+			jGenerator -> {
+					if (Tags.size() > 0) {
+						jGenerator.writeFieldName("Tags");
+						jGenerator.writeStartArray();
+						Iterator<String> iterator = Tags.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeString(iterator.next());
+						jGenerator.writeEndArray();
+					}
+				}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		            Tags.add(jParser.getText());
+		        }
+			});
+				
+		setJsonField("Parameters", 
+			jGenerator -> {
+					if (Parameters.size() > 0) {
+						jGenerator.writeObjectFieldStart("Parameters");
+						for (String name:Parameters.keySet())
+							jGenerator.writeNumberField(name, Parameters.get(name));
+						jGenerator.writeEndObject();
+					}
+				},
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String subfieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+	    				String str = jParser.getValueAsString();
+	    				if (Objects.equals(str, new String("Infinity"))) {
+	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("-Infinity"))) {
+	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    				} else if (Objects.equals(str, new String("NaN"))) {
+	    					Parameters.put(subfieldname, Double.NaN);
+	    				}
+	    			} else {
+	    				Parameters.put(subfieldname, jParser.getDoubleValue());
+	    			}
+		    	}
+			});
+				
+		setJsonField("RegionsOfInterest", 
+			jGenerator -> {
+					if (regionsOfInterest.size() > 0) {
+						jGenerator.writeArrayFieldStart("RegionsOfInterest");
+						for (String region : regionsOfInterest.keySet()) 
+							regionsOfInterest.get(region).toJSON(jGenerator);
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsRegion regionOfInterest = new MarsRegion(jParser);
+				    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+			    	}
+			 });
+				 	
+		setJsonField("PositionsOfInterest", 
+			jGenerator -> {
+					if (positionsOfInterest.size() > 0) {
+						jGenerator.writeArrayFieldStart("PositionsOfInterest");
+						for (String position :positionsOfInterest.keySet()) 
+							positionsOfInterest.get(position).toJSON(jGenerator);
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsPosition positionOfInterest = new MarsPosition(jParser);
+			    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+		    	}
+		 	});
 	}
 	
 	/**
@@ -287,7 +252,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public void addTag(String tag) {
 		Tags.add(tag);
 		if (parent != null) {
-			parent.getProperties().addTag(tag);
+			parent.properties().addTag(tag);
 		}
 	}
 	
@@ -359,7 +324,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public void setParameter(String parameter, double value) {
 		Parameters.put(parameter, value);
 		if (parent != null) {
-			parent.getProperties().addParameter(parameter);
+			parent.properties().addParameter(parameter);
 		}
 	}
 	
@@ -412,32 +377,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public LinkedHashMap<String, Double> getParameters() {
 		return Parameters;
-	}
-	
-	/**
-	 * Get the {@link MarsTable} DataTable holding the primary data for
-	 * this record.
-	 * 
-	 * @return The primary DataTable for this record.
-	 */
-	public MarsTable getDataTable() {
-		return dataTable;
-	}
-	
-	/**
-	 * Set the {@link MarsTable} holding the primary data for
-	 * this record. Usually this is tracking or intensity 
-	 * as a function of time.
-	 * 
-	 * @param table The {@link MarsTable} to add or update in the 
-	 * record.
-	 */
-	public void setDataTable(MarsTable table) {
-		//This means we are resetting all the data...
-		dataTable.clear();
-		
-		//Now set to new table
-		dataTable = table;
 	}
 	
 	/**

@@ -1,14 +1,13 @@
-/*-
- * #%L
- * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
- * %%
- * Copyright (C) 2018 - 2020 Karl Duderstadt
- * %%
+/*******************************************************************************
+ * Copyright (C) 2019, Duderstadt Lab
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
@@ -16,7 +15,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -24,46 +23,66 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-package de.mpg.biochem.mars.ImageProcessing.commands;
+ ******************************************************************************/
+package de.mpg.biochem.mars.image.commands;
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
+import org.scijava.module.DefaultMutableModuleItem;
 import org.scijava.module.MutableModuleItem;
 import org.decimal4j.util.DoubleRounder;
+import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.ImageProcessing.Peak;
-import de.mpg.biochem.mars.ImageProcessing.PeakFinder;
-import de.mpg.biochem.mars.ImageProcessing.PeakFitter;
-import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
+import de.mpg.biochem.mars.image.DogPeakFinder;
+import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.image.PeakFitter;
+import de.mpg.biochem.mars.image.PeakTracker;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsMath;
+import io.scif.Format;
+import io.scif.FormatException;
+import io.scif.Metadata;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
+import io.scif.filters.AbstractMetadataWrapper;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.FormatService;
+import io.scif.services.TranslatorService;
+import io.scif.util.SCIFIOMetadataTools;
+import loci.common.services.ServiceException;
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
-import net.imagej.display.OverlayService;
 import net.imglib2.Cursor;
 import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,9 +92,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+
 import org.scijava.table.DoubleColumn;
+import org.scijava.ui.DialogPrompt;
+import org.scijava.ui.UIService;
+import org.scijava.widget.NumberWidget;
+
 import io.scif.img.IO;
-import io.scif.img.ImgIOException;
 
 import java.awt.image.ColorModel;
 import java.awt.Color;
@@ -86,22 +110,38 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+import ome.units.UNITS;
+import ome.units.quantity.Length;
+import ome.xml.meta.OMEXMLMetadata;
+import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.UnitsLength;
+import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class)
-public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
+@Plugin(type = Command.class, label = "Peak Tracker", menu = {
+		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
+		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 's'),
+		@Menu(label = "Image", weight = 20,
+			mnemonic = 'm'),
+		@Menu(label = "Peak Tracker", weight = 10, mnemonic = 'p')})
+public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED
 		@Parameter(required=false)
 		private RoiManager roiManager;
@@ -112,18 +152,32 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 	    @Parameter
 	    private StatusService statusService;
 	    
+	    @Parameter
+	    private TranslatorService translatorService;
+	    
+	    @Parameter
+	    private OMEXMLService omexmlService;
+	    
+	    @Parameter
+	    private FormatService formatService;
+	    
 		@Parameter
 	    private MarsTableService resultsTableService;
 		
 		@Parameter
+		private ConvertService convertService;
+		
+	    @Parameter
+	    private OpService opService;
+		
+		@Parameter
 	    private MoleculeArchiveService moleculeArchiveService;
 		
-		//INPUT IMAGE
 		@Parameter(label = "Image to search for Peaks")
-		private ImagePlus image; 
+		private ImageDisplay imageDisplay;
 		
 		//ROI SETTINGS
-		@Parameter(label="use ROI", persist=false)
+		@Parameter(label="Use ROI", persist=false)
 		private boolean useROI = true;
 		
 		@Parameter(label="ROI x0", persist=false)
@@ -138,21 +192,30 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		@Parameter(label="ROI height", persist=false)
 		private int height;
 		
-		//PEAK FINDER SETTINGS
-		@Parameter(label="Use Discoidal Averaging Filter")
-		private boolean useDiscoidalAveragingFilter;
+		@Parameter(label="Channel", choices = {"a", "b", "c"})
+		private String channel = "0";
 		
-		@Parameter(label="Inner radius")
-		private int DS_innerRadius;
+		//PEAK FINDER SETTINGS		
+		@Parameter(label="Use DoG filter")
+		private boolean useDogFilter = true;
 		
-		@Parameter(label="Outer radius")
-		private int DS_outerRadius;
+		@Parameter(label="DoG filter radius")
+		private double dogFilterRadius = 2;
 		
-		@Parameter(label="Detection threshold (mean + N * STD)")
-		private double threshold;
+		@Parameter(label="Detection threshold")
+		private double threshold = 50;
 		
-		@Parameter(label="Minimum distance between peaks (in pixels)")
-		private int minimumDistance;
+		@Parameter(label="Minimum distance between peaks")
+		private int minimumDistance = 4;
+		
+		@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
+		private boolean preview = false;
+		
+		@Parameter(visibility = ItemVisibility.MESSAGE)
+		private String tPeakCount = "count: 0";
+		
+		@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+		private int previewT;
 		
 		@Parameter(label="Find negative peaks")
 		private boolean findNegativePeaks = false;
@@ -162,86 +225,32 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		private final String fitterTitle =
 			"Peak fitter settings:";
 		
-		@Parameter(label="Fit Radius")
-		private int fitRadius = 2;
+		@Parameter(label="Fit radius")
+		private int fitRadius = 4;
 		
-		//Initial guesses for fitting
-		@Parameter(label="Initial Baseline")
-		private double PeakFitter_initialBaseline = Double.NaN;
+		@Parameter(label = "Minimum R-squared",
+				style = NumberWidget.SLIDER_STYLE, min = "0.00", max = "1.00",
+				stepSize = "0.01")
+		private double RsquaredMin = 0;
 		
-		@Parameter(label="Initial Height")
-		private double PeakFitter_initialHeight = Double.NaN;
-		
-		@Parameter(label="Initial Sigma")
-		private double PeakFitter_initialSigma = Double.NaN;
-		
-		//parameters to vary during fit
-		
-		@Parameter(label="Vary Baseline")
-		private boolean PeakFitter_varyBaseline = true;
-		
-		@Parameter(label="Vary Height")
-		private boolean PeakFitter_varyHeight = true;
-		
-		@Parameter(label="Vary Sigma")
-		private boolean PeakFitter_varySigma = true;
-		
-		//Check the maximal allowed error for the fitting process.
-		@Parameter(label="Filter by Max Error")
-		private boolean PeakFitter_maxErrorFilter = true;
-		
-		//Maximum allow error for the fitting process
-		@Parameter(label="Max Error Baseline")
-		private double PeakFitter_maxErrorBaseline = 50;
-		
-		@Parameter(label="Max Error Height")
-		private double PeakFitter_maxErrorHeight = 50;
-		
-		@Parameter(label="Max Error X")
-		private double PeakFitter_maxErrorX = 0.2;
-		
-		@Parameter(label="Max Error Y")
-		private double PeakFitter_maxErrorY = 0.2;
-		
-		@Parameter(label="Max Error Sigma")
-		private double PeakFitter_maxErrorSigma = 0.2;
-		
-		@Parameter(label="Verbose fit output")
-		private boolean PeakFitter_writeEverything = true;
+		@Parameter(label="Verbose output")
+		private boolean verbose = false;
 		
 		//PEAK TRACKER
 		@Parameter(visibility = ItemVisibility.MESSAGE)
 		private final String trackerTitle =
 			"Peak tracker settings:";
 		
-		//@Parameter(label="Check Max Difference Baseline")
-		private boolean PeakTracker_ckMaxDifferenceBaseline = false;
-		
-		//@Parameter(label="Max Difference Baseline")
-		private double PeakTracker_maxDifferenceBaseline = 5000;
-		
-		//@Parameter(label="Check Max Difference Height")
-		private boolean PeakTracker_ckMaxDifferenceHeight = false;
-		
-		//@Parameter(label="Max Difference Height")
-		private double PeakTracker_maxDifferenceHeight = 5000;
-		
-		@Parameter(label="Max Difference X")
+		@Parameter(label="Max difference x")
 		private double PeakTracker_maxDifferenceX = 1;
 		
-		@Parameter(label="Max Difference Y")
+		@Parameter(label="Max difference y")
 		private double PeakTracker_maxDifferenceY = 1;
 		
-		//@Parameter(label="Check Max Difference Sigma")
-		private boolean PeakTracker_ckMaxDifferenceSigma = false;
-		
-		//@Parameter(label="Max Difference Sigma")
-		private double PeakTracker_maxDifferenceSigma = 1;
-		
-		@Parameter(label="Max Difference Slice")
-		private int PeakTracker_maxDifferenceSlice = 1;
+		@Parameter(label="Max difference T")
+		private int PeakTracker_maxDifferenceFrame = 1;
 
-		@Parameter(label="Min trajectory length")
+		@Parameter(label="Minimum track length")
 		private int PeakTracker_minTrajectoryLength = 100;
 		
 		@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -260,15 +269,18 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		@Parameter(label="Microscope")
 		private String microscope;
 		
-		@Parameter(label="Format", choices = { "None", "MicroManager", "NorPix"})
-		private String imageFormat;
+		@Parameter(label = "Pixel length")
+		private double pixelLength = 1;
+		
+		@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm"})
+		private String pixelUnits = "pixel";
+		
+		@Parameter
+		private UIService uiService;
 		
 		//OUTPUT PARAMETERS
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 		private SingleMoleculeArchive archive;
-		
-		//instance of a PeakFinder to use for all the peak finding operations by passing an image and getting back a peak list.
-		private PeakFinder finder;
 		
 		//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
 		private PeakFitter fitter;
@@ -276,12 +288,8 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		//instance of a PeakTracker used for linking all the peaks between detected in each frame.
 		private PeakTracker tracker;
 		
-		//A map with peak lists for each slice for an image stack
+		//A map with peak lists for each frame for an image stack
 		private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
-		
-		//A map that will hold all the metadata from individual frames as they are processed
-		//this will contain the 'label' information from each image header
-		private ConcurrentMap<Integer, String> metaDataStack;
 		
 		//box region for analysis added to the image.
 		private Rectangle rect;
@@ -293,16 +301,55 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		
 		//array for max error margins.
 		private double[] maxDifference;
-		private double[] maxError;
 		private boolean[] ckMaxDifference;
-		private boolean[] vary;
 		
 		//For peak integration
 		private ArrayList<int[]> innerOffsets;
 		private ArrayList<int[]> outerOffsets;
 		
+		private Dataset dataset;
+		private ImagePlus image;
+		
+		private MarsOMEMetadata marsOMEMetadata;
+		
+		//private MutableModuleItem<String> positionSelection;
+		//private MutableModuleItem<String> channelSelection = 
+		//		new DefaultMutableModuleItem<String>(this, "Channel", String.class);
+		
 		@Override
 		public void initialize() {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+
+			ImgPlus<?> imp = dataset.getImgPlus();
+			
+			OMEXMLMetadata omexmlMetadata = null;
+			if (!(imp instanceof SCIFIOImgPlus)) {
+				logService.info("This image has not been opened with SCIFIO.");
+				try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService, dataset);
+				} catch (ServiceException e) {
+					e.printStackTrace();
+				}
+			} else {
+				//Attempt to read metadata
+				Metadata metadata = (Metadata)dataset.getProperties().get("scifio.metadata.global");			
+		        OMEMetadata omeMeta = new OMEMetadata(getContext());
+		        if (!translatorService.translate(metadata, omeMeta, true)) {
+		        	logService.info("Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
+		 		} else {
+		 			omexmlMetadata = omeMeta.getRoot();
+		 		}
+			}
+			
+			String metaUID;
+		    if (omexmlMetadata.getUUID() != null)
+		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
+		    else
+		    	metaUID = MarsMath.getUUID58().substring(0, 10);
+		    
+		    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+			
 			if (image.getRoi() == null) {
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 				final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
@@ -311,6 +358,27 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 				rect = image.getRoi().getBounds();
 				startingRoi = image.getRoi();
 			}
+			
+			final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
+			long channelCount = dataset.getChannels();
+			ArrayList<String> channels = new ArrayList<String>();
+			for (int ch=0; ch<channelCount; ch++)
+				channels.add(String.valueOf(ch));
+			channelItems.setChoices(channels);
+			channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
+		
+			//Add positions
+			/*
+			positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
+			long PositionCount = dataset.getP
+			if (channelCount > 1) {
+				ArrayList<String> channels = new ArrayList<String>();
+				for (int ch=0; ch<channelCount; ch++)
+					channels.add(String.valueOf(ch));
+				channelSelection.setChoices(channels);
+			}
+			getInfo().addInput(channelSelection);
+			*/
 			
 			final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
 			imgX0.setValue(this, rect.x);
@@ -323,50 +391,48 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			
 			final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput("height", Integer.class);
 			imgHeight.setValue(this, rect.height);
-
+			
+			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
+			preFrame.setValue(this, image.getFrame() - 1);
+			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
+		
 		@Override
-		public void run() {				
+		public void run() {
+			if (useROI) {
+				rect = new Rectangle(x0,y0,width - 1,height - 1);
+			} else {
+				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
+			}
+			
 			image.deleteRoi();
 			
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
-			String label = image.getStack().getSliceLabel(1);
-			if (label == null) {
-				metaDataLogMessage = "No ImageMetadata was found in image header so the format was switched to None.";
-    			imageFormat = "None";
-    		} else if (imageFormat.equals("MicroManager") && label.indexOf("{") == -1) {
-    			metaDataLogMessage = "Images did not appear to have a MicroManager image format so the format was switched to None.";
-    			imageFormat = "None";
-			} else if (imageFormat.equals("NorPix") && label.indexOf("DateTime: ") == -1) {
-				metaDataLogMessage = "Images did not appear to have a NorPix image format so the format was switched to None.";
-    			imageFormat = "None";
+	        
+	        UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+	        
+	        try {
+	        	Length pixelSize = new Length(pixelLength, 
+					UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
+	        
+	        	marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
+	        	marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
+				
+			} catch (EnumerationException e1) {
+				e1.printStackTrace();
 			}
 			
-			if (useDiscoidalAveragingFilter) {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, DS_innerRadius, DS_outerRadius, findNegativePeaks);
-		    } else {
-		    	finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
-		    }
-			
-			vary = new boolean[5];
-			vary[0] = PeakFitter_varyBaseline;
-			vary[1] = PeakFitter_varyHeight;
+			boolean[] vary = new boolean[5];
+			vary[0] = true;
+			vary[1] = true;
 			vary[2] = true;
 			vary[3] = true;
-			vary[4] = PeakFitter_varySigma;
+			vary[4] = true;
 			
 			fitter = new PeakFitter(vary);
 			
-			if (integrate)
-				BuildOffsets();
-			
-			maxError = new double[5];
-			maxError[0] = PeakFitter_maxErrorBaseline;
-			maxError[1] = PeakFitter_maxErrorHeight;
-			maxError[2] = PeakFitter_maxErrorX;
-			maxError[3] = PeakFitter_maxErrorY;
-			maxError[4] = PeakFitter_maxErrorSigma;
+			BuildOffsets();
 			
 			//Build log
 			LogBuilder builder = new LogBuilder();
@@ -380,8 +446,6 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			}
 			
 			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
-			
-			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 			
 			//Need to determine the number of threads
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
@@ -412,9 +476,9 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		        progressThread.start();
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-		        //peaks with the slice number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> peaks = findPeaksInSlice(i);
+		        //peaks with the frame number as a key in the map for each list...
+		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(i -> { 
+		        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), i);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (peaks.size() > 0)
 		        		PeakStack.put(i, peaks);
@@ -434,21 +498,22 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		    
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    
-		    //Now we have filled the PeakStack with all the peaks found and fitted for each slice and we need to connect them using the peak tracker
+		    //Now we have filled the PeakStack with all the peaks found and fitted for each frame and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
-		    maxDifference[0] = PeakTracker_maxDifferenceBaseline;
-		    maxDifference[1] = PeakTracker_maxDifferenceHeight;
+		    maxDifference[0] = Double.NaN;
+		    maxDifference[1] = Double.NaN;
 		    maxDifference[2] = PeakTracker_maxDifferenceX;
 			maxDifference[3] = PeakTracker_maxDifferenceY;
-			maxDifference[4] = PeakTracker_maxDifferenceSigma;
-			maxDifference[5] = PeakTracker_maxDifferenceSlice;
+			maxDifference[4] = Double.NaN;
+			maxDifference[5] = PeakTracker_maxDifferenceFrame;
 			
 			ckMaxDifference = new boolean[3];
-			ckMaxDifference[0] = PeakTracker_ckMaxDifferenceBaseline;
-			ckMaxDifference[1] = PeakTracker_ckMaxDifferenceHeight;
-			ckMaxDifference[2] = PeakTracker_ckMaxDifferenceSigma;
+			ckMaxDifference[0] = false;
+			ckMaxDifference[1] = false;
+			ckMaxDifference[2] = false;
 		    
-		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, PeakTracker_minTrajectoryLength, integrate, PeakFitter_writeEverything, logService);
+		    tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance, 
+		    		PeakTracker_minTrajectoryLength, integrate, verbose, logService, pixelLength);
 		    
 		    //Let's make sure we create a unique archive name...
 		    //I guess this is already taken care of in the service now...
@@ -461,11 +526,9 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		    }
 		    
 		    archive = new SingleMoleculeArchive(newName + ".yama");
+			archive.putMetadata(marsOMEMetadata);
 		    
-		    SdmmImageMetadata metaData = new SdmmImageMetadata(image, microscope, imageFormat, metaDataStack);
-			archive.putMetadata(metaData);
-		    
-		    tracker.track(PeakStack, archive);
+		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
 		    //Reorder Molecules to Natural Order, so there is a common order
 		    //if we have to recover..
@@ -493,8 +556,8 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 				logService.info(LogBuilder.endBlock(true));
 	
 				log += "\n" + LogBuilder.endBlock(true);
-				archive.addLogMessage(log);
-				archive.addLogMessage("   ");	
+				archive.logln(log);
+				archive.logln("   ");	
 			}
 		}
 
@@ -521,27 +584,14 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			}
 		}
 		
-		private ArrayList<Peak> findPeaksInSlice(int slice) {
+		private ArrayList<Peak> findPeaksInT(int channel, int t) {
 			ImageStack stack = image.getImageStack();
-			ImageProcessor processor = stack.getProcessor(slice);
-			
-			//IT IS REALLY IMPORTANT THAT THE LABEL IS RETRIEVED 
-			//RIGHT AFTER RUNNING GET PROCESSOR ON THE SAME SLICE
-			//The get processor method will load in all the info
-			//Then the getSliceLabel will retreive it
-			//If you are working in virtual memtory the slice label won't be set properly until
-			//the get Processor method has been run...
-			
-			//First we add the header information to the metadata map 
-			//to generate the metadata table later in the molecule archive.
-			if (!imageFormat.equals("None")) {
-				String label = stack.getSliceLabel(slice);
-				metaDataStack.put(slice, label);
-			}
-			
-			//Now we do the peak search and find all peaks and fit them for the current slice and return the result
-			//which will be put in the concurrentHashMap PeakStack above with the slice as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("slice " + slice, processor), slice));
+			int index = image.getStackIndex(channel + 1, 1, t + 1);
+			ImageProcessor processor = stack.getProcessor(index);
+
+			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
+			//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
+			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + t + 1, processor.duplicate()), t));
 			
 			//After fitting some peaks may have moved within the mininmum distance
 			//So we remove these always favoring the ones having lower fit error in x and y
@@ -550,13 +600,35 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			return peaks;
 		}
 
-		public ArrayList<Peak> findPeaks(ImagePlus imp, int slice) {
+		public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
 			ArrayList<Peak> peaks;
 			
-			if (useROI) {
-		    	peaks = finder.findPeaks(imp, new Roi(x0, y0, width, height), slice);
+			DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
+			
+			if (useDogFilter) {
+				// Convert image to FloatType for better numeric precision
+		        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
+
+		        // Create the filtering result
+		        Img<FloatType> dog = opService.create().img(converted);
+
+		        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
+				final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
+
+		        // Do the DoG filtering using ImageJ Ops
+				opService.filter().dog(dog, converted, sigma2, sigma1);
+
+		        if (useROI) {
+			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
+				} else {
+					peaks = finder.findPeaks(dog, t);
+				}
 			} else {
-				peaks = finder.findPeaks(imp, slice);
+				if (useROI) {
+			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
+				} else {
+					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), t);
+				}
 			}
 			
 			if (peaks == null)
@@ -571,49 +643,51 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			
 			int fitWidth = fitRadius * 2 + 1;
 			
-			//Need to read in initial guess values
-			//Also, need to read out fit results back into peak
-			
 			for (Peak peak: positionList) {
 				
 				imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
 				
 				double[] p = new double[5];
-				p[0] = PeakFitter_initialBaseline;
-				p[1] = PeakFitter_initialHeight;
+				p[0] = Double.NaN;
+				p[1] = Double.NaN;
 				p[2] = peak.getX();
 				p[3] = peak.getY();
-				p[4] = PeakFitter_initialSigma;
+				p[4] = dogFilterRadius/2;
 				double[] e = new double[5];
 				
-				fitter.fitPeak(imp, p, e);
+				fitter.fitPeak(imp, p, e, findNegativePeaks);
 				
 				// First we reset valid since it was set to false for all peaks
 				// during the finding step to avoid finding the same peak twice.
 				peak.setValid();
 				
 				for (int i = 0; i < p.length && peak.isValid(); i++) {
-					if (Double.isNaN(p[i]) || Double.isNaN(e[i]) || Math.abs(e[i]) > maxError[i])
+					if (Double.isNaN(p[i]))
 						peak.setNotValid();
 				}
-				
+
 				//If the x, y, sigma values are negative reject the peak
 				//but we can have negative height p[0] or baseline p[1]
 				if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 					peak.setNotValid();
 				}
 				
-				//Force all peaks to be valid... If we are not checking error
-				if (!PeakFitter_maxErrorFilter)
-					peak.setValid();
+				double Rsquared = 0;
+				if (peak.isValid()) {
+					Gaussian2D gauss = new Gaussian2D(p);
+					Rsquared = calcR2(gauss, imp);
+					if (Rsquared <= RsquaredMin)
+						peak.setNotValid();
+				}
 				
 				if (peak.isValid()) {
 					peak.setValues(p);
-					peak.setErrorValues(e);
+					peak.setRsquared(Rsquared);
 					
 					//Integrate intensity
 					if (integrate) {
-						//I think they need to be shifted for just the integration step. Otherwise, leave them.
+						//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
+						//Math.round() is be an alternative option...
 						double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
 						peak.setIntensity(intensity[0]);
 					}
@@ -622,6 +696,37 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 				}
 			}
 			return newList;
+		}
+		
+		private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
+			double SSres = 0;
+			double SStot = 0;
+			double mean = 0;
+			double count = 0;
+			
+			Rectangle roi = imp.getRoi();
+			
+			//First determine mean
+			for (int y = roi.y; y < roi.y + roi.height; y++) {
+				for (int x = roi.x; x < roi.x + roi.width; x++) {
+					mean += (double)getPixelValue(imp, x, y, rect);
+					count++;
+				}
+			}
+			
+			mean = mean/count;
+			
+			for (int y = roi.y; y < roi.y + roi.height; y++) {
+				for (int x = roi.x; x < roi.x + roi.width; x++) {
+					double value = (double)getPixelValue(imp, x, y, rect);
+					SStot += (value - mean)*(value - mean);
+					
+					double prediction = gauss.getValue(x, y);
+					SSres += (value - prediction)*(value - prediction);
+				}
+			}
+			
+			return 1 - SSres / SStot;
 		}
 		
 		private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
@@ -698,11 +803,11 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			if (peakList.size() < 2)
 				return peakList;
 			
-			//Sort the list from lowest to highest XYErrors
+			//Sort the list from highest to lowest Rsquared
 			Collections.sort(peakList, new Comparator<Peak>(){
 				@Override
 				public int compare(Peak o1, Peak o2) {
-					return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
+					return Double.compare(o2.getRSquared(), o1.getRSquared());		
 				}
 			});
 			
@@ -745,6 +850,49 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			return finalPeaks;
 		}
 		
+		@Override
+		public void preview() {	
+			if (preview) {
+				image.setOverlay(null);
+				image.deleteRoi();
+				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
+				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
+				
+				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
+				if (!peaks.isEmpty()) {
+					Polygon poly = new Polygon();
+					
+					for (Peak p: peaks) {
+						int x = (int)p.getDoublePosition(0);
+						int y = (int)p.getDoublePosition(1);
+						poly.addPoint(x, y);
+					}
+					
+					PointRoi peakRoi = new PointRoi(poly);
+					image.setRoi(peakRoi);
+					
+					preFrameCount.setValue(this, "count: " + peaks.size());
+				} else {
+					preFrameCount.setValue(this, "count: 0");
+				}
+			}
+		}
+		
+		@Override
+		public void cancel() {
+			if (image !=  null) {
+				image.setOverlay(null);
+				image.setRoi(startingRoi);
+			}
+		}
+		
+		/** Called when the {@link #preview} parameter value changes. */
+		protected void previewChanged() {
+			// When preview box is unchecked, reset the Roi back to how it was before...
+			if (!preview) cancel();
+		}
+		
 		private void addInputParameterLog(LogBuilder builder) {
 			builder.addParameter("Image Title", image.getTitle());
 			if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
@@ -755,38 +903,23 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			builder.addParameter("ROI y0", String.valueOf(y0));
 			builder.addParameter("ROI w", String.valueOf(width));
 			builder.addParameter("ROI h", String.valueOf(height));
-			builder.addParameter("useDiscoidalAveragingFilter", String.valueOf(useDiscoidalAveragingFilter));
-			builder.addParameter("DS_innerRadius", String.valueOf(DS_innerRadius));
-			builder.addParameter("DS_outerRadius", String.valueOf(DS_outerRadius));
+			builder.addParameter("Channel", channel);
+			builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
+			builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 			builder.addParameter("Threshold", String.valueOf(threshold));
 			builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-			builder.addParameter("Find Negative Peaks", String.valueOf(findNegativePeaks));
-			builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-			builder.addParameter("Initial Baseline", String.valueOf(PeakFitter_initialBaseline));
-			builder.addParameter("Initial Height", String.valueOf(PeakFitter_initialHeight));
-			builder.addParameter("Initial Sigma", String.valueOf(PeakFitter_initialSigma));
-			builder.addParameter("Vary Baseline", String.valueOf(PeakFitter_varyBaseline));
-			builder.addParameter("Vary Height", String.valueOf(PeakFitter_varyHeight));
-			builder.addParameter("Vary Sigma", String.valueOf(PeakFitter_varySigma));
-			builder.addParameter("Filter by Max Error", String.valueOf(this.PeakFitter_maxErrorFilter));
-			builder.addParameter("Max Error Baseline", String.valueOf(PeakFitter_maxErrorBaseline));
-			builder.addParameter("Max Error Height", String.valueOf(PeakFitter_maxErrorHeight));
-			builder.addParameter("Max Error X", String.valueOf(PeakFitter_maxErrorX));
-			builder.addParameter("Max Error Y", String.valueOf(PeakFitter_maxErrorY));
-			builder.addParameter("Max Error Sigma", String.valueOf(PeakFitter_maxErrorSigma));
-			builder.addParameter("Verbose fit output", String.valueOf(PeakFitter_writeEverything));
-			builder.addParameter("Check Max Difference Baseline", String.valueOf(PeakTracker_ckMaxDifferenceBaseline));
-			builder.addParameter("Max Difference Baseline", String.valueOf(PeakTracker_maxDifferenceBaseline));
-			builder.addParameter("Check Max Difference Height", String.valueOf(PeakTracker_ckMaxDifferenceHeight));
-			builder.addParameter("Max Difference Height", String.valueOf(PeakTracker_maxDifferenceHeight));
-			builder.addParameter("Max Difference X", String.valueOf(PeakTracker_maxDifferenceX));
-			builder.addParameter("Max Difference Y", String.valueOf(PeakTracker_maxDifferenceY));
-			builder.addParameter("Check Max Difference Sigma", String.valueOf(PeakTracker_ckMaxDifferenceSigma));
-			builder.addParameter("Max Difference Sigma", String.valueOf(PeakTracker_maxDifferenceSigma));
-			builder.addParameter("Max Difference Slice", String.valueOf(PeakTracker_maxDifferenceSlice));
-			builder.addParameter("Min trajectory length", String.valueOf(PeakTracker_minTrajectoryLength));
+			builder.addParameter("Find negative peaks", String.valueOf(findNegativePeaks));
+			builder.addParameter("Fit radius", String.valueOf(fitRadius));
+			builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
+			builder.addParameter("Verbose output", String.valueOf(verbose));
+			builder.addParameter("Max difference x", String.valueOf(PeakTracker_maxDifferenceX));
+			builder.addParameter("Max difference y", String.valueOf(PeakTracker_maxDifferenceY));
+			builder.addParameter("Max difference T", String.valueOf(PeakTracker_maxDifferenceFrame));
+			builder.addParameter("Minimum track length", String.valueOf(PeakTracker_minTrajectoryLength));
+			builder.addParameter("Integrate", String.valueOf(integrate));
+			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
+			builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 			builder.addParameter("Microscope", microscope);
-			builder.addParameter("Format", imageFormat);
 		}
 		
 		//Getters and Setters
@@ -794,12 +927,12 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 	    	return archive;
 	    }
 		
-		public void setImage(ImagePlus image) {
-			this.image = image;
+		public void setDataset(Dataset dataset) {
+			this.dataset = dataset;
 		}
 		
-		public ImagePlus getImage() {
-			return image;
+		public Dataset getDataset() {
+			return dataset;
 		}
 		
 		public void setUseROI(boolean useROI) {
@@ -842,28 +975,20 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			return height;
 		}
 		
-		public void setUseDiscoidalAveragingFilter(boolean useDiscoidalAveragingFilter) {
-			this.useDiscoidalAveragingFilter = useDiscoidalAveragingFilter;
+		public void setChannel(int channel) {
+			this.channel = String.valueOf(channel);
 		}
 		
-		public boolean getUseDiscoidalAveragingFilter() {
-			return useDiscoidalAveragingFilter;
+		public int getChannel() {
+			return Integer.valueOf(channel);
 		}
 		
-		public void setInnerRadius(int DS_innerRadius) {
-			this.DS_innerRadius = DS_innerRadius;
+		public void setUseDogFiler(boolean useDogFilter) {
+			this.useDogFilter = useDogFilter;
 		}
 		
-		public int getInnerRadius() {
-			return DS_innerRadius;
-		}
-		
-		public void setOuterRadius(int DS_outerRadius) {
-			this.DS_outerRadius = DS_outerRadius;
-		}
-		
-		public int getOuterRadius() {
-			return DS_outerRadius;
+		public void setDogFilterRadius(double dogFilterRadius) {
+			this.dogFilterRadius = dogFilterRadius;
 		}
 		
 		public void setThreshold(int threshold) {
@@ -898,140 +1023,20 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			return fitRadius;
 		}
 		
-		public void setInitialBaseline(double PeakFitter_initialBaseline) {
-			this.PeakFitter_initialBaseline = PeakFitter_initialBaseline;
+		public void setMinimumRsquared(double Rsquared) {
+			this.RsquaredMin = Rsquared;
 		}
 		
-		public double getInitialBaseline() {
-			return PeakFitter_initialBaseline;
+		public double getMinimumRsquared() {
+			return RsquaredMin;
 		}
 		
-		public void setInitialHeight(double PeakFitter_initialHeight) {
-			this.PeakFitter_initialHeight = PeakFitter_initialHeight;
+		public void setVerboseOutput(boolean verbose) {
+			this.verbose = verbose;
 		}
 		
-		public double getInitialHeight() {
-			return PeakFitter_initialHeight;
-		}
-		
-		public void setInitialSigma(double PeakFitter_initialSigma) {
-			this.PeakFitter_initialSigma = PeakFitter_initialSigma;
-		}
-		
-		public double getInitialSigma() {
-			return PeakFitter_initialSigma;
-		}
-		
-		public void setVaryBaseline(boolean PeakFitter_varyBaseline) {
-			this.PeakFitter_varyBaseline = PeakFitter_varyBaseline;
-		}
-		
-		public boolean getVaryBaseline() {
-			return PeakFitter_varyBaseline;
-		}
-		
-		public void setVaryHeight(boolean PeakFitter_varyHeight) {
-			this.PeakFitter_varyHeight = PeakFitter_varyHeight;
-		}
-		
-		public boolean getVaryHeight() {
-			return PeakFitter_varyHeight;
-		}
-		
-		public void setVarySigma(boolean PeakFitter_varySigma) {
-			this.PeakFitter_varySigma = PeakFitter_varySigma;
-		}
-		
-		public boolean getVarySigma() {
-			return PeakFitter_varySigma;
-		}
-		
-		public void setMaxErrorFilter(boolean PeakFitter_maxErrorFilter) {
-			this.PeakFitter_maxErrorFilter = PeakFitter_maxErrorFilter;
-		}
-		
-		public boolean getMaxErrorFilter() {
-			return PeakFitter_maxErrorFilter;
-		}
-		
-		public void setMaxErrorBaseline(double PeakFitter_maxErrorBaseline) {
-			this.PeakFitter_maxErrorBaseline = PeakFitter_maxErrorBaseline;
-		}
-		
-		public double getMaxErrorBaseline() {
-			return PeakFitter_maxErrorBaseline;
-		}
-		
-		public void setMaxErrorHeight(double PeakFitter_maxErrorHeight) {
-			this.PeakFitter_maxErrorHeight = PeakFitter_maxErrorHeight;
-		}
-		
-		public double getMaxErrorHeight() {
-			return PeakFitter_maxErrorHeight;
-		}
-		
-		public void setMaxErrorX(double PeakFitter_maxErrorX) {
-			this.PeakFitter_maxErrorX = PeakFitter_maxErrorX;
-		}
-		
-		public double getMaxErrorX() {
-			return PeakFitter_maxErrorX;
-		}
-
-		public void setMaxErrorY(double PeakFitter_maxErrorY) {
-			this.PeakFitter_maxErrorY = PeakFitter_maxErrorY;
-		}
-		
-		public double getMaxErrorY() {
-			return PeakFitter_maxErrorY;
-		}
-		
-		public void setMaxErrorSigma(double PeakFitter_maxErrorSigma) {
-			this.PeakFitter_maxErrorSigma = PeakFitter_maxErrorSigma;
-		}
-		
-		public double getMaxErrorSigma() {
-			return PeakFitter_maxErrorSigma;
-		}
-		
-		public void setVerboseFitOutput(boolean PeakFitter_writeEverything) {
-			this.PeakFitter_writeEverything = PeakFitter_writeEverything;
-		}
-		
-		public boolean getVerboseFitOutput() {
-			return PeakFitter_writeEverything;
-		}
-		
-		public void setCheckMaxDifferenceBaseline(boolean PeakTracker_ckMaxDifferenceBaseline) {
-			this.PeakTracker_ckMaxDifferenceBaseline = PeakTracker_ckMaxDifferenceBaseline; 
-		}
-		
-		public boolean getCheckMaxDifferenceBaseline() {
-			return PeakTracker_ckMaxDifferenceBaseline; 
-		}
-		
-		public void setMaxDifferenceBaseline(double PeakTracker_maxDifferenceBaseline) {
-			this.PeakTracker_maxDifferenceBaseline = PeakTracker_maxDifferenceBaseline; 
-		}
-		
-		public double getMaxDifferenceBaseline() {
-			return PeakTracker_maxDifferenceBaseline; 
-		}
-		
-		public void setCheckMaxDifferenceHeight(boolean PeakTracker_ckMaxDifferenceHeight) {
-			this.PeakTracker_ckMaxDifferenceHeight = PeakTracker_ckMaxDifferenceHeight; 
-		}
-		
-		public boolean getCheckMaxDifferenceHeight() {
-			return PeakTracker_ckMaxDifferenceHeight; 
-		}
-		
-		public void setMaxDifferenceHeight(double PeakTracker_maxDifferenceHeight) {
-			this.PeakTracker_maxDifferenceHeight = PeakTracker_maxDifferenceHeight; 
-		}
-		
-		public double getMaxDifferenceHeight() {
-			return PeakTracker_maxDifferenceHeight; 
+		public boolean getVerboseOutput() {
+			return verbose;
 		}
 		
 		public void setMaxDifferenceX(double PeakTracker_maxDifferenceX) {
@@ -1050,36 +1055,44 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 			return PeakTracker_maxDifferenceY;
 		}
 		
-		public void setCheckMaxDifferenceSigma(boolean PeakTracker_ckMaxDifferenceSigma) {
-			this.PeakTracker_ckMaxDifferenceSigma = PeakTracker_ckMaxDifferenceSigma;
-		}
-
-		public boolean getCheckMaxDifferenceSigma() {
-			return PeakTracker_ckMaxDifferenceSigma;
+		public void setMaxDifferenceFrame(int PeakTracker_maxDifferenceFrame) {
+			this.PeakTracker_maxDifferenceFrame = PeakTracker_maxDifferenceFrame;
 		}
 		
-		public void setMaxDifferenceSigma(double PeakTracker_maxDifferenceSigma) {
-			this.PeakTracker_maxDifferenceSigma = PeakTracker_maxDifferenceSigma;
+		public int getMaxDifferenceFrame() {
+			return PeakTracker_maxDifferenceFrame;
 		}
 		
-		public double getMaxDifferenceSigma() {
-			return PeakTracker_maxDifferenceSigma;
-		}
-		
-		public void setMaxDifferenceSlice(int PeakTracker_maxDifferenceSlice) {
-			this.PeakTracker_maxDifferenceSlice = PeakTracker_maxDifferenceSlice;
-		}
-		
-		public int getMaxDifferenceSlice() {
-			return PeakTracker_maxDifferenceSlice;
-		}
-		
-		public void setMinTrajectoryLength(int PeakTracker_minTrajectoryLength) {
+		public void setMinimumTrackLength(int PeakTracker_minTrajectoryLength) {
 			this.PeakTracker_minTrajectoryLength = PeakTracker_minTrajectoryLength;
 		}
 
-		public int getMinTrajectoryLength() {
+		public int getMinimumTrackLength() {
 			return PeakTracker_minTrajectoryLength;
+		}
+		
+		public void setIntegrate(boolean integrate) {
+			this.integrate = integrate;
+		}
+		
+		public boolean getIntegrate() {
+			return integrate;
+		}
+		
+		public void setIntegrationInnerRadius(int integrationInnerRadius) {
+			this.integrationInnerRadius = integrationInnerRadius;
+		}
+		
+		public int getIntegrationInnerRadius() {
+			return integrationInnerRadius;
+		}
+		
+		public void setIntegrationOuterRadius(int integrationOuterRadius) {
+			this.integrationOuterRadius = integrationOuterRadius;
+		}
+		
+		public int getIntegrationOuterRadius() {
+			return integrationOuterRadius;
 		}
 		
 		public void setMicroscope(String microscope) {
@@ -1088,13 +1101,5 @@ public class DSPeakTrackerCommand<T extends RealType< T >> extends DynamicComman
 		
 		public String getMicroscope() {
 			return microscope;
-		}
-		
-		public void setImageFormat(String imageFormat) {
-			this.imageFormat = imageFormat;
-		}
-		
-		public String getImageFormat() {
-			return imageFormat;
 		}
 }

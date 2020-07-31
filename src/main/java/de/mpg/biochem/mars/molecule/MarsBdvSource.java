@@ -37,14 +37,14 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import net.imglib2.realtransform.AffineTransform3D;
 
 public class MarsBdvSource extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
-	private String name, xDriftColumn, yDriftColumn, pathToXml;
+	private String name, pathToXml;
+	private boolean driftCorrect;
 	private AffineTransform3D affine3D;
 	
 	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
-		xDriftColumn = "";
-		yDriftColumn = "";
+		driftCorrect = false;
 		pathToXml = "";
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	}
@@ -52,8 +52,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 	public MarsBdvSource(JsonParser jParser) throws IOException {
 		super();
 		name = "";
-		xDriftColumn = "";
-		yDriftColumn = "";
+		driftCorrect = false;
 		pathToXml = "";
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 		fromJSON(jParser);
@@ -61,54 +60,42 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 	
 	@Override
 	protected void createIOMaps() {
-		//Add to output map
-		outputMap.put("Name", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeStringField("Name", name);
-	 	}, IOException.class));
-		outputMap.put("xDriftColumn", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeStringField("xDriftColumn", xDriftColumn);
-	 	}, IOException.class));
-		outputMap.put("yDriftColumn", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeStringField("yDriftColumn", yDriftColumn);
-	 	}, IOException.class));
-		outputMap.put("pathToXml", MarsUtil.catchConsumerException(jGenerator -> {
-			jGenerator.writeStringField("pathToXml", pathToXml);
-	 	}, IOException.class));
-		outputMap.put("AffineTransform3D", MarsUtil.catchConsumerException(jGenerator -> {
-			//Jackson 2.9.9 compatible stuff
-			//jGenerator.writeFieldName("AffineTransform3D");
-			//jGenerator.writeArray(getTransformAsArray(), 0, 12);
-			
-			//Jackson 2.6.5 version of above
-			jGenerator.writeFieldName("AffineTransform3D");
-			jGenerator.writeStartArray();
-			for (double num : getTransformAsArray())
-				jGenerator.writeNumber(num);
-			jGenerator.writeEndArray();
-	 	}, IOException.class));
 		
-		//Add to input map
-		inputMap.put("Name", MarsUtil.catchConsumerException(jParser -> {
-	    	name = jParser.getText();
-		}, IOException.class));
-		inputMap.put("xDriftColumn", MarsUtil.catchConsumerException(jParser -> {
-	    	xDriftColumn = jParser.getText();
-		}, IOException.class));
-		inputMap.put("yDriftColumn", MarsUtil.catchConsumerException(jParser -> {
-	    	yDriftColumn = jParser.getText();
-		}, IOException.class));
-		inputMap.put("pathToXml", MarsUtil.catchConsumerException(jParser -> {
-	    	pathToXml = jParser.getText();
-		}, IOException.class));
-		inputMap.put("AffineTransform3D", MarsUtil.catchConsumerException(jParser -> {
-			double[] trans = new double[12];
-			int index = 0;
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-	    		trans[index] = jParser.getDoubleValue();
-	    		index++;
-	    	}
-	    	affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5], trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
-		}, IOException.class));
+		setJsonField("Name", 
+			jGenerator -> jGenerator.writeStringField("Name", name), 
+			jParser -> name = jParser.getText());
+		
+		setJsonField("DriftCorrect", 
+			jGenerator -> jGenerator.writeBooleanField("DriftCorrect", driftCorrect),
+			jParser -> driftCorrect = jParser.getBooleanValue()); 
+		
+		setJsonField("pathToXml", 
+			jGenerator -> jGenerator.writeStringField("pathToXml", pathToXml),
+			jParser -> pathToXml = jParser.getText());
+		
+		setJsonField("AffineTransform3D", 
+			jGenerator -> {
+				//Jackson 2.9.9 compatible stuff
+				//jGenerator.writeFieldName("AffineTransform3D");
+				//jGenerator.writeArray(getTransformAsArray(), 0, 12);
+				
+				//Jackson 2.6.5 version of above
+				jGenerator.writeFieldName("AffineTransform3D");
+				jGenerator.writeStartArray();
+				for (double num : getTransformAsArray())
+					jGenerator.writeNumber(num);
+				jGenerator.writeEndArray();
+		 	}, 
+			jParser -> {
+				double[] trans = new double[12];
+				int index = 0;
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+		    		trans[index] = jParser.getDoubleValue();
+		    		index++;
+		    	}
+		    	affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5], trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
+			});
+	
 	}
 	
 	public String getName() {
@@ -127,20 +114,12 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 		this.pathToXml = pathToXml;
 	}
 	
-	public String getXDriftColumn() {
-		return xDriftColumn;
+	public boolean getCorrectDrift() {
+		return driftCorrect;
 	}
 	
-	public void setXDriftColumn(String xDriftColumn) {
-		this.xDriftColumn = xDriftColumn;
-	}
-	
-	public String getYDriftColumn() {
-		return yDriftColumn;
-	}
-	
-	public void setYDriftColumn(String yDriftColumn) {
-		this.yDriftColumn = yDriftColumn;
+	public void setCorrectDrift(boolean driftCorrect) {
+		this.driftCorrect = driftCorrect;
 	}
 	
 	//See https://forum.image.sc/t/applying-affine-matrix-result-from-2d-3d-registration-to-images/22298/8 for mapping info

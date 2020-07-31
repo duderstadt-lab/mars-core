@@ -41,6 +41,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
@@ -73,19 +75,21 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	//UID of metadata associated wit this molecule.
 	protected String metadataUID;
 	
+	//Table housing main record data.
+	protected MarsTable dataTable = new MarsTable();
+	
 	//Segments tables resulting from change point fitting
 	//ArrayList has two items:
 	//XColumn is at index 0
 	//YColumn is at index 1
 	//RegionName is at index 2
-	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables;
+	protected LinkedHashMap<ArrayList<String>, MarsTable> segmentTables = new LinkedHashMap<>();
 	
 	/**
 	 * Constructor for creating an empty Molecule record. 
 	 */
 	public AbstractMolecule() {
 		super();
-		segmentTables = new LinkedHashMap<>();
 	}
 	
 	/**
@@ -99,7 +103,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(JsonParser jParser) throws IOException {
 		super();
-		segmentTables = new LinkedHashMap<>();
 		fromJSON(jParser);
 	}
 	
@@ -111,7 +114,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(String UID) {
 		super(UID);
-		segmentTables = new LinkedHashMap<>();
 	}
 
 	/**
@@ -124,108 +126,167 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * initialization.
 	 */
 	public AbstractMolecule(String UID, MarsTable dataTable) {
-		super(UID, dataTable);
-		segmentTables = new LinkedHashMap<>();
+		super(UID);
+		setDataTable(dataTable);
 	}
 	
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		//Add to output map
-		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (metadataUID != null)
-				jGenerator.writeStringField("ImageMetadataUID", metadataUID);
-	 	}, IOException.class));
-		outputMap.put("metaUID", MarsUtil.catchConsumerException(jGenerator -> {
-			if (metadataUID != null)
-				jGenerator.writeStringField("MetadataUID", metadataUID);
-	 	}, IOException.class));
-		outputMap.put("SegmentTables", MarsUtil.catchConsumerException(jGenerator -> {
-			if (segmentTables.size() > 0) {
-				jGenerator.writeArrayFieldStart("SegmentTables");
-				for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
-					if (segmentTables.get(tableColumnNames).size() > 0) {
-						jGenerator.writeStartObject();
-						
-						jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
-						jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
-						jGenerator.writeStringField("RegionName", tableColumnNames.get(2));
-						
-						jGenerator.writeFieldName("Table");
-						segmentTables.get(tableColumnNames).toJSON(jGenerator);
-						
-						jGenerator.writeEndObject();
+		setJsonField("DataTable", 
+			jGenerator -> {
+					if (dataTable.getColumnCount() > 0) {
+						jGenerator.writeFieldName("DataTable");
+						dataTable.toJSON(jGenerator);
 					}
-				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
-		
-		//Add to input map
-		inputMap.put("ImageMetadataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("ImageMetaDataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("MetadataUID", MarsUtil.catchConsumerException(jParser -> {
-	    	metadataUID = jParser.getText();
-		}, IOException.class));
-		inputMap.put("SegmentTables", MarsUtil.catchConsumerException(jParser -> {
-	    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String xColumnName = "";
-		    		String yColumnName = "";
-		    		String regionName = "";
-		    		
-				    ArrayList<String> tableColumnNames = new ArrayList<String>();
-		    	
-		    		//Needed for backwards compatibility when reverse order was used...
-				    if ("xColumnName".equals(jParser.getCurrentName())) {
-				    	jParser.nextToken();
-				    	xColumnName = jParser.getText();
-				    	
-				    	//Then move past the field and next name
-					    jParser.nextToken();
-					    jParser.nextToken();
-				    	yColumnName = jParser.getText();
-				    } else if ("yColumnName".equals(jParser.getCurrentName())) {
-				    	jParser.nextToken();
-				    	yColumnName = jParser.getText();
-				    	
-				    	//Then move past the field and next name
-					    jParser.nextToken();
-					    jParser.nextToken();
-				    	xColumnName = jParser.getText();
-				    } 
-				    
-				    tableColumnNames.add(xColumnName);
-			    	tableColumnNames.add(yColumnName);
-				    
-			    	//Move to next field
-			    	jParser.nextToken();
-			    	
-			    	if ("RegionName".equals(jParser.getCurrentName())) {
-			    		jParser.nextToken();
-			    		regionName = jParser.getText();
-			    		tableColumnNames.add(regionName);
+				}, 
+			jParser -> dataTable.fromJSON(jParser));	
+				
+		setJsonField("MetadataUID", 
+			jGenerator -> {
+					if (metadataUID != null)
+						jGenerator.writeStringField("MetadataUID", metadataUID);
+			 	}, 
+			jParser -> metadataUID = jParser.getText());
+			 	
+		setJsonField("SegmentTables", 
+			jGenerator -> {
+					if (segmentTables.size() > 0) {
+						jGenerator.writeArrayFieldStart("SegmentTables");
+						for (ArrayList<String> tableColumnNames :segmentTables.keySet()) {
+							if (segmentTables.get(tableColumnNames).size() > 0) {
+								jGenerator.writeStartObject();
+								
+								jGenerator.writeStringField("xColumnName", tableColumnNames.get(0));
+								jGenerator.writeStringField("yColumnName", tableColumnNames.get(1));
+								jGenerator.writeStringField("RegionName", tableColumnNames.get(2));
+								
+								jGenerator.writeFieldName("Table");
+								segmentTables.get(tableColumnNames).toJSON(jGenerator);
+								
+								jGenerator.writeEndObject();
+							}
+						}
+						jGenerator.writeEndArray();
+					}
+			 	}, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String xColumnName = "";
+			    		String yColumnName = "";
+			    		String regionName = "";
 			    		
-			    		//Move to table field
-			    		jParser.nextToken();
-			    	} else {
-			    		//Must not have a region name
-			    		tableColumnNames.add("");
+					    ArrayList<String> tableColumnNames = new ArrayList<String>();
+			    	
+			    		//Needed for backwards compatibility when reverse order was used...
+					    if ("xColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    } else if ("yColumnName".equals(jParser.getCurrentName())) {
+					    	jParser.nextToken();
+					    	yColumnName = jParser.getText();
+					    	
+					    	//Then move past the field and next name
+						    jParser.nextToken();
+						    jParser.nextToken();
+					    	xColumnName = jParser.getText();
+					    } 
+					    
+					    tableColumnNames.add(xColumnName);
+				    	tableColumnNames.add(yColumnName);
+					    
+				    	//Move to next field
+				    	jParser.nextToken();
+				    	
+				    	if ("RegionName".equals(jParser.getCurrentName())) {
+				    		jParser.nextToken();
+				    		regionName = jParser.getText();
+				    		tableColumnNames.add(regionName);
+				    		
+				    		//Move to table field
+				    		jParser.nextToken();
+				    	} else {
+				    		//Must not have a region name
+				    		tableColumnNames.add("");
+				    	}
+				    	
+				    	MarsTable segmenttable = new MarsTable(yColumnName + " vs " + xColumnName + " - " + regionName);
+				    	
+				    	segmenttable.fromJSON(jParser);
+				    	
+				    	segmentTables.put(tableColumnNames, segmenttable);
 			    	}
-			    	
-			    	MarsTable segmenttable = new MarsTable(yColumnName + " vs " + xColumnName + " - " + regionName);
-			    	
-			    	segmenttable.fromJSON(jParser);
-			    	
-			    	segmentTables.put(tableColumnNames, segmenttable);
 		    	}
-	    	}
-		}, IOException.class));
+			});
+		
+		
+		// FOR BACKWARDS COMPATIBILITY 
+		setJsonField("ImageMetadataUID", null, 
+				jParser -> metadataUID = jParser.getText());
+		
+		setJsonField("ImageMetaDataUID", null, 
+				jParser -> metadataUID = jParser.getText());
+	}
+	
+	/**
+	 * Get the {@link MarsTable} DataTable holding the primary data for
+	 * this record.
+	 * 
+	 * @return The primary DataTable for this record.
+	 */
+	@Deprecated
+	public MarsTable getDataTable() {
+		return dataTable;
+	}
+	
+	/**
+	 * Get the {@link MarsTable} holding the primary data for
+	 * this record.
+	 * 
+	 * @return The primary Table for this record.
+	 */
+	public MarsTable getTable() {
+		return dataTable;
+	}
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * record.
+	 */
+	@Deprecated
+	public void setDataTable(MarsTable table) {
+		//This means we are resetting all the data...
+		dataTable.clear();
+		
+		//Now set to new table
+		dataTable = table;
+	}
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * record.
+	 */
+	public void setTable(MarsTable table) {
+		//This means we are resetting all the data...
+		dataTable.clear();
+		
+		//Now set to new table
+		dataTable = table;
 	}
 	
 	/**

@@ -31,12 +31,15 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.metadata.*;
 
-public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
 	
 	public ArchMoleculeArchive(String name) {
 		super(name);
@@ -46,12 +49,12 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, S
 		super(file);
 	}
 	
-	public ArchMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public ArchMoleculeArchive(String name, MarsTable table) {
+		super(name, table);
 	}
 	
-	public ArchMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public ArchMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super(name, file);
 	}
 	
 	public SingleMoleculeArchiveProperties createProperties() {
@@ -62,12 +65,18 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, S
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
 	
-	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new SdmmImageMetadata(jParser);
+	/**
+	 * Create MarsOMEMetadata record using JsonParser stream.
+	 */
+	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
-	public SdmmImageMetadata createMetadata(String metaUID) {
-		return new SdmmImageMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID) {
+		return new MarsOMEMetadata(metaUID);
 	}
 	
 	public ArchMolecule createMolecule() {

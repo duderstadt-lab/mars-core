@@ -34,13 +34,14 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.ImageProcessing.MoleculeIntegrator;
-import de.mpg.biochem.mars.ImageProcessing.PeakTracker;
+import de.mpg.biochem.mars.image.MoleculeIntegrator;
+import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
@@ -65,230 +66,197 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
  * 
  * @author Karl Duderstadt
  */
-public class MarsRegion implements JsonConvertibleRecord {
-		private String name = "Region";
-		private String column = "Time (s)";
-		private String color = "#416ef468";
-		private double start = 0;
-		private double end = 0;
-		private double opacity = 0.2;
-		
-		/**
-		 * Constructor for creating a plot region of a given name with default settings. 
-		 * This has a default light blue color and start = end = 0. The bounds can then be 
-		 * changed in the gui. 
-		 * 
-		 * @param name Name of the region.
-		 */
-		public MarsRegion(String name) {
-			this.name = name;
-		}
-		
-		/**
-		 * Constructor for creating a plot region given a json stream. Used when loading
-		 * objects from file.
-		 * 
-		 * @param jParser Json stream used to build the object.
-		 * @throws IOException Thrown if unable to parse Json from the JsonParser stream.
-		 */
-		public MarsRegion(JsonParser jParser) throws IOException {
-			fromJSON(jParser);
-		}
-		
-		/**
-		 * Constructor for creating a plot region using known parameters.
-		 * 
-		 * @param name Name of the region.
-		 * @param column Name of column the region refers to.
-		 * @param start Starting value of the region.
-		 * @param end Ending value of the region.
-		 * @param color Color string in hex format.
-		 * @param opacity Opacity of the region between 0 and 1.
-		 * 
-		 */
-		public MarsRegion(String name, String column, double start, double end, String color, double opacity) {
-			this.name = name;
-			this.column = column;
-			this.color = color;
-			this.start = start;
-			this.end = end;
-			this.opacity = opacity;
-		}
-
-		/**
-		 * Stream a record to JSON. Stream a record
-		 * from to a file using the JsonGenerator stream provided.
-		 * 
-		 * @param jGenerator A JsonGenerator for streaming a
-		 * record to a file.
-		 * 
-	     * @throws IOException if there is a problem reading from the file.
-		 */
-		@Override
-		public void toJSON(JsonGenerator jGenerator) throws IOException {
-			jGenerator.writeStartObject();
-			jGenerator.writeStringField("name", name);
-			jGenerator.writeStringField("column", column);
-			jGenerator.writeNumberField("start",start);
-			jGenerator.writeNumberField("end",end);
-			jGenerator.writeStringField("color", color);
-			jGenerator.writeNumberField("opacity", opacity);
-			jGenerator.writeEndObject();
-		}
-
-		/**
-		 * Read a record from JSON. Load a record
-		 * from a file using the JsonParser stream provided.
-		 * 
-		 * @param jParser A JsonParser for loading the 
-		 * record from a file.
-		 * 
-	     * @throws IOException if there is a problem reading from the file.
-		 */
-		@Override
-		public void fromJSON(JsonParser jParser) throws IOException {
-			//Then we move through fields
-	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-	    		String fieldname = jParser.getCurrentName();
-	    		if ("name".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			name = jParser.getText();
-	    		} 
-	    		if ("column".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			column = jParser.getText();
-	    		}
-	    			
-	    		if ("start".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			start = jParser.getDoubleValue();
-	    		}
-	    		if ("end".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			end = jParser.getDoubleValue();
-	    		}
-	    		if ("color".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			color = jParser.getText();
-	    		}
-	    		if ("opacity".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			opacity = jParser.getDoubleValue();
-	    		}
-	    	}
-		}
-		
-		/**
-		 * Get the name of the region.
-		 * 
-		 * @return The region name.
-		 */
-		public String getName() {
-			return name;
-		}
-		
-		/**
-		 * Set the region name.
-		 * 
-		 * @param name The region name.
-		 */
-		public void setName(String name) {
-			this.name = name;
-		}
-		
-		/**
-		 * Get the name of the column the
-		 * start and end values refer to.
-		 * 
-		 * @return The column name.
-		 */
-		public String getColumn() {
-			return column;
-		}
-		
-		/**
-		 * Set the name of the column the
-		 * start and end values refer to.
-		 * 
-		 * @param column The column name.
-		 */
-		public void setColumn(String column) {
-			this.column = column;
-		}
-		
-		/**
-		 * Get the string color of the region in hex.
-		 * 
-		 * @return Color string in hex.
-		 */
-		public String getColor() {
-			return color;
-		}
-		
-		/**
-		 * Set the hex color string.
-		 * 
-		 * @param color The hex color string.
-		 */
-		public void setColor(String color) {
-			this.color = color;
-		}
-		
-		/**
-		 * Get lower bound of the region.
-		 * 
-		 * @return Lower bound of the region.
-		 */
-		public double getStart() {
-			return start;
-		}
-		
-		/**
-		 * Set the lower bound of the region.
-		 * 
-		 * @param start The lower bound of the region.
-		 */
-		public void setStart(double start) {
-			this.start = start;
-		}
-		
-		/**
-		 * Get the upper bound of the region.
-		 * 
-		 * @return The upper bound of the region.
-		 */
-		public double getEnd() {
-			return end;
-		}
-		
-		/**
-		 * Set the upper bound of the region.
-		 * 
-		 * @param end The upper bound of the region.
-		 */
-		public void setEnd(double end) {
-			this.end = end;
-		}
-		
-		/**
-		 * Set the opacity of the region. Range is 
-		 * 0 to 1. Used by the javafx gui when drawing 
-		 * regions on plots.
-		 * 
-		 * @param opacity The opacity of the region.
-		 */
-		public void setOpacity(double opacity) {
-			this.opacity = opacity;
-		}
-		
-		/**
-		 * Get the opacity of the region. Range is 
-		 * 0 to 1. Used by the javafx gui when drawing 
-		 * regions on plots.
-		 * 
-		 * @return The opacity of the region.
-		 */
-		public double getOpacity() {
-			return opacity;
-		}
+public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
+	private String name = "Region";
+	private String column = "Time (s)";
+	private String color = "#416ef468";
+	private double start = 0;
+	private double end = 0;
+	private double opacity = 0.2;
+	
+	/**
+	 * Constructor for creating a plot region of a given name with default settings. 
+	 * This has a default light blue color and start = end = 0. The bounds can then be 
+	 * changed in the gui. 
+	 * 
+	 * @param name Name of the region.
+	 */
+	public MarsRegion(String name) {
+		this.name = name;
 	}
+	
+	/**
+	 * Constructor for creating a plot region given a json stream. Used when loading
+	 * objects from file.
+	 * 
+	 * @param jParser Json stream used to build the object.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser stream.
+	 */
+	public MarsRegion(JsonParser jParser) throws IOException {
+		fromJSON(jParser);
+	}
+	
+	/**
+	 * Constructor for creating a plot region using known parameters.
+	 * 
+	 * @param name Name of the region.
+	 * @param column Name of column the region refers to.
+	 * @param start Starting value of the region.
+	 * @param end Ending value of the region.
+	 * @param color Color string in hex format.
+	 * @param opacity Opacity of the region between 0 and 1.
+	 * 
+	 */
+	public MarsRegion(String name, String column, double start, double end, String color, double opacity) {
+		this.name = name;
+		this.column = column;
+		this.color = color;
+		this.start = start;
+		this.end = end;
+		this.opacity = opacity;
+	}
+	
+	@Override
+	protected void createIOMaps() {
+		
+		setJsonField("name", 
+				jGenerator -> jGenerator.writeStringField("name", name), 
+				jParser -> name = jParser.getText());
+		
+		setJsonField("column", 
+				jGenerator -> jGenerator.writeStringField("column", column), 
+				jParser -> column = jParser.getText());
+		
+		setJsonField("start", 
+				jGenerator -> jGenerator.writeNumberField("start",start), 
+				jParser -> start = jParser.getDoubleValue());
+		
+		setJsonField("end", 
+				jGenerator -> jGenerator.writeNumberField("end",end), 
+				jParser -> end = jParser.getDoubleValue());
+		
+		setJsonField("color", 
+				jGenerator -> jGenerator.writeStringField("color", color), 
+				jParser -> color = jParser.getText());
+		
+		setJsonField("opacity", 
+				jGenerator -> jGenerator.writeNumberField("opacity", opacity), 
+				jParser -> opacity = jParser.getDoubleValue());
+		
+	}
+	
+	/**
+	 * Get the name of the region.
+	 * 
+	 * @return The region name.
+	 */
+	public String getName() {
+		return name;
+	}
+	
+	/**
+	 * Set the region name.
+	 * 
+	 * @param name The region name.
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	/**
+	 * Get the name of the column the
+	 * start and end values refer to.
+	 * 
+	 * @return The column name.
+	 */
+	public String getColumn() {
+		return column;
+	}
+	
+	/**
+	 * Set the name of the column the
+	 * start and end values refer to.
+	 * 
+	 * @param column The column name.
+	 */
+	public void setColumn(String column) {
+		this.column = column;
+	}
+	
+	/**
+	 * Get the string color of the region in hex.
+	 * 
+	 * @return Color string in hex.
+	 */
+	public String getColor() {
+		return color;
+	}
+	
+	/**
+	 * Set the hex color string.
+	 * 
+	 * @param color The hex color string.
+	 */
+	public void setColor(String color) {
+		this.color = color;
+	}
+	
+	/**
+	 * Get lower bound of the region.
+	 * 
+	 * @return Lower bound of the region.
+	 */
+	public double getStart() {
+		return start;
+	}
+	
+	/**
+	 * Set the lower bound of the region.
+	 * 
+	 * @param start The lower bound of the region.
+	 */
+	public void setStart(double start) {
+		this.start = start;
+	}
+	
+	/**
+	 * Get the upper bound of the region.
+	 * 
+	 * @return The upper bound of the region.
+	 */
+	public double getEnd() {
+		return end;
+	}
+	
+	/**
+	 * Set the upper bound of the region.
+	 * 
+	 * @param end The upper bound of the region.
+	 */
+	public void setEnd(double end) {
+		this.end = end;
+	}
+	
+	/**
+	 * Set the opacity of the region. Range is 
+	 * 0 to 1. Used by the javafx gui when drawing 
+	 * regions on plots.
+	 * 
+	 * @param opacity The opacity of the region.
+	 */
+	public void setOpacity(double opacity) {
+		this.opacity = opacity;
+	}
+	
+	/**
+	 * Get the opacity of the region. Range is 
+	 * 0 to 1. Used by the javafx gui when drawing 
+	 * regions on plots.
+	 * 
+	 * @return The opacity of the region.
+	 */
+	public double getOpacity() {
+		return opacity;
+	}
+}
+

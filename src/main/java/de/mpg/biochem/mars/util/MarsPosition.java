@@ -33,8 +33,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;
 
 /**
@@ -46,7 +45,7 @@ import de.mpg.biochem.mars.molecule.*;
  * </p>
  * @author Karl Duderstadt
  */
-public class MarsPosition implements JsonConvertibleRecord {
+public class MarsPosition extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 		private String name = "Position"; 
 		private String column = "Time (s)";
 		private String color = "#000000";
@@ -91,62 +90,30 @@ public class MarsPosition implements JsonConvertibleRecord {
 			this.position = position;
 			this.stroke = stroke;
 		}
-
-		/**
-		 * Stream a record to JSON. Stream a record
-		 * from to a file using the JsonGenerator stream provided.
-		 * 
-		 * @param jGenerator A JsonGenerator for streaming a
-		 * record to a file.
-		 * 
-	     * @throws IOException if there is a problem reading from the file.
-		 */
+		
 		@Override
-		public void toJSON(JsonGenerator jGenerator) throws IOException {
-			jGenerator.writeStartObject();
-			jGenerator.writeStringField("name", name);
-			jGenerator.writeStringField("column", column);
-			jGenerator.writeNumberField("position",position);
-			jGenerator.writeStringField("color", color);
-			jGenerator.writeNumberField("stroke",stroke);
-			jGenerator.writeEndObject();
-		}
-
-		/**
-		 * Read a record from JSON. Load a record
-		 * from a file using the JsonParser stream provided.
-		 * 
-		 * @param jParser A JsonParser for loading the 
-		 * record from a file.
-		 * 
-	     * @throws IOException if there is a problem reading from the file.
-		 */
-		@Override
-		public void fromJSON(JsonParser jParser) throws IOException {
-			//Then we move through fields
-	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-	    		String fieldname = jParser.getCurrentName();
-	    		if ("name".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			name = jParser.getText();
-	    		}
-	    		if ("column".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			column = jParser.getText();
-	    		}
-	    		if ("position".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			position = jParser.getDoubleValue();
-	    		}
-	    		if ("color".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			color = jParser.getText();
-	    		}
-	    		if ("stroke".equals(fieldname)) {
-	    			jParser.nextToken();
-	    			stroke = jParser.getDoubleValue();
-	    		}
-	    	}
+		protected void createIOMaps() {
+			
+			setJsonField("name", 
+					jGenerator -> jGenerator.writeStringField("name", name), 
+					jParser -> name = jParser.getText());
+			
+			setJsonField("column", 
+					jGenerator -> jGenerator.writeStringField("column", column), 
+					jParser -> column = jParser.getText());
+			
+			setJsonField("position", 
+					jGenerator -> jGenerator.writeNumberField("position",position), 
+					jParser -> position = jParser.getDoubleValue());
+			
+			setJsonField("color", 
+					jGenerator -> jGenerator.writeStringField("color", color), 
+					jParser -> color = jParser.getText());
+			
+			setJsonField("stroke", 
+					jGenerator -> jGenerator.writeNumberField("stroke",stroke), 
+					jParser -> stroke = jParser.getDoubleValue());
+			
 		}
 		
 		//Getters and Setters

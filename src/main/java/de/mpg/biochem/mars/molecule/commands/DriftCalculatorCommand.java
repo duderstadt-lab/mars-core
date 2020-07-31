@@ -44,14 +44,15 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.SdmmImageMetadata;
-import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
@@ -132,21 +133,21 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//in the archive separately
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			//Let's find the last slice
-			MarsTable metaDataTable = meta.getDataTable();
+			//Let's find the last T
+			//MarsTable metaDataTable = meta.getDataTable();
 			
-			int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
+			int sizeT = meta.getImage(0).getSizeT();
 			
 			HashMap<Integer, DoubleColumn> xValuesColumns = new HashMap<Integer, DoubleColumn>();
 			HashMap<Integer, DoubleColumn> yValuesColumns = new HashMap<Integer, DoubleColumn>();
 			
-			for (int slice=1;slice<=slices;slice++) {
-				xValuesColumns.put(slice, new DoubleColumn("X " + slice));
-				yValuesColumns.put(slice, new DoubleColumn("Y " + slice));
+			for (int t=0;t<=sizeT;t++) {
+				xValuesColumns.put(t, new DoubleColumn("X " + t));
+				yValuesColumns.put(t, new DoubleColumn("Y " + t));
 			}
 			
 			if (use_incomplete_traces) {
-				//For all molecules in this dataset that are marked with the background tag and have all slices
+				//For all molecules in this dataset that are marked with the background tag and have all Ts
 				archive.getMoleculeUIDs().stream()
 					.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
@@ -156,13 +157,13 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						double y_mean = datatable.mean(input_y);
 						
 						for (int row = 0; row < datatable.getRowCount(); row++) {
-							int slice = (int)datatable.getValue("slice", row);
-							xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
-							yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+							int t = (int)datatable.getValue("T", row);
+							xValuesColumns.get(t).add(datatable.getValue(input_x, row) - x_mean);
+							yValuesColumns.get(t).add(datatable.getValue(input_y, row) - y_mean);
 						}
 				});
 			} else {
-				//For all molecules in this dataset that are marked with the background tag and have all slices
+				//For all molecules in this dataset that are marked with the background tag and have all Ts
 				long[] num_full_traj = new long[1];
 				num_full_traj[0] = 0;
 				archive.getMoleculeUIDs().stream()
@@ -170,88 +171,83 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
 						MarsTable datatable = archive.get(UID).getDataTable();
-						if (archive.get(UID).getDataTable().getRowCount() == slices) {
+						if (archive.get(UID).getDataTable().getRowCount() == sizeT) {
 							double x_mean = datatable.mean(input_x);
 							double y_mean = datatable.mean(input_y);
 							
 							for (int row = 0; row < datatable.getRowCount(); row++) {
-								int slice = (int)datatable.getValue("slice", row);
-								xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
-								yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+								int t = (int)datatable.getValue("T", row);
+								xValuesColumns.get(t).add(datatable.getValue(input_x, row) - x_mean);
+								yValuesColumns.get(t).add(datatable.getValue(input_y, row) - y_mean);
 							}
 							num_full_traj[0]++;
 						}
 				});
 				
 				if (num_full_traj[0] == 0) {
-				    archive.addLogMessage("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
-				    logService.info("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+				    archive.logln("Aborting. No complete molecules with all Ts found for dataset " + meta.getUID() + "!");
+				    logService.info("Aborting. No complete molecules with all Ts found for dataset " + meta.getUID() + "!");
 				    continue;
 				}
 			}
 			
 			MarsTable driftTable = new MarsTable();
-			driftTable.appendColumn("slice");
+			driftTable.appendColumn("T");
 			driftTable.appendColumn("x");
 			driftTable.appendColumn("y");
 			
 			int gRow = 0;
-			for (int slice = 1; slice <= slices ; slice++) {
-				if (xValuesColumns.get(slice).size() == 0 || yValuesColumns.get(slice).size() == 0)
+			for (int t = 0; t <= sizeT ; t++) {
+				if (xValuesColumns.get(t).size() == 0 || yValuesColumns.get(t).size() == 0)
 					continue;
 				
-				double xSliceFinalValue = Double.NaN;
-				double ySliceFinalValue = Double.NaN;
+				double xTFinalValue = Double.NaN;
+				double yTFinalValue = Double.NaN;
 					
 				MarsTable xTempTable = new MarsTable();
-				xTempTable.add(xValuesColumns.get(slice));
+				xTempTable.add(xValuesColumns.get(t));
 				
 				MarsTable yTempTable = new MarsTable();
-				yTempTable.add(yValuesColumns.get(slice));
+				yTempTable.add(yValuesColumns.get(t));
 				
 				if (mode.equals("mean")) {
-					xSliceFinalValue = xTempTable.mean("X " + slice);
-					ySliceFinalValue = yTempTable.mean("Y " + slice);
+					xTFinalValue = xTempTable.mean("X " + t);
+					yTFinalValue = yTempTable.mean("Y " + t);
 				} else {
-					xSliceFinalValue = xTempTable.median("X " + slice);
-					ySliceFinalValue = yTempTable.median("Y " + slice);
+					xTFinalValue = xTempTable.median("X " + t);
+					yTFinalValue = yTempTable.median("Y " + t);
 				}
 				
 				driftTable.appendRow();
-				driftTable.setValue("slice", gRow, slice);
-				driftTable.setValue("x", gRow, xSliceFinalValue);
-				driftTable.setValue("y", gRow, ySliceFinalValue);
+				driftTable.setValue("T", gRow, t);
+				driftTable.setValue("x", gRow, xTFinalValue);
+				driftTable.setValue("y", gRow, yTFinalValue);
 				gRow++;
 			}
 			
-			if (driftTable.getRowCount() != slices)	
-				linearInterpolateGaps(driftTable, slices);
+			if (driftTable.getRowCount() != sizeT)	
+				linearInterpolateGaps(driftTable, sizeT);
 			
-			if (!metaDataTable.hasColumn(output_x))
-				metaDataTable.appendColumn(output_x);
-			
-			if (!metaDataTable.hasColumn(output_y))
-				metaDataTable.appendColumn(output_y);
-			
-			for (int row = 0; row < metaDataTable.getRowCount() ; row++) {
-				metaDataTable.setValue(output_x, row, driftTable.getValue("x", row));
-				metaDataTable.setValue(output_y, row, driftTable.getValue("y", row));
+			for (int row = 0; row < driftTable.getRowCount() ; row++) {
+				MarsOMEPlane plane = meta.getPlane(0, 0, 0, (int)driftTable.getValue("T", row));
+				plane.setXDrift(driftTable.getValue("x", row));
+				plane.setYDrift(driftTable.getValue("y", row));
 			}
 			
 			double xZeroPoint = 0;
 			double yZeroPoint = 0;
 			
 			if (zeroPoint.equals("beginning")) {
-				xZeroPoint = metaDataTable.getValue(output_x, 0);
-				yZeroPoint = metaDataTable.getValue(output_y, 0);
+				xZeroPoint = meta.getPlane(0, 0, 0, 0).getXDrift();
+				yZeroPoint = meta.getPlane(0, 0, 0, 0).getYDrift();
 			} else if (zeroPoint.equals("end")) {
-				xZeroPoint = metaDataTable.getValue(output_x, metaDataTable.getRowCount() - 1);
-				yZeroPoint = metaDataTable.getValue(output_y, metaDataTable.getRowCount() - 1);
+				xZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getXDrift();
+				yZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getYDrift();
 			}
 			
-			for (int row=0; row < metaDataTable.getRowCount(); row++) {
-				metaDataTable.setValue(output_x, row, metaDataTable.getValue(output_x, row) - xZeroPoint);
-				metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
+			for (int t=0; t < meta.getImage(0).getSizeT(); t++) {
+				meta.getPlane(0, 0, 0, t).setXDrift(meta.getPlane(0, 0, 0, t).getXDrift() - xZeroPoint);
+				meta.getPlane(0, 0, 0, t).setYDrift(meta.getPlane(0, 0, 0, t).getYDrift() - yZeroPoint);
 			}
 			
 			archive.putMetadata(meta);
@@ -267,44 +263,44 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			archive.unlock();
 	}
 	
-	private static void linearInterpolateGaps(MarsTable table, int slices) {
+	private static void linearInterpolateGaps(MarsTable table, int sizeT) {
 		int rows = table.getRowCount();
 
 		for (int i=1;i<rows;i++) {
-			//Check whether there is a gap in the slice number...
-			int previous_slice = (int)table.getValue("slice", i-1);
-			int current_slice = (int)table.getValue("slice", i);
-			if (previous_slice != current_slice - 1) {
-				for (int w=1; w < current_slice - previous_slice ; w++) {
+			//Check whether there is a gap in the T index...
+			int previous_T = (int)table.getValue("T", i-1);
+			int current_T = (int)table.getValue("T", i);
+			if (previous_T != current_T - 1) {
+				for (int w=1; w < current_T - previous_T ; w++) {
 					table.appendRow();
-					table.setValue("slice", table.getRowCount() - 1, previous_slice + w);
-					table.setValue("x", table.getRowCount() - 1, table.getValue("x", i-1) + w*(table.getValue("x", i) - table.getValue("x", i-1))/(current_slice - previous_slice));
-					table.setValue("y", table.getRowCount() - 1, table.getValue("y", i-1) + w*(table.getValue("y", i) - table.getValue("y", i-1))/(current_slice - previous_slice));
+					table.setValue("T", table.getRowCount() - 1, previous_T + w);
+					table.setValue("x", table.getRowCount() - 1, table.getValue("x", i-1) + w*(table.getValue("x", i) - table.getValue("x", i-1))/(current_T - previous_T));
+					table.setValue("y", table.getRowCount() - 1, table.getValue("y", i-1) + w*(table.getValue("y", i) - table.getValue("y", i-1))/(current_T - previous_T));
 				}
 			}
 		}
 		
 		//fill ends if points are missing there...
-		if (table.getValue("slice", 0) > 1) {
-			for (int slice=1;slice < table.getValue("slice", 0); slice++) {
+		if (table.getValue("T", 0) > 1) {
+			for (int t=0;t < table.getValue("T", 0); t++) {
 				table.appendRow();
-				table.setValue("slice", table.getRowCount() - 1, slice);
+				table.setValue("T", table.getRowCount() - 1, t);
 				table.setValue("x", table.getRowCount() - 1, table.getValue("x", 0));
 				table.setValue("y", table.getRowCount() - 1, table.getValue("y", 0));
 			}
 		}
 		
-		if (table.getValue("slice", rows - 1) != slices) {
-			for (int slice = (int)table.getValue("slice", rows - 1) + 1;slice <= slices; slice++) {
+		if (table.getValue("T", rows - 1) != sizeT) {
+			for (int t = (int)table.getValue("T", rows - 1) + 1;t < sizeT; sizeT++) {
 				table.appendRow();
-				table.setValue("slice", table.getRowCount() - 1, slice);
+				table.setValue("T", table.getRowCount() - 1, t);
 				table.setValue("x", table.getRowCount() - 1, table.getValue("x", rows - 1));
 				table.setValue("y", table.getRowCount() - 1, table.getValue("y", rows - 1));
 			}
 		}
 		
-		//now that we have added all the new rows we need to resort the table by slice.
-		table.sort(true, "slice");
+		//now that we have added all the new rows we need to resort the table by T.
+		table.sort(true, "T");
 	}
 	
 	public static void calcDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
@@ -325,27 +321,26 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			builder.addParameter("mode", mode);
 			log += builder.buildParameterList();
 			
-			archive.addLogMessage(log);
+			archive.logln(log);
 			
 			//We will want to calculate the background for each dataset 
 			//in the archive separately
 			for (String metaUID : archive.getMetadataUIDs()) {
 				MarsMetadata meta = archive.getMetadata(metaUID);
-				//Let's find the last slice
-				MarsTable metaDataTable = meta.getDataTable();
+				//Let's find the last T
 				
-				int slices = (int)metaDataTable.getValue("slice", metaDataTable.getRowCount()-1);
+				int sizeT = meta.getImage(0).getSizeT();
 				
 				HashMap<Integer, DoubleColumn> xValuesColumns = new HashMap<Integer, DoubleColumn>();
 				HashMap<Integer, DoubleColumn> yValuesColumns = new HashMap<Integer, DoubleColumn>();
 				
-				for (int slice=1;slice<=slices;slice++) {
-					xValuesColumns.put(slice, new DoubleColumn("X " + slice));
-					yValuesColumns.put(slice, new DoubleColumn("Y " + slice));
+				for (int t=0;t<=sizeT;t++) {
+					xValuesColumns.put(t, new DoubleColumn("X " + t));
+					yValuesColumns.put(t, new DoubleColumn("Y " + t));
 				}
 				
 				if (use_incomplete_traces) {
-					//For all molecules in this dataset that are marked with the background tag and have all slices
+					//For all molecules in this dataset that are marked with the background tag and have all Ts
 					archive.getMoleculeUIDs().stream()
 						.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
@@ -355,13 +350,13 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 							double y_mean = datatable.mean(input_y);
 							
 							for (int row = 0; row < datatable.getRowCount(); row++) {
-								int slice = (int)datatable.getValue("slice", row);
-								xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
-								yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+								int t = (int)datatable.getValue("T", row);
+								xValuesColumns.get(t).add(datatable.getValue(input_x, row) - x_mean);
+								yValuesColumns.get(t).add(datatable.getValue(input_y, row) - y_mean);
 							}
 					});
 				} else {
-					//For all molecules in this dataset that are marked with the background tag and have all slices
+					//For all molecules in this dataset that are marked with the background tag and have all Ts
 					//Throws and error for a non array... So strange...
 					long[] num_full_traj = new long[1];
 					num_full_traj[0] = 0;
@@ -370,87 +365,82 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 						.forEach(UID -> {
 							MarsTable datatable = archive.get(UID).getDataTable();
-							if (archive.get(UID).getDataTable().getRowCount() == slices) {
+							if (archive.get(UID).getDataTable().getRowCount() == sizeT) {
 								double x_mean = datatable.mean(input_x);
 								double y_mean = datatable.mean(input_y);
 								
 								for (int row = 0; row < datatable.getRowCount(); row++) {
-									int slice = (int)datatable.getValue("slice", row);
-									xValuesColumns.get(slice).add(datatable.getValue(input_x, row) - x_mean);
-									yValuesColumns.get(slice).add(datatable.getValue(input_y, row) - y_mean);
+									int t = (int)datatable.getValue("T", row);
+									xValuesColumns.get(t).add(datatable.getValue(input_x, row) - x_mean);
+									yValuesColumns.get(t).add(datatable.getValue(input_y, row) - y_mean);
 								}
 								num_full_traj[0]++;
 							}
 					});
 					
 					if (num_full_traj[0] == 0) {
-					    archive.logln("Aborting. No complete molecules with all slices found for dataset " + meta.getUID() + "!");
+					    archive.logln("Aborting. No complete molecules with all Ts found for dataset " + meta.getUID() + "!");
 					    continue;
 					}
 				}
 				
 				MarsTable driftTable = new MarsTable();
-				driftTable.appendColumn("slice");
+				driftTable.appendColumn("T");
 				driftTable.appendColumn("x");
 				driftTable.appendColumn("y");
 				
 				int gRow = 0;
-				for (int slice = 1; slice <= slices ; slice++) {
-					if (xValuesColumns.get(slice).size() == 0 || yValuesColumns.get(slice).size() == 0)
+				for (int t = 0; t <= sizeT ; t++) {
+					if (xValuesColumns.get(t).size() == 0 || yValuesColumns.get(t).size() == 0)
 						continue;
 					
 					double xSliceFinalValue = Double.NaN;
 					double ySliceFinalValue = Double.NaN;
 						
 					MarsTable xTempTable = new MarsTable();
-					xTempTable.add(xValuesColumns.get(slice));
+					xTempTable.add(xValuesColumns.get(t));
 					
 					MarsTable yTempTable = new MarsTable();
-					yTempTable.add(yValuesColumns.get(slice));
+					yTempTable.add(yValuesColumns.get(t));
 					
 					if (mode.equals("mean")) {
-						xSliceFinalValue = xTempTable.mean("X " + slice);
-						ySliceFinalValue = yTempTable.mean("Y " + slice);
+						xSliceFinalValue = xTempTable.mean("X " + t);
+						ySliceFinalValue = yTempTable.mean("Y " + t);
 					} else {
-						xSliceFinalValue = xTempTable.median("X " + slice);
-						ySliceFinalValue = yTempTable.median("Y " + slice);
+						xSliceFinalValue = xTempTable.median("X " + t);
+						ySliceFinalValue = yTempTable.median("Y " + t);
 					}
 					
 					driftTable.appendRow();
-					driftTable.setValue("slice", gRow, slice);
+					driftTable.setValue("T", gRow, t);
 					driftTable.setValue("x", gRow, xSliceFinalValue);
 					driftTable.setValue("y", gRow, ySliceFinalValue);
 					gRow++;
 				}
 				
-				if (driftTable.getRowCount() != slices)	
-					linearInterpolateGaps(driftTable, slices);
+				if (driftTable.getRowCount() != sizeT)	
+					linearInterpolateGaps(driftTable, sizeT);
 				
-				if (!metaDataTable.hasColumn(output_x))
-					metaDataTable.appendColumn(output_x);
-				
-				if (!metaDataTable.hasColumn(output_y))
-					metaDataTable.appendColumn(output_y);
-				
-				for (int row = 0; row < metaDataTable.getRowCount() ; row++) {
-					metaDataTable.setValue(output_x, row, driftTable.getValue("x", row));
-					metaDataTable.setValue(output_y, row, driftTable.getValue("y", row));
+				for (int row = 0; row < driftTable.getRowCount() ; row++) {
+					MarsOMEPlane plane = meta.getPlane(0, 0, 0, (int)driftTable.getValue("T", row));
+					plane.setXDrift(driftTable.getValue("x", row));
+					plane.setYDrift(driftTable.getValue("y", row));
 				}
 				
 				double xZeroPoint = 0;
 				double yZeroPoint = 0;
 				
 				if (zeroPoint.equals("beginning")) {
-					xZeroPoint = metaDataTable.getValue(output_x, 0);
-					yZeroPoint = metaDataTable.getValue(output_y, 0);
+					xZeroPoint = meta.getPlane(0, 0, 0, 0).getXDrift();
+					yZeroPoint = meta.getPlane(0, 0, 0, 0).getYDrift();
 				} else if (zeroPoint.equals("end")) {
-					xZeroPoint = metaDataTable.getValue(output_x, metaDataTable.getRowCount() - 1);
-					yZeroPoint = metaDataTable.getValue(output_y, metaDataTable.getRowCount() - 1);
+					xZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getXDrift();
+					yZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getYDrift();
 				}
 				
-				for (int row=0; row < metaDataTable.getRowCount(); row++) {
-					metaDataTable.setValue(output_x, row, metaDataTable.getValue(output_x, row) - xZeroPoint);
-					metaDataTable.setValue(output_y, row, metaDataTable.getValue(output_y, row) - yZeroPoint);
+				for (int t=0; t < meta.getImage(0).getSizeT(); t++) {
+					meta.getPlane(0, 0, 0, t).setXDrift(meta.getPlane(0, 0, 0, t).getXDrift() - xZeroPoint);
+					meta.getPlane(0, 0, 0, t).setYDrift(meta.getPlane(0, 0, 0, t).getYDrift() - yZeroPoint);
 				}
 				
 				archive.putMetadata(meta);

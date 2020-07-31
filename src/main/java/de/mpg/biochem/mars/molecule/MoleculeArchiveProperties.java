@@ -31,7 +31,11 @@ package de.mpg.biochem.mars.molecule;
 import java.util.ArrayList;
 import java.util.Set;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+
 public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
+	
+	String getInputSchema();
 	
 	void addTag(String tag);
 	

@@ -1,14 +1,13 @@
-/*-
- * #%L
- * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
- * %%
- * Copyright (C) 2018 - 2020 Karl Duderstadt
- * %%
+/*******************************************************************************
+ * Copyright (C) 2019, Duderstadt Lab
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
@@ -16,7 +15,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -24,18 +23,21 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-package de.mpg.biochem.mars.molecule;
+ ******************************************************************************/
+package de.mpg.biochem.mars.metadata;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.OutputStream;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -43,8 +45,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
+import de.mpg.biochem.mars.molecule.MarsBdvSource;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil;
+import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * Abstract superclass for storage of metadata, which includes all information
@@ -64,7 +69,8 @@ import de.mpg.biochem.mars.util.MarsUtil;
  * </p>
  * @author Karl Duderstadt
  */
-public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
+public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
+	
 	//Processing log for the record
 	protected String log = "";
 
@@ -73,16 +79,10 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	//Directory where the images are stored..
 	protected String SourceDirectory = "unknown";
 	
-	//Date and time when the data was collected...
-	protected String CollectionDate = "unknown";
+	protected Map<Integer, MarsOMEImage> images = new ConcurrentHashMap<Integer, MarsOMEImage>();
 	
 	//BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
-    
-    //Used for making JsonParser instances...
-    //We make it static because we just need to it make parsers so we don't need multiple copies..
-	//Here json is always UTF encoded
-    protected static JsonFactory jfactory = new JsonFactory();
     
     /**
 	 * Constructor for creating an empty MarsMetadata record. 
@@ -102,16 +102,13 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
     }
     
     /**
-	 * Constructor for creating a new record with the
-	 * specified UID and the {@link MarsTable} given
-	 * as the DataTable. 
+	 * Constructor for creating a MarsMetadata record using OMEXMLMetadata.
 	 * 
-	 * @param UID The unique identifier for this record.
-	 * @param dataTable The {@link MarsTable} to use for 
-	 * initialization.
+	 * @param OMEXMLMetadata The OMEXMLMetadata to use.
 	 */
-    public AbstractMarsMetadata(String UID, MarsTable dataTable) {
-    	super(UID, dataTable);
+    public AbstractMarsMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
+    	super(UID);
+    	populateMetadata(omexmlMetadata);
     }
 	
     /**
@@ -127,57 +124,74 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 		fromJSON(jParser);
 	}
 	
+	public void populateMetadata(OMEXMLMetadata md) {
+		for (int imageIndex = 0; imageIndex < md.getImageCount(); imageIndex++)
+			images.put(imageIndex, new MarsOMEImage(imageIndex, md));
+	}
+	
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
 
-		//Add to output map
-		outputMap.put("Microscope", MarsUtil.catchConsumerException(jGenerator -> {
-			if(Microscope != null)
-	  			jGenerator.writeStringField("Microscope", Microscope);
-	 	}, IOException.class));
-		outputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (SourceDirectory != null)
-	  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
-	 	}, IOException.class));
-		outputMap.put("CollectionDate", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (CollectionDate != null)
-	  			jGenerator.writeStringField("CollectionDate", CollectionDate);
-	 	}, IOException.class));
-		outputMap.put("Log", MarsUtil.catchConsumerException(jGenerator -> {
-	  		if (!log.equals("")) {
-	  			jGenerator.writeStringField("Log", log);
-	  		}
-	 	}, IOException.class));
-		outputMap.put("BdvSources", MarsUtil.catchConsumerException(jGenerator -> {
-			if (bdvSources.size() > 0) {
-				jGenerator.writeArrayFieldStart("BdvSources");
-				for (MarsBdvSource source : bdvSources.values()) {
-					source.toJSON(jGenerator);
-				}
-				jGenerator.writeEndArray();
-			}
-	 	}, IOException.class));
+		setJsonField("Microscope",
+			jGenerator -> {
+				if(Microscope != null)
+		  			jGenerator.writeStringField("Microscope", Microscope);
+		 	},
+			jParser -> Microscope = jParser.getText());
 		
-		//Add to input map
-		inputMap.put("Microscope", MarsUtil.catchConsumerException(jParser -> {
-	    	Microscope = jParser.getText();
-		}, IOException.class));
-		inputMap.put("SourceDirectory", MarsUtil.catchConsumerException(jParser -> {
-	    	SourceDirectory = jParser.getText();
-		}, IOException.class));
-		inputMap.put("CollectionDate", MarsUtil.catchConsumerException(jParser -> {
-	    	CollectionDate = jParser.getText();
-		}, IOException.class));
-		inputMap.put("Log", MarsUtil.catchConsumerException(jParser -> {
-	    	log = jParser.getText();
-		}, IOException.class));
-		inputMap.put("BdvSources", MarsUtil.catchConsumerException(jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				MarsBdvSource source = new MarsBdvSource(jParser);
-				bdvSources.put(source.getName(), source);
-			}
-		}, IOException.class));
+		setJsonField("SourceDirectory", 
+			jGenerator -> {
+		  		if (SourceDirectory != null)
+		  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
+			},
+			jParser -> SourceDirectory = jParser.getText());
+						
+		setJsonField("Log", 
+			jGenerator -> {
+		  		if (!log.equals("")) {
+		  			jGenerator.writeStringField("Log", log);
+		  		}
+		 	}, 
+			jParser -> log = jParser.getText());
+		
+		setJsonField("BdvSources", 
+			jGenerator -> {
+				if (bdvSources.size() > 0) {
+					jGenerator.writeArrayFieldStart("BdvSources");
+					for (MarsBdvSource source : bdvSources.values()) {
+						source.toJSON(jGenerator);
+					}
+					jGenerator.writeEndArray();
+				}
+		 	}, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsBdvSource source = new MarsBdvSource(jParser);
+					bdvSources.put(source.getName(), source);
+				}
+			});
+		
+		setJsonField("Images", 
+			jGenerator -> {
+				jGenerator.writeArrayFieldStart("Images");
+				for (int imageIndex=0; imageIndex<images.size(); imageIndex++)
+					images.get(imageIndex).toJSON(jGenerator);
+				jGenerator.writeEndArray();
+		 	},
+			jParser -> {
+				System.out.println("Parsing Images");
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsOMEImage image = new MarsOMEImage(jParser);
+					System.out.println("Done parsing image");
+					
+					if (images == null)
+						System.out.println("images null");
+					
+					images.put(image.getImageIndex(), image);
+				}
+		 	});
+		 	
 	}
 	
 	/**
@@ -228,27 +242,6 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	public boolean hasBdvSource(String name) {
 		return bdvSources.containsKey(name);
 	}
-  	
-	/**
-	 * Get the record in Json string format.
-	 * 
-	 * @return Json string representation of the MarsMetadata record.
-	 */
-  	public String toJSONString() {
-  		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-  		JsonGenerator jGenerator;
-  		try {
-  			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-  			toJSON(jGenerator);
-  			jGenerator.close();
-  		} catch (IOException e) {
-  			// TODO Auto-generated catch block
-  			e.printStackTrace();
-  		}
-  		
-  		return stream.toString();
-  	}
     
   	/**
 	 * Set the name of the microscope used for data collection.
@@ -268,18 +261,20 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 		return Microscope;
 	}
 	
-	/**
-	 * Set the Date when these data were collected.
-	 */
-	public void setCollectionDate(String str) {
-		CollectionDate = str;
+	public void setImage(MarsOMEImage image, int imageIndex) {
+		images.put(imageIndex, image);
 	}
 	
-	/**
-	 * Get the Date when these data were collected.
-	 */
-	public String getCollectionDate() {
-		return CollectionDate;
+	public MarsOMEImage getImage(int imageIndex) {
+		return images.get(imageIndex);
+	}
+	
+	public int getImageCount() {
+		return images.size();
+	}
+	
+	public Stream<MarsOMEImage> images() {
+		return images.values().stream();
 	}
 	
 	/**
@@ -294,16 +289,6 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 */
 	public void setSourceDirectory(String path) {
 		this.SourceDirectory = path;
-	}
-	
-	/**
-	 * Add to the log that contains the history of processing steps
-	 * conducted on this dataset and the associated molecule records
-	 * contained in the same {@link MoleculeArchive}.
-	 */
-	@Deprecated
-	public void addLogMessage(String str) {
-		log += str + "\n";
 	}
 	
 	/**
@@ -333,5 +318,33 @@ public class AbstractMarsMetadata extends AbstractMarsRecord implements MarsMeta
 	 */
 	public String getLog() {
 		return log;
+	}
+	
+	/**
+	 * Get the MarsOMEPlane for a given image and ZCT position.
+	 * If there are multiple planes for a given position, this
+	 * will return the plane with the highest value in the plane
+	 * index. Therefore, if there are multiple planes per position,
+	 * the getPlane(int imageIndex, int planeIndex) should be used.
+	 * 
+	 * @param imageIndex Index of the image.
+	 * @param Z Z (slice).
+	 * @param C Channel.
+	 * @param T Time point.
+	 */
+	public MarsOMEPlane getPlane(int imageIndex, int z, int c, int t) {
+		return images.get(imageIndex).getPlane(z, c, t);
+	}
+	
+	public boolean hasPlane(int imageIndex, int planeIndex) {
+		return images.get(imageIndex).hasPlane(planeIndex);
+	}
+	
+	public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
+		return images.get(imageIndex).getPlane(planeIndex);
+	}
+	
+	public String getCollectionDate() {
+		return images.get(0).getAquisitionDate().getValue();
 	}
 }

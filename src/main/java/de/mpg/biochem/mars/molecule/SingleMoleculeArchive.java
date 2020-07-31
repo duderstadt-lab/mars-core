@@ -31,10 +31,14 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import org.scijava.Context;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.metadata.*;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
@@ -48,7 +52,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * <p>
  * @author Karl Duderstadt
  */
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, SdmmImageMetadata, SingleMoleculeArchiveProperties> {
+public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
 	
 	/**
 	 * Creates an empty SingleMoleculeArchive with the given name. 
@@ -101,8 +105,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public SingleMoleculeArchive(String name, File file, MoleculeArchiveService moleculeArchiveService) throws JsonParseException, IOException {
-		super(name, file, moleculeArchiveService);
+	public SingleMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super(name, file);
 	}
 	
 	/**
@@ -119,8 +123,8 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * @param moleculeArchiveService The MoleculeArchiveService from
 	 * the current context.
 	 */
-	public SingleMoleculeArchive(String name, MarsTable table, MoleculeArchiveService moleculeArchiveService) {
-		super(name, table, moleculeArchiveService);
+	public SingleMoleculeArchive(String name, MarsTable table) {
+		super(name, table);
 	}
 	
 	/**
@@ -138,17 +142,20 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	}
 	
 	/**
-	 * Create SdmmImageMetadata record using JsonParser stream.
+	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
-	public SdmmImageMetadata createMetadata(JsonParser jParser) throws IOException {
-		return new SdmmImageMetadata(jParser);
+	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
+		if (properties().getInputSchema() == null)
+			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else
+			return new MarsOMEMetadata(jParser);
 	}
 	
 	/**
-	 * Create empty SdmmImageMetadata record with the metaUID specified.
+	 * Create empty MarsOMEMetadata record with the metaUID specified.
 	 */
-	public SdmmImageMetadata createMetadata(String metaUID) {
-		return new SdmmImageMetadata(metaUID);
+	public MarsOMEMetadata createMetadata(String metaUID) {
+		return new MarsOMEMetadata(metaUID);
 	}
 	
 	/**

@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
@@ -81,6 +83,44 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 */
 	String getMetadataUID();
 		
+	/**
+	 * Get the {@link MarsTable} DataTable holding the primary data for
+	 * this molecule record.
+	 * 
+	 * @return The primary DataTable for this molecule record.
+	 */
+	@Deprecated
+	MarsTable getDataTable();
+	
+	/**
+	 * Get the {@link MarsTable} DataTable holding the primary data for
+	 * this molecule record.
+	 * 
+	 * @return The primary DataTable for this molecule record.
+	 */
+	MarsTable getTable();
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this molecule record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * molecule record.
+	 */
+	@Deprecated
+	void setDataTable(MarsTable table);
+	
+	/**
+	 * Set the {@link MarsTable} holding the primary data for
+	 * this molecule record. Usually this is tracking or intensity 
+	 * as a function of time.
+	 * 
+	 * @param table The {@link MarsTable} to add or update in the 
+	 * molecule record.
+	 */
+	void setTable(MarsTable table);
+	
 	/**
 	 * Add or update a Segments table ({@link MarsTable}) generated 
 	 * using the yColumnName and xColumnName. The {@link KCPCommand} performs

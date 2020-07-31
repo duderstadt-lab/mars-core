@@ -29,14 +29,18 @@
 package de.mpg.biochem.mars.util;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -46,6 +50,7 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 import java.nio.file.attribute.PosixFilePermission;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
@@ -60,9 +65,36 @@ import java.util.Set;
 
 public class MarsUtil {
 	
-	public static Set<PosixFilePermission> ownerGroupPermissions = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_WRITE, GROUP_EXECUTE);
-  	
-  	
+	private static JsonFactory jfactory;
+	
+	/**
+	 * Return Json String in pretty print format.
+	 * 
+	 * @return Json string.
+	 */
+	public static String dumpJSON(ThrowingConsumer<JsonGenerator, IOException> throwingConsumer) {
+  		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+  		//Create a new jfactory. 
+  		if (jfactory == null) 
+  			jfactory = new JsonFactory();
+  		
+  		JsonGenerator jGenerator;
+  		try {
+  			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+  			jGenerator.useDefaultPrettyPrinter();
+  			throwingConsumer.accept(jGenerator);
+  			jGenerator.close();
+  			String output = stream.toString();
+  			stream.close();
+  			
+  			return output;
+  		} catch (IOException e) {
+  			e.printStackTrace();
+  			return null;
+  		}
+  	}
+
 	/**
 	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
 	 * 
@@ -88,117 +120,6 @@ public class MarsUtil {
       			passThroughUnknownArrays(jParser);
       	}
   	}
-	
-	public static String getArchiveTypeFromYama(File file) throws JsonParseException, IOException {
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
-		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-	    
-	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
-	    
-		jParser.nextToken();
-		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			jParser.nextToken();
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    String fieldname = jParser.getCurrentName();
-			    	
-			    if ("ArchiveType".equals(fieldname)) {
-			    	jParser.nextToken();
-			    	archiveType = jParser.getText();
-			    	break;
-			    }
-			}
-		} else {
-			System.out.println("The file " + file.getName() + " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
-			return null;
-		}
-		
-		jParser.close();
-		inputStream.close();
-		
-		return archiveType;
-	}
-	
-	public static String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
-		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-	    
-	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
-	    
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    String fieldname = jParser.getCurrentName();
-		    	
-		    if ("ArchiveType".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	archiveType = jParser.getText();
-		    	break;
-		    }
-		}
-		
-		jParser.close();
-		inputStream.close();
-		
-		return archiveType;
-	}
-	
-	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType) {
-		try {
-			Class<?> clazz = Class.forName(archiveType);
-			Constructor<?> constructor = clazz.getConstructor(String.class);
-			return (MoleculeArchive<?,?,?>)constructor.newInstance("archive");
-		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType, File file) {
-		try {
-			Class<?> clazz = Class.forName(archiveType);
-			Constructor<?> constructor = clazz.getConstructor(File.class);
-			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
-		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static MoleculeArchive<?,?,?> createMoleculeArchive(String archiveType, File file, MoleculeArchiveService moleculeArchiveService) {
-		try {
-			Class<?> clazz = Class.forName(archiveType);
-			Constructor<?> constructor = clazz.getConstructor(String.class, File.class, MoleculeArchiveService.class);
-			return (MoleculeArchive<?,?,?>)constructor.newInstance(file.getName(), file, moleculeArchiveService);
-		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
   	
   	public static <T, E extends Exception> Predicate<T> catchConsumerException(
   		ThrowingConsumer<T, E> throwingConsumer, Class<E> exceptionType) {

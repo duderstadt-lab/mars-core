@@ -28,16 +28,23 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
+import ome.xml.model.primitives.Timestamp;
 
 /**
  * Abstract superclass for JsonConvertibleRecords. Contains basic conversion 
@@ -52,9 +59,9 @@ import de.mpg.biochem.mars.util.MarsUtil;
  */
 public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	
-	protected LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
+	private LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
 	
-	protected HashMap<String, Predicate<JsonParser>> inputMap;
+	private HashMap<String, Predicate<JsonParser>> inputMap;
 	
 	//IOMaps are created during the first call to toJSON or fromJSON lazily
 	//This ensures subclasses overriding createIOMaps have been fully 
@@ -145,6 +152,23 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 		    }
 		}
 	}
+	
+	protected void setJsonField(String field, ThrowingConsumer<JsonGenerator, IOException> output, ThrowingConsumer<JsonParser, IOException> input) {
+		if (output != null)
+			outputMap.put(field, MarsUtil.catchConsumerException(output, IOException.class));
+		
+		if (input != null)
+			inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
+	}
+	
+	/**
+	 * Get the record in Json string format.
+	 * 
+	 * @return Json string representation of the record.
+	 */
+  	public String dumpJSON() {
+  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+  	}
 	
 	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
 	//based on the Jackson streaming API.
