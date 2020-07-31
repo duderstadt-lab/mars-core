@@ -1,13 +1,14 @@
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
+/*-
+ * #%L
+ * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
+ * %%
+ * Copyright (C) 2018 - 2020 Karl Duderstadt
+ * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
@@ -15,7 +16,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -23,7 +24,8 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
+ * #L%
+ */
 package de.mpg.biochem.mars.molecule;
 
 import java.io.BufferedInputStream;
@@ -123,7 +125,7 @@ import org.scijava.table.*;
  * Required input for all commands in the molecule package, including {@link RegionDifferenceCalculatorCommand}, 
  * {@link VarianceCalculatorCommand}, {@link DriftCorrectorCommand}, {@link DriftCalculatorCommand}
  * as well as commands in the kcp package, including 
- * {@link KCPCommand}, {@link SigmaCalculatorCommand}, and {@link SegmentDistributionBuilderCommand}.
+ * {@link KCPCommand}, and {@link SigmaCalculatorCommand}.
  * </p>
  * <p>
  * MoleculeArchives can be saved in json (or smile) format as a single file or in a virtual store using the 
@@ -1432,7 +1434,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * using keras. Region goes from rangeStart to 1 - rangeEnd.
 	 * 
 	 * @param UIDs The list of UIDs for the molecule to review data from.
-	 * @param timeColumn Name of the T column.
+	 * @param tColumn Name of the T column.
 	 * @param signalColumn Name of the signal column.
 	 * @param rangeStart Index of start of range in T column.
 	 * @param rangeEnd Index of end of range in T column.
@@ -1519,7 +1521,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * is checked without retrieving all virtual records.
 	 * 
 	 * @param UID The UID of the molecule to check for the tag.
-	 * @param tag The tag to check for.
 	 * @return Returns true if the molecule has the tag and false if not.
 	 */
 	public boolean moleculeHasNoTags(String UID) {
@@ -1605,8 +1606,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * performance by using multiple threads. Provides a way to add tags
 	 * resulting from machine learning using python.
 	 * 
-	 * @param UID The UID of the molecule to check.
-	 * @return Returns true if the molecule has no tags and false if it has tags.
+	 * @param tagMap The UID to tag map for add to molecules.
 	 */
 	public void addMoleculeTags(HashMap<String, String> tagMap) {
 		tagMap.keySet().parallelStream().forEach(UID -> {
