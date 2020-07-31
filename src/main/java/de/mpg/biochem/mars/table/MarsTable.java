@@ -1202,7 +1202,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	/**
 	 * Calculates the variance for the column given. NaN values are ignored. 
 	 * 
-	 * @param  column  Name of the column used to calculate the variance.
+	 * @param  varianceColumn  Name of the column used to calculate the variance.
 	 * @return The variance for the column given. NaN is returned if all values are NaN or the column does not exist.
 	 */
 	public double variance(String varianceColumn) {

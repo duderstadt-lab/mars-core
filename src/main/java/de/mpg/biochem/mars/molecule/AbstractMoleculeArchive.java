@@ -122,7 +122,7 @@ import org.scijava.table.*;
  * Required input for all commands in the molecule package, including {@link RegionDifferenceCalculatorCommand}, 
  * {@link VarianceCalculatorCommand}, {@link DriftCorrectorCommand}, {@link DriftCalculatorCommand}
  * as well as commands in the kcp package, including 
- * {@link KCPCommand}, {@link SigmaCalculatorCommand}, and {@link SegmentDistributionBuilderCommand}.
+ * {@link KCPCommand}, and {@link SigmaCalculatorCommand}.
  * </p>
  * <p>
  * MoleculeArchives can be saved in json (or smile) format as a single file or in a virtual store using the 
@@ -1467,7 +1467,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * using keras. Region goes from rangeStart to 1 - rangeEnd.
 	 * 
 	 * @param UIDs The list of UIDs for the molecule to review data from.
-	 * @param timeColumn Name of the T column.
+	 * @param tColumn Name of the T column.
 	 * @param signalColumn Name of the signal column.
 	 * @param rangeStart Index of start of range in T column.
 	 * @param rangeEnd Index of end of range in T column.
@@ -1554,7 +1554,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * is checked without retrieving all virtual records.
 	 * 
 	 * @param UID The UID of the molecule to check for the tag.
-	 * @param tag The tag to check for.
 	 * @return Returns true if the molecule has the tag and false if not.
 	 */
 	public boolean moleculeHasNoTags(String UID) {
@@ -1640,8 +1639,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * performance by using multiple threads. Provides a way to add tags
 	 * resulting from machine learning using python.
 	 * 
-	 * @param UID The UID of the molecule to check.
-	 * @return Returns true if the molecule has no tags and false if it has tags.
+	 * @param tagMap The UID to tag map for add to molecules.
 	 */
 	public void addMoleculeTags(HashMap<String, String> tagMap) {
 		tagMap.keySet().parallelStream().forEach(UID -> {

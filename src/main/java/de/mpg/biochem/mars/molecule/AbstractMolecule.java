@@ -254,7 +254,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * this molecule. The {@link MarsMetadata} contains information about
 	 * the data collection (Timing of frames, colors, collection date, etc...)
 	 * 
-	 * @param MetadataUID The new MarsMetadata UID to set.
+	 * @param metadataUID The new MarsMetadata UID to set.
 	 */
 	public void setMetadataUID(String metadataUID) {
 		this.metadataUID = metadataUID;
