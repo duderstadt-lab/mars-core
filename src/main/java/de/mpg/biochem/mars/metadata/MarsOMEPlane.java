@@ -13,7 +13,6 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsUtil;
-import io.scif.io.Location;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;
