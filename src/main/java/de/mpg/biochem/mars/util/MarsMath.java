@@ -37,23 +37,25 @@ import com.chrylis.codec.base58.Base58Codec;
 import com.chrylis.codec.base58.Base58UUID;
 
 //A collection of useful utility math functions used multiple times throughout MARS.
-public class MarsMath {
-	//Precision in number of decimal places for output arrays
-	//Primarily used for DataTable output
-	final static int DECIMAL_PLACE_PRECISION = 7;
-	
+public class MarsMath {	
 	private static final BigInteger INIT64  = new BigInteger("cbf29ce484222325", 16);
 	private static final BigInteger PRIME64 = new BigInteger("100000001b3",      16);
 	private static final BigInteger MOD64   = new BigInteger("2").pow(64);
 	
-	public static double round(double input) {
-		return DoubleRounder.round(input, DECIMAL_PLACE_PRECISION);
+	public static double round(double input, int decimalPlacePrecision) {
+		double log10 = Math.log10(input);
+		if (log10 < 0) {
+			decimalPlacePrecision = (int)Math.abs(log10) + decimalPlacePrecision;
+			if (decimalPlacePrecision < 0 || decimalPlacePrecision > 18)
+				return input;
+		}
+		return DoubleRounder.round(input, decimalPlacePrecision);
 	}
 	
-	public static double[] roundArray(double[] input) {
+	public static double[] roundArray(double[] input, int decimalPlacePrecision) {
 		double[] output = new double[input.length];
 		for (int i=0;i<input.length;i++) {
-			output[i] = DoubleRounder.round(input[i], DECIMAL_PLACE_PRECISION);
+			output[i] = DoubleRounder.round(input[i], decimalPlacePrecision);
 		}
 		return output;
 	}

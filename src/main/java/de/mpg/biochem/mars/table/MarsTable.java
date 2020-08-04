@@ -106,6 +106,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 
 	private static final long serialVersionUID = 1L;
 	
+	private int decimalPlacePrecision = -1;
+	
 	private MarsTableWindow win;
 	
 	private StringBuilder sb;
@@ -213,6 +215,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * */
 	public String getName() {
 		return name;
+	}
+	
+	public void setPrecision(int decimalPlacePrecision) {
+		if (decimalPlacePrecision > -1 && decimalPlacePrecision < 19)
+			this.decimalPlacePrecision = decimalPlacePrecision;
+		else 
+			this.decimalPlacePrecision = -1;
 	}
 	
 	/** Returns the column headings as a array of strings. 
@@ -441,11 +450,12 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 			for (int row=0;row<getRowCount();row++) {
 				jGenerator.writeStartObject();
 				for (int col=0;col<getColumnCount();col++) {
-					if (get(col) instanceof GenericColumn) {
+					if (get(col) instanceof GenericColumn)
 						jGenerator.writeStringField(getColumnHeader(col), (String)get(col, row));
-					} else if (get(col) instanceof DoubleColumn) {
-						jGenerator.writeNumberField(getColumnHeader(col), MarsMath.round((double)get(col, row)));
-					}
+					else if (get(col) instanceof DoubleColumn && decimalPlacePrecision != -1)
+						jGenerator.writeNumberField(getColumnHeader(col), MarsMath.round((double)get(col, row), decimalPlacePrecision));
+					else if (get(col) instanceof DoubleColumn) 
+						jGenerator.writeNumberField(getColumnHeader(col), (double)get(col, row));
 				}
 				jGenerator.writeEndObject();
 			}
