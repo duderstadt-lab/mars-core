@@ -192,6 +192,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		super(columnCount, rowCount);
 	}
 	
+	/** Creates a results table with the given a scijava Table. Creates
+	 * DoubleColumns if those exist. Otherwise, generic columns are created.
+	 * 
+	 * @param table Something implementing the Table interface.
+	 * */
 	public MarsTable(Table<Column<? extends Object>, Object> table) {
 		for (int col = 0; col < table.getColumnCount(); col++) {
 			if (table.get(col) instanceof DoubleColumn) {
@@ -221,6 +226,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		this.name = name;
 	}
 	
+	/** Wraps a scijava table or anything implementing the scijava Table interface
+	 * inside a MarsTable without copying. Provides fast access to MarsTable functions
+	 * without the need to copy all values.   
+	 * 
+	 * @param table Something implementing the Table interface.
+	 * @return The wrapped MarsTable.
+	 * */
 	public static MarsTable wrap(Table<Column<? extends Object>, Object> table) {
 		MarsTable shell = new MarsTable();
 		for (int i=0; i< table.getColumnCount(); i++)
