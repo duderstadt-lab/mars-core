@@ -191,6 +191,24 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	public MarsTable(final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 	}
+	
+	public MarsTable(Table<Column<? extends Object>, Object> table) {
+		for (int col = 0; col < table.getColumnCount(); col++) {
+			if (table.get(col) instanceof DoubleColumn) {
+				DoubleColumn column = new DoubleColumn(table.get(col).getHeader());
+				for (int row=0;row<table.getRowCount();row++)
+					column.add((double)table.get(col, row));
+				
+				add(column);
+			} else {
+				GenericColumn column = new GenericColumn(table.get(col).getHeader());
+				for (int row=0;row<table.getRowCount();row++)
+					column.add(table.get(col, row));
+				
+				add(column);
+			}
+		}
+	}
 
 	/** Creates a results table with the given name and column and row dimensions. 
 	 * 
@@ -201,6 +219,14 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	public MarsTable(final String name, final int columnCount, final int rowCount) {
 		super(columnCount, rowCount);
 		this.name = name;
+	}
+	
+	public static MarsTable wrap(Table<Column<? extends Object>, Object> table) {
+		MarsTable shell = new MarsTable();
+		for (int i=0; i< table.getColumnCount(); i++)
+			shell.add(table.get(i));
+		
+		return shell;
 	}
 	
 	/** Sets the name of the table. 
@@ -217,11 +243,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		return name;
 	}
 	
-	public void setPrecision(int decimalPlacePrecision) {
+	public MarsTable setPrecision(int decimalPlacePrecision) {
 		if (decimalPlacePrecision > -1 && decimalPlacePrecision < 19)
 			this.decimalPlacePrecision = decimalPlacePrecision;
 		else 
 			this.decimalPlacePrecision = -1;
+		
+		return this;
 	}
 	
 	/** Returns the column headings as a array of strings. 
@@ -261,8 +289,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * This could be a swing or javafx window.
 	 * @param win The window containing the table if working with a gui.
 	 */
-	public void setWindow(MarsTableWindow win) {
+	public MarsTableWindow setWindow(MarsTableWindow win) {
 		this.win = win;
+		return win;
 	}
 	
 	/** Returns an array of double values for the column given.
@@ -603,7 +632,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		stream.close();	
 	}
 	
-	private void loadCSV(File file) {
+	private MarsTable loadCSV(File file) {
 		String absolutePath = file.getAbsolutePath();
 		double size_in_bytes = file.length();
 		double readPosition = 0;
@@ -689,9 +718,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
         	statusService.showProgress(100, 100);
         	statusService.showStatus("Opening file " + file.getName() + " - Done!");
         }
+        
+        return this;
 	}
 	
-	private void loadJSON(File file) throws JsonParseException, IOException {
+	private MarsTable loadJSON(File file) throws JsonParseException, IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		
 		this.name = file.getName();
@@ -708,6 +739,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		
 		jParser.close();
 		inputStream.close();
+		
+		return this;
 	}
 	
 	@Override
@@ -1299,9 +1332,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * Sort the table in ascending order on one or more columns.
 	 * 
 	 * @param  columns Comma separated list of columns to sort by.
-	 * @return True if sort finished.
+	 * @return MarsTable for next operation.
 	 */
-	public boolean sort(String... columns) {
+	public MarsTable sort(String... columns) {
 		return sort(true, columns);
 	}
 	
@@ -1310,14 +1343,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * 
 	 * @param  ascending Determines sort order.
 	 * @param  columns Comma separated list of columns to sort by.
-	 * @return True if sort finished.
+	 * @return MarsTable for next operation.
 	 */
-	public boolean sort(final boolean ascending, String... columns) {
-		for (int index=0; index<columns.length; index++) {	
-			if (!hasColumn(columns[index]))
-				return false;
-		}
-		
+	public MarsTable sort(final boolean ascending, String... columns) {
 		final int[] columnIndexes = new int[columns.length];
 		
 		for (int i = 0; i < columns.length; i++)
@@ -1342,7 +1370,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 			
 		});
 		
-		return true;
+		return this;
 	}
 	
 	/**
@@ -1372,14 +1400,37 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
     }
 	
 	/**
+	 * Add MarsTableRow to the end of the table. Assumes the
+	 * table has all the columns listed in the row. 
+	 * 
+	 * @param addRow A MarsTableRow that should be added to the end of the table.
+	 * @return MarsTable for next operation.
+	 */
+	public MarsTable addRow(MarsTableRow row) {
+		appendRow();
+		for (String colHeader : getColumnHeadingList()) {
+			Column<?> column = this.get(colHeader);
+        	
+        	if (column instanceof DoubleColumn) {
+        		setValue(colHeader, getRowCount() - 1, row.getValue(colHeader));
+        	} 
+        	
+        	if (column instanceof GenericColumn) {
+        		setValue(colHeader, getRowCount() - 1, row.getStringValue(colHeader));
+        	}
+		}
+		return this;
+	}
+	
+	/**
 	 * Remove rows at the positions specified in the ordered list given. 
 	 * 
 	 * @param rows The list of rows to remove.
+	 * @return MarsTable for next operation.
 	 */
-	//TODO check with strings
-	public void deleteRows(int[] rows) {
+	public MarsTable deleteRows(int[] rows) {
 		if (rows.length == 0)
-			return;
+			return this;
 		
 		int pos = 0;
 		int rowsIndex = 0;
@@ -1402,16 +1453,19 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		// delete last rows
 		for (int row = getRowCount() - 1; row > pos-1; row--)
 			removeRow(row);
+		
+		return this;
 	}
 	
 	/**
 	 * Remove rows at the positions specified in the ordered list given. 
 	 * 
 	 * @param rows An ArrayList containing the rows to remove.
+	 * @return MarsTable for next operation.
 	 */
-	public void deleteRows(ArrayList<Integer> rows) {
+	public MarsTable deleteRows(ArrayList<Integer> rows) {
 		if (rows.size() == 0)
-			return;
+			return this;
 		
 		int pos = 0;
 		int rowsIndex = 0;
@@ -1434,16 +1488,19 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		// delete last rows
 		for (int row = getRowCount() - 1; row > pos-1; row--)
 			removeRow(row);
+		
+		return this;
 	}
 	
 	/**
 	 * Remove rows at the positions specified in the ordered list given. 
 	 * 
 	 * @param rows The list of rows to remove.
+	 * @return MarsTable for next operation.
 	 */
-	public void keepRows(int[] rows) {
+	public MarsTable keepRows(int[] rows) {
 		if (rows.length == 0)
-			return;
+			return this;
 		
 		int rowsIndex = 0;
 		for (int row = 0; row < getRowCount(); row++) {
@@ -1460,6 +1517,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		// delete last rows
 		for (int row = getRowCount() - 1; row > rows.length-1; row--)
 			removeRow(row);
+		
+		return this;
 	}
 	
 	/**
@@ -1467,15 +1526,16 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * Remove all other rows.
 	 * 
 	 * @param rows An ArrayList containing the rows to keep.
+	 * @return MarsTable for next operation.
 	 */
-	public void keepRows(ArrayList<Integer> rows) {
+	public MarsTable keepRows(ArrayList<Integer> rows) {
 		if (rows.size() == 0) {
 			//Then we remove all rows...
 			//Maybe we just need to change size...
 			//This will work for now...
 			for (int row = getRowCount() - 1; row > rows.size()-1; row--)
 				removeRow(row);
-			return;
+			return this;
 		}
 		
 		int rowsIndex = 0;
@@ -1493,6 +1553,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 		// delete last rows
 		for (int row = getRowCount() - 1; row > rows.size()-1; row--)
 			removeRow(row);
+		
+		return this;
 	}
 	
 	@Override
