@@ -130,8 +130,13 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
-			metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
+			if (!retainCoordinates) {
+					metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
+					metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
+			} else {
+				metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
+				metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
+			}
 		}
 
 		//Loop through each molecule and calculate drift corrected traces...
@@ -228,6 +233,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return TtoColumn;
 	}
 	
+	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta) {
+		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
+		
+		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
+			TtoColumn.put(meta.getPlane(0, 0, 0, t).getXDrift(), meta.getPlane(0, 0, 0, t).getXDrift());
+		}
+		return TtoColumn;
+	}
+	
 	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta, int from, int to) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 		
@@ -241,6 +255,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		
 		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
 			TtoColumn.put(meta.getPlane(0, 0, 0, t).getYDrift(), meta.getPlane(0, 0, 0, t).getYDrift() - meanYbg);
+		}
+		return TtoColumn;
+	}
+	
+	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta) {
+		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>(); 
+		
+		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
+			TtoColumn.put(meta.getPlane(0, 0, 0, t).getYDrift(), meta.getPlane(0, 0, 0, t).getYDrift());
 		}
 		return TtoColumn;
 	}
@@ -272,8 +295,13 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			
 			for (String metaUID : archive.getMetadataUIDs()) {
 				MarsMetadata meta = archive.getMetadata(metaUID);
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
+				if (!retainCoordinates) {
+					metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
+					metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
+				} else {
+					metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
+					metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
+				}
 			}
 
 			//Loop through each molecule and calculate drift corrected traces...
