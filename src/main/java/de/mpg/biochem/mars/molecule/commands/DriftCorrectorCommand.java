@@ -137,8 +137,13 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
 			if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
-				metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
-				metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
+				if (!retainCoordinates) {
+					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
+					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
+				} else {
+					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
+					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
+				}
 			} else {
 				logService.error("Metadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 				logService.error(LogBuilder.endBlock(false));
@@ -229,6 +234,17 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
+	private static HashMap<Double, Double> getSliceToColumnMap(MarsMetadata meta, String columnName) {
+		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
+		
+		MarsTable metaTable = meta.getDataTable();
+		
+		for (int i=0;i<metaTable.getRowCount();i++) {
+			sliceToColumn.put(metaTable.getValue("slice", i), metaTable.getValue(columnName, i));
+		}
+		return sliceToColumn;
+	}
+	
 	private static HashMap<Double, Double> getSliceToColumnMap(MarsMetadata meta, String columnName, int from, int to) {
 		HashMap<Double, Double> sliceToColumn = new HashMap<Double, Double>();
 		
@@ -270,8 +286,13 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			for (String metaUID : archive.getMetadataUIDs()) {
 				MarsMetadata meta = archive.getMetadata(metaUID);
 				if (meta.getDataTable().get(meta_x) != null && meta.getDataTable().get(meta_y) != null) {
-					metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
-					metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
+					if (!retainCoordinates) {
+						metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x, from, to));
+						metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y, from, to));
+					} else {
+						metaToMapX.put(meta.getUID(), getSliceToColumnMap(meta, meta_x));
+						metaToMapY.put(meta.getUID(), getSliceToColumnMap(meta, meta_y));
+					}
 				} else {
 					archive.logln("ImageMetadata " + meta.getUID() + " is missing " +  meta_x + " or " + meta_y + " column. Aborting");
 					archive.logln(LogBuilder.endBlock(false));
