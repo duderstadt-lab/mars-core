@@ -93,6 +93,9 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		String log = LogBuilder.buildTitleBlock("Add Time (s)");
 		
 		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Source", source);
+		if (source.equals("Time increment (s)"))
+			builder.addParameter("Time increment (s)", timeIncrement);
 		log += builder.buildParameterList();
 		
 		//Output first part of log message...
@@ -109,7 +112,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			SingleMolecule molecule = archive.get(UID);
 			
 			MarsMetadata metadata = archive.getMetadata(molecule.getMetadataUID());
-			MarsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getTable();
 			
 			//If the column already exists we don't need to add it
 			//instead we will just be overwriting the values below..
@@ -120,7 +123,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 				datatable.rows().forEach(row -> row.setValue("Time (s)", 
 						metadata.getPlane(0, 0, (int) molecule.getParameter("Channel"), (int) row.getValue("T")).getDeltaTinSeconds()));
 			else
-				molecule.getDataTable().rows().forEach(row -> row.setValue("Time (s)", row.getValue("T")*timeIncrement));
+				molecule.getTable().rows().forEach(row -> row.setValue("Time (s)", row.getValue("T")*timeIncrement));
 			
 			archive.put(molecule);
 		});
@@ -133,7 +136,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
 	    
-	    archive.logln("\n" + LogBuilder.endBlock(true));
+	    archive.logln(LogBuilder.endBlock(true));
 	    archive.logln("  ");
 	    
 		//Unlock the window so it can be changed
