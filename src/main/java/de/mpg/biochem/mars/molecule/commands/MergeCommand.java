@@ -64,6 +64,7 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsUtil;
@@ -85,9 +86,6 @@ public class MergeCommand extends DynamicCommand {
 	
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-	private Context context;
 	
 	@Parameter
     private UIService uiService;
@@ -216,7 +214,10 @@ public class MergeCommand extends DynamicCommand {
 						String fieldName = jParser.getCurrentName();
 						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
-								metadataList.add(mergedArchiveType.createMetadata(jParser));
+								//This line would be more generic but the translator from old formats is blocking that for now
+								//This should be restored.
+								//metadataList.add(mergedArchiveType.createMetadata(jParser));
+								metadataList.add(new MarsOMEMetadata(jParser));
 							}
 						}
 						

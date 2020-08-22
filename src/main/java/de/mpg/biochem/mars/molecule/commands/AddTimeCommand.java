@@ -94,7 +94,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Source", source);
-		if (source.equals("Time increment (s)"))
+		if (source.equals("Time increment"))
 			builder.addParameter("Time increment (s)", timeIncrement);
 		log += builder.buildParameterList();
 		
