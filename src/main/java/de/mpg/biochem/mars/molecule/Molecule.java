@@ -82,6 +82,22 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @return Return a JSON string representation of the molecule.
 	 */
 	String getMetadataUID();
+	
+	/**
+	 * Set the channel for this molecule record.
+	 * 
+	 * @param channel The channel.
+	 */
+	void setChannel(int channel);
+	
+	/**
+	 * Get the channel for this molecule record. An integer
+	 * value starting at zero. If channel is not set this value
+	 * will be -1.
+	 * 
+	 * @return Return the channel for this molecule record.
+	 */
+	int getChannel();
 		
 	/**
 	 * Get the {@link MarsTable} DataTable holding the primary data for
