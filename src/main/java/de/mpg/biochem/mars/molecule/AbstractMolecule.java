@@ -75,6 +75,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	//UID of metadata associated wit this molecule.
 	protected String metadataUID;
 	
+	protected int channel = -1;
+	
 	//Table housing main record data.
 	protected MarsTable dataTable = new MarsTable();
 	
@@ -127,7 +129,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 */
 	public AbstractMolecule(String UID, MarsTable dataTable) {
 		super(UID);
-		setDataTable(dataTable);
+		setTable(dataTable);
 	}
 	
 	@Override
@@ -149,6 +151,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 						jGenerator.writeStringField("MetadataUID", metadataUID);
 			 	}, 
 			jParser -> metadataUID = jParser.getText());
+		
+		setJsonField("channel", 
+				jGenerator -> jGenerator.writeNumberField("channel", channel), 
+				jParser -> channel = jParser.getIntValue());
 			 	
 		setJsonField("SegmentTables", 
 			jGenerator -> {
@@ -233,6 +239,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		setJsonField("ImageMetaDataUID", null, 
 				jParser -> metadataUID = jParser.getText());
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = channel;
+	}
+	
+	public int getChannel() {
+		return channel;
 	}
 	
 	/**
