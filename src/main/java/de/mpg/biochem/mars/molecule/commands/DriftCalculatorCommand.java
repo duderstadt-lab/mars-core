@@ -91,12 +91,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     @Parameter(label="Input Y (y)")
     private String input_y = "y";
     
-    @Parameter(label="Output X (x_drift)")
-    private String output_x = "x_drift";
-    
-    @Parameter(label="Output Y (y_drift)")
-    private String output_y = "y_drift";
-    
     @Parameter(label="Use incomplete traces")
     private boolean use_incomplete_traces = false;
 
@@ -123,10 +117,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		//Output first part of log message...
 		logService.info(log);
 		
-		//Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless())
-			archive.lock();
-		
 		archive.logln(log);
 		
 		//We will want to calculate the background for each dataset 
@@ -152,7 +142,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
-						MarsTable datatable = archive.get(UID).getDataTable();
+						MarsTable datatable = archive.get(UID).getTable();
 						double x_mean = datatable.mean(input_x);
 						double y_mean = datatable.mean(input_y);
 						
@@ -170,8 +160,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 					.forEach(UID -> {
-						MarsTable datatable = archive.get(UID).getDataTable();
-						if (archive.get(UID).getDataTable().getRowCount() == sizeT) {
+						MarsTable datatable = archive.get(UID).getTable();
+						if (archive.get(UID).getTable().getRowCount() == sizeT) {
 							double x_mean = datatable.mean(input_x);
 							double y_mean = datatable.mean(input_y);
 							
@@ -228,11 +218,19 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			if (driftTable.getRowCount() != sizeT)	
 				linearInterpolateGaps(driftTable, sizeT);
 			
-			for (int row = 0; row < driftTable.getRowCount() ; row++) {
-				MarsOMEPlane plane = meta.getPlane(0, 0, 0, (int)driftTable.getValue("T", row));
-				plane.setXDrift(driftTable.getValue("x", row));
-				plane.setYDrift(driftTable.getValue("y", row));
-			}
+			//Build Maps
+			HashMap<Integer, Double> TtoXMap = new HashMap<Integer, Double>();
+			HashMap<Integer, Double> TtoYMap = new HashMap<Integer, Double>();
+			
+			driftTable.rows().forEach(row -> {
+				TtoXMap.put((int)row.getValue("T"), row.getValue("x"));
+				TtoYMap.put((int)row.getValue("T"), row.getValue("y"));
+			});
+			
+			meta.getImage(0).planes().forEach(plane -> {
+				plane.setXDrift(TtoXMap.get(plane.getT()));
+				plane.setYDrift(TtoYMap.get(plane.getT()));
+			});
 			
 			double xZeroPoint = 0;
 			double yZeroPoint = 0;
@@ -245,10 +243,12 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 				yZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getYDrift();
 			}
 			
-			for (int t=0; t < meta.getImage(0).getSizeT(); t++) {
-				meta.getPlane(0, 0, 0, t).setXDrift(meta.getPlane(0, 0, 0, t).getXDrift() - xZeroPoint);
-				meta.getPlane(0, 0, 0, t).setYDrift(meta.getPlane(0, 0, 0, t).getYDrift() - yZeroPoint);
-			}
+			final double xZeroPointFinal = xZeroPoint;
+			final double yZeroPointFinal = yZeroPoint;
+			meta.getImage(0).planes().forEach(plane -> {
+				plane.setXDrift(plane.getXDrift() - xZeroPointFinal);
+				plane.setYDrift(plane.getYDrift() - yZeroPointFinal);
+			});
 			
 			archive.putMetadata(meta);
 		}
@@ -303,6 +303,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		table.sort(true, "T");
 	}
 	
+	//Fix me...
 	public static void calcDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
 			String output_x, String output_y, boolean use_incomplete_traces, String mode, String zeroPoint) {
 			//Build log message
@@ -328,6 +329,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 			for (String metaUID : archive.getMetadataUIDs()) {
 				MarsMetadata meta = archive.getMetadata(metaUID);
 				//Let's find the last T
+				//MarsTable metaDataTable = meta.getDataTable();
 				
 				int sizeT = meta.getImage(0).getSizeT();
 				
@@ -345,7 +347,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 						.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 						.forEach(UID -> {
-							MarsTable datatable = archive.get(UID).getDataTable();
+							MarsTable datatable = archive.get(UID).getTable();
 							double x_mean = datatable.mean(input_x);
 							double y_mean = datatable.mean(input_y);
 							
@@ -357,15 +359,14 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					});
 				} else {
 					//For all molecules in this dataset that are marked with the background tag and have all Ts
-					//Throws and error for a non array... So strange...
 					long[] num_full_traj = new long[1];
 					num_full_traj[0] = 0;
 					archive.getMoleculeUIDs().stream()
 						.filter(UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 						.filter(UID -> archive.moleculeHasTag(UID, backgroundTag))
 						.forEach(UID -> {
-							MarsTable datatable = archive.get(UID).getDataTable();
-							if (archive.get(UID).getDataTable().getRowCount() == sizeT) {
+							MarsTable datatable = archive.get(UID).getTable();
+							if (archive.get(UID).getTable().getRowCount() == sizeT) {
 								double x_mean = datatable.mean(input_x);
 								double y_mean = datatable.mean(input_y);
 								
@@ -394,8 +395,8 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					if (xValuesColumns.get(t).size() == 0 || yValuesColumns.get(t).size() == 0)
 						continue;
 					
-					double xSliceFinalValue = Double.NaN;
-					double ySliceFinalValue = Double.NaN;
+					double xTFinalValue = Double.NaN;
+					double yTFinalValue = Double.NaN;
 						
 					MarsTable xTempTable = new MarsTable();
 					xTempTable.add(xValuesColumns.get(t));
@@ -404,28 +405,36 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					yTempTable.add(yValuesColumns.get(t));
 					
 					if (mode.equals("mean")) {
-						xSliceFinalValue = xTempTable.mean("X " + t);
-						ySliceFinalValue = yTempTable.mean("Y " + t);
+						xTFinalValue = xTempTable.mean("X " + t);
+						yTFinalValue = yTempTable.mean("Y " + t);
 					} else {
-						xSliceFinalValue = xTempTable.median("X " + t);
-						ySliceFinalValue = yTempTable.median("Y " + t);
+						xTFinalValue = xTempTable.median("X " + t);
+						yTFinalValue = yTempTable.median("Y " + t);
 					}
 					
 					driftTable.appendRow();
 					driftTable.setValue("T", gRow, t);
-					driftTable.setValue("x", gRow, xSliceFinalValue);
-					driftTable.setValue("y", gRow, ySliceFinalValue);
+					driftTable.setValue("x", gRow, xTFinalValue);
+					driftTable.setValue("y", gRow, yTFinalValue);
 					gRow++;
 				}
 				
 				if (driftTable.getRowCount() != sizeT)	
 					linearInterpolateGaps(driftTable, sizeT);
 				
-				for (int row = 0; row < driftTable.getRowCount() ; row++) {
-					MarsOMEPlane plane = meta.getPlane(0, 0, 0, (int)driftTable.getValue("T", row));
-					plane.setXDrift(driftTable.getValue("x", row));
-					plane.setYDrift(driftTable.getValue("y", row));
-				}
+				//Build Maps
+				HashMap<Integer, Double> TtoXMap = new HashMap<Integer, Double>();
+				HashMap<Integer, Double> TtoYMap = new HashMap<Integer, Double>();
+				
+				driftTable.rows().forEach(row -> {
+					TtoXMap.put((int)row.getValue("T"), row.getValue("x"));
+					TtoYMap.put((int)row.getValue("T"), row.getValue("y"));
+				});
+				
+				meta.getImage(0).planes().forEach(plane -> {
+					plane.setXDrift(TtoXMap.get(plane.getT()));
+					plane.setYDrift(TtoYMap.get(plane.getT()));
+				});
 				
 				double xZeroPoint = 0;
 				double yZeroPoint = 0;
@@ -438,10 +447,12 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 					yZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1).getYDrift();
 				}
 				
-				for (int t=0; t < meta.getImage(0).getSizeT(); t++) {
-					meta.getPlane(0, 0, 0, t).setXDrift(meta.getPlane(0, 0, 0, t).getXDrift() - xZeroPoint);
-					meta.getPlane(0, 0, 0, t).setYDrift(meta.getPlane(0, 0, 0, t).getYDrift() - yZeroPoint);
-				}
+				final double xZeroPointFinal = xZeroPoint;
+				final double yZeroPointFinal = yZeroPoint;
+				meta.getImage(0).planes().forEach(plane -> {
+					plane.setXDrift(plane.getXDrift() - xZeroPointFinal);
+					plane.setYDrift(plane.getYDrift() - yZeroPointFinal);
+				});
 				
 				archive.putMetadata(meta);
 			}
@@ -454,8 +465,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Input X", input_x);
 		builder.addParameter("Input Y", input_y);
-		builder.addParameter("Output X", output_x);
-		builder.addParameter("Output Y", output_y);
 		builder.addParameter("Use incomplete traces", String.valueOf(use_incomplete_traces));
 		builder.addParameter("Zero Point", zeroPoint);
 		builder.addParameter("Background Tag", backgroundTag);
@@ -472,14 +481,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 	
 	public void setInputY(String input_y) {
 		this.input_y = input_y;
-	}
-	
-	public void setOutputX(String output_x) {
-		this.output_x = output_x;
-	}
-	
-	public void setOutputY(String output_y) {
-		this.output_y = output_y;
 	}
 	
 	public void setUseIncompleteTraces(boolean use_incomplete_traces) {
@@ -508,14 +509,6 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 	
 	public String getInputY() {
 		return input_y;
-	}
-	
-	public String getOutputX() {
-		return output_x;
-	}
-	
-	public String getOutputY() {
-		return output_y;
 	}
 	
 	public boolean getUseIncompleteTraces() {
