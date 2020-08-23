@@ -81,11 +81,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private final String header =
 		"Region for background alignment:";
     
-    @Parameter(label="from T")
-    private int from = 1;
+    @Parameter(label="start T")
+    private int start = 0;
     
-    @Parameter(label="to T")
-	private int to = 100;
+    @Parameter(label="end T")
+	private int end = 100;
     
     @Parameter(label="Input X (x)")
     private String input_x = "x";
@@ -131,8 +131,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
 			if (!retainCoordinates) {
-					metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
-					metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
+				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, start, end));
+				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, start, end));
 			} else {
 				metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
 				metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
@@ -149,18 +149,18 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				return;
 			}
 			
-			HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getMetadataUID());
-			HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getMetadataUID());
+			HashMap<Double, Double> TtoXMap = metaToMapX.get(molecule.getMetadataUID());
+			HashMap<Double, Double> TtoYMap = metaToMapY.get(molecule.getMetadataUID());
 			
-			MarsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getTable();
 			
 			//If the column already exists we don't need to add it
 			//instead we will just be overwriting the values below..
 			if (!datatable.hasColumn(output_x))
-				molecule.getDataTable().appendColumn(output_x);
+				molecule.getTable().appendColumn(output_x);
 			
 			if (!datatable.hasColumn(output_y))
-				molecule.getDataTable().appendColumn(output_y);
+				molecule.getTable().appendColumn(output_y);
 			
 			//If we want to retain the original coordinates then 
 			//we don't subtract anything except the drift.
@@ -168,40 +168,33 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			double meanY = 0;
 			
 			if (!retainCoordinates) {
-				meanX = datatable.mean(input_x,"slice",from, to);
-				meanY = datatable.mean(input_y,"slice",from, to);
+				meanX = datatable.mean(input_x,"T",start, end);
+				meanY = datatable.mean(input_y,"T",start, end);
 			}
 			
-			//We use the mappings because many molecules are missing slices.
-			//by always using the maps we ensure the correct background slice is 
-			//taken that matches the molecules slice at the given index.
-			for (int i=0;i<datatable.getRowCount();i++) {
-				double slice = datatable.getValue("slice", i);
+			final double meanXFinal = meanX;
+			final double meanYFinal = meanY;
+			datatable.rows().forEach(row -> {
+				double T = row.getValue("T");
 				
-				//First calculate corrected value for current slice x
-				double molX = datatable.getValue(input_x, i) - meanX;
+				double molX = row.getValue(input_x) - meanXFinal;
 				double backgroundX = Double.NaN;
 				
-				//If using incomplete traces for building the background
-				//sometimes there are missing slices..
-				if (sliceToXMap.containsKey(slice))
-					backgroundX = sliceToXMap.get(slice);
+				if (TtoXMap.containsKey(T))
+					backgroundX = TtoXMap.get(T);
 				
 				double x_drift_corr_value = molX - backgroundX;
-				datatable.set(output_x, i, x_drift_corr_value);
+				row.setValue(output_x, x_drift_corr_value);
 		
-				//Then calculate corrected value for current slice y
-				double molY = datatable.getValue(input_y, i) - meanY;
+				double molY = row.getValue(input_y) - meanYFinal;
 				double backgroundY = Double.NaN;
 				
-				//If using incomplete traces for building the background
-				//sometimes there are missing slices..
-				if (sliceToYMap.containsKey(slice))
-					backgroundY = sliceToYMap.get(slice);
+				if (TtoYMap.containsKey(T))
+					backgroundY = TtoYMap.get(T);
 				
 				double y_drift_corr_value = molY - backgroundY;
-				datatable.set(output_y, i, y_drift_corr_value);
-			}
+				row.setValue(output_y, y_drift_corr_value);
+			});
 			
 			archive.put(molecule);
 		});
@@ -216,6 +209,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			archive.unlock();	
 	}
 	
+	//Add channel input?
 	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta, int from, int to) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 		
@@ -313,18 +307,18 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 					return;
 				}
 				
-				HashMap<Double, Double> sliceToXMap = metaToMapX.get(molecule.getMetadataUID());
-				HashMap<Double, Double> sliceToYMap = metaToMapY.get(molecule.getMetadataUID());
+				HashMap<Double, Double> TtoXMap = metaToMapX.get(molecule.getMetadataUID());
+				HashMap<Double, Double> TtoYMap = metaToMapY.get(molecule.getMetadataUID());
 				
-				MarsTable datatable = molecule.getDataTable();
+				MarsTable datatable = molecule.getTable();
 				
 				//If the column already exists we don't need to add it
 				//instead we will just be overwriting the values below..
 				if (!datatable.hasColumn(output_x))
-					molecule.getDataTable().appendColumn(output_x);
+					molecule.getTable().appendColumn(output_x);
 				
 				if (!datatable.hasColumn(output_y))
-					molecule.getDataTable().appendColumn(output_y);
+					molecule.getTable().appendColumn(output_y);
 				
 				//If we want to retain the original coordinates then 
 				//we don't subtract anything except the drift.
@@ -332,40 +326,33 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 				double meanY = 0;
 				
 				if (!retainCoordinates) {
-					meanX = datatable.mean(input_x,"slice",from, to);
-					meanY = datatable.mean(input_y,"slice",from, to);
+					meanX = datatable.mean(input_x,"T",from, to);
+					meanY = datatable.mean(input_y,"T",from, to);
 				}
 				
-				//We use the mappings because many molecules are missing slices.
-				//by always using the maps we ensure the correct background slice is 
-				//taken that matches the molecules slice at the given index.
-				for (int i=0;i<datatable.getRowCount();i++) {
-					double slice = datatable.getValue("slice", i);
+				final double meanXFinal = meanX;
+				final double meanYFinal = meanY;
+				datatable.rows().forEach(row -> {
+					double T = row.getValue("T");
 					
-					//First calculate corrected value for current slice x
-					double molX = datatable.getValue(input_x, i) - meanX;
+					double molX = row.getValue(input_x) - meanXFinal;
 					double backgroundX = Double.NaN;
 					
-					//If using incomplete traces for building the background
-					//sometimes there are missing slices..
-					if (sliceToXMap.containsKey(slice))
-						backgroundX = sliceToXMap.get(slice);
+					if (TtoXMap.containsKey(T))
+						backgroundX = TtoXMap.get(T);
 					
 					double x_drift_corr_value = molX - backgroundX;
-					datatable.set(output_x, i, x_drift_corr_value);
+					row.setValue(output_x, x_drift_corr_value);
 			
-					//Then calculate corrected value for current slice y
-					double molY = datatable.getValue(input_y, i) - meanY;
+					double molY = row.getValue(input_y) - meanYFinal;
 					double backgroundY = Double.NaN;
 					
-					//If using incomplete traces for building the background
-					//sometimes there are missing slices..
-					if (sliceToYMap.containsKey(slice))
-						backgroundY = sliceToYMap.get(slice);
+					if (TtoYMap.containsKey(T))
+						backgroundY = TtoYMap.get(T);
 					
 					double y_drift_corr_value = molY - backgroundY;
-					datatable.set(output_y, i, y_drift_corr_value);
-				}
+					row.setValue(output_y, y_drift_corr_value);
+				});
 				
 				archive.put(molecule);
 			});
@@ -376,8 +363,8 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("from T", String.valueOf(from));
-		builder.addParameter("to T", String.valueOf(to));
+		builder.addParameter("from T", String.valueOf(start));
+		builder.addParameter("to T", String.valueOf(end));
 		builder.addParameter("Input X", input_x);
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);
@@ -393,20 +380,20 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return archive;
 	}
 	
-	public void setFromSlice(int from) {
-		this.from = from;
+	public void setStartT(int start) {
+		this.start = start;
 	}
 	
-	public int getFromSlice() {
-		return from;
+	public int getStartT() {
+		return start;
 	}
 	
-	public void setToSlice(int to) {
-		this.to = to;
+	public void setEndT(int end) {
+		this.end = end;
 	}
 	
-	public int getToSlice() {
-		return to;
+	public int getEndT() {
+		return end;
 	}
     
 	public void setInputX(String input_x) {
