@@ -222,7 +222,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		meanXbg = meanXbg/count; 
 		
 		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put(meta.getPlane(0, 0, 0, t).getXDrift(), meta.getPlane(0, 0, 0, t).getXDrift() - meanXbg);
+			TtoColumn.put((double)t, meta.getPlane(0, 0, 0, t).getXDrift() - meanXbg);
 		}
 		return TtoColumn;
 	}
@@ -231,7 +231,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 		
 		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put(meta.getPlane(0, 0, 0, t).getXDrift(), meta.getPlane(0, 0, 0, t).getXDrift());
+			TtoColumn.put((double)t, meta.getPlane(0, 0, 0, t).getXDrift());
 		}
 		return TtoColumn;
 	}
@@ -248,7 +248,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		meanYbg = meanYbg/count; 
 		
 		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put(meta.getPlane(0, 0, 0, t).getYDrift(), meta.getPlane(0, 0, 0, t).getYDrift() - meanYbg);
+			TtoColumn.put((double)t, meta.getPlane(0, 0, 0, t).getYDrift() - meanYbg);
 		}
 		return TtoColumn;
 	}
@@ -257,7 +257,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>(); 
 		
 		for (int t=0; t<meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put(meta.getPlane(0, 0, 0, t).getYDrift(), meta.getPlane(0, 0, 0, t).getYDrift());
+			TtoColumn.put((double)t, meta.getPlane(0, 0, 0, t).getYDrift());
 		}
 		return TtoColumn;
 	}
