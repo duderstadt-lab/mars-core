@@ -30,14 +30,10 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.roi.commands;
 
-import java.awt.AWTEvent;
-import java.awt.Choice;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Vector;
 
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -47,57 +43,36 @@ import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.image.DogPeakFinder;
-import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.LevenbergMarquardt;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
-import ij.IJ;
 import ij.ImagePlus;
-import ij.Prefs;
-import ij.WindowManager;
-import ij.gui.DialogListener;
-import ij.gui.GenericDialog;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
-import ij.measure.ResultsTable;
-import ij.plugin.filter.ExtendedPlugInFilter;
-import ij.plugin.filter.PlugInFilter;
-import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
-import ij.text.TextWindow;
-import net.imagej.Dataset;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
+import net.imglib2.RandomAccess;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import ij.plugin.PlugIn;
 
 @Plugin(type = Command.class, label = "Transform ROIs", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "roi", weight = 30,
+		@Menu(label = "Roi", weight = 30,
 			mnemonic = 'r'),
 		@Menu(label = "Transform ROIs", weight = 30, mnemonic = 't')})
-public class TransformROIsCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable, Previewable {
+public class TransformROIsCommand<T extends RealType< T >> extends DynamicCommand implements Command, Previewable {
 	//GENERAL SERVICES NEEDED
 	@Parameter
 	private RoiManager roiManager;
@@ -122,7 +97,7 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 
 	//INPUT IMAGE
     @Parameter(label = "Image")
-	private ImageDisplay imageDisplay;
+	private ImagePlus image;
 	
 	//AFFINE2D Matrix
 	@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -153,9 +128,6 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 	@Parameter(label = "Colocalize")
 	private boolean colocalize = false;
 	
-	@Parameter(label="Colocalize channel", choices = {"a", "b", "c"})
-	private String channel = "0";
-	
 	@Parameter(label="Use DoG filter")
 	private boolean useDogFilter = true;
 	
@@ -181,23 +153,6 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
     private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
     
     private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
-    
-    private Dataset dataset;
-	private ImagePlus image;
-
-    @Override
-	public void initialize() {
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
-		image = convertService.convert(imageDisplay, ImagePlus.class);
-		
-		final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
-		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
-		for (int ch=1; ch<=channelCount; ch++)
-			channels.add(String.valueOf(ch - 1));
-		channelItems.setChoices(channels);
-		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
-	}
     
 	@Override
 	public void run() {
@@ -247,27 +202,31 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 	
 	public ArrayList<Point> findPeaks(ImagePlus imp) {
 		ArrayList<Point> peaks = new ArrayList<Point>();
-		ImageProcessor duplicate = imp.getProcessor(); 
+		Img<FloatType> dog;
+		
+		int width = imp.getWidth();
+		int height = imp.getHeight();
 		
 		if (useDogFilter) {
 			// Convert image to FloatType for better numeric precision
 	        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
 
 	        // Create the filtering result
-	        Img<FloatType> dog = opService.create().img(converted);
+	        dog = opService.create().img(converted);
 
 	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
 			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
 
 	        // Do the DoG filtering using ImageJ Ops
 	        opService.filter().dog(dog, converted, sigma2, sigma1);
-
-			ImagePlus imp2 = convertService.convert(dog, ImagePlus.class);
-			duplicate = imp2.getProcessor();
+		} else {
+			dog = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
 		}
 		
-		Rectangle roi = imp.getRoi().getBounds();
+		//Rectangle roi = imp.getRoi().getBounds();
 		colocalizedPeakIndex.clear();
+		
+		RandomAccess<FloatType> ra = dog.randomAccess();
 		
 		for (int i = 0; i < TransformedROIs.size(); i++) {
 			
@@ -279,7 +238,7 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 				
 				for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++) {
 					for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++) {
-						if (Sx < 0 || Sx > duplicate.getWidth() || Sy < 0 || Sy > duplicate.getHeight())
+						if (Sx < 0 || Sx > width || Sy < 0 || Sy > height)
 							continue;
 						
 						col_search_pixels.add(new Point(Sx, Sy));
@@ -288,7 +247,9 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 				
 				boolean passed = false;
 				for (int w=0;w<col_search_pixels.size();w++) {
-					if (duplicate.getf(col_search_pixels.get(w).x, col_search_pixels.get(w).y) >= threshold) {
+					ra.setPosition(col_search_pixels.get(w).x, 0);
+					ra.setPosition(col_search_pixels.get(w).y, 1);
+					if (ra.get().get() >= threshold) {
 						passed = true;
 						break;
 					}
@@ -409,7 +370,10 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
 		builder.addParameter("Transformation Direction", transformationDirection);
+		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
+		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
+		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("filterOriginalRois", String.valueOf(filterOriginalRois));
 		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
 	}
@@ -470,14 +434,6 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 		return colocalize;
 	}
 	
-	public void setChannel(int channel) {
-		this.channel = String.valueOf(channel);
-	}
-	
-	public int getChannel() {
-		return Integer.valueOf(channel);
-	}
-	
 	public void setUseDogFiler(boolean useDogFilter) {
 		this.useDogFilter = useDogFilter;
 	}
@@ -492,6 +448,14 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 	
 	public double getThreshold() {
 		return threshold;
+	}
+	
+	public void setMinimumDistance(int minimumDistance) {
+		this.minimumDistance = minimumDistance;
+	}
+	
+	public int getMinimumDistance() {
+		return minimumDistance;
 	}
 	
 	public void setFilterOriginalRois(boolean filterOriginalRois) {
