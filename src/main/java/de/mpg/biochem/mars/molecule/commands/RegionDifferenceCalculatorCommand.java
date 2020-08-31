@@ -147,7 +147,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 				if (!molecule.hasRegion(regionOneName) || !molecule.hasRegion(regionTwoName))
 					return;
 				
-				MarsTable datatable = molecule.getDataTable();
+				MarsTable datatable = molecule.getTable();
 				
 				double region1_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionOneName).getStart(), molecule.getRegion(regionOneName).getEnd());
 				double region2_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionTwoName).getStart(), molecule.getRegion(regionTwoName).getEnd());
@@ -182,7 +182,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 				MarsRegion regionTwo = metadataRegionTwoMap.get(metaUID);
 				
 				Molecule molecule = archive.get(UID);
-				MarsTable datatable = molecule.getDataTable();
+				MarsTable datatable = molecule.getTable();
 				
 				double region1_mean = datatable.mean(Ycolumn, Xcolumn, regionOne.getStart(), regionOne.getEnd());
 				double region2_mean = datatable.mean(Ycolumn, Xcolumn, regionTwo.getStart(), regionTwo.getEnd());
@@ -213,7 +213,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	}
 	
 	public static double calcRegionDifference(Molecule molecule, String xColumn, String yColumn, MarsRegion regionOne, MarsRegion regionTwo, String parameterName) {
-		MarsTable datatable = molecule.getDataTable();
+		MarsTable datatable = molecule.getTable();
 		
 		double region1_mean = datatable.mean(yColumn, xColumn, regionOne.getStart(), regionOne.getEnd());
 		double region2_mean = datatable.mean(yColumn, xColumn, regionTwo.getStart(), regionTwo.getEnd());

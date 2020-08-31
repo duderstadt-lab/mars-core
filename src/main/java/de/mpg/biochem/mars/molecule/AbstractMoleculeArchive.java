@@ -195,7 +195,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	//This is a map from keys to molecules if working in memory..
 	//Otherwise if working in virtual memory it is left null..
-	private ConcurrentMap<String, M> molecules;
+	private ConcurrentMap<String, M> moleculeMap;
 	
 	//If true we work in virtual memory
 	private boolean virtual;
@@ -326,7 +326,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			virtualMoleculesSet = ConcurrentHashMap.newKeySet();
 			virtualMetadataSet = ConcurrentHashMap.newKeySet();
 		} else {
-			molecules = new ConcurrentHashMap<>();
+			moleculeMap = new ConcurrentHashMap<>();
 		}
 		
 		archiveProperties = createProperties();
@@ -611,7 +611,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
-		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		        
@@ -651,7 +651,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
-		        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
 		   } catch (InterruptedException | ExecutionException e ) {
@@ -924,11 +924,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	
 	        	newParameterSet.addAll(molecule.getParameters().keySet());
 	        	newTagSet.addAll(molecule.getTags());
-	        	newMoleculeDataTableColumnSet.addAll(molecule.getDataTable().getColumnHeadingList());
+	        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 	        	
 	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 	        	
-	        	archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+	        	archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
 	        	try {
 					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
 	        	} catch (IOException e) {
@@ -1002,7 +1002,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 			updateTagIndex(molecule);
-		} else if (!molecules.containsKey(molecule.getUID())) {
+		} else if (!moleculeMap.containsKey(molecule.getUID())) {
 			//If working in memory and the key is already in the map
 			//there is only one copy and all changes have already been saved
 			//otherwise, we add it as a new record.
@@ -1010,10 +1010,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				moleculeIndex.add(molecule.getUID());
 			}
 			molecule.setParent(this);
-			molecules.put(molecule.getUID(), molecule);
+			moleculeMap.put(molecule.getUID(), molecule);
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
-		archiveProperties.addAllColumns(molecule.getDataTable().getColumnHeadingList());
+		archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
 		archiveProperties.addAllSegmentTableNames(molecule.getSegmentsTableNames());
 	}
 	
@@ -1241,7 +1241,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				moleculeFile.delete();
 			virtualMoleculesSet.remove(UID);
 		} else {
-			molecules.remove(UID);
+			moleculeMap.remove(UID);
 		}
 	}
 	
@@ -1452,7 +1452,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
 	        	
-	        	MarsTable table = molecule.getDataTable();
+	        	MarsTable table = molecule.getTable();
 	        	
 	        	int molDataRow = UIDs.indexOf(UID);
 	        	
@@ -1684,7 +1684,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (virtual) {
 			return virtualMoleculesSet.contains(UID);
 		} else {
-			return molecules.containsKey(UID);
+			return moleculeMap.containsKey(UID);
 		}
 	}
 	
@@ -1750,7 +1750,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			return molecule;
 		} else {
-			return molecules.get(UID);
+			return moleculeMap.get(UID);
 		}
 	}
 	

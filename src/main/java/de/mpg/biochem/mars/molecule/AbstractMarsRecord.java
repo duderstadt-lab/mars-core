@@ -29,15 +29,12 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
@@ -45,15 +42,15 @@ import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
 /**
  * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsMetadata}. 
- * All {@link MarsRecord}s have a basic set of properties including a UID, Notes, 
- * Tags, Parameters, a {@link MarsTable}, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}
- * can also be serialized to and from Json.
+ * All {@link MarsRecord}s have a basic set of properties including a UID, notes, 
+ * tags, parameters, a {@link MarsTable}, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}s
+ * can be serialized to and from Json.
  * <p>
  * This basic set of properties is extended for storage of molecule information and metadata information in
  * {@link Molecule}, {@link AbstractMolecule}, {@link MarsMetadata}, {@link AbstractMarsMetadata}.
@@ -61,34 +58,30 @@ import de.mpg.biochem.mars.util.MarsRegion;
  * @author Karl Duderstadt
  */
 public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
-	//Unique ID for storage in maps and universal identification.
-	protected String UID;
 	
-	//Reference to MoleculeArchive containing the record
-	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
+	/**
+	 * Unique ID for storage in maps and universal identification. 
+	 */
+	private String UID;
 	
-	//For any notes associated with the record
-	protected String Notes;
+	/**
+	 * Reference to MoleculeArchive containing the record.
+	 */
+	private MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
 	
-	//tags for filtering and sorting records
-	protected LinkedHashSet<String> Tags;
-		
-	//Parameter map for record properties
-	protected LinkedHashMap<String, Double> Parameters;
-	
-	//Regions of interest map
-	protected LinkedHashMap<String, MarsRegion> regionsOfInterest;
-	
-	//Positions of interest map
-	protected LinkedHashMap<String, MarsPosition> positionsOfInterest;
+	private String notes;
+	private LinkedHashSet<String> tags;
+	private LinkedHashMap<String, Double> parameters;
+	private LinkedHashMap<String, MarsRegion> regionsOfInterest;
+	private LinkedHashMap<String, MarsPosition> positionsOfInterest;
 	
 	/**
 	 * Constructor for creating an empty MarsRecord. 
 	 */
 	public AbstractMarsRecord() {
 		super();
-		Parameters = new LinkedHashMap<>();
-		Tags = new LinkedHashSet<String>();
+		parameters = new LinkedHashMap<>();
+		tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 	}
@@ -101,14 +94,15 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public AbstractMarsRecord(String UID) {
 		super();
-		Parameters = new LinkedHashMap<>();
-		Tags = new LinkedHashSet<String>();
+		parameters = new LinkedHashMap<>();
+		tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 		this.UID = UID;
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void createIOMaps() {
 
@@ -116,23 +110,23 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			jGenerator -> jGenerator.writeStringField("UID", UID),
 			jParser -> UID = jParser.getText());
 		
-		setJsonField("Type", 
-			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()),
+		setJsonField("type", 
+			jGenerator -> jGenerator.writeStringField("type", this.getClass().getName()),
 			null);
 		
-		setJsonField("Notes",
+		setJsonField("notes",
 			jGenerator -> {
-				if (Notes != null)
-					jGenerator.writeStringField("Notes", Notes);
+				if (notes != null)
+					jGenerator.writeStringField("notes", notes);
 				}, 
-			jParser -> Notes = jParser.getText());
+			jParser -> notes = jParser.getText());
 		
-		setJsonField("Tags", 
+		setJsonField("tags", 
 			jGenerator -> {
-					if (Tags.size() > 0) {
-						jGenerator.writeFieldName("Tags");
+					if (tags.size() > 0) {
+						jGenerator.writeFieldName("tags");
 						jGenerator.writeStartArray();
-						Iterator<String> iterator = Tags.iterator();
+						Iterator<String> iterator = tags.iterator();
 						while(iterator.hasNext())
 							jGenerator.writeString(iterator.next());
 						jGenerator.writeEndArray();
@@ -140,16 +134,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 				}, 
 			jParser -> {
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            Tags.add(jParser.getText());
+		            tags.add(jParser.getText());
 		        }
 			});
 				
-		setJsonField("Parameters", 
+		setJsonField("parameters", 
 			jGenerator -> {
-					if (Parameters.size() > 0) {
-						jGenerator.writeObjectFieldStart("Parameters");
-						for (String name:Parameters.keySet())
-							jGenerator.writeNumberField(name, Parameters.get(name));
+					if (parameters.size() > 0) {
+						jGenerator.writeObjectFieldStart("parameters");
+						for (String name:parameters.keySet())
+							jGenerator.writeNumberField(name, parameters.get(name));
 						jGenerator.writeEndObject();
 					}
 				},
@@ -160,22 +154,22 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 	    				String str = jParser.getValueAsString();
 	    				if (Objects.equals(str, new String("Infinity"))) {
-	    					Parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+	    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
 	    				} else if (Objects.equals(str, new String("-Infinity"))) {
-	    					Parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+	    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
 	    				} else if (Objects.equals(str, new String("NaN"))) {
-	    					Parameters.put(subfieldname, Double.NaN);
+	    					parameters.put(subfieldname, Double.NaN);
 	    				}
 	    			} else {
-	    				Parameters.put(subfieldname, jParser.getDoubleValue());
+	    				parameters.put(subfieldname, jParser.getDoubleValue());
 	    			}
 		    	}
 			});
 				
-		setJsonField("RegionsOfInterest", 
+		setJsonField("regionsOfInterest", 
 			jGenerator -> {
 					if (regionsOfInterest.size() > 0) {
-						jGenerator.writeArrayFieldStart("RegionsOfInterest");
+						jGenerator.writeArrayFieldStart("regionsOfInterest");
 						for (String region : regionsOfInterest.keySet()) 
 							regionsOfInterest.get(region).toJSON(jGenerator);
 						jGenerator.writeEndArray();
@@ -188,11 +182,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			    	}
 			 });
 				 	
-		setJsonField("PositionsOfInterest", 
+		setJsonField("positionsOfInterest", 
 			jGenerator -> {
 					if (positionsOfInterest.size() > 0) {
-						jGenerator.writeArrayFieldStart("PositionsOfInterest");
-						for (String position :positionsOfInterest.keySet()) 
+						jGenerator.writeArrayFieldStart("positionsOfInterest");
+						for (String position : positionsOfInterest.keySet()) 
 							positionsOfInterest.get(position).toJSON(jGenerator);
 						jGenerator.writeEndArray();
 					}
@@ -203,6 +197,22 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
 		    	}
 		 	});
+		
+		// FOR BACKWARDS COMPATIBILITY
+		setJsonField("Notes", null, 
+				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("notes"));
+		
+		setJsonField("Tags", null, 
+				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("tags"));
+		
+		setJsonField("Parameters", null, 
+				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("parameters"));
+		
+		setJsonField("RegionsOfInterest", null, 
+				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("regionsOfInterest"));
+		
+		setJsonField("PositionsOfInterest", null,
+				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("positionsOfInterest"));
 	}
 	
 	/**
@@ -221,7 +231,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns a string containing any notes associated with this record.
 	 */
 	public String getNotes() {
-		return Notes;
+		return notes;
 	}
 	
 	/**
@@ -230,8 +240,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * 
 	 * @param Notes Any notes about this molecule.
 	 */
-	public void setNotes(String Notes) {
-		this.Notes = Notes;
+	public void setNotes(String notes) {
+		this.notes = notes;
 	}
 	
 	/**
@@ -239,8 +249,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 *  
 	 * @param Note String with the note to add to the record.
 	 */
-	public void addNote(String Note) {
-		Notes += Note;
+	public void addNote(String note) {
+		this.notes += note;
 	}
 	
 	/**
@@ -250,7 +260,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param tag The string tag to be added.
 	 */
 	public void addTag(String tag) {
-		Tags.add(tag);
+		tags.add(tag);
 		if (parent != null) {
 			parent.properties().addTag(tag);
 		}
@@ -264,7 +274,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * and false if not.
 	 */
 	public boolean hasTag(String tag) {
-		return Tags.contains(tag);
+		return tags.contains(tag);
 	}
 	
 	/**
@@ -273,7 +283,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns true if the record has no tags.
 	 */
 	public boolean hasNoTags() {
-		return Tags.size() == 0;
+		return tags.size() == 0;
 	}
 	
 	/**
@@ -282,7 +292,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the set of tags for this record.
 	 */
 	public LinkedHashSet<String> getTags() {
-		return Tags;
+		return tags;
 	}
 	
 	/**
@@ -291,8 +301,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the set of tags for this record as an array.
 	 */
 	public String[] getTagsArray() {
-		String tagArray[] = new String[Tags.size()];
-		return Tags.toArray(tagArray);
+		String tagArray[] = new String[tags.size()];
+		return tags.toArray(tagArray);
 	}
 	
 	/**
@@ -301,14 +311,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param tag The string tag to remove.
 	 */
 	public void removeTag(String tag) {
-		Tags.remove(tag);
+		tags.remove(tag);
 	}
 	
 	/**
 	 * Remove all tags from the record.
 	 */
 	public void removeAllTags() {
-		Tags.clear();
+		tags.clear();
 	}
 	
 	/**
@@ -322,7 +332,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param value The double value to set for the parameter name.
 	 */
 	public void setParameter(String parameter, double value) {
-		Parameters.put(parameter, value);
+		parameters.put(parameter, value);
 		if (parent != null) {
 			parent.properties().addParameter(parameter);
 		}
@@ -332,7 +342,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * Remove all parameter values from the record.
 	 */
 	public void removeAllParameters() {
-		Parameters.clear();
+		parameters.clear();
 	}
 	
 	/**
@@ -341,8 +351,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @param parameter The parameter name to remove.
 	 */
 	public void removeParameter(String parameter) {
-		if (Parameters.containsKey(parameter)) {
-			Parameters.remove(parameter);
+		if (parameters.containsKey(parameter)) {
+			parameters.remove(parameter);
 		}
 	}
 	
@@ -353,8 +363,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the double value for the parameter name given.
 	 */
 	public double getParameter(String parameter) {
-		if (Parameters.containsKey(parameter)) {
-			return Parameters.get(parameter);
+		if (parameters.containsKey(parameter)) {
+			return parameters.get(parameter);
 		} else {
 			return Double.NaN;
 		}
@@ -367,7 +377,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the double value for the parameter name given.
 	 */
 	public boolean hasParameter(String parameter) {
-		return Parameters.containsKey(parameter);
+		return parameters.containsKey(parameter);
 	}
 	
 	/**
@@ -376,7 +386,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the map of parameter names to values.
 	 */
 	public LinkedHashMap<String, Double> getParameters() {
-		return Parameters;
+		return parameters;
 	}
 	
 	/**
@@ -479,6 +489,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
+	 * Set the parent {@link MoleculeArchive} that this record is stored in.
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */

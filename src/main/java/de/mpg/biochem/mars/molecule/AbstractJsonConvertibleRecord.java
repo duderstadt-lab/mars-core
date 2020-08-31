@@ -28,30 +28,26 @@
  */
 package de.mpg.biochem.mars.molecule;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
-import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
-import ome.xml.model.primitives.Timestamp;
 
 /**
  * Abstract superclass for JsonConvertibleRecords. Contains basic conversion 
  * methods to and from Json based on the Jackson streaming API. This abstract
- * class can be extended for any classes that need to be serialized or de-serialized
- * from Json. The subclass must then define an input and output Predicate maps that define
- * how objects, fields, arrays should be stored using the jackson streaming API. 
+ * class can be extended for any classes that needs to be serialized or de-serialized
+ * from Json. The subclass must implement the {@link #createIOMaps() createIOMaps} method to define the input 
+ * and output Predicate maps that determine how objects, fields, arrays should be stored 
+ * using the Jackson streaming API. 
  * <p>
  * For examples, see {@link MarsRecord}, {@link AbstractMolecule}, {@link AbstractMarsMetadata}.
  * </p>
@@ -60,12 +56,13 @@ import ome.xml.model.primitives.Timestamp;
 public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	
 	private LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
-	
 	private HashMap<String, Predicate<JsonParser>> inputMap;
-	
-	//IOMaps are created during the first call to toJSON or fromJSON lazily
-	//This ensures subclasses overriding createIOMaps have been fully 
-	//initialized before the first call. If false this field triggers initialization.
+
+	/**
+	 * IOMaps are created during the first call to toJSON or fromJSON lazily 
+	 * This ensures subclasses overriding createIOMaps have been fully
+	 * initialized before the first call. If false this field triggers initialization.
+	 */
 	private boolean IOMapsInitialized;
 	
 	/**
@@ -162,6 +159,26 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	}
 	
 	/**
+	 * Get the JsonGenerator for a field.
+	 * 
+	 * @param field Json field.
+	 * @return JsonGenerator predicate for field.
+	 */
+	protected Predicate<JsonGenerator> getJsonGenerator(String field) {
+		return outputMap.get(field);
+	}
+	
+	/**
+	 * Get the JsonParser for a field.
+	 * 
+	 * @param field Json field.
+	 * @return JsonParser predicate for field.
+	 */
+	protected Predicate<JsonParser> getJsonParser(String field) {
+		return inputMap.get(field);
+	}
+	
+	/**
 	 * Get the record in Json string format.
 	 * 
 	 * @return Json string representation of the record.
@@ -170,7 +187,9 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
   		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
   	}
 	
-	//Must be implemented in subclasses to define how fields, objects, arrays should be saved
-	//based on the Jackson streaming API.
+  	/**
+	 * Must be implemented in subclasses to define how fields, objects, arrays should be saved 
+	 * based on the Jackson streaming API.
+	 */
 	protected abstract void createIOMaps();
 }

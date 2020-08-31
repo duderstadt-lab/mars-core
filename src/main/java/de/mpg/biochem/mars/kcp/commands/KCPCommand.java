@@ -221,7 +221,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 	        		Molecule molecule = archive.get(i);
 	        		
-	        		if (molecule.getDataTable().hasColumn(Xcolumn) && molecule.getDataTable().hasColumn(Ycolumn)) {
+	        		if (molecule.getTable().hasColumn(Xcolumn) && molecule.getTable().hasColumn(Ycolumn)) {
 	        			findChangePoints(molecule);
 	        			archive.put(molecule);
 	        		}
@@ -253,7 +253,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	}
 	
 	private void findChangePoints(Molecule molecule) {
-		MarsTable datatable = molecule.getDataTable();
+		MarsTable datatable = molecule.getTable();
 		
 		MarsRecord regionRecord = null;
 		if (region || calcBackgroundSigma) {

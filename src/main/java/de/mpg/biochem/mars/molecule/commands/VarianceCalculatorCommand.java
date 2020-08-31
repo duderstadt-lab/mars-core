@@ -119,7 +119,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements Command
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			
-			molecule.setParameter(ParameterName, molecule.getDataTable().variance(column));
+			molecule.setParameter(ParameterName, molecule.getTable().variance(column));
 			
 			archive.put(molecule);
 		});
@@ -141,7 +141,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements Command
 	}
 	
 	public static double calcVariance(Molecule molecule, String column, String parameterName) {
-		double variance = molecule.getDataTable().variance(column);
+		double variance = molecule.getTable().variance(column);
 		
 		molecule.setParameter(parameterName, variance);
 		

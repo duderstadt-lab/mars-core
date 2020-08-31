@@ -32,11 +32,25 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import de.mpg.biochem.mars.kcp.commands.KCPCommand;
+import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
+/**
+ * Basic interface for Mars records. 
+ * <p>
+ * All {@link MarsRecord}s have a basic set of properties including a UID, notes, 
+ * tags, parameters, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}s
+ * can be serialized to and from Json.
+ * <p>
+ * This basic set of properties is extended for storage of molecule information and metadata information in
+ * {@link Molecule}, {@link AbstractMolecule}, {@link MarsMetadata}, {@link AbstractMarsMetadata}.
+ * </p>
+ * @author Karl Duderstadt
+ */
 public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
@@ -58,16 +72,16 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * Sets the notes for this record. Notes can be added during manual sorting
 	 * to point out a feature or important detail about the current record.
 	 * 
-	 * @param Notes Any notes about this record.
+	 * @param notes Any notes about this record.
 	 */
-	void setNotes(String Notes);
+	void setNotes(String notes);
 	
 	/**
 	 * Add to any notes already in the record.
 	 *  
-	 * @param Note String with the note to add to the record.
+	 * @param note String with the note to add to the record.
 	 */
-	void addNote(String Note);
+	void addNote(String note);
 	
 	/**
 	 * Add a string tag to the record. Tags are used for marking individual
@@ -166,24 +180,83 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 */
 	LinkedHashMap<String, Double> getParameters();
 	
+	/**
+	 * Add or update a {@link MarsRegion}. This can be a region of
+	 * interest for further analysis steps: slope calculations or
+	 * KCP calculations {@link KCPCommand}. Region names are unique. If a region that
+	 * has this name already exists in the record it will be
+	 * overwritten by this method.
+	 *  
+	 * @param regionOfInterest The region to add to the record.
+	 */
 	public void putRegion(MarsRegion regionOfInterest);
 	
+	/**
+	 * Get a {@link MarsRegion}. Region names are
+	 * unique. Only one copy of each region can be 
+	 * stored in the record.
+	 *  
+	 * @param name The name of the region to retrieve.
+	 */
 	public MarsRegion getRegion(String name);
 	
+	/**
+	 * Check if the record contains a {@link MarsRegion}
+	 * using the name.
+	 *  
+	 * @param name The name of the region to check for.
+	 */
 	public boolean hasRegion(String name);
 	
+	/**
+	 * Remove a {@link MarsRegion} from the record using the name.
+	 *  
+	 * @param name The name of the region to remove.
+	 */
 	public void removeRegion(String name);
 	
+	/**
+	 * Get the set of region names contained in this record.
+	 */
 	public Set<String> getRegionNames();
 	
+	/**
+	 * Add or update a {@link MarsPosition}. This can be a position of
+	 * interest for further analysis steps. Position names are unique. 
+	 * If a position with has this name already exists in the record it 
+	 * will be overwritten by this method.
+	 *  
+	 * @param positionOfInterest The position to add to the record.
+	 */
 	public void putPosition(MarsPosition positionOfInterest);
 	
+	/**
+	 * Get a {@link MarsPosition}. Position names are
+	 * unique. Only one copy of each region can be 
+	 * stored in the record.
+	 *  
+	 * @param name The name of the position to retrieve.
+	 */
 	public MarsPosition getPosition(String name);
 	
+	/**
+	 * Check if the record contains a {@link MarsPosition}
+	 * using the name.
+	 *  
+	 * @param name The name of the position to check for.
+	 */
 	public boolean hasPosition(String name);
 	
+	/**
+	 * Remove a {@link MarsPosition} from the record using the name.
+	 *  
+	 * @param name The name of the position to remove.
+	 */
 	public void removePosition(String name);
 	
+	/**
+	 * Get the set of position names contained in this record.
+	 */
 	public Set<String> getPositionNames();
 	
 	/**

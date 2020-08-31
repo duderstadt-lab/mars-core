@@ -142,7 +142,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		//Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			MarsTable datatable = molecule.getDataTable();
+			MarsTable datatable = molecule.getTable();
 			
 			if (regionType.equals("Defined below")) {
 				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
