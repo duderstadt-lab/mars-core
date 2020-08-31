@@ -311,7 +311,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * 
 	 * @return The channel integer or -1 if not set.
 	 */
-	public int getChannel() {
+	public int getChannel() {		
 		return channel;
 	}
 	
@@ -332,6 +332,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	
 	@Deprecated
 	public void setDataTable(MarsTable table) {
+		this.table.clear();
 		this.table = table;
 	}
 	
@@ -344,7 +345,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * record.
 	 */
 	public void setTable(MarsTable table) {
-		//this.table.clear();
+		this.table.clear();
 		this.table = table;
 	}
 	
