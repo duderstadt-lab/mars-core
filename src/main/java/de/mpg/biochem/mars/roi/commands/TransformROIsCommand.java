@@ -55,7 +55,6 @@ import ij.ImagePlus;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccess;
 import net.imglib2.img.ImagePlusAdapter;
@@ -69,7 +68,7 @@ import net.imglib2.type.numeric.real.FloatType;
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
 		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
-		@Menu(label = "Roi", weight = 30,
+		@Menu(label = "ROI", weight = 30,
 			mnemonic = 'r'),
 		@Menu(label = "Transform ROIs", weight = 30, mnemonic = 't')})
 public class TransformROIsCommand<T extends RealType< T >> extends DynamicCommand implements Command, Previewable {

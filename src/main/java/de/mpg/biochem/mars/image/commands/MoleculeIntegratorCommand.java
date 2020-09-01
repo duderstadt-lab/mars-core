@@ -292,8 +292,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
     		
 		}
         
+        String fretChannelName = null;
+        
         //Build integration lists for all time points for each color.
-        channelColors.forEach(channel -> {
+        for (int i=0; i < channelColors.size(); i++) {
+        	MutableModuleItem<String> channel = channelColors.get(i);
         	String colorOption = channel.getValue(this);
         	
         	if (colorOption.equals("Short"))
@@ -301,13 +304,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
         	else if (colorOption.equals("Long"))
         		mapToAllPeaks.put(channel.getName(), createColorIntegrationList(channel.getName(), longIntegrationList));
         	else if (colorOption.equals("FRET")) {
+        		fretChannelName = channel.getName();
         		mapToAllPeaks.put(channel.getName() + " " + fretShortName, 
         				createColorIntegrationList(channel.getName(), shortIntegrationList));
 
         		mapToAllPeaks.put(channel.getName() + " " + fretLongName, 
         				createColorIntegrationList(channel.getName(), longIntegrationList));
         	}
-        });
+        }
 		
 		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius, outerRadius);
 			
@@ -357,6 +361,27 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        archive = new SingleMoleculeArchive(newName + ".yama");
 			archive.putMetadata(marsOMEMetadata);
 			
+			HashMap<String, HashMap<Integer, Double>> channelToTtoDtMap = new HashMap<String, HashMap<Integer, Double>>();
+			
+			//Let's build some maps from t to dt for each color...
+			for (String colorName : mapToAllPeaks.keySet()) {
+				HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
+				final String fretCName = fretChannelName;
+				
+				marsOMEMetadata.getImage(0).planes()
+					.filter(plane -> {
+						if (fretCName != null && colorName.startsWith(fretCName))
+							return channelColors.get(plane.getC()).getName().equals(fretCName);
+						else
+							return channelColors.get(plane.getC()).getName().equals(colorName);
+					})
+					.forEach(plane -> {
+						tToDtMap.put(plane.getT(), plane.getDeltaTinSeconds());
+					});
+
+				channelToTtoDtMap.put(colorName, tToDtMap);
+			}
+			
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
 	        statusService.showStatus(progressInteger.get(), shortIntegrationList.keySet().size(), statusMessage);
@@ -370,6 +395,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        	columns.add(new DoubleColumn("T"));
 	        	
 	    		for (String colorName : mapToAllPeaks.keySet()) {
+	    			columns.add(new DoubleColumn(colorName + " Time (s)"));
 	    			columns.add(new DoubleColumn(colorName));
 	    			columns.add(new DoubleColumn(colorName + " background"));
 	    		}
@@ -385,9 +411,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		        	for (String colorName : mapToAllPeaks.keySet()) {
 	        			if (mapToAllPeaks.get(colorName).containsKey(t)) {
 	        				Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
+	        				if (channelToTtoDtMap.get(colorName).containsKey(t))
+	        					table.setValue(colorName + " Time (s)", row, channelToTtoDtMap.get(colorName).get(t));
+	        				else
+	        					table.setValue(colorName + " Time (s)", row, Double.NaN);
 	        				table.setValue(colorName, row, peak.getIntensity());
 	        				table.setValue(colorName + " background", row, peak.getMedianBackground());
 	        			} else {
+	        				table.setValue(colorName + " Time (s)", row, Double.NaN);
 	        				table.setValue(colorName, row, Double.NaN);
 	        				table.setValue(colorName + " background", row, Double.NaN);
 	        			}
