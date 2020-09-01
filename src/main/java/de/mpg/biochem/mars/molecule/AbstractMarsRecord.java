@@ -102,7 +102,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void createIOMaps() {
 
@@ -200,19 +199,50 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		
 		// FOR BACKWARDS COMPATIBILITY
 		setJsonField("Notes", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("notes"));
+				jParser -> notes = jParser.getText());
 		
 		setJsonField("Tags", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("tags"));
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			            tags.add(jParser.getText());
+			        }
+				});
 		
 		setJsonField("Parameters", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("parameters"));
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+		    				String str = jParser.getValueAsString();
+		    				if (Objects.equals(str, new String("Infinity"))) {
+		    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+		    				} else if (Objects.equals(str, new String("-Infinity"))) {
+		    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+		    				} else if (Objects.equals(str, new String("NaN"))) {
+		    					parameters.put(subfieldname, Double.NaN);
+		    				}
+		    			} else {
+		    				parameters.put(subfieldname, jParser.getDoubleValue());
+		    			}
+			    	}
+				});
 		
 		setJsonField("RegionsOfInterest", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("regionsOfInterest"));
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsRegion regionOfInterest = new MarsRegion(jParser);
+				    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+			    	}
+			 });
 		
 		setJsonField("PositionsOfInterest", null,
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("positionsOfInterest"));
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsPosition positionOfInterest = new MarsPosition(jParser);
+				    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+			    	}
+			 	});
 	}
 	
 	/**

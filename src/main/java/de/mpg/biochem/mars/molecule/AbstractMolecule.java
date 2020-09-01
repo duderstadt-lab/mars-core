@@ -226,16 +226,16 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		
 		// FOR BACKWARDS COMPATIBILITY 
 		setJsonField("DataTable", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("table"));
+				jParser -> table.fromJSON(jParser));
 		
 		setJsonField("MetadataUID", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("metadataUID"));
+				jParser -> metadataUID = jParser.getText());
 		
 		setJsonField("ImageMetadataUID", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("metadataUID"));
+				jParser -> metadataUID = jParser.getText());
 		
 		setJsonField("ImageMetaDataUID", null, 
-				(ThrowingConsumer<JsonParser, IOException>) getJsonParser("metadataUID"));
+				jParser -> metadataUID = jParser.getText());
 		
 		setJsonField("SegmentTables", null, 
 				jParser -> {
