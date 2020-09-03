@@ -26,6 +26,7 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.image.commands;
 
+import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
 import net.imglib2.realtransform.AffineTransform2D;
@@ -50,6 +51,7 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.command.Previewable;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
@@ -92,7 +94,10 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	@Parameter
 	private StatusService statusService;
 	
-	@Parameter(label = "Add To Me")
+    @Parameter
+	private ConvertService convertService;
+	
+    @Parameter(label = "Add To Me")
 	private ImagePlus addToMe;
 	
 	@Parameter(label = "Transform Me")
@@ -132,17 +137,22 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	
+	//private ImagePlus addToMe, transformMe;
+	
 	@Override
 	public void run() {
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Overlay Channels");
+		String log = LogBuilder.buildTitleBlock("Overlay Channels");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		
 		logService.info(log);
+		
+		//addToMe = convertService.convert(addToMeDisplay, ImagePlus.class);
+		//transformMe = convertService.convert(transformMeDisplay, ImagePlus.class);
 		
 		transformedImageMap = new ConcurrentHashMap<>();
 		
