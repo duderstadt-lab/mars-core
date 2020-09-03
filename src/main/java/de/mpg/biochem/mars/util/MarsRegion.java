@@ -68,7 +68,7 @@ import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
  */
 public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 	private String name = "Region";
-	private String column = "Time (s)";
+	private String column = "T";
 	private String color = "#416ef468";
 	private double start = 0;
 	private double end = 0;

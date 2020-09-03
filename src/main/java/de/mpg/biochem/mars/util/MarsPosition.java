@@ -47,7 +47,7 @@ import de.mpg.biochem.mars.molecule.*;
  */
 public class MarsPosition extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
 		private String name = "Position"; 
-		private String column = "Time (s)";
+		private String column = "T";
 		private String color = "#000000";
 		private double stroke = 1;
 		private double position = 0;
