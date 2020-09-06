@@ -26,6 +26,8 @@
  ******************************************************************************/
 package de.mpg.biochem.mars.image.commands;
 
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imglib2.img.Img;
@@ -96,12 +98,19 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	
     @Parameter
 	private ConvertService convertService;
+    
+    @Parameter
+    private DatasetService datasetService;
 	
-    @Parameter(label = "Add To Me")
-	private ImagePlus addToMe;
+    //@Parameter(label = "Add To Me")
+	//private Dataset addToMeDataset;
+    @Parameter(label="Add To Me", choices = {"a", "b", "c"})
+	private String addToMeName;
 	
-	@Parameter(label = "Transform Me")
-	private ImagePlus transformMe;
+	//@Parameter(label = "Transform Me")
+	//private Dataset transformMeDataset;
+    @Parameter(label="Transform Me", choices = {"a", "b", "c"})
+	private String transformMeName;
 
 	@Parameter(label= "Keep originals")
 	private boolean keep = false;
@@ -137,10 +146,27 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	
-	//private ImagePlus addToMe, transformMe;
+	private ImagePlus addToMe, transformMe;
+	
+	@Override
+	public void initialize() {		
+		final MutableModuleItem<String> addToMeItems = getInfo().getMutableInput("addToMeName", String.class);
+		final MutableModuleItem<String> transformMeItems = getInfo().getMutableInput("transformMeName", String.class);
+		
+		List<String> datasetNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
+		
+		addToMeItems.setChoices(datasetNames);
+		transformMeItems.setChoices(datasetNames);
+	}
 	
 	@Override
 	public void run() {
+		Dataset addToMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
+		Dataset transformMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
+		
+		addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
+		transformMe = convertService.convert(transformMeDataset, ImagePlus.class);
+		
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
@@ -150,9 +176,6 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		log += builder.buildParameterList();
 		
 		logService.info(log);
-		
-		//addToMe = convertService.convert(addToMeDisplay, ImagePlus.class);
-		//transformMe = convertService.convert(transformMeDisplay, ImagePlus.class);
 		
 		transformedImageMap = new ConcurrentHashMap<>();
 		
