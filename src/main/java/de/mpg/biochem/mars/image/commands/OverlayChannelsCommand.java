@@ -64,6 +64,7 @@ import org.scijava.plugin.Plugin;
 import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.WindowManager;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;
 
@@ -102,13 +103,9 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
     @Parameter
     private DatasetService datasetService;
 	
-    //@Parameter(label = "Add To Me")
-	//private Dataset addToMeDataset;
     @Parameter(label="Add To Me", choices = {"a", "b", "c"})
 	private String addToMeName;
 	
-	//@Parameter(label = "Transform Me")
-	//private Dataset transformMeDataset;
     @Parameter(label="Transform Me", choices = {"a", "b", "c"})
 	private String transformMeName;
 
@@ -153,19 +150,28 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		final MutableModuleItem<String> addToMeItems = getInfo().getMutableInput("addToMeName", String.class);
 		final MutableModuleItem<String> transformMeItems = getInfo().getMutableInput("transformMeName", String.class);
 		
-		List<String> datasetNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
+		//Super Hacky IJ1 workaround for issues in scijava/scifio related to getting images.
+		int numberOfImages = WindowManager.getImageCount();
+		List<String> imageNames = new ArrayList<String>();
 		
-		addToMeItems.setChoices(datasetNames);
-		transformMeItems.setChoices(datasetNames);
+		for (int i = 0; i < numberOfImages; i++)
+			imageNames.add(WindowManager.getImage(i + 1).getTitle());
+
+		//List<String> datasetNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
+		
+		addToMeItems.setChoices(imageNames);
+		transformMeItems.setChoices(imageNames);
 	}
 	
 	@Override
 	public void run() {
-		Dataset addToMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
-		Dataset transformMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
+		//Dataset addToMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
+		//Dataset transformMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
 		
-		addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
-		transformMe = convertService.convert(transformMeDataset, ImagePlus.class);
+		//addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
+		//transformMe = convertService.convert(transformMeDataset, ImagePlus.class);
+		addToMe = WindowManager.getImage(addToMeName);
+		transformMe = WindowManager.getImage(transformMeName);
 		
 		//Build log
 		LogBuilder builder = new LogBuilder();

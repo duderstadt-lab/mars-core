@@ -27,10 +27,13 @@
 package de.mpg.biochem.mars.image.commands;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.scijava.app.StatusService;
@@ -40,6 +43,7 @@ import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -85,12 +89,21 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	
     @Parameter
     private StatusService statusService;
+    
+    @Parameter
+    private DatasetService datasetService;
+    
+    @Parameter(label="Image to correct", choices = {"a", "b", "c"})
+	private String imageName;
+    
+    @Parameter(label="Background image", choices = {"a", "b", "c"})
+	private String backgroundName;
 	
-	@Parameter(label = "Image to correct")
-	private ImagePlus image; 
+	//@Parameter(label = "Image to correct")
+	//private ImagePlus image; 
 	
-	@Parameter(label = "Background image")
-	private ImagePlus backgroundImage;
+	//@Parameter(label = "Background image")
+	//private ImagePlus backgroundImage;
 	
 	@Parameter(label="Electronic offset")
 	private double electronicOffset = 0;
@@ -108,12 +121,35 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	ImageProcessor backgroundIp;
 	double maximumPixelValue;
 	
+	private ImagePlus image, backgroundImage;
+	
+	@Override
+	public void initialize() {		
+		final MutableModuleItem<String> imageItems = getInfo().getMutableInput("imageName", String.class);
+		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput("backgroundName", String.class);
+		
+		//Super Hacky IJ1 workaround for issues in scijava/scifio related to getting images.
+		int numberOfImages = WindowManager.getImageCount();
+		List<String> imageNames = new ArrayList<String>();
+		
+		for (int i = 0; i < numberOfImages; i++)
+			imageNames.add(WindowManager.getImage(i + 1).getTitle());
+		
+		//List<String> imageNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
+		
+		imageItems.setChoices(imageNames);
+		backgroundItems.setChoices(imageNames);
+	}
+	
 	@Override
 	public void run() {
+		image = WindowManager.getImage(imageName);
+		backgroundImage = WindowManager.getImage(backgroundName);
+		
 		//Build log
 		LogBuilder builder = new LogBuilder();
 		
-		String log = builder.buildTitleBlock("Beam Profile Correction");
+		String log = LogBuilder.buildTitleBlock("Beam Profile Correction");
 		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
@@ -172,7 +208,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
 	    	e.getStackTrace();
-	    	logService.info(builder.endBlock(false));
+	    	logService.info(LogBuilder.endBlock(false));
 	    	return;
 	    } finally {
 	        forkJoinPool.shutdown();
@@ -182,7 +218,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	    //This might crash a headless run...
 	    if (!saveToDisk)
 	    	image.updateAndDraw();
-	    logService.info(builder.endBlock(true));
+	    logService.info(LogBuilder.endBlock(true));
 	}
 	
 	public void correctFrame(int slice) {
