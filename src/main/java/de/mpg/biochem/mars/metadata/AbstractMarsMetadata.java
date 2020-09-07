@@ -105,7 +105,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
     /**
 	 * Constructor for creating a MarsMetadata record using OMEXMLMetadata.
 	 * 
-	 * @param OMEXMLMetadata The OMEXMLMetadata to use.
+	 * @param UID The UID of the MarsMetadata record being created.
+	 * @param omexmlMetadata The OMEXMLMetadata to use.
 	 */
     public AbstractMarsMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
     	super(UID);
@@ -323,9 +324,9 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * the getPlane(int imageIndex, int planeIndex) should be used.
 	 * 
 	 * @param imageIndex Index of the image.
-	 * @param Z Z (slice).
-	 * @param C Channel.
-	 * @param T Time point.
+	 * @param z Z (slice).
+	 * @param c Channel.
+	 * @param t Time point.
 	 */
 	public MarsOMEPlane getPlane(int imageIndex, int z, int c, int t) {
 		return images.get(imageIndex).getPlane(z, c, t);

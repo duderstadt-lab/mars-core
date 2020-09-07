@@ -90,9 +90,6 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * <p>
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
-	 * 
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
@@ -111,8 +108,6 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
 	 */
 	public DefaultMoleculeArchive(String name, MarsTable table) {
 		super(name, table);

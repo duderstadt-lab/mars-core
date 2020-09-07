@@ -30,7 +30,7 @@ package de.mpg.biochem.mars.molecule;
 
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.*;
 
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -50,7 +50,7 @@ import com.fasterxml.jackson.core.JsonParser;
  * Molecule records are assigned a random UID string at the time of creation derived from 
  * a base58 encoded UUID for readability. This serves as their primary identifier within 
  * {@link AbstractMoleculeArchive}s and for a range of transformations and merging operations. 
- * Molecule records also have a UID string for corresponding {@link SdmmImageMetadata} records, 
+ * Molecule records also have a UID string for corresponding {@link MarsMetadata} records, 
  * which contain information about the imaging settings, the timing of frames etc.. 
  * during data collection. 
  * </p>

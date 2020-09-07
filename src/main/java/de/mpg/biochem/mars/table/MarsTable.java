@@ -300,6 +300,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	/** Sets a reference to the window holding the table. 
 	 * This could be a swing or javafx window.
 	 * @param win The window containing the table if working with a gui.
+	 * @return A reference to the MarsTableWindow provided.
 	 */
 	public MarsTableWindow setWindow(MarsTableWindow win) {
 		this.win = win;
@@ -1415,7 +1416,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 * Add MarsTableRow to the end of the table. Assumes the
 	 * table has all the columns listed in the row. 
 	 * 
-	 * @param addRow A MarsTableRow that should be added to the end of the table.
+	 * @param row A MarsTableRow that should be added to the end of the table.
 	 * @return MarsTable for next operation.
 	 */
 	public MarsTable addRow(MarsTableRow row) {

@@ -197,6 +197,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * stored in the record.
 	 *  
 	 * @param name The name of the region to retrieve.
+	 * @return The MarsRegion with the name given.
 	 */
 	public MarsRegion getRegion(String name);
 	
@@ -205,6 +206,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * using the name.
 	 *  
 	 * @param name The name of the region to check for.
+	 * @return True if a region with name exists, false otherwise.
 	 */
 	public boolean hasRegion(String name);
 	
@@ -217,6 +219,8 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the set of region names contained in this record.
+	 * 
+	 * @return The set of region names.
 	 */
 	public Set<String> getRegionNames();
 	
@@ -236,6 +240,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * stored in the record.
 	 *  
 	 * @param name The name of the position to retrieve.
+	 * @return The MarsPosition with the name given.
 	 */
 	public MarsPosition getPosition(String name);
 	
@@ -244,6 +249,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * using the name.
 	 *  
 	 * @param name The name of the position to check for.
+	 * @return True if the position exists, false otherwise.
 	 */
 	public boolean hasPosition(String name);
 	
@@ -256,6 +262,8 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the set of position names contained in this record.
+	 * 
+	 * @return The set of MarsPosition names.
 	 */
 	public Set<String> getPositionNames();
 	

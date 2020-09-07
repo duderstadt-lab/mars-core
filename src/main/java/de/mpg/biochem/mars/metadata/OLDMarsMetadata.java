@@ -60,7 +60,7 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 		
 	    /**
 		 * Constructor for loading a MarsMetadata record from a file. Typically,
-		 * used when streaming records into memory when loading a {@link MoleculeArchive}
+		 * used when streaming records into memory when loading a
 		 * or when a record is retrieved from the virtual store. 
 		 * 
 		 * @param jParser A JsonParser at the start of the record.
@@ -181,7 +181,7 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 		/**
 		 * Get the log that contains the history of processing steps
 		 * conducted on this dataset and the associated molecule records
-		 * contained in the same {@link MoleculeArchive}.
+		 * contained in the same.
 		 */
 		public String getLog() {
 			return log;

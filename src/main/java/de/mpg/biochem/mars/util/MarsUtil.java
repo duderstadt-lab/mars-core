@@ -70,6 +70,7 @@ public class MarsUtil {
 	/**
 	 * Return Json String in pretty print format.
 	 * 
+	 * @param throwingConsumer Consumer to generate JSON.
 	 * @return Json string.
 	 */
 	public static String dumpJSON(ThrowingConsumer<JsonGenerator, IOException> throwingConsumer) {

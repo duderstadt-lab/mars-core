@@ -148,7 +148,7 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @param segmentsTable The {@link MarsTable} to add that contains the 
 	 * segments.
 	 */
-	void putSegmentsTable(String xColumn, String yColumn, String region, MarsTable segs);
+	void putSegmentsTable(String xColumn, String yColumn, String region, MarsTable segmentsTable);
 	
 	/**
 	 * Retrieve a segments table ({@link MarsTable}) generated 

@@ -268,7 +268,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * Sets the notes for this record. Notes can be added during manual sorting
 	 * to point out a feature or important detail about the current record.
 	 * 
-	 * @param Notes Any notes about this molecule.
+	 * @param notes Any notes about this molecule.
 	 */
 	public void setNotes(String notes) {
 		this.notes = notes;
@@ -277,7 +277,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Add to any notes already in the record.
 	 *  
-	 * @param Note String with the note to add to the record.
+	 * @param note String with the note to add to the record.
 	 */
 	public void addNote(String note) {
 		this.notes += note;

@@ -109,7 +109,7 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	/**
 	 * Set the Source Directory where the images are stored.
 	 * 
-	 * @return Directory where the images are stored.
+	 * @param path The string file path.
 	 */
 	void setSourceDirectory(String path);
 	

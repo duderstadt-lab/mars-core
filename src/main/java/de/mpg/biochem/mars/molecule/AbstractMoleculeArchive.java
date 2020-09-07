@@ -140,7 +140,7 @@ import org.scijava.table.*;
  * </p>
  * <p>
  * MoleculeArchives can be loaded using the constructors {@link #AbstractMoleculeArchive(File)} or 
- * {@link #AbstractMoleculeArchive(String, File, MoleculeArchiveService)}. Otherwise, MoleculeArchives can be loaded
+ * {@link #AbstractMoleculeArchive(String, File)}. Otherwise, MoleculeArchives can be loaded
  * using the Mars command {@link ImportVirtualStoreCommand} through the 
  * GUI or in scripts.
  * </p>
@@ -265,8 +265,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
 	 * 
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
@@ -299,8 +297,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
 	 */
 	public AbstractMoleculeArchive(String name, MarsTable table) {
 		this.name = name;

@@ -115,7 +115,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * as the DataTable. 
 	 * 
 	 * @param UID The unique identifier for this Molecule record.
-	 * @param dataTable The {@link MarsTable} to use for 
+	 * @param table The {@link MarsTable} to use for 
 	 * initialization.
 	 */
 	public AbstractMolecule(String UID, MarsTable table) {

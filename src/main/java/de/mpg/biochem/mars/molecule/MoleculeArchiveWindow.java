@@ -65,7 +65,7 @@ public interface MoleculeArchiveWindow {
 	/**
 	 * Add a message to the log that is presented in the background
 	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
+	 * {@link MoleculeArchive#logln(String message) logln(String message)} are printed
 	 * to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.
@@ -76,7 +76,7 @@ public interface MoleculeArchiveWindow {
 	/**
 	 * Add a message to the log that is presented in the background
 	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
+	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)} are printed
 	 * to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.
@@ -86,7 +86,7 @@ public interface MoleculeArchiveWindow {
 	/**
 	 * Add a message and start a new line in the log that is presented in the background
 	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#addLogMessage(String message) addLogMessage(String message)} are printed
+	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)} are printed
 	 * to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.

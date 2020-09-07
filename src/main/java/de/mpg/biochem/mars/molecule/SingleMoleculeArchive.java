@@ -44,7 +44,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
 /**
  * Implementation of {@link AbstractMoleculeArchive} for default archives used for
  * routine single molecule time-series datasets composed of {@link SingleMolecule} 
- * molecule records, {@link SdmmImageMetadata} metadata records, and 
+ * molecule records, {@link MarsMetadata} metadata records, and 
  * {@link SingleMoleculeArchiveProperties} archive properties.
  * <p>
  * For a more extensive explanation of uses and features of molecule archives see 
@@ -99,8 +99,6 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * <p>
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
 	 * 
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
@@ -120,8 +118,6 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
-	 * @param moleculeArchiveService The MoleculeArchiveService from
-	 * the current context.
 	 */
 	public SingleMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
