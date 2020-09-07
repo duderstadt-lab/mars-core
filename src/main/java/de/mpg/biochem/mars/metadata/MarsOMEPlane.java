@@ -344,6 +344,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		return valueFields.get(field);
 	}
 	
+	public boolean hasField(String field) {
+		return valueFields.containsKey(field);
+	}
+	
 	public void setFields(Map<String, Double> valueFields) {
 		this.valueFields = valueFields;
 	}
