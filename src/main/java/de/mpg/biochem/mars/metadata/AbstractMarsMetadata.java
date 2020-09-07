@@ -49,6 +49,7 @@ import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsMath;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
@@ -88,7 +89,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * Constructor for creating an empty MarsMetadata record. 
 	 */
     public AbstractMarsMetadata() {
-    	super();
+    	super(MarsMath.getUUID58().substring(0, 10));
     }
     
     /**
