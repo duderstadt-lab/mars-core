@@ -373,11 +373,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		        
 		      //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), i);
+		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
+		        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
 		        	//Don't add to stack unless peaks were detected.
 		        	if (tpeaks.size() > 0)
-		        		PeakStack.put(i, tpeaks);
+		        		PeakStack.put(t, tpeaks);
 		        })).get();
 		        	
 		        progressUpdating.set(false);
@@ -394,8 +394,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		 }
 			
 		} else {
+			image.setPosition(Integer.valueOf(channel) + 1, 1, image.getFrame());
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			peaks = findPeaks(selectedImage);
+			peaks = findPeaks(selectedImage, image.getFrame() - 1);
 			if (fitPeaks) {
 				peaks = fitPeaks(selectedImage.getProcessor(), peaks);
 				peaks = removeNearestNeighbors(peaks);
@@ -504,18 +505,19 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 	}
 	
-	private ArrayList<Peak> findPeaksInT(int channel, int frame) {
+	private ArrayList<Peak> findPeaksInT(int channel, int t) {
 		ImageStack stack = image.getImageStack();
-		int index = image.getStackIndex(channel, 1, frame);
+		int index = image.getStackIndex(channel + 1, 1, t + 1);
 		ImageProcessor processor = stack.getProcessor(index);
+
+		//Now we do the peak search and find all peaks and fit them for the current frame and return the result
+		//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
+		ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + t + 1, processor.duplicate()), t));
 		
-		ArrayList<Peak> peaks = findPeaks(new ImagePlus("frame " + frame, processor));
-		if (peaks.size() == 0)
-			return peaks;
-		if (fitPeaks) {
-			peaks = fitPeaks(processor, peaks);
-			peaks = removeNearestNeighbors(peaks);
-		}
+		//After fitting some peaks may have moved within the mininmum distance
+		//So we remove these always favoring the ones having lower fit error in x and y
+		peaks = removeNearestNeighbors(peaks);
+		
 		return peaks;
 	}
 	
@@ -550,7 +552,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return pCount;
 	}
 	
-	public ArrayList<Peak> findPeaks(ImagePlus imp) {
+	public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
 		ArrayList<Peak> peaks;
 		
 		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
@@ -566,18 +568,18 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
 
 	        // Do the DoG filtering using ImageJ Ops
-	        opService.filter().dog(dog, converted, sigma2, sigma1);
+			opService.filter().dog(dog, converted, sigma2, sigma1);
 
 	        if (useROI) {
-		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
 			} else {
-				peaks = finder.findPeaks(dog);
+				peaks = finder.findPeaks(dog, t);
 			}
 		} else {
 			if (useROI) {
-		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
+		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
 			} else {
-				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
+				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), t);
 			}
 		}
 		
@@ -805,7 +807,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			image.deleteRoi();
 			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			ArrayList<Peak> peaks = findPeaks(selectedImage);
+			ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
 			
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 			if (!peaks.isEmpty()) {
