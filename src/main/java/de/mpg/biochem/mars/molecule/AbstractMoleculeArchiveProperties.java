@@ -35,9 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.util.MarsUtil;
 
 /**
  * Abstract superclass for MoleculeArchiveProperties objects that contain
@@ -51,12 +49,13 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected int numberOfMolecules;
 	protected int numMetadata;
 	protected String comments, inputSchema;
-	public static final String SCHEMA = "2020-06-07";
+	public static final String SCHEMA = "2020-09-09";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
 	protected Set<String> parameterSet;
 	protected Set<String> moleculeDataTableColumnSet;
+	protected Set<Integer> channelSet;
 	protected Set<ArrayList<String>> moleculeSegmentTableNames;
 	
 	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
@@ -71,6 +70,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		comments = "";
 		
 		tagSet = ConcurrentHashMap.newKeySet();
+		channelSet = ConcurrentHashMap.newKeySet();
 		parameterSet = ConcurrentHashMap.newKeySet();
 		moleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		moleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
@@ -183,6 +183,21 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		            tagSet.add(jParser.getText());
 			});
 			
+		setJsonField("moleculeChannelSet", 
+				jGenerator -> {
+					if (channelSet.size() > 0) {
+						jGenerator.writeFieldName("moleculeChannelSet");
+						jGenerator.writeStartArray();
+						Iterator<Integer> iterator = channelSet.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeNumber(iterator.next());	
+						jGenerator.writeEndArray();
+					}
+				}, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			    		channelSet.add(jParser.getIntValue());
+				});
 			
 		setJsonField("MoleculeParameterSet", 
 			jGenerator -> {
@@ -253,6 +268,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		this.addComment("Comments from Merged Archive " + archiveName + ":\n" + properties.getComments() + "\n");
 		
 		addAllTags(properties.getTagSet());
+		addAllChannels(properties.getChannelSet());
 		addAllParameters(properties.getParameterSet());
 		addAllColumns(properties.getColumnSet());
 		addAllSegmentTableNames(properties.getSegmentTableNames());
@@ -286,6 +302,38 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public void setTagSet(Set<String> tagSet) {
 		this.tagSet = tagSet;
+	}
+	
+	/**
+	 * Add a channel index to the global set that contains a record of all unique indexes 
+	 * that are represented in the archive.
+	 */
+	public void addChannel(int channel) {
+		channelSet.add(channel);
+	}
+	
+	/**
+	 * Add molecule channel indexes to the global set that 
+	 * contains a record of all unique channel indexes 
+	 * that are represented in the archive.
+	 */
+	public void addAllChannels(Set<Integer> channels) {
+		channelSet.addAll(channels);
+	}
+	
+	/**
+	 * Get the set of channel indexes for molecules in the archive.
+	 */
+	public Set<Integer> getChannelSet() {
+		return channelSet;
+	}
+	
+	/**
+	 * Redefine the set of molecule channels in use. 
+	 * Integers with an index starting at 0. 
+	 */
+	public void setChannelSet(Set<Integer> channelSet) {
+		this.channelSet = channelSet;
 	}
 	
 	/**

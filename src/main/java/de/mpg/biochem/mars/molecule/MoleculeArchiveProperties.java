@@ -45,6 +45,14 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setTagSet(Set<String> tagSet);
 	
+	void addChannel(int channel);
+	
+	void addAllChannels(Set<Integer> channels);
+	
+	Set<Integer> getChannelSet();
+	
+	void setChannelSet(Set<Integer> channelSet);
+	
 	void addParameter(String parameterName);
 	
 	void addAllParameters(Set<String> parameters);

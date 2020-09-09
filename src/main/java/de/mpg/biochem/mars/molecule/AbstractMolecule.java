@@ -301,7 +301,13 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * @param channel Integer value for the channel.
 	 */
 	public void setChannel(int channel) {
-		this.channel = channel;
+		if (channel > -1) {
+			this.channel = channel;
+			if (parent != null) {
+				parent.properties().addChannel(channel);
+			}
+		} else
+			channel = -1;
 	}
 	
 	/**

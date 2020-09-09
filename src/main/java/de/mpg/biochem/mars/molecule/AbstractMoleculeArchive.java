@@ -186,6 +186,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	//This is a map index of tags for searching in molecule tables etc..
 	private ConcurrentMap<String, LinkedHashSet<String>> tagIndex, metadataTagIndex;
+	private ConcurrentMap<String, Integer> channelIndex;
 	
 	//this is a map of molecule UIDs to MetadataUID for virtual storage indexing...
 	private ConcurrentMap<String, String> moleculeMetadataUIDIndex;
@@ -316,6 +317,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		if (virtual) {
 			tagIndex = new ConcurrentHashMap<>();
+			channelIndex = new ConcurrentHashMap<>();
 			metadataTagIndex = new ConcurrentHashMap<>();
 			moleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 			
@@ -417,8 +419,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    			if("UID".equals(indexJParser.getCurrentName())) {
 			    				indexJParser.nextToken();
 			    				UID = indexJParser.getText();
-			    					virtualMoleculesSet.add(UID);
-					    			moleculeIndex.add(UID);
+			    				virtualMoleculesSet.add(UID);
+					    		moleculeIndex.add(UID);
 			    			}
 			    			
 			    			if ("ImageMetaDataUID".equals(indexJParser.getCurrentName()) || "ImageMetadataUID".equals(indexJParser.getCurrentName()) || "MetadataUID".equals(indexJParser.getCurrentName())) {
@@ -433,6 +435,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			    		            tags.add(indexJParser.getText());
 			    		        }
 			    		    	tagIndex.put(UID, tags);
+			    			}
+			    			
+			    			if ("theC".equals(indexJParser.getCurrentName())) {
+			    				indexJParser.nextToken();
+			    		    	channelIndex.put(UID, indexJParser.getIntValue());
 			    			}
 			    		}
 		    		}
@@ -558,6 +565,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//Global sets stored in MoleculeArchiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
+		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 		
@@ -595,6 +603,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 			
 			ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, Integer> newChannelIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> newMetadataTagIndex = new ConcurrentHashMap<>();
 			
 			ConcurrentMap<String, String> newMoleculeMetadataUIDIndex = new ConcurrentHashMap<>();
@@ -603,10 +612,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        forkJoinPool.submit(() -> newMoleculeIndex.parallelStream().forEach(UID -> { 
 		        	M molecule = get(UID);
 		        	newTagIndex.put(UID, molecule.getTags());
+		        	newChannelIndex.put(UID, molecule.getChannel());
 		        	newMoleculeMetadataUIDIndex.put(UID, molecule.getMetadataUID());
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
+		        	if (molecule.getChannel() > -1)
+		        		newChannelSet.add(molecule.getChannel());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
@@ -625,6 +637,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   this.moleculeIndex = (ArrayList<String>)newMoleculeIndex.stream().sorted().collect(toList());
 		   this.metadataIndex = (ArrayList<String>)newMetadataIndex.stream().sorted().collect(toList());
 		   this.tagIndex = newTagIndex;
+		   this.channelIndex = newChannelIndex;
 		   this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
 		   this.metadataTagIndex = newMetadataTagIndex;
 		   
@@ -632,6 +645,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   this.virtualMetadataSet = newVirtualMetadataSet;
 		   
 		   archiveProperties.setTagSet(newTagSet);
+		   archiveProperties.setChannelSet(newChannelSet);
 		   archiveProperties.setParameterSet(newParameterSet);
 		   archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 		   archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
@@ -647,6 +661,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
+		        	if (molecule.getChannel() > -1)
+		        		newChannelSet.add(molecule.getChannel());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
 		        })).get();    
@@ -658,6 +674,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   }
 			
 			archiveProperties.setTagSet(newTagSet);
+			archiveProperties.setChannelSet(newChannelSet);
 			archiveProperties.setParameterSet(newParameterSet);
 			archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 			archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);	
@@ -669,10 +686,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	private void saveIndexes() throws IOException {
-		saveIndexes(file, moleculeIndex, metadataIndex, moleculeMetadataUIDIndex, metadataTagIndex, tagIndex, jfactory);
+		saveIndexes(file, moleculeIndex, metadataIndex, moleculeMetadataUIDIndex, metadataTagIndex, tagIndex, channelIndex, jfactory);
 	}
 	
-	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> metadataIndex, ConcurrentMap<String, String> moleculeMetadataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> metadataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, JsonFactory jfactory) throws IOException {
+	private void saveIndexes(File directory, ArrayList<String> moleculeIndex, ArrayList<String> metadataIndex, ConcurrentMap<String, String> moleculeMetadataUIDIndex, ConcurrentMap<String, LinkedHashSet<String>> metadataTagIndex, ConcurrentMap<String, LinkedHashSet<String>> tagIndex, ConcurrentMap<String, Integer> channelIndex, JsonFactory jfactory) throws IOException {
 		File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 		
@@ -714,6 +731,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				jGenerator.writeEndArray();
 			}
 			
+			if (channelIndex.containsKey(UID)) {
+				jGenerator.writeNumberField("theC", channelIndex.get(UID));
+			}
+			
 			jGenerator.writeEndObject();
 		}
 		jGenerator.writeEndArray();
@@ -722,8 +743,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		stream.flush();
 		stream.close();
-		
-        //Files.setPosixFilePermissions(indexFile.toPath(), MarsUtil.ownerGroupPermissions);
 	}
 	
 	/**
@@ -881,12 +900,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		//We will generate the index as we save records...
 		ConcurrentMap<String, LinkedHashSet<String>> newTagIndex = new ConcurrentHashMap<>();
+		ConcurrentMap<String, Integer> newChannelIndex = new ConcurrentHashMap<>();
 		ConcurrentMap<String, LinkedHashSet<String>> newMetadataTagIndex = new ConcurrentHashMap<>();
 		ConcurrentMap<String, String> newMoleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 		
 		//Let's also rebuild the parameter index stored in the archiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
+		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		
 		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
@@ -916,10 +937,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        forkJoinPool.submit(() -> moleculeIndex.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
 	        	newTagIndex.put(UID, molecule.getTags());
+	        	if (molecule.getChannel() > -1)
+	        		newChannelIndex.put(UID, molecule.getChannel());
 	        	newMoleculeMetadataUIDIndex.put(UID, molecule.getMetadataUID());
 	        	
 	        	newParameterSet.addAll(molecule.getParameters().keySet());
 	        	newTagSet.addAll(molecule.getTags());
+	        	if (molecule.getChannel() > -1)
+	        		newChannelSet.add(molecule.getChannel());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
 	        	
 	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
@@ -940,10 +965,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		if (virtual) {
 			this.tagIndex = newTagIndex;
+			this.channelIndex = newChannelIndex;
 	    	this.moleculeMetadataUIDIndex = newMoleculeMetadataUIDIndex;
 		}
 		
 		archiveProperties.setTagSet(newTagSet);
+		archiveProperties.setChannelSet(newChannelSet);
 		archiveProperties.setParameterSet(newParameterSet);
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 		archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
@@ -965,7 +992,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//then we save the resulting indexes from the operation..
 		//this way virtual or in memory archive can both be saved no problem..
 		//In the case of saving virtual archives this method then re-indexes completely.
-		saveIndexes(virtualDirectory, moleculeIndex, metadataIndex, newMoleculeMetadataUIDIndex, newMetadataTagIndex, newTagIndex, jfactory);
+		saveIndexes(virtualDirectory, moleculeIndex, metadataIndex, newMoleculeMetadataUIDIndex, newMetadataTagIndex, newTagIndex, newChannelIndex, jfactory);
 	}
 	
 	/**
@@ -998,6 +1025,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 			updateTagIndex(molecule);
+			updateChannelIndex(molecule);
 		} else if (!moleculeMap.containsKey(molecule.getUID())) {
 			//If working in memory and the key is already in the map
 			//there is only one copy and all changes have already been saved
@@ -1011,6 +1039,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
 		archiveProperties.addAllSegmentTableNames(molecule.getSegmentsTableNames());
+		if (molecule.getTags().size() > 0)
+			archiveProperties.addAllTags(molecule.getTags());
+		if (molecule.getChannel() > -1)
+			archiveProperties.addChannel(molecule.getChannel());
 	}
 	
 	/**
@@ -1298,6 +1330,19 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
+	 * Channel for the molecule with the given UID.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the channel of.
+	 * @return The channel index of the molecule in question.
+	 */
+	public int getChannel(String UID) {
+		if (channelIndex.containsKey(UID))
+			return channelIndex.get(UID);
+		else 
+			return -1;
+	}
+	
+	/**
 	 * Comma separated list of tags for the MarsMetadata record with the given UID.
 	 * 
 	 * @param UID The UID of the MarsMetadata record to retrieve the tag list for.
@@ -1420,6 +1465,17 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				archiveProperties.addAllTags(molecule.getTags());
 			} else {
 				tagIndex.remove(molecule.getUID());
+			}
+		}
+	}
+	
+	private void updateChannelIndex(M molecule) {
+		if (virtual) {
+			if (molecule.getChannel() > -1) {
+				channelIndex.put(molecule.getUID(), molecule.getChannel());
+				archiveProperties.addChannel(molecule.getChannel());
+			} else {
+				channelIndex.remove(molecule.getUID());
 			}
 		}
 	}
