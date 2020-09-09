@@ -60,6 +60,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -228,6 +229,8 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				for (String UID : archive.getMoleculeUIDs()) {
 					if (virtualMoleculesSet.contains(UID)) {
 						logService.error("Duplicate molecule entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
+						uiService.showDialog("Merge failed due to duplicate molecule record " + UID + ".\n"
+								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
 						return;
 					}
 					moleculeIndex.add(UID);
@@ -242,6 +245,8 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				for (String metaUID : archive.getMetadataUIDs()) {
 					if (virtualMetadataSet.contains(metaUID)) {
 						logService.error("Duplicate metadata entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
+						uiService.showDialog("Merge failed due to duplicate metadata record " + metaUID + ".\n"
+								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
 						return;
 					}
 					metadataIndex.add(metaUID);

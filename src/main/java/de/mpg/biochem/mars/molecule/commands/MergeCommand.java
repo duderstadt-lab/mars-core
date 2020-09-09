@@ -42,6 +42,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import org.scijava.Context;
+import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -241,6 +242,8 @@ public class MergeCommand extends DynamicCommand {
 						logService.info("Are you trying to merge copies of the same dataset?");
 						logService.info("Please resolve the conflict and run the merge command again.");
 						logService.info(LogBuilder.endBlock(false));
+						uiService.showDialog("Merge failed due to duplicate metadata record " + metaUID + ".\n"
+								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
 						return;
 					} else {
 						metaUIDs.add(metaUID);
