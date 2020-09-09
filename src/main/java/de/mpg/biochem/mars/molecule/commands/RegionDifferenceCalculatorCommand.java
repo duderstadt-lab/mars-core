@@ -250,6 +250,14 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		return Ycolumn;
 	}
 	
+	public void setRegionSource(String regionSource) {
+		this.regionSource = regionSource;
+	}
+	
+	public String getRegionSource() {
+		return this.regionSource;
+	}
+	
 	public void setRegionOne(String regionOneName) {
 		this.regionOneName = regionOneName;
 	}
