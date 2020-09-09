@@ -354,7 +354,7 @@ public class PeakTracker {
 		
 		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
 		mol.setMetadataUID(metaDataUID);
-		mol.setParameter("Channel", channel);
+		mol.setChannel(channel);
 		archive.put(mol);
 	}
 }
