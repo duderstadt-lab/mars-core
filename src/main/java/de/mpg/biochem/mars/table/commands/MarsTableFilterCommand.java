@@ -57,7 +57,7 @@ import net.imagej.ops.Initializable;
 @Plugin(type = Command.class, label = "Filter", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 'm'),
 		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),

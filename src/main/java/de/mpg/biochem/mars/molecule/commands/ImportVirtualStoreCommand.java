@@ -41,14 +41,14 @@ import org.scijava.plugin.Plugin;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 
-@Plugin(type = Command.class, label = "Import archive", menu = {
+@Plugin(type = Command.class, label = "Open archive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),
-		@Menu(label = "Import virtual store", weight = 1, mnemonic = 'v')})
+		@Menu(label = "Open virtual store", weight = 1, mnemonic = 'v')})
 public class ImportVirtualStoreCommand extends DynamicCommand {    
     @Parameter(label="MoleculeArchive (.yama.store)", style="directory")
     private File file;

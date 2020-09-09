@@ -69,7 +69,7 @@ import javax.swing.filechooser.FileSystemView;
 @Plugin(type = Command.class, label = "Build archive from table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Molecule", weight = 1,
 			mnemonic = 'm'),

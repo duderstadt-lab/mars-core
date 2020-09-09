@@ -136,7 +136,7 @@ import net.imglib2.img.ImagePlusAdapter;
 @Plugin(type = Command.class, label = "Peak Tracker", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Image", weight = 20,
 			mnemonic = 'm'),

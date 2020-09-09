@@ -42,14 +42,14 @@ import org.scijava.Context;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
 
-@Plugin(type = Command.class, label = "Import table", menu = {
+@Plugin(type = Command.class, label = "Open table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "Table", weight = 10,
 			mnemonic = 't'),
-		@Menu(label = "Import table", weight = 1, mnemonic = 'o')})
+		@Menu(label = "Open table", weight = 1, mnemonic = 'o')})
 public class MarsTableImporterCommand extends DynamicCommand {
 	
     @Parameter(label="MarsTable (csv, tab or json) ")
