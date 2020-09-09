@@ -254,6 +254,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	LinkedHashSet<String> getTagSet(String UID);
 	
 	/**
+	 * Channel for the molecule with the given UID.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the channel of.
+	 * @return The channel index of the molecule in question.
+	 */
+	int getChannel(String UID);
+	
+	/**
 	 * Comma separated list of tags for the metadata record with the given UID.
 	 * 
 	 * @param UID The UID of the metadata record to retrieve the tag list for.

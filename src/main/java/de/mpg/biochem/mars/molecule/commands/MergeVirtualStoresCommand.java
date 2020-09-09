@@ -190,6 +190,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				
 				//update global indexes
 				mergedProperties.addAllTags(properties.getTagSet());
+				mergedProperties.addAllChannels(properties.getChannelSet());
 				mergedProperties.addAllParameters(properties.getParameterSet());
 				mergedProperties.addAllColumns(properties.getColumnSet());
 			}
@@ -220,6 +221,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			
 			ConcurrentMap<String, String> moleculeMetadataUIDIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> tagIndex = new ConcurrentHashMap<>();
+			ConcurrentMap<String, Integer> channelIndex = new ConcurrentHashMap<>();
 			ConcurrentMap<String, LinkedHashSet<String>> metadataTagIndex = new ConcurrentHashMap<>();
 			
 			for (MoleculeArchive<?, ?, ?> archive : archives) {
@@ -233,6 +235,8 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					moleculeMetadataUIDIndex.put(UID, archive.getMetadataUIDforMolecule(UID));
 					if (archive.getTagSet(UID) != null)	
 						tagIndex.put(UID, archive.getTagSet(UID));
+					if (archive.getChannel(UID) > -1)
+						channelIndex.put(UID, archive.getChannel(UID));
 				}
 				
 				for (String metaUID : archive.getMetadataUIDs()) {
@@ -295,6 +299,10 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 							jGenerator.writeString(tag);
 						}
 						jGenerator.writeEndArray();
+					}
+					
+					if (channelIndex.containsKey(UID)) {
+						jGenerator.writeNumberField("theC", channelIndex.get(UID));
 					}
 					
 					jGenerator.writeEndObject();
