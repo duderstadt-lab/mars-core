@@ -286,4 +286,76 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
 	}
+	
+	public void setAddToMe(ImagePlus addToMe) {
+		this.addToMe = addToMe;
+	}
+	
+	public ImagePlus getAddToMe() {
+		return addToMe;
+	}
+	
+	public void setTransformMe(ImagePlus transformMe) {
+		this.transformMe = transformMe;
+	}
+	
+	public ImagePlus getTransformMe() {
+		return transformMe;
+	}
+	
+	public void setKeepOriginals(boolean keep) {
+		this.keep = keep;
+	}
+	
+	public boolean getKeepOriginals() {
+		return keep;
+	}
+
+	public void setM00(double m00) {
+		this.m00 = m00;
+	}
+	
+	public double getM00() {
+		return m00;
+	}
+	
+	public void setM01(double m01) {
+		this.m01 = m01;
+	}
+	
+	public double getM01() {
+		return m01;
+	}
+	
+	public void setM02(double m02) {
+		this.m02 = m02;
+	}
+	
+	public double getM02() {
+		return m02;
+	}
+	
+	public void setM10(double m10) {
+		this.m10 = m10;
+	}
+	
+	public double getM10() {
+		return m10;
+	}
+	
+	public void setM11(double m11) {
+		this.m11 = m11;
+	}
+	
+	public double getM11() {
+		return m11;
+	}
+	
+	public void setM12(double m12) {
+		this.m12 = m12;
+	}
+	
+	public double getM12() {
+		return m12;
+	}
 }

@@ -207,6 +207,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("X Column", Xcolumn);
 		builder.addParameter("Y Column", Ycolumn);
+		builder.addParameter("Region source", regionSource);
 		builder.addParameter("Region 1 name", regionOneName);
 		builder.addParameter("Region 2 name", regionTwoName);
 		builder.addParameter("Parameter Name", ParameterName);

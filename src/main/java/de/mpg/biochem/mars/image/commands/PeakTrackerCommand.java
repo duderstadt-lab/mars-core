@@ -920,6 +920,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Integration inner radius", String.valueOf(integrationInnerRadius));
 			builder.addParameter("Integration outer radius", String.valueOf(integrationOuterRadius));
 			builder.addParameter("Microscope", microscope);
+			builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
+			builder.addParameter("Pixel Units", this.pixelUnits);
 		}
 		
 		//Getters and Setters
