@@ -1102,4 +1102,20 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public String getMicroscope() {
 			return microscope;
 		}
+		
+		public void setPixelLength(double pixelLength) {
+			this.pixelLength = pixelLength;
+		}
+		
+		public double getPixelLength() {
+			return this.pixelLength;
+		}
+		
+		public void setPixelUnits(String pixelUnits) {
+			this.pixelUnits = pixelUnits;
+		}
+		
+		public String getPixelUnits() {
+			return this.pixelUnits;
+		}
 }
