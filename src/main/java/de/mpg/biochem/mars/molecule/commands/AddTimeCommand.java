@@ -151,4 +151,20 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
+	
+	public void setSource(String source) {
+		this.source = source;
+	}
+	
+	public String getSource() {
+		return this.source;
+	}
+	
+	public void setTimeIncrement(double timeIncrement) {
+		this.timeIncrement = timeIncrement;
+	}
+	
+	public double getTimeIncrement() {
+		return this.timeIncrement;
+	}
 }
