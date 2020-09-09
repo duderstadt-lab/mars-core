@@ -89,9 +89,6 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter
     private MoleculeArchiveService moleculeArchiveService;
-	
-	@Parameter
-	private Context context;
 
 	@Parameter
     private UIService uiService;

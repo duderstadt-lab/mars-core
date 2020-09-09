@@ -66,7 +66,7 @@ import net.imglib2.type.numeric.real.FloatType;
 @Plugin(type = Command.class, label = "Transform ROIs", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
 			mnemonic = 's'),
 		@Menu(label = "ROI", weight = 30,
 			mnemonic = 'r'),
