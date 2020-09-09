@@ -108,7 +108,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 					"Metadata" })
 	private String regionSource;
     
-    @Parameter(label="Calculate from background")
+    @Parameter(label="Calculate sigma from background")
     private boolean calcBackgroundSigma = true;
     
     @Parameter(label="Background region", required=false)
@@ -229,8 +229,6 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	        
 	        progressUpdating.set(false);
 	        
-	        statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
-	        
 	    } catch (InterruptedException | ExecutionException e) {
 	        // handle exceptions
 	    	logService.error(e.getMessage());
@@ -250,6 +248,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 	    if (!uiService.isHeadless())
 	    	archive.unlock();
 
+	    statusService.showStatus(1, 1, "Change point search for archive " + archive.getName() + " - Done!");
 	}
 	
 	private void findChangePoints(Molecule molecule) {
@@ -290,19 +289,26 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		}
 		//END FIX
 		
+		if (region && !regionRecord.hasRegion(regionName))
+			return;
+		
+		boolean offsetSet = false;
+		boolean sigmaOffsetSet = false;
 		for (int j=0;j<rowCount;j++) {
 			if (region) {
-				if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getStart()) {
+				if (xData[j] >= regionRecord.getRegion(regionName).getStart() && !offsetSet) {
 					offset = j;
-				} else if (regionRecord.hasRegion(regionName) && xData[j] <= regionRecord.getRegion(regionName).getEnd()) {
+					offsetSet = true;
+				} else if (xData[j] <= regionRecord.getRegion(regionName).getEnd()) {
 					length = j - offset + 1;
 				}
 			}
 				
-			if (calcBackgroundSigma) {
-				if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getStart()) {
+			if (calcBackgroundSigma && regionRecord.hasRegion(backgroundRegion)) {
+				if (xData[j] >= regionRecord.getRegion(backgroundRegion).getStart() && !sigmaOffsetSet) {
 					SigXstart = j;
-				} else if (regionRecord.hasRegion(backgroundRegion) && xData[j] <= regionRecord.getRegion(backgroundRegion).getEnd()) {
+					sigmaOffsetSet = true;
+				} else if (xData[j] <= regionRecord.getRegion(backgroundRegion).getEnd()) {
 					SigXend = j;
 				}
 			}
@@ -387,7 +393,7 @@ public class KCPCommand extends DynamicCommand implements Command, Initializable
 		builder.addParameter("Confidence value", String.valueOf(confidenceLevel));
 		builder.addParameter("Global sigma", String.valueOf(global_sigma));
 		builder.addParameter("Region Source", regionSource);
-		builder.addParameter("Calculate Sigma from background", String.valueOf(calcBackgroundSigma));
+		builder.addParameter("Calculate sigma from background", String.valueOf(calcBackgroundSigma));
 		builder.addParameter("Background Region", backgroundRegion);
 		builder.addParameter("Analyze region", String.valueOf(region));
 		builder.addParameter("Region", regionName);
