@@ -49,6 +49,11 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import ome.xml.model.primitives.PositiveInteger;
+import ome.xml.model.primitives.Timestamp;
+import ome.units.quantity.Time;
+import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
+
 import de.mpg.biochem.mars.image.DogPeakFinder;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
@@ -78,6 +83,7 @@ import io.scif.util.SCIFIOMetadataTools;
 import loci.common.services.ServiceException;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imglib2.Cursor;
 import net.imglib2.KDTree;
@@ -90,6 +96,10 @@ import java.util.Comparator;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
@@ -112,6 +122,8 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -128,9 +140,12 @@ import net.imglib2.view.Views;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadata;
+import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
+import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
+import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 import net.imglib2.img.ImagePlusAdapter;
 
 @Plugin(type = Command.class, label = "Peak Tracker", menu = {
@@ -275,6 +290,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm"})
 		private String pixelUnits = "pixel";
 		
+		@Parameter(label="Norpix format")
+		private boolean norpixFormat = false;
+		
 		@Parameter
 		private UIService uiService;
 		
@@ -290,6 +308,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		//A map with peak lists for each frame for an image stack
 		private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
+		
+		//A map that will hold all Slice information if the image was opened
+		//as an IJ1 image.
+		private ConcurrentMap<Integer, String> metaDataStack;
 		
 		//box region for analysis added to the image.
 		private Rectangle rect;
@@ -348,6 +370,16 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    else
 		    	metaUID = MarsMath.getUUID58().substring(0, 10);
 		    
+		    if (norpixFormat) {
+		    	//Flip Z and T and assume a single
+				omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()) , 0);
+				omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()) , 0);
+				omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1) , 0);
+				omexmlMetadata.setPixelsSizeC(new PositiveInteger(1) , 0);
+				omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
+				omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
+			}
+		    
 		    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 			
 			if (image.getRoi() == null) {
@@ -393,8 +425,13 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			imgHeight.setValue(this, rect.height);
 			
 			final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
-			preFrame.setValue(this, image.getFrame() - 1);
-			preFrame.setMaximumValue(image.getNFrames() - 1);
+			if (image.getNFrames() < 2) {
+				preFrame.setValue(this, image.getSlice() - 1);
+				preFrame.setMaximumValue(image.getStackSize() - 1);
+			} else {
+				preFrame.setValue(this, image.getFrame() - 1);
+				preFrame.setMaximumValue(image.getNFrames() - 1);
+			}
 		}
 		
 		@Override
@@ -447,6 +484,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			PeakStack = new ConcurrentHashMap<>(image.getStackSize());
 			
+			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
+			
 			//Need to determine the number of threads
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
@@ -477,12 +516,21 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(i -> { 
-		        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), i);
-		        	//Don't add to stack unless peaks were detected.
-		        	if (peaks.size() > 0)
-		        		PeakStack.put(i, peaks);
-		        })).get();
+		        if (norpixFormat) {
+		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
+			        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), t);
+			        	//Don't add to stack unless peaks were detected.
+			        	if (peaks.size() > 0)
+			        		PeakStack.put(t, peaks);
+			        })).get();
+		        } else {
+			        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
+			        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), t);
+			        	//Don't add to stack unless peaks were detected.
+			        	if (peaks.size() > 0)
+			        		PeakStack.put(t, peaks);
+			        })).get();
+		        }
 		        
 		        progressUpdating.set(false);
 		        
@@ -526,7 +574,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    }
 		    
 		    archive = new SingleMoleculeArchive(newName + ".yama");
+		    if (norpixFormat)
+		    	getTimeFromNoprixSliceLabels(marsOMEMetadata, metaDataStack);
 			archive.putMetadata(marsOMEMetadata);
+			
+			for (int i=0; i<PeakStack.size(); i++) {
+				System.out.println("t " + i + " " + PeakStack.get(i).size());
+				System.out.println("peak0 T " + PeakStack.get(i).get(0).getT());
+			}
 		    
 		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
@@ -586,8 +641,17 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		private ArrayList<Peak> findPeaksInT(int channel, int t) {
 			ImageStack stack = image.getImageStack();
-			int index = image.getStackIndex(channel + 1, 1, t + 1);
+			int index = t + 1;
+			if (!norpixFormat)
+				index = image.getStackIndex(channel + 1, 1, t + 1);
+			
 			ImageProcessor processor = stack.getProcessor(index);
+			
+			//Workaround for IJ1 metadata in slices - Norpix format.
+			if (norpixFormat) {
+				String label = stack.getSliceLabel(index);
+				metaDataStack.put(t, label);
+			}
 
 			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
 			//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
@@ -850,12 +914,68 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			return finalPeaks;
 		}
 		
+		private void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata, Map<Integer, String> metaDataStack) {
+			try {
+				//Set Global Collection Date for the dataset
+				int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
+				String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 + 10);
+				marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(DateTimeString1));
+				
+				final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+				
+				//Extract the exact time of collection of all frames..
+				final long t0 = getNorPixMillisecondTime(DateTimeString1);
+				
+				marsMetadata.getImage(0).planes().forEach(plane -> {
+					int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf("DateTime: ");
+					String DateTimeString2 = metaDataStack.get(plane.getT()).substring(dateTimeIndex2 + 10);
+					Time dt = null;
+					try {
+						dt = new Time((getNorPixMillisecondTime(DateTimeString2) - t0)/1000, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration("s")));
+					} catch (ParseException | EnumerationException e) {
+						e.printStackTrace();
+					}
+					plane.setDeltaT(dt);
+				});
+			} catch (ParseException e1) {
+				//e1.printStackTrace();
+			}
+		}
+		
+		//Utility method
+		//Returns the time when the frame was collected in milliseconds since 1970
+		//Makes sure to properly round microsecond information.
+		private long getNorPixMillisecondTime(String strTime) throws ParseException {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
+			//For the moment we throw-out the microsecond information.
+			//String microSecs = strTime.substring(strTime.length() - 3, strTime.length());
+			Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() - 4));
+			return convertedDate.getTime();// + Double.parseDouble(microSecs)/1000;
+		}
+		
+		//Utility method
+		//Returns the Date as a string
+		private Timestamp getNorPixDate(String strTime) throws ParseException {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
+			Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() - 4));
+			//TimeZone tz = TimeZone.getTimeZone("UTC");
+			DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to indicate UTC, no timezone offset
+			//df.setTimeZone(tz);
+			String nowAsISO = df.format(convertedDate);
+			return new Timestamp(nowAsISO);
+		}
+		
 		@Override
 		public void preview() {	
 			if (preview) {
 				image.setOverlay(null);
 				image.deleteRoi();
-				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+				if (norpixFormat) {
+					image.setSlice(previewT + 1);
+				} else {
+					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+				}
+				
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
 				
@@ -922,6 +1042,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Microscope", microscope);
 			builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
 			builder.addParameter("Pixel Units", this.pixelUnits);
+			builder.addParameter("Norpix Format", String.valueOf(norpixFormat));
 		}
 		
 		//Getters and Setters
@@ -1119,5 +1240,13 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		public String getPixelUnits() {
 			return this.pixelUnits;
+		}
+		
+		public void setNorpixFormat(boolean norpixFormat) {
+			this.norpixFormat = norpixFormat;
+		}
+		
+		public boolean getNorpixFormat() {
+			return norpixFormat;
 		}
 }

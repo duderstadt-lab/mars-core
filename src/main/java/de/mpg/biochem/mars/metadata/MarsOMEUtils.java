@@ -27,30 +27,54 @@ import net.imagej.axis.Axes;
 public class MarsOMEUtils {
 	public static OMEXMLMetadata createOMEXMLMetadata(OMEXMLService omexmlService, Dataset dataset) throws ServiceException {
 		OMEXMLMetadata meta = omexmlService.createOMEXMLMetadata();
+		
+		String dimensionOrderString = "";
 
 		for (int d = 0; d < dataset.numDimensions(); d++) {
-			if (dataset.axis(d).type().equals(Axes.X))
+			if (dataset.axis(d).type().equals(Axes.X)) {
 				meta.setPixelsSizeX(new PositiveInteger((int) dataset.dimension(d)) , 0);
-			else if (dataset.axis(d).type().equals(Axes.Y))
+				dimensionOrderString += "X";
+			} else if (dataset.axis(d).type().equals(Axes.Y)) {
 				meta.setPixelsSizeY(new PositiveInteger((int) dataset.dimension(d)) , 0);
-			else if (dataset.axis(d).type().equals(Axes.Z))
+				dimensionOrderString += "Y";
+			} else if (dataset.axis(d).type().equals(Axes.Z)) {
 				meta.setPixelsSizeZ(new PositiveInteger((int) dataset.dimension(d)) , 0);
-			else if (dataset.axis(d).type().equals(Axes.CHANNEL))
+				dimensionOrderString += "Z";
+			} else if (dataset.axis(d).type().equals(Axes.CHANNEL)) {
 				meta.setPixelsSizeC(new PositiveInteger((int) dataset.dimension(d)) , 0);
-			else if (dataset.axis(d).type().equals(Axes.TIME))
+				dimensionOrderString += "C";
+			} else if (dataset.axis(d).type().equals(Axes.TIME)) {
 				meta.setPixelsSizeT(new PositiveInteger((int) dataset.dimension(d)) , 0);
+				dimensionOrderString += "T";
+			}
 		}
 		
-		if (meta.getPixelsSizeX(0) == null)
+		if (meta.getPixelsSizeX(0) == null) {
 			meta.setPixelsSizeX(new PositiveInteger(1) , 0);
-		if (meta.getPixelsSizeY(0) == null)
+			dimensionOrderString += "X";
+		}
+		
+		if (meta.getPixelsSizeY(0) == null) {
 			meta.setPixelsSizeY(new PositiveInteger(1) , 0);
-		if (meta.getPixelsSizeZ(0) == null)
+			dimensionOrderString += "Y";
+		}
+		
+		if (meta.getPixelsSizeZ(0) == null) {
 			meta.setPixelsSizeZ(new PositiveInteger(1) , 0);
-		if (meta.getPixelsSizeC(0) == null)
+			dimensionOrderString += "Z";
+		}
+		
+		if (meta.getPixelsSizeC(0) == null) {
 			meta.setPixelsSizeC(new PositiveInteger(1) , 0);
-		if (meta.getPixelsSizeT(0) == null)
+			dimensionOrderString += "C";
+		}
+		
+		if (meta.getPixelsSizeT(0) == null) {
 			meta.setPixelsSizeT(new PositiveInteger(1) , 0);
+			dimensionOrderString += "T";
+		}
+		
+		meta.setPixelsDimensionOrder(DimensionOrder.valueOf(dimensionOrderString), 0);
 		
 		return meta;
 	}
