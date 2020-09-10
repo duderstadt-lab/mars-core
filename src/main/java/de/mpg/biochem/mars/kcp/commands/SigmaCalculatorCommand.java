@@ -93,7 +93,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 	@Parameter(label="to")
 	private double to = 500;
 	
-    @Parameter(label="Region from MarsRecord")
+    @Parameter(label="Region")
 	private String regionName;
     
     @Override
