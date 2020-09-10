@@ -370,16 +370,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    else
 		    	metaUID = MarsMath.getUUID58().substring(0, 10);
 		    
-		    if (norpixFormat) {
-		    	//Flip Z and T and assume a single
-				omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()) , 0);
-				omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()) , 0);
-				omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1) , 0);
-				omexmlMetadata.setPixelsSizeC(new PositiveInteger(1) , 0);
-				omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
-				omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
-			}
-		    
 		    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 			
 			if (image.getRoi() == null) {
@@ -448,6 +438,25 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			String metaDataLogMessage = "";
 	        
 	        UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+	        
+	        if (norpixFormat) {
+	        	//Generate new MarsOMEMetadata based on NorpixFormat.
+		    	//Flip Z and T and assume a single
+	        	OMEXMLMetadata omexmlMetadata = null;
+	        	try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService, dataset);
+				} catch (ServiceException e) {
+					e.printStackTrace();
+				}
+	        	String metaUID = MarsMath.getUUID58().substring(0, 10);
+				omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()) , 0);
+				omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()) , 0);
+				omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1) , 0);
+				omexmlMetadata.setPixelsSizeC(new PositiveInteger(1) , 0);
+				omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
+				omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
+				marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+			}
 	        
 	        try {
 	        	Length pixelSize = new Length(pixelLength, 
@@ -577,11 +586,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		    if (norpixFormat)
 		    	getTimeFromNoprixSliceLabels(marsOMEMetadata, metaDataStack);
 			archive.putMetadata(marsOMEMetadata);
-			
-			for (int i=0; i<PeakStack.size(); i++) {
-				System.out.println("t " + i + " " + PeakStack.get(i).size());
-				System.out.println("peak0 T " + PeakStack.get(i).get(0).getT());
-			}
 		    
 		    tracker.track(PeakStack, archive, Integer.valueOf(channel));
 		    
@@ -931,7 +935,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					String DateTimeString2 = metaDataStack.get(plane.getT()).substring(dateTimeIndex2 + 10);
 					Time dt = null;
 					try {
-						dt = new Time((getNorPixMillisecondTime(DateTimeString2) - t0)/1000, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration("s")));
+						double millisecondsDt = ((double) getNorPixMillisecondTime(DateTimeString2) - t0)/1000;
+						dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration("s")));
 					} catch (ParseException | EnumerationException e) {
 						e.printStackTrace();
 					}
@@ -942,7 +947,16 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 		}
 		
-		//Utility method
+		//Utility methods
+		//Generate a unique ID using a hash of all headerlabel information...
+		private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
+			String allLabels = "";
+			for (int i=0;i<headerLabels.size();i++)
+				allLabels += headerLabels.get(i);
+			
+			return MarsMath.getFNV1aBase58(allLabels);
+		}
+		
 		//Returns the time when the frame was collected in milliseconds since 1970
 		//Makes sure to properly round microsecond information.
 		private long getNorPixMillisecondTime(String strTime) throws ParseException {
