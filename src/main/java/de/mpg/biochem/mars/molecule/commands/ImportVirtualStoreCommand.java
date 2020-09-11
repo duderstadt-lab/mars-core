@@ -38,7 +38,9 @@ import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.UIService;
 
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 
 @Plugin(type = Command.class, label = "Open archive", menu = {
@@ -53,13 +55,17 @@ public class ImportVirtualStoreCommand extends DynamicCommand {
     @Parameter(label="MoleculeArchive (.yama.store)", style="directory")
     private File file;
     
+    @Parameter
+    private UIService uiService;
+    
 	@Override
 	public void run() {				
 		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
 		moleculeArchiveIOPlugin.setContext(getContext());
 		
 		try {
-			moleculeArchiveIOPlugin.open(file.getAbsolutePath());
+			MoleculeArchive<?,?,?> archive = moleculeArchiveIOPlugin.open(file.getAbsolutePath());
+			uiService.show(archive);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

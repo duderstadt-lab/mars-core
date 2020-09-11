@@ -78,10 +78,6 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 		
 		objectService.addObject(table);
 		
-		//There must be a better way...
-		if (!uiService.isHeadless())
-			uiService.show(table.getName(), table);
-		
 		return table;
 	}
 	

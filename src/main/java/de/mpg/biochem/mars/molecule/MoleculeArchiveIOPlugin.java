@@ -101,7 +101,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	public MoleculeArchive open(final String source) throws IOException {
 		File file = new File(source);
 		if (!file.exists())
-			System.out.println("File not found.");
+			logService.error("File not found.");
 		String archiveType;
 		
 		if (file.isDirectory())
@@ -120,9 +120,6 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		
 		objectService.addObject(archive);
 		scriptService.addAlias(archive.getClass());
-		
-		if (!uiService.isHeadless())
-			uiService.show(archive.getName(), archive);
 
 		LogBuilder builder = new LogBuilder();
 		
