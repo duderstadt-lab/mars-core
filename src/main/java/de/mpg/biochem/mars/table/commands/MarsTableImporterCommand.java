@@ -43,6 +43,7 @@ import de.mpg.biochem.mars.table.MarsTableIOPlugin;
 import org.scijava.Context;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
+import org.scijava.options.OptionsService;
 
 @Plugin(type = Command.class, label = "Open table", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -60,6 +61,9 @@ public class MarsTableImporterCommand extends DynamicCommand {
     @Parameter
     private UIService uiService;
     
+    @Parameter
+    private OptionsService optionsService;
+    
 	@Override
 	public void run() {				
 		final MarsTableIOPlugin marsTableIOPlugin = new MarsTableIOPlugin();
@@ -67,7 +71,12 @@ public class MarsTableImporterCommand extends DynamicCommand {
 		
 		try {
 			MarsTable table = marsTableIOPlugin.open(file.getAbsolutePath());
-			uiService.show(table);
+			final boolean newStyleIO =
+					optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+			
+			if (!newStyleIO)
+				uiService.show(table);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

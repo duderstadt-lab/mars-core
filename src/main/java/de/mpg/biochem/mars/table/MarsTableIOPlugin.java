@@ -37,6 +37,7 @@ import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
 import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.object.ObjectService;
+import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -54,6 +55,9 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	
 	@Parameter
 	private ObjectService objectService;
+	
+	@Parameter
+	private OptionsService optionsService;
 	
 	@Override
 	public Class<MarsTable> getDataType() {
@@ -77,6 +81,12 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 		MarsTable table = new MarsTable(new File(source));
 		
 		objectService.addObject(table);
+		
+		final boolean newStyleIO =
+				optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+		
+		if (newStyleIO)
+			uiService.show(table);
 		
 		return table;
 	}

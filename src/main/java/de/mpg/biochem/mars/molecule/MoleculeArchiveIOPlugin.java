@@ -42,6 +42,7 @@ import org.scijava.io.IOPlugin;
 import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
+import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
@@ -81,6 +82,9 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	
 	@Parameter
     private UIService uiService;
+	
+    @Parameter
+    private OptionsService optionsService;
 	
 	@Override
 	public Class<MoleculeArchive> getDataType() {
@@ -130,6 +134,12 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		log += builder.buildParameterList();
 		logService.info(log);
 		logService.info(LogBuilder.endBlock(true));
+		
+		final boolean newStyleIO =
+				optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+		
+		if (newStyleIO)
+			uiService.show(archive);
 		
 		return archive;
 	}

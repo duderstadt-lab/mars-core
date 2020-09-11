@@ -35,6 +35,7 @@ import org.scijava.Context;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
+import org.scijava.options.OptionsService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -58,6 +59,9 @@ public class ImportVirtualStoreCommand extends DynamicCommand {
     @Parameter
     private UIService uiService;
     
+    @Parameter
+    private OptionsService optionsService;
+    
 	@Override
 	public void run() {				
 		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
@@ -65,7 +69,13 @@ public class ImportVirtualStoreCommand extends DynamicCommand {
 		
 		try {
 			MoleculeArchive<?,?,?> archive = moleculeArchiveIOPlugin.open(file.getAbsolutePath());
-			uiService.show(archive);
+			
+			final boolean newStyleIO =
+					optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+			
+			if (!newStyleIO)
+				uiService.show(archive);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
