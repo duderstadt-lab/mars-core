@@ -53,6 +53,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
+	protected Set<String> positionSet;
+	protected Set<String> regionSet;
 	protected Set<String> parameterSet;
 	protected Set<String> moleculeDataTableColumnSet;
 	protected Set<Integer> channelSet;
@@ -70,6 +72,8 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		comments = "";
 		
 		tagSet = ConcurrentHashMap.newKeySet();
+		positionSet = ConcurrentHashMap.newKeySet(); 
+		regionSet = ConcurrentHashMap.newKeySet(); 
 		channelSet = ConcurrentHashMap.newKeySet();
 		parameterSet = ConcurrentHashMap.newKeySet();
 		moleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();

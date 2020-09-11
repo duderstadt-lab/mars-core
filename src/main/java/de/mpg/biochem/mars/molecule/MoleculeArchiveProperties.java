@@ -53,6 +53,22 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setChannelSet(Set<Integer> channelSet);
 	
+	void addPosition(String position);
+	
+	void addAllPositions(Set<String> positions);
+	
+	Set<String> getPositionSet();
+	
+	void setPositionSet(Set<String> positionSet);
+	
+	void addRegion(String region);
+	
+	void addAllRegions(Set<String> regions);
+	
+	Set<String> getRegionSet();
+	
+	void setRegionSet(Set<String> regionSet);
+	
 	void addParameter(String parameterName);
 	
 	void addAllParameters(Set<String> parameters);

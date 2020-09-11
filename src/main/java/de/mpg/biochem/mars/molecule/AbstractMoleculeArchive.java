@@ -2016,7 +2016,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * records or after recovery to ensure the molecule records preserve an order.
 	 */
 	public void naturalOrderSortMoleculeIndex() {
-		moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
+		synchronized (moleculeIndex) {
+			moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
+		}
 	}
 	
 	/**
