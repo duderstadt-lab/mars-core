@@ -53,14 +53,6 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setChannelSet(Set<Integer> channelSet);
 	
-	void addPosition(String position);
-	
-	void addAllPositions(Set<String> positions);
-	
-	Set<String> getPositionSet();
-	
-	void setPositionSet(Set<String> positionSet);
-	
 	void addRegion(String region);
 	
 	void addAllRegions(Set<String> regions);
@@ -69,11 +61,17 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	void setRegionSet(Set<String> regionSet);
 	
+	void addPosition(String position);
+	
+	void addAllPositions(Set<String> positions);
+	
+	Set<String> getPositionSet();
+	
+	void setPositionSet(Set<String> positionSet);
+	
 	void addParameter(String parameterName);
 	
 	void addAllParameters(Set<String> parameters);
-	
-	void removeParameter(String parameter);
 	
 	Set<String> getParameterSet();
 	
@@ -97,13 +95,13 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	
 	Set<String> getColumnSet();
 	
-	void addSegmentTableName(ArrayList<String> segmentTableName);
+	void addSegmentsTableName(ArrayList<String> segmentTableName);
 	
-	void addAllSegmentTableNames(Set<ArrayList<String>> segmentTableNames);
+	void addAllSegmentsTableNames(Set<ArrayList<String>> segmentTableNames);
 	
-	void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames);
+	void setSegmentsTableNames(Set<ArrayList<String>> moleculeSegmentTableNames);
 	
-	Set<ArrayList<String>> getSegmentTableNames();
+	Set<ArrayList<String>> getSegmentsTableNames();
 	
 	String getComments();
 	

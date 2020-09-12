@@ -49,7 +49,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected int numberOfMolecules;
 	protected int numMetadata;
 	protected String comments, inputSchema;
-	public static final String SCHEMA = "2020-09-09";
+	public static final String SCHEMA = "2020-12-09";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -218,6 +218,38 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		    	while (jParser.nextToken() != JsonToken.END_ARRAY)
 		            parameterSet.add(jParser.getText());
 			});
+		
+		setJsonField("moleculeRegionSet", 
+				jGenerator -> {
+					if (regionSet.size() > 0) {
+						jGenerator.writeFieldName("moleculeRegionSet");
+						jGenerator.writeStartArray();
+						Iterator<String> iterator = regionSet.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeString(iterator.next());	
+						jGenerator.writeEndArray();
+					}
+				}, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			    		regionSet.add(jParser.getText());
+				});
+		
+		setJsonField("moleculePositionSet", 
+				jGenerator -> {
+					if (positionSet.size() > 0) {
+						jGenerator.writeFieldName("moleculePositionSet");
+						jGenerator.writeStartArray();
+						Iterator<String> iterator = positionSet.iterator();
+						while(iterator.hasNext())
+							jGenerator.writeString(iterator.next());	
+						jGenerator.writeEndArray();
+					}
+				}, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			    		positionSet.add(jParser.getText());
+				});
 			
 		setJsonField("Comments", 
 			jGenerator -> {
@@ -274,8 +306,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		addAllTags(properties.getTagSet());
 		addAllChannels(properties.getChannelSet());
 		addAllParameters(properties.getParameterSet());
+		addAllRegions(properties.getRegionSet());
+		addAllPositions(properties.getPositionSet());
 		addAllColumns(properties.getColumnSet());
-		addAllSegmentTableNames(properties.getSegmentTableNames());
+		addAllSegmentsTableNames(properties.getSegmentsTableNames());
 	}
 	
 	/**
@@ -357,13 +391,6 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	}
 	
 	/**
-	 * Remove a parameter name from the set of unique molecule parameter names being used.
-	 */
-	public void removeParameter(String parameter) {
-		tagSet.remove(parameter);
-	}
-	
-	/**
 	 * Get the set of parameter names in use.
 	 */
 	public Set<String> getParameterSet() {
@@ -375,6 +402,66 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 */
 	public void setParameterSet(Set<String> parameterSet) {
 		this.parameterSet = parameterSet;
+	}
+	
+	/**
+	 * Add a molecule position name to the global set that contains a record of all unique position 
+	 * names that are being used.
+	 */	
+	public void addPosition(String position) {
+		positionSet.add(position);
+	}
+	
+	/**
+	 * Add molecule position names to the global set that contains a record of all unique position 
+	 * names that are being used.
+	 */
+	public void addAllPositions(Set<String> positions) {
+		positionSet.addAll(positions);
+	}
+	
+	/**
+	 * Get the set of molecule position names in use.
+	 */
+	public Set<String> getPositionSet() {
+		return positionSet;
+	}
+	
+	/**
+	 * Redefine the set of molecule position names in use. 
+	 */
+	public void setPositionSet(Set<String> positionSet) {
+		this.positionSet = positionSet;
+	}
+	
+	/**
+	 * Add a molecule region name to the global set that contains a record of all unique region 
+	 * names that are being used.
+	 */	
+	public void addRegion(String region) {
+		regionSet.add(region);
+	}
+	
+	/**
+	 * Add molecule region names to the global set that contains a record of all unique region 
+	 * names that are being used.
+	 */
+	public void addAllRegions(Set<String> regions) {
+		regionSet.addAll(regions);
+	}
+	
+	/**
+	 * Get the set of molecule region names in use.
+	 */
+	public Set<String> getRegionSet() {
+		return regionSet;
+	}
+	
+	/**
+	 * Redefine the set of molecule region names in use. 
+	 */
+	public void setRegionSet(Set<String> regionSet) {
+		this.regionSet = regionSet;
 	}
 	
 	/**
@@ -449,7 +536,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 * Add a segment table name to the unique set of segment table 
 	 * names found in molecule records.
 	 */
-	public void addSegmentTableName(ArrayList<String> segmentTableName) {
+	public void addSegmentsTableName(ArrayList<String> segmentTableName) {
 		this.moleculeSegmentTableNames.add(segmentTableName);
 	}
 	
@@ -457,21 +544,21 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	 * Add segment table names to the unique set of segment table names found in 
 	 * molecule records.
 	 */
-	public void addAllSegmentTableNames(Set<ArrayList<String>> segmentTableNames) {
+	public void addAllSegmentsTableNames(Set<ArrayList<String>> segmentTableNames) {
 		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
 	
 	/**
 	 * Redefine the unique set of segment table names found in molecule records.
 	 */
-	public void setSegmentTableNames(Set<ArrayList<String>> moleculeSegmentTableNames) {
+	public void setSegmentsTableNames(Set<ArrayList<String>> moleculeSegmentTableNames) {
 		this.moleculeSegmentTableNames = moleculeSegmentTableNames;
 	}
 	
 	/**
 	 * Get the unique set of segment table names found in molecule records.
 	 */
-	public Set<ArrayList<String>> getSegmentTableNames() {
+	public Set<ArrayList<String>> getSegmentsTableNames() {
 		return moleculeSegmentTableNames;
 	}
 	

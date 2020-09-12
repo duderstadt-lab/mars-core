@@ -245,7 +245,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
 		List<MoleculeArchive<?,?,?>> archives = getArchives();
 	
-		archives.forEach(archive -> segTableNames.addAll(archive.properties().getSegmentTableNames()));
+		archives.forEach(archive -> segTableNames.addAll(archive.properties().getSegmentsTableNames()));
 		
 		return segTableNames;
 	}

@@ -565,6 +565,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//Global sets stored in MoleculeArchiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
+		Set<String> newRegionSet = ConcurrentHashMap.newKeySet();
+		Set<String> newPositionSet = ConcurrentHashMap.newKeySet();
 		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
@@ -617,6 +619,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
+		        	newRegionSet.addAll(molecule.getRegionNames());
+		        	newPositionSet.addAll(molecule.getPositionNames());
 		        	if (molecule.getChannel() > -1)
 		        		newChannelSet.add(molecule.getChannel());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
@@ -647,8 +651,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   archiveProperties.setTagSet(newTagSet);
 		   archiveProperties.setChannelSet(newChannelSet);
 		   archiveProperties.setParameterSet(newParameterSet);
+		   archiveProperties.setRegionSet(newRegionSet);
+		   archiveProperties.setPositionSet(newPositionSet);
 		   archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-		   archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
+		   archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
 			
 		   updateProperties();
 		   saveIndexes();
@@ -661,6 +667,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		        	
 		        	newParameterSet.addAll(molecule.getParameters().keySet());
 		        	newTagSet.addAll(molecule.getTags());
+		        	newRegionSet.addAll(molecule.getRegionNames());
+		        	newPositionSet.addAll(molecule.getPositionNames());
 		        	if (molecule.getChannel() > -1)
 		        		newChannelSet.add(molecule.getChannel());
 		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
@@ -674,10 +682,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		   }
 			
 			archiveProperties.setTagSet(newTagSet);
+			archiveProperties.setRegionSet(newRegionSet);
+			archiveProperties.setPositionSet(newPositionSet);
 			archiveProperties.setChannelSet(newChannelSet);
 			archiveProperties.setParameterSet(newParameterSet);
 			archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-			archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);	
+			archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);	
 			
 			updateProperties();
 		}
@@ -907,6 +917,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		//Let's also rebuild the parameter index stored in the archiveProperties
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
+		Set<String> newRegionSet = ConcurrentHashMap.newKeySet();
+		Set<String> newPositionSet = ConcurrentHashMap.newKeySet();
 		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
 		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
 		
@@ -943,6 +955,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	
 	        	newParameterSet.addAll(molecule.getParameters().keySet());
 	        	newTagSet.addAll(molecule.getTags());
+	        	newRegionSet.addAll(molecule.getRegionNames());
+	        	newPositionSet.addAll(molecule.getPositionNames());
 	        	if (molecule.getChannel() > -1)
 	        		newChannelSet.add(molecule.getChannel());
 	        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
@@ -970,10 +984,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		
 		archiveProperties.setTagSet(newTagSet);
+		archiveProperties.setRegionSet(newRegionSet);
+		archiveProperties.setPositionSet(newPositionSet);
 		archiveProperties.setChannelSet(newChannelSet);
 		archiveProperties.setParameterSet(newParameterSet);
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-		archiveProperties.setSegmentTableNames(newMoleculeSegmentTableNames);
+		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
 
 		//Save archive properties
 		File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
@@ -1038,11 +1054,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveProperties.setNumberOfMolecules(moleculeIndex.size());
 		}
 		archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
-		archiveProperties.addAllSegmentTableNames(molecule.getSegmentsTableNames());
+		archiveProperties.addAllSegmentsTableNames(molecule.getSegmentsTableNames());
 		if (molecule.getTags().size() > 0)
 			archiveProperties.addAllTags(molecule.getTags());
 		if (molecule.getChannel() > -1)
 			archiveProperties.addChannel(molecule.getChannel());
+		archiveProperties.addAllRegions(molecule.getRegionNames());
+		archiveProperties.addAllPositions(molecule.getPositionNames());
 	}
 	
 	/**

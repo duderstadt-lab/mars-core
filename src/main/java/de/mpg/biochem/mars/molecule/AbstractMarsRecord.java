@@ -430,6 +430,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public void putRegion(MarsRegion regionOfInterest) {
 		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+		if (parent != null) {
+			parent.properties().addRegion(regionOfInterest.getName());
+		}
 	}
 	
 	/**
@@ -479,6 +482,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public void putPosition(MarsPosition positionOfInterest) {
 		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
+		if (parent != null) {
+			parent.properties().addPosition(positionOfInterest.getName());
+		}
 	}
 	
 	/**
