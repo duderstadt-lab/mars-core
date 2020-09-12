@@ -42,6 +42,7 @@ import org.scijava.io.IOPlugin;
 import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
+import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
@@ -82,6 +83,9 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	@Parameter
     private UIService uiService;
 	
+    @Parameter
+    private OptionsService optionsService;
+	
 	@Override
 	public Class<MoleculeArchive> getDataType() {
 		return MoleculeArchive.class;
@@ -101,7 +105,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	public MoleculeArchive open(final String source) throws IOException {
 		File file = new File(source);
 		if (!file.exists())
-			System.out.println("File not found.");
+			logService.error("File not found.");
 		String archiveType;
 		
 		if (file.isDirectory())
@@ -120,9 +124,6 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		
 		objectService.addObject(archive);
 		scriptService.addAlias(archive.getClass());
-		
-		if (!uiService.isHeadless())
-			uiService.show(archive.getName(), archive);
 
 		LogBuilder builder = new LogBuilder();
 		
@@ -133,6 +134,12 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		log += builder.buildParameterList();
 		logService.info(log);
 		logService.info(LogBuilder.endBlock(true));
+		
+		final boolean newStyleIO =
+				optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+		
+		if (newStyleIO)
+			uiService.show(archive);
 		
 		return archive;
 	}

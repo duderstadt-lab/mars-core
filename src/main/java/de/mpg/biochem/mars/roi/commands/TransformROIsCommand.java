@@ -246,6 +246,9 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 				
 				boolean passed = false;
 				for (int w=0;w<col_search_pixels.size();w++) {
+					if (col_search_pixels.get(w).x >= imp.getWidth() || col_search_pixels.get(w).y >= imp.getHeight())
+						continue;
+					
 					ra.setPosition(col_search_pixels.get(w).x, 0);
 					ra.setPosition(col_search_pixels.get(w).y, 1);
 					if (ra.get().get() >= threshold) {
