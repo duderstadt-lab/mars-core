@@ -466,6 +466,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
+	 * Remove all regions from the record.
+	 */
+	public void removeAllRegions() {
+		regionsOfInterest.clear();
+	}
+	
+	/**
 	 * Get the set of region names contained in this record.
 	 */
 	public Set<String> getRegionNames() {
@@ -515,6 +522,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public void removePosition(String name) {
 		positionsOfInterest.remove(name);
+	}
+	
+	/**
+	 * Remove all positions from the record.
+	 */
+	public void removeAllPositions() {
+		positionsOfInterest.clear();
 	}
 	
 	/**

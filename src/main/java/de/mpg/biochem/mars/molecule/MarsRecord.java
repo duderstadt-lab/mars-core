@@ -189,7 +189,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 *  
 	 * @param regionOfInterest The region to add to the record.
 	 */
-	public void putRegion(MarsRegion regionOfInterest);
+	void putRegion(MarsRegion regionOfInterest);
 	
 	/**
 	 * Get a {@link MarsRegion}. Region names are
@@ -199,7 +199,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @param name The name of the region to retrieve.
 	 * @return The MarsRegion with the name given.
 	 */
-	public MarsRegion getRegion(String name);
+	MarsRegion getRegion(String name);
 	
 	/**
 	 * Check if the record contains a {@link MarsRegion}
@@ -208,14 +208,19 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @param name The name of the region to check for.
 	 * @return True if a region with name exists, false otherwise.
 	 */
-	public boolean hasRegion(String name);
+	boolean hasRegion(String name);
 	
 	/**
 	 * Remove a {@link MarsRegion} from the record using the name.
 	 *  
 	 * @param name The name of the region to remove.
 	 */
-	public void removeRegion(String name);
+	void removeRegion(String name);
+	
+	/**
+	 * Remove all {@link MarsRegion}s from the record.
+	 */
+	void removeAllRegions();
 	
 	/**
 	 * Get the set of region names contained in this record.
@@ -266,6 +271,11 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @return The set of MarsPosition names.
 	 */
 	public Set<String> getPositionNames();
+	
+	/**
+	 * Remove all {@link MarsPosition}s from the record.
+	 */
+	void removeAllPositions();
 	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.
