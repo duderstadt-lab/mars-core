@@ -287,6 +287,12 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		
 	}
 	
+	/**
+	 * Get the Json input schema for the archive. Returns a string
+	 * with the date for the schema definition using to save the archive
+	 * that has just been opened. Or null if for archives created with 
+	 * early versions of mars-core.
+	 */
 	public String getInputSchema() {
 		return inputSchema;
 	}
@@ -391,7 +397,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	}
 	
 	/**
-	 * Get the set of parameter names in use.
+	 * Get the set of molecule parameter names in use.
 	 */
 	public Set<String> getParameterSet() {
 		return parameterSet;
