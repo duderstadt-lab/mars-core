@@ -394,7 +394,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		 }
 			
 		} else {
-			image.setPosition(Integer.valueOf(channel) + 1, 1, image.getFrame());
+			//image.setPosition(Integer.valueOf(channel) + 1, 1, image.getFrame());
+			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			peaks = findPeaks(selectedImage, image.getFrame() - 1);
 			if (fitPeaks) {
