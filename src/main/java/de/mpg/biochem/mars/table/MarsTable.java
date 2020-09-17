@@ -114,6 +114,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	
 	private String name = "MarsTable";
 	
+	private File file;
+	
     @Parameter
     private StatusService statusService;
 	
@@ -153,6 +155,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	 */
 	public MarsTable(File file) throws JsonParseException, IOException {
 		super();
+		this.file = file;
 		setName(file.getName());
 		if (file.getName().endsWith(".json") || file.getName().endsWith(".yamt"))
 			loadJSON(file);
@@ -174,6 +177,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
 	public MarsTable(File file, StatusService statusService) throws JsonParseException, IOException {
 		super();
 		setName(file.getName());
+		this.file = file;
 		
 		this.statusService = statusService;
 		
@@ -1584,6 +1588,14 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object> i
   	public String dumpJSON() {
   		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
   	}
+	
+	public File getFile() {
+		return file;
+	}
+	
+	public void setFile(File file) {
+		this.file = file;
+	}
 
 	/**
 	 * Create a copy of the MarsTable. 
