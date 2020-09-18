@@ -11,7 +11,7 @@
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars-core</artifactId>
-	<version>1.0.0-beta-5-SNAPSHOT</version>
+	<version>1.0.0-beta-6-SNAPSHOT</version>
 
 	<name>mars-core</name>
 	<description>Molecule Archive Suite (Mars) - core data storage and processing algorithms.</description>
