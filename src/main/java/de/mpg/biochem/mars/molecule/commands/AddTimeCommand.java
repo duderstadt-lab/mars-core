@@ -129,9 +129,10 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		});
 		
 		//Set the incrementTime for all metadata to match that provided.
-		archive.metadata().forEach(metadata -> 
-			metadata.images().forEach(image -> 
-				image.setTimeIncrementInSeconds(timeIncrement)));
+		if (source.equals("Time increment"))
+			archive.metadata().forEach(metadata -> 
+				metadata.images().forEach(image -> 
+					image.setTimeIncrementInSeconds(timeIncrement)));
 		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	    logService.info(LogBuilder.endBlock(true));
@@ -142,6 +143,77 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		//Unlock the window so it can be changed
 	    if (!uiService.isHeadless())
 			archive.unlock();	
+	}
+	
+	public static void addTime(SingleMoleculeArchive archive) {			
+			//Build log message
+			LogBuilder builder = new LogBuilder();
+			
+			String log = LogBuilder.buildTitleBlock("Add Time (s)");
+			
+			builder.addParameter("MoleculeArchive", archive.getName());
+			builder.addParameter("Source", "dt");
+			log += builder.buildParameterList();
+			
+			archive.logln(log);
+			
+			//Loop through each molecule and add a Time (s) column using the metadata information...
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				SingleMolecule molecule = archive.get(UID);
+				
+				MarsMetadata metadata = archive.getMetadata(molecule.getMetadataUID());
+				MarsTable datatable = molecule.getTable();
+				
+				//If the column already exists we don't need to add it
+				//instead we will just be overwriting the values below..
+				if (!datatable.hasColumn("Time (s)"))
+					datatable.appendColumn("Time (s)");
+
+				datatable.rows().forEach(row -> row.setValue("Time (s)", 
+						metadata.getPlane(0, 0, (int) molecule.getParameter("Channel"), (int) row.getValue("T")).getDeltaTinSeconds()));
+				
+				archive.put(molecule);
+			});
+		    
+		    archive.logln(LogBuilder.endBlock(true));
+		    archive.logln("  ");
+	}
+	
+	public static void addTime(SingleMoleculeArchive archive, double timeIncrement) {			
+		//Build log message
+		LogBuilder builder = new LogBuilder();
+		
+		String log = LogBuilder.buildTitleBlock("Add Time (s)");
+		
+		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Time increment (s)", timeIncrement);
+		log += builder.buildParameterList();
+		
+		archive.logln(log);
+		
+		//Loop through each molecule and add a Time (s) column using the metadata information...
+		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+			SingleMolecule molecule = archive.get(UID);
+			
+			MarsTable datatable = molecule.getTable();
+			
+			//If the column already exists we don't need to add it
+			//instead we will just be overwriting the values below..
+			if (!datatable.hasColumn("Time (s)"))
+				datatable.appendColumn("Time (s)");
+			
+			molecule.getTable().rows().forEach(row -> row.setValue("Time (s)", row.getValue("T")*timeIncrement));
+			
+			archive.put(molecule);
+		});
+		
+		//Set the incrementTime for all metadata to match that provided.
+		archive.metadata().forEach(metadata -> 
+			metadata.images().forEach(image -> 
+				image.setTimeIncrementInSeconds(timeIncrement)));
+	    
+	    archive.logln(LogBuilder.endBlock(true));
+	    archive.logln("  ");
 	}
 	
 	public void setArchive(SingleMoleculeArchive archive) {
