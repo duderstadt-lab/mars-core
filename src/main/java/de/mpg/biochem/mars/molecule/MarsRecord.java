@@ -232,6 +232,8 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the map for all regions.
+	 * 
+	 * @return The map containing all regions.
 	 */
 	LinkedHashMap<String, MarsRegion> getRegions();
 	
@@ -280,6 +282,8 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the map for all regions.
+	 * 
+	 * @return The map containing all positions.
 	 */
 	LinkedHashMap<String, MarsPosition> getPositions();
 	

@@ -84,7 +84,7 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	/**
 	 * Set the image position for this molecule record.
 	 * 
-	 * @param position The Position.
+	 * @param image The imageID.
 	 */
 	void setImage(int image);
 	
