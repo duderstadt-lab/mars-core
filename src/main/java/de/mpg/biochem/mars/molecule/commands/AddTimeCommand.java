@@ -119,9 +119,20 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			if (!datatable.hasColumn("Time (s)"))
 				datatable.appendColumn("Time (s)");
 			
+			int imageIndex = 0;
+			if (metadata.getImageCount() > 1)
+				for (int index = 0 ; index < metadata.getImageCount(); index++) {
+					if (metadata.getImage(index).getImageID() == molecule.getImage()) {
+						imageIndex = index;
+						break;
+					}
+				}
+			
+			final int finalImageIndex = imageIndex;
+			
 			if (source.equals("dt"))
 				datatable.rows().forEach(row -> row.setValue("Time (s)", 
-						metadata.getPlane(0, 0, (int) molecule.getParameter("Channel"), (int) row.getValue("T")).getDeltaTinSeconds()));
+						metadata.getPlane(finalImageIndex, 0, (int) molecule.getParameter("Channel"), (int) row.getValue("T")).getDeltaTinSeconds()));
 			else
 				molecule.getTable().rows().forEach(row -> row.setValue("Time (s)", row.getValue("T")*timeIncrement));
 			
