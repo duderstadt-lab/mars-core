@@ -228,6 +228,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 
 	private Dataset dataset;
 	private ImagePlus image;
+	private String imageID;
 	
 	private MarsOMEMetadata marsOMEMetadata;
 	
@@ -265,6 +266,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
 			omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
 		}
+		
+		imageID = omexmlMetadata.getImageID(0);
 		
 		String metaUID;
 	    if (omexmlMetadata.getUUID() != null)
@@ -553,6 +556,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		builder.addParameter("FRET short wavelength name", fretShortName);
 		builder.addParameter("FRET short wavelength name", fretLongName);
 		channelColors.forEach(channel -> builder.addParameter(channel.getName(), channel.getValue(this)));
+		builder.addParameter("ImageID", imageID);
 	}
 	
 	//Getters and Setters

@@ -40,6 +40,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import static java.util.stream.Collectors.toList;
 
 import org.scijava.Context;
 import org.scijava.ui.DialogPrompt.MessageType;
@@ -65,6 +72,7 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEImage;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -205,24 +213,23 @@ public class MergeCommand extends DynamicCommand {
 			
 			
 			//read in all MarsMetadata items from all archives - I hope they fit in memory :)
-			ArrayList<ArrayList<MarsMetadata>> allMetadataItems = new ArrayList<ArrayList<MarsMetadata>>();
+			ArrayList<MarsMetadata> allMetadataItems = new ArrayList<MarsMetadata>();
 			ArrayList<String> metaUIDs = new ArrayList<String>();
 			
 			for (JsonParser jParser :jParsers) {
-				ArrayList<MarsMetadata> metadataList = new ArrayList<MarsMetadata>();
 				try {
 					while (jParser.nextToken() != JsonToken.END_OBJECT) {
 						String fieldName = jParser.getCurrentName();
-						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
+						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName) || "metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
 								//This line would be more generic but the translator from old formats is blocking that for now
 								//This should be restored.
 								//metadataList.add(mergedArchiveType.createMetadata(jParser));
-								metadataList.add(new MarsOMEMetadata(jParser));
+								allMetadataItems.add(new MarsOMEMetadata(jParser));
 							}
 						}
 						
-						if ("Molecules".equals(fieldName))
+						if ("Molecules".equals(fieldName) || "molecules".equals(fieldName))
 							break;
 					}
 				} catch (FileNotFoundException e) {
@@ -230,26 +237,63 @@ public class MergeCommand extends DynamicCommand {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				allMetadataItems.add(metadataList);
 			}
 			
-			//Check for duplicate metadata items
-			for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
-				for (MarsMetadata metaItem : archiveMetaList) {
-					String metaUID = metaItem.getUID();
-					if (metaUIDs.contains(metaUID)) {
-						logService.info("Duplicate metadata record " + metaUID + " found.");
-						logService.info("Are you trying to merge copies of the same dataset?");
-						logService.info("Please resolve the conflict and run the merge command again.");
-						logService.info(LogBuilder.endBlock(false));
-						uiService.showDialog("Merge failed due to duplicate metadata record " + metaUID + ".\n"
-								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
-						return;
-					} else {
-						metaUIDs.add(metaUID);
-						metaItem.logln(log);
+			Set<String> duplicateMetadataUIDs = new HashSet<String>();
+			
+			//First make a list of duplicates if there are duplicates
+			for (MarsMetadata metaItem : allMetadataItems) {
+				String metaUID = metaItem.getUID();
+				if (metaUIDs.contains(metaUID)) {
+					duplicateMetadataUIDs.add(metaUID);
+				} else {
+					metaUIDs.add(metaUID);
+					metaItem.logln(log);
+				}
+			}
+			
+			Map<String, ArrayList<MarsMetadata>> duplicateMetadatas = new HashMap<String, ArrayList<MarsMetadata>>();
+			
+			for (String duplicateMetaUID : duplicateMetadataUIDs) {
+				Set<Integer> imageIndexes = new HashSet<Integer>();
+				ArrayList<MarsMetadata> listofDuplicates = new ArrayList<MarsMetadata>();
+				for (MarsMetadata metaItem : allMetadataItems) {
+					if (metaItem.getUID().equals(duplicateMetaUID)) {
+						listofDuplicates.add(metaItem);
+						for (int imageIndex = 0; imageIndex < metaItem.getImageCount(); imageIndex++) {
+							if (imageIndexes.contains(metaItem.getImage(imageIndex).getImage())) {
+								logService.info("Duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImage() + " found.");
+								logService.info("Are you trying to merge copies of the same dataset?");
+								logService.info("Please resolve the conflict and run the merge command again.");
+								logService.info(LogBuilder.endBlock(false));
+								uiService.showDialog("Merge failed due to duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImage() + ".\n"
+										+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
+								return;
+							} else {
+								imageIndexes.add(metaItem.getImage(imageIndex).getImage());
+							}
+						}
 					}
 				}
+				duplicateMetadatas.put(duplicateMetaUID, listofDuplicates);
+			}
+
+			//Now we need to merge any duplicate Metadata records that contain different positions
+			for (String duplicateMetaUID : duplicateMetadatas.keySet()) {
+				List<MarsMetadata> duplicates = duplicateMetadatas.get(duplicateMetaUID);
+				MarsMetadata mergedMetadata = duplicates.get(0);
+
+				for (int i=1; i< duplicates.size(); i++) {
+					mergedMetadata.merge(duplicates.get(i));
+				}
+
+				for (int i=0; i < allMetadataItems.size(); i++) {
+					if (allMetadataItems.get(i).getUID().equals(duplicateMetaUID)) {
+						allMetadataItems.remove(i);
+						i--;
+					}
+				}
+				allMetadataItems.add(mergedMetadata);
 			}
 			
 			//Now we just need to write the file starting with the new MoleculeArchiveProperties
@@ -273,11 +317,9 @@ public class MergeCommand extends DynamicCommand {
 				mergedProperties.toJSON(jGenerator);
 				
 				jGenerator.writeArrayFieldStart("Metadata");
-				for (ArrayList<MarsMetadata> archiveMetaList : allMetadataItems) {
-					for (MarsMetadata metaItem : archiveMetaList) {
-						metaItem.toJSON(jGenerator);
-					}
-				}	
+				for (MarsMetadata metaItem : allMetadataItems) {
+					metaItem.toJSON(jGenerator);
+				}
 				jGenerator.writeEndArray();
 				
 				//Now we need to loop through all molecules in all archives and save them to the merged archive.

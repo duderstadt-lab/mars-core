@@ -37,6 +37,7 @@ import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.table.MarsTable;
 import ome.xml.meta.OMEXMLMetadata;
 
@@ -114,6 +115,13 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * @param path The string file path.
 	 */
 	void setSourceDirectory(String path);
+	
+	/**
+	 * Used to merge another MarsMetadata record into this one.
+	 * 
+	 * @param metadata MarsMetadata to merge into this one.
+	 */
+	void merge(MarsMetadata metadata);
 	
 	/**
 	 * Add to the log that contains the history of processing steps

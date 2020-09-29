@@ -281,4 +281,10 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata 
 			// TODO Auto-generated method stub
 			return null;
 		}
+
+		@Override
+		public void merge(MarsMetadata metadata) {
+			// TODO Auto-generated method stub
+			
+		}
 }

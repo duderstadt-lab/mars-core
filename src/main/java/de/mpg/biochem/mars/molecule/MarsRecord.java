@@ -227,7 +227,13 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * 
 	 * @return The set of region names.
 	 */
-	public Set<String> getRegionNames();
+	Set<String> getRegionNames();
+	
+	
+	/**
+	 * Get the map for all regions.
+	 */
+	LinkedHashMap<String, MarsRegion> getRegions();
 	
 	/**
 	 * Add or update a {@link MarsPosition}. This can be a position of
@@ -237,7 +243,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 *  
 	 * @param positionOfInterest The position to add to the record.
 	 */
-	public void putPosition(MarsPosition positionOfInterest);
+	void putPosition(MarsPosition positionOfInterest);
 	
 	/**
 	 * Get a {@link MarsPosition}. Position names are
@@ -273,9 +279,21 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	public Set<String> getPositionNames();
 	
 	/**
+	 * Get the map for all regions.
+	 */
+	LinkedHashMap<String, MarsPosition> getPositions();
+	
+	/**
 	 * Remove all {@link MarsPosition}s from the record.
 	 */
 	void removeAllPositions();
+	
+	/**
+	 * Merge another MarsRecord into this one.
+	 *  
+	 * @param record The record to merge.
+	 */
+	void merge(MarsRecord record);
 	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.

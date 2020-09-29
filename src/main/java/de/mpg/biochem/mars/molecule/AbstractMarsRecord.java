@@ -480,6 +480,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
+	 * Get the map for all regions.
+	 */
+	public LinkedHashMap<String, MarsRegion> getRegions() {
+		return regionsOfInterest;
+	}
+	
+	/**
 	 * Add or update a {@link MarsPosition}. This can be a position of
 	 * interest for further analysis steps. Position names are unique. 
 	 * If a position with has this name already exists in the record it 
@@ -536,6 +543,26 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public Set<String> getPositionNames() {
 		return positionsOfInterest.keySet();
+	}
+	
+	/**
+	 * Get the map for all positions.
+	 */
+	public LinkedHashMap<String, MarsPosition> getPositions() {
+		return positionsOfInterest;
+	}
+	
+	/**
+	 * Merge another MarsRecord into this one.
+	 *  
+	 * @param record The record to merge.
+	 */
+	public void merge(MarsRecord record) {
+		setNotes(getNotes() + record.getNotes());
+		getTags().addAll(record.getTags());
+		getParameters().putAll(record.getParameters());
+		getRegions().putAll(record.getRegions());
+		getPositions().putAll(record.getPositions());
 	}
 	
 	/**

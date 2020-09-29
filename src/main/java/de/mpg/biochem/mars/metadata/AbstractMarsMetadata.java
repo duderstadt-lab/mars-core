@@ -28,14 +28,20 @@
  */
 package de.mpg.biochem.mars.metadata;
 
+import static java.util.stream.Collectors.toList;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +56,9 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import ome.xml.meta.OMEXMLMetadata;
 
@@ -192,6 +200,38 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				}
 		 	});
 		 	
+	}
+	
+	/**
+	 * Used to merge another MarsMetadata record into this one. 
+	 * Assumes different images are being merged. Keeps images
+	 * in this record and add missing images from the record
+	 * provided.
+	 * 
+	 * @param metadata MarsMetadata to merge into this one.
+	 */
+	public void merge(MarsMetadata metadata) {
+		super.merge(metadata);
+		logln(LogBuilder.buildTitleBlock("Merged log"));
+		logln("Merged MarsMetadata record " + metadata.getUID() + " was collected on " + metadata.getCollectionDate() + "."); 
+		logln("Using microscope " + metadata.getMicroscopeName() + ".");
+		logln("Source was " + metadata.getSourceDirectory() + ".");
+		logln("");
+		logln(metadata.getLog());
+		getBdvSources().addAll(metadata.getBdvSources());
+		
+		//Get set of imageIndexes contained in this record..
+		Set<Integer> imageIndexes = new HashSet<Integer>();
+		images().forEach(image -> imageIndexes.add(image.getImage()));
+		
+		List<MarsOMEImage> allImages = metadata.images().filter(image -> !imageIndexes.contains(image.getImage())).collect(toList());
+		allImages.addAll(images.values());
+		allImages.sort(Comparator.comparing(MarsOMEImage::getImage));
+		
+		images.clear();
+		
+		for (int i=0 ; i < allImages.size(); i++)
+			images.put(i, allImages.get(i));
 	}
 	
 	/**

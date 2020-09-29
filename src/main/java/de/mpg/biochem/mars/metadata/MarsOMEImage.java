@@ -485,7 +485,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			});
 		
 		setJsonField("image",
-			jGenerator -> jGenerator.writeNumberField("Image", image),
+			jGenerator -> jGenerator.writeNumberField("image", image),
 			jParser -> image = jParser.getIntValue());
 		
 		setJsonField("ImageName", 
