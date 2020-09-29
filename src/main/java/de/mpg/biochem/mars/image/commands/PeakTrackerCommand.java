@@ -362,6 +362,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		private MarsOMEMetadata marsOMEMetadata;
 		
+		private boolean swapZandT = false;
+		
 		@Override
 		public void initialize() {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
@@ -438,10 +440,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			if (image.getNFrames() < 2) {
 				preFrame.setValue(this, image.getSlice() - 1);
 				preFrame.setMaximumValue(image.getStackSize() - 1);
+				swapZandT = true;
 			} else {
 				preFrame.setValue(this, image.getFrame() - 1);
 				preFrame.setMaximumValue(image.getNFrames() - 1);
 			}
+			
+			if (norpixFormat)
+				swapZandT = true;
 		}
 		
 		@Override
@@ -459,7 +465,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	        
 	        UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
 	        
-	        if (norpixFormat) {
+	        if (swapZandT) {
 	        	//Generate new MarsOMEMetadata based on NorpixFormat.
 		    	//Flip Z and T and assume a single
 	        	OMEXMLMetadata omexmlMetadata = null;
@@ -545,7 +551,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		        
 		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
 		        //peaks with the frame number as a key in the map for each list...
-		        if (norpixFormat) {
+		        if (swapZandT) {
 		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
 			        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), t);
 			        	//Don't add to stack unless peaks were detected.
@@ -666,7 +672,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private ArrayList<Peak> findPeaksInT(int channel, int t) {
 			ImageStack stack = image.getImageStack();
 			int index = t + 1;
-			if (!norpixFormat)
+			if (!swapZandT)
 				index = image.getStackIndex(channel + 1, 1, t + 1);
 			
 			ImageProcessor processor = stack.getProcessor(index);
@@ -1004,7 +1010,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			if (preview) {
 				image.setOverlay(null);
 				image.deleteRoi();
-				if (norpixFormat || image.getNFrames() < 2) {
+				if (swapZandT || norpixFormat || image.getNFrames() < 2) {
 					image.setSlice(previewT + 1);
 				} else
 					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
@@ -1075,6 +1081,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			builder.addParameter("Microscope", microscope);
 			builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
 			builder.addParameter("Pixel Units", this.pixelUnits);
+			builder.addParameter("Swap Z and T", swapZandT);
 			builder.addParameter("Norpix Format", String.valueOf(norpixFormat));
 		}
 		
