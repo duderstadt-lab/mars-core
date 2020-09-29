@@ -306,7 +306,7 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	/**
 	 * Get archive comments.
 	 * 
-	 * @param The comments.
+	 * @return The comments.
 	 */
 	String getComments();
 	
