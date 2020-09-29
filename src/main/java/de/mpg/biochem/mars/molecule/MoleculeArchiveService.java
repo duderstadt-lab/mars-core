@@ -107,12 +107,12 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	    
 		jParser.nextToken();
 		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+		if ("properties".equals(jParser.getCurrentName()) || "MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			    String fieldname = jParser.getCurrentName();
 			    	
-			    if ("ArchiveType".equals(fieldname)) {
+			    if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
 			    	jParser.nextToken();
 			    	archiveType = jParser.getText();
 			    	break;
@@ -145,7 +145,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
 		    String fieldname = jParser.getCurrentName();
 		    	
-		    if ("ArchiveType".equals(fieldname)) {
+		    if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
 		    	jParser.nextToken();
 		    	archiveType = jParser.getText();
 		    	break;
