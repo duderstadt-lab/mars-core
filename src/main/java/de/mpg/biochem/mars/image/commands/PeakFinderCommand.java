@@ -331,8 +331,13 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		imgHeight.setValue(this, rect.height);
 		
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput("previewT", Integer.class);
-		preFrame.setValue(this, image.getFrame() - 1);
-		preFrame.setMaximumValue(image.getNFrames() - 1);
+		if (image.getNFrames() < 2) {
+			preFrame.setValue(this, image.getSlice() - 1);
+			preFrame.setMaximumValue(image.getStackSize() - 1);
+		} else {
+			preFrame.setValue(this, image.getFrame() - 1);
+			preFrame.setMaximumValue(image.getNFrames() - 1);
+		}
 	}
 	
 	@Override
@@ -834,7 +839,11 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		if (preview) {
 			image.setOverlay(null);
 			image.deleteRoi();
-			image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			if (image.getNFrames() < 2) {
+				image.setSlice(previewT + 1);
+			} else
+				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 			ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
 			
@@ -850,8 +859,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				
 				PointRoi peakRoi = new PointRoi(poly);
 				image.setRoi(peakRoi);
-				
-				
+
 				preFrameCount.setValue(this, "count: " + peaks.size());
 			} else {
 				preFrameCount.setValue(this, "count: 0");

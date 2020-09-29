@@ -362,10 +362,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		private MarsOMEMetadata marsOMEMetadata;
 		
-		//private MutableModuleItem<String> positionSelection;
-		//private MutableModuleItem<String> channelSelection = 
-		//		new DefaultMutableModuleItem<String>(this, "Channel", String.class);
-		
 		@Override
 		public void initialize() {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
@@ -393,10 +389,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			}
 			
 			//Ensures that MarsMicromangerFormat correctly sets the ImageID based on the position.
-			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
-				omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
+			try {
+				if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
+					omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
+				}
+			} catch (NullPointerException e) {
+				//Do nothing. May of the omexmlmetadata methods give NullPointerException if fields are not set.
 			}
-			
+				
 			String metaUID;
 		    if (omexmlMetadata.getUUID() != null)
 		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
@@ -421,19 +421,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				channels.add(String.valueOf(ch));
 			channelItems.setChoices(channels);
 			channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
-		
-			//Add positions
-			/*
-			positionSelection = new DefaultMutableModuleItem<String>(this, "Position", String.class);
-			long PositionCount = dataset.getP
-			if (channelCount > 1) {
-				ArrayList<String> channels = new ArrayList<String>();
-				for (int ch=0; ch<channelCount; ch++)
-					channels.add(String.valueOf(ch));
-				channelSelection.setChoices(channels);
-			}
-			getInfo().addInput(channelSelection);
-			*/
 			
 			final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0", Integer.class);
 			imgX0.setValue(this, rect.x);
@@ -1017,11 +1004,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			if (preview) {
 				image.setOverlay(null);
 				image.deleteRoi();
-				if (norpixFormat) {
+				if (norpixFormat || image.getNFrames() < 2) {
 					image.setSlice(previewT + 1);
-				} else {
+				} else
 					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-				}
 				
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
 				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
