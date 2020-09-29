@@ -88,7 +88,7 @@ public class MoleculeArchiveTests {
 		MarsOMEMetadata metadata = new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10));
 		
 		MarsOMEImage image = new MarsOMEImage();
-		image.setImageIndex(0);
+		image.setImage(0);
 		//image.setID(id);
 		//image.setPixelID(pixelID);
 		//image.setAquisitionDate(imageAquisitionDate);

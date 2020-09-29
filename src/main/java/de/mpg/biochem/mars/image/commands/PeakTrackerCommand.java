@@ -392,6 +392,11 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		 		}
 			}
 			
+			//Ensures that MarsMicromangerFormat correctly sets the ImageID based on the position.
+			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
+				omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
+			}
+			
 			String metaUID;
 		    if (omexmlMetadata.getUUID() != null)
 		    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);

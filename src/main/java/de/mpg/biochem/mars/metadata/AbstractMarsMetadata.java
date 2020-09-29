@@ -184,9 +184,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				jGenerator.writeEndArray();
 		 	},
 			jParser -> {
+				int imageIndex=0;
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					MarsOMEImage image = new MarsOMEImage(jParser);
-					images.put(image.getImageIndex(), image);
+					images.put(imageIndex, image);
+					imageIndex++;
 				}
 		 	});
 		 	

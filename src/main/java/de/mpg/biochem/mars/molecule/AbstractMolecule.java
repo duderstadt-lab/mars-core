@@ -69,6 +69,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 
 	private String metadataUID;
 	private int channel = -1;
+	private int image = -1;
 	private MarsTable table = new MarsTable();
 	/**
 	 * Segments tables resulting from change point fitting:
@@ -143,6 +144,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 						jGenerator.writeStringField("metadataUID", metadataUID);
 			 	}, 
 			jParser -> metadataUID = jParser.getText());
+		
+		setJsonField("image", 
+				jGenerator -> jGenerator.writeNumberField("image", image), 
+				jParser -> image = jParser.getIntValue());
 		
 		setJsonField("channel", 
 				jGenerator -> jGenerator.writeNumberField("channel", channel), 
@@ -292,6 +297,33 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 				    	}
 			    	}
 				});
+	}
+	
+	/**
+	 * Set the image index for this molecule. Format is 0 to 
+	 * (image count) - 1. Set to -1 for no image index.
+	 * 
+	 * @param image Integer value for the image index.
+	 */
+	public void setImage(int image) {
+		if (image > -1) {
+			this.image = image;
+			//if (parent != null) {
+			//	parent.properties().addImage(image);
+			//}
+		} else
+			channel = -1;
+	}
+	
+	/**
+	 * Get the image index for this molecule. If the molecule does
+	 * not have image information this parameter will be set to
+	 * -1. Format is 0 to (image count) - 1.
+	 * 
+	 * @return The image integer or -1 if not set.
+	 */
+	public int getImage() {		
+		return image;
 	}
 	
 	/**

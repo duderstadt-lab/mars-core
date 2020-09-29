@@ -261,6 +261,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	 		}
 		}
 		
+		//Ensures that MarsMicromangerFormat correctly sets the ImageID based on the position.
+		if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
+			omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
+		}
+		
 		String metaUID;
 	    if (omexmlMetadata.getUUID() != null)
 	    	metaUID = MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
@@ -268,7 +273,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    	metaUID = MarsMath.getUUID58().substring(0, 10);
 	    
 	    marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-		
+	    
 	    List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(channel -> channel.getName()).collect(Collectors.toList());
 	    channelColors = new ArrayList<MutableModuleItem<String>>();
 	    channelNames.forEach(name -> {
@@ -413,6 +418,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 			statusMessage = "Adding Molecules to Archive...";
 	        progressInteger.set(0);
 	        statusService.showStatus(progressInteger.get(), shortIntegrationList.keySet().size(), statusMessage);
+	        
+	        final int imageIndex = marsOMEMetadata.getImage(0).getImage();
 			
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
 	        forkJoinPool.submit(() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> {
@@ -454,6 +461,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	    		}
 	    		
 	        	SingleMolecule molecule = new SingleMolecule(UID, table);
+	        	
+	        	//This command works on single positions but they might have different indexes
+	        	molecule.setImage(imageIndex);
 	        	molecule.setMetadataUID(marsOMEMetadata.getUID());
 	        	if (longIntegrationList.containsKey(UID)) {
 	        		molecule.setParameter("x_LONG", longIntegrationList.get(UID).getX());

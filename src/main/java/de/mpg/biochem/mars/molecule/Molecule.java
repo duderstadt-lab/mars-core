@@ -82,6 +82,22 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	String getMetadataUID();
 	
 	/**
+	 * Set the image position for this molecule record.
+	 * 
+	 * @param position The Position.
+	 */
+	void setImage(int image);
+	
+	/**
+	 * Get the image index for this molecule record. An integer
+	 * value starting at zero. If image index is not set this value
+	 * will be -1.
+	 * 
+	 * @return Return the image index for this molecule record.
+	 */
+	int getImage();
+	
+	/**
 	 * Set the channel for this molecule record.
 	 * 
 	 * @param channel The channel.

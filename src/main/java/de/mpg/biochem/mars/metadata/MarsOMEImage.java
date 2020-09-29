@@ -75,7 +75,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	
 	private Time timeIncrement;
 	private Timestamp imageAquisitionDate;
-	private int imageIndex;
+	
+	//True index of the image (position) from collection.
+	private int image;
 	private String imageName;
 	private String imageDescription;
 	private Map<Integer, MarsOMEChannel> channels = new LinkedHashMap<Integer, MarsOMEChannel>();
@@ -109,7 +111,6 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	public MarsOMEImage(int imageIndex, OMEXMLMetadata md) {
 		super();
 		
-		this.imageIndex = imageIndex;
 		id = md.getImageID(imageIndex);
 		pixelID = md.getPixelsID(imageIndex);
 		imageAquisitionDate = md.getImageAcquisitionDate(imageIndex);
@@ -171,6 +172,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				}
 			}
 		}
+		if (md.getImageID(imageIndex) != null)
+			this.image = Integer.valueOf(md.getImageID(imageIndex).substring(6));
+		else
+			this.image = imageIndex;
 	}
 	
 	private void createPlanesFromDimensions() {
@@ -179,7 +184,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			for (int c=0; c < sizeC.getValue(); c++)
 				for (int t=0; t < sizeT.getValue(); t++) {
 					int planeIndex = (int) getPlaneIndex(z, c, t);
-					marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, imageIndex, planeIndex, 
+					marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, image, planeIndex, 
 							new NonNegativeInteger(z), 
 							new NonNegativeInteger(c),
 							new NonNegativeInteger(t)));
@@ -457,12 +462,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return sizeZ.getValue();
 	}
 	
-	public void setImageIndex(int imageIndex) {
-		this.imageIndex = imageIndex;
+	public void setImage(int image) {
+		this.image = image;
 	}
 	
-	public int getImageIndex() {
-		return imageIndex;
+	public int getImage() {
+		return image;
 	}
 
 	@Override
@@ -479,9 +484,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				imageAquisitionDate = new Timestamp(jParser.getText());
 			});
 		
-		setJsonField("ImageIndex",
-			jGenerator -> jGenerator.writeNumberField("ImageIndex", imageIndex),
-			jParser -> imageIndex = jParser.getIntValue());
+		setJsonField("image",
+			jGenerator -> jGenerator.writeNumberField("Image", image),
+			jParser -> image = jParser.getIntValue());
 		
 		setJsonField("ImageName", 
 			jGenerator -> jGenerator.writeStringField("ImageName", imageName),
@@ -781,7 +786,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	
 	@Override
 	public String toString() {
-		return "Image : " + this.imageName;
+		return "Image:" + this.image;
 	}
 
 	@Override
