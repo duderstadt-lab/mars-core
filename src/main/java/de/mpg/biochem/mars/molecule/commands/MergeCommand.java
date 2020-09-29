@@ -183,7 +183,7 @@ public class MergeCommand extends DynamicCommand {
 				    
 					jParser.nextToken();
 					jParser.nextToken();
-					if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+					if ("properties".equals(jParser.getCurrentName()) || "MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
 						mergedProperties.merge(mergedArchiveType.createProperties(jParser), file.getName());
 					} else {
@@ -207,7 +207,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			log += "Merged " + archiveFileList.length + " yama files into the output archive merged.yama\n";
 			log += "Including: " + archiveList + "\n";
-			log += "In total " + mergedProperties.getNumberOfMetadatas() + " Datasets were merged.\n";
+			log += "In total " + mergedProperties.getNumberOfMetadatas() + " datasets were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
 			log += LogBuilder.endBlock(true);
 			
@@ -220,7 +220,7 @@ public class MergeCommand extends DynamicCommand {
 				try {
 					while (jParser.nextToken() != JsonToken.END_OBJECT) {
 						String fieldName = jParser.getCurrentName();
-						if ("ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName) || "metadata".equals(fieldName)) {
+						if ("metadata".equals(fieldName) || "ImageMetaData".equals(fieldName) || "ImageMetadata".equals(fieldName) || "Metadata".equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
 								//This line would be more generic but the translator from old formats is blocking that for now
 								//This should be restored.
@@ -229,7 +229,7 @@ public class MergeCommand extends DynamicCommand {
 							}
 						}
 						
-						if ("Molecules".equals(fieldName) || "molecules".equals(fieldName))
+						if ("molecules".equals(fieldName) || "Molecules".equals(fieldName))
 							break;
 					}
 				} catch (FileNotFoundException e) {
@@ -313,17 +313,17 @@ public class MergeCommand extends DynamicCommand {
 				//We have to have a starting { for the json...
 				jGenerator.writeStartObject();
 				
-				jGenerator.writeFieldName("MoleculeArchiveProperties");
+				jGenerator.writeFieldName("properties");
 				mergedProperties.toJSON(jGenerator);
 				
-				jGenerator.writeArrayFieldStart("Metadata");
+				jGenerator.writeArrayFieldStart("metadata");
 				for (MarsMetadata metaItem : allMetadataItems) {
 					metaItem.toJSON(jGenerator);
 				}
 				jGenerator.writeEndArray();
 				
 				//Now we need to loop through all molecules in all archives and save them to the merged archive.
-				jGenerator.writeArrayFieldStart("Molecules");
+				jGenerator.writeArrayFieldStart("molecules");
 				for (JsonParser jParser :jParsers) {
 					while (jParser.nextToken() != JsonToken.END_ARRAY)
 						mergedArchiveType.createMolecule(jParser).toJSON(jGenerator);
@@ -350,7 +350,7 @@ public class MergeCommand extends DynamicCommand {
 			
 			logService.info("Merged " + archiveFileList.length + " yama files into the output archive merged.yama");
 			logService.info("Including: " + archiveList);
-			logService.info("In total " + mergedProperties.getNumberOfMetadatas() + " Datasets were merged.");
+			logService.info("In total " + mergedProperties.getNumberOfMetadatas() + " datasets were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
 		} else {

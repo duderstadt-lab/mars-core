@@ -816,11 +816,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		updateProperties();
 		
-		jGenerator.writeFieldName("MoleculeArchiveProperties");
+		jGenerator.writeFieldName("properties");
 		archiveProperties.toJSON(jGenerator);
 		
 		if (metadataIndex.size() > 0) {
-			jGenerator.writeArrayFieldStart("Metadata");
+			jGenerator.writeArrayFieldStart("metadata");
 			Iterator<String> iter = metadataIndex.iterator();
 			while (iter.hasNext()) {
 				getMetadata(iter.next()).toJSON(jGenerator);
@@ -829,7 +829,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		
 		if (moleculeIndex.size() > 0) {
-			jGenerator.writeArrayFieldStart("Molecules");
+			jGenerator.writeArrayFieldStart("molecules");
 			Iterator<String> iterator = moleculeIndex.iterator();
 			while (iterator.hasNext()) {
 				get(iterator.next()).toJSON(jGenerator);
@@ -854,7 +854,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void fromJSON(JsonParser jParser) throws IOException {
 		jParser.nextToken();
 		jParser.nextToken();
-		if ("MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+		if ("properties".equals(jParser.getCurrentName()) || "MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 			jParser.nextToken();
 			archiveProperties.fromJSON(jParser);
 		} else
@@ -869,11 +869,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		    else 
 		    	fieldBlockName = fieldName;
 			
-			if ("ImageMetadata".equals(fieldName) || "ImageMetaData".equals(fieldName) || "Metadata".equals(fieldName))
+			if ("metadata".equals(fieldName) || "Metadata".equals(fieldName) || "ImageMetadata".equals(fieldName) || "ImageMetaData".equals(fieldName))
 				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					putMetadata(createMetadata(jParser));
 			
-			if ("Molecules".equals(fieldName))
+			if ("molecules".equals(fieldName) || "Molecules".equals(fieldName))
 				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					put(createMolecule(jParser));
 			
