@@ -85,10 +85,10 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	//Processing log for the record
 	protected String log = "";
 
-	protected String Microscope = "unknown";
+	protected String microscope = "unknown";
 	
 	//Directory where the images are stored..
-	protected String SourceDirectory = "unknown";
+	protected String sourceDirectory = "unknown";
 	
 	protected Map<Integer, MarsOMEImage> images = new ConcurrentHashMap<Integer, MarsOMEImage>();
 	
@@ -145,32 +145,32 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	protected void createIOMaps() {
 		super.createIOMaps();
 
-		setJsonField("Microscope",
+		setJsonField("microscope",
 			jGenerator -> {
-				if(Microscope != null)
-		  			jGenerator.writeStringField("Microscope", Microscope);
+				if(microscope != null)
+		  			jGenerator.writeStringField("microscope", microscope);
 		 	},
-			jParser -> Microscope = jParser.getText());
+			jParser -> microscope = jParser.getText());
 		
-		setJsonField("SourceDirectory", 
+		setJsonField("sourceDirectory", 
 			jGenerator -> {
-		  		if (SourceDirectory != null)
-		  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
+		  		if (sourceDirectory != null)
+		  			jGenerator.writeStringField("sourceDirectory", sourceDirectory);
 			},
-			jParser -> SourceDirectory = jParser.getText());
+			jParser -> sourceDirectory = jParser.getText());
 						
-		setJsonField("Log", 
+		setJsonField("log", 
 			jGenerator -> {
 		  		if (!log.equals("")) {
-		  			jGenerator.writeStringField("Log", log);
+		  			jGenerator.writeStringField("log", log);
 		  		}
 		 	}, 
 			jParser -> log = jParser.getText());
 		
-		setJsonField("BdvSources", 
+		setJsonField("bdvSources", 
 			jGenerator -> {
 				if (bdvSources.size() > 0) {
-					jGenerator.writeArrayFieldStart("BdvSources");
+					jGenerator.writeArrayFieldStart("bdvSources");
 					for (MarsBdvSource source : bdvSources.values()) {
 						source.toJSON(jGenerator);
 					}
@@ -184,9 +184,9 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 				}
 			});
 		
-		setJsonField("Images", 
+		setJsonField("images", 
 			jGenerator -> {
-				jGenerator.writeArrayFieldStart("Images");
+				jGenerator.writeArrayFieldStart("images");
 				for (int imageIndex=0; imageIndex<images.size(); imageIndex++)
 					images.get(imageIndex).toJSON(jGenerator);
 				jGenerator.writeEndArray();
@@ -199,7 +199,41 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 					imageIndex++;
 				}
 		 	});
-		 	
+		
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+		
+		setJsonField("Microscope", null,
+			jParser -> microscope = jParser.getText());
+		
+		setJsonField("SourceDirectory", null,
+			jParser -> sourceDirectory = jParser.getText());
+		
+		setJsonField("Log", null, 
+				jParser -> log = jParser.getText());
+		
+		setJsonField("BdvSources", null, 
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsBdvSource source = new MarsBdvSource(jParser);
+						bdvSources.put(source.getName(), source);
+					}
+				});
+		
+		setJsonField("Images", null,
+				jParser -> {
+					int imageIndex=0;
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsOMEImage image = new MarsOMEImage(jParser);
+						images.put(imageIndex, image);
+						imageIndex++;
+					}
+			 	});
 	}
 	
 	/**
@@ -288,8 +322,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * This is just for record keeping. There are no predefined
 	 * setting based on microscope names.
 	 */
-	public void setMicroscopeName(String Microscope) {
-		this.Microscope = Microscope;
+	public void setMicroscopeName(String microscope) {
+		this.microscope = microscope;
 	}
 	
 	/**
@@ -298,7 +332,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * setting based on microscope names.
 	 */
 	public String getMicroscopeName() {
-		return Microscope;
+		return microscope;
 	}
 	
 	public void setImage(MarsOMEImage image, int imageIndex) {
@@ -321,14 +355,14 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * Get the Source Directory where the images are stored.
 	 */
 	public String getSourceDirectory() {
-		return SourceDirectory;
+		return sourceDirectory;
 	}
 	
 	/**
 	 * Set the Source Directory where the images are stored.
 	 */
 	public void setSourceDirectory(String path) {
-		this.SourceDirectory = path;
+		this.sourceDirectory = path;
 	}
 	
 	/**
