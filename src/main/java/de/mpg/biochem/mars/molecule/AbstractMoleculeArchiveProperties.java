@@ -49,7 +49,7 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	protected int numberOfMolecules;
 	protected int numMetadata;
 	protected String comments, inputSchema;
-	public static final String SCHEMA = "2020-12-09";
+	public static final String SCHEMA = "2020-29-09";
 	
 	//Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -95,18 +95,18 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 	@Override
 	protected void createIOMaps() {
 		
-		setJsonField("ArchiveType",
+		setJsonField("archiveType",
 			jGenerator -> {
 				if (parent != null)
-					jGenerator.writeStringField("ArchiveType", parent.getClass().getName());
+					jGenerator.writeStringField("archiveType", parent.getClass().getName());
 			}, null);
 			
-		setJsonField("Type", 
-			jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()), 
+		setJsonField("type", 
+			jGenerator -> jGenerator.writeStringField("type", this.getClass().getName()), 
 			null);
 		
-		setJsonField("Schema", 
-				jGenerator -> jGenerator.writeStringField("Schema", SCHEMA), 
+		setJsonField("schema", 
+				jGenerator -> jGenerator.writeStringField("schema", SCHEMA), 
 				jParser -> inputSchema = jParser.getText());
 			
 		setJsonField("numberOfMolecules", 
@@ -117,10 +117,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			jGenerator -> jGenerator.writeNumberField("numberOfMetadata", numMetadata),
 			jParser -> numMetadata = jParser.getIntValue());
 			
-		setJsonField("MoleculeDataTableColumnSet", 
+		setJsonField("moleculeTableColumnSet", 
 			jGenerator -> {
 				if (moleculeDataTableColumnSet.size() > 0) {
-					jGenerator.writeFieldName("MoleculeDataTableColumnSet");
+					jGenerator.writeFieldName("moleculeTableColumnSet");
 					jGenerator.writeStartArray();
 					Iterator<String> iterator = moleculeDataTableColumnSet.iterator();
 					while(iterator.hasNext())
@@ -134,10 +134,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			});
 			
 			
-		setJsonField("MoleculeSegmentTableNames", 
+		setJsonField("moleculeSegmentTableNames", 
 			jGenerator -> {
 				if (moleculeSegmentTableNames.size() > 0) {
-					jGenerator.writeFieldName("MoleculeSegmentTableNames");
+					jGenerator.writeFieldName("moleculeSegmentTableNames");
 					jGenerator.writeStartArray();
 					Iterator<ArrayList<String>> iterator = moleculeSegmentTableNames.iterator();
 					while(iterator.hasNext()) {
@@ -171,10 +171,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 		    	}
 			});
 			
-		setJsonField("MoleculeTagSet", 
+		setJsonField("moleculeTagSet", 
 			jGenerator -> {
 				if (tagSet.size() > 0) {
-					jGenerator.writeFieldName("MoleculeTagSet");
+					jGenerator.writeFieldName("moleculeTagSet");
 					jGenerator.writeStartArray();
 					Iterator<String> iterator = tagSet.iterator();
 					while(iterator.hasNext())
@@ -203,10 +203,10 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			    		channelSet.add(jParser.getIntValue());
 				});
 			
-		setJsonField("MoleculeParameterSet", 
+		setJsonField("moleculeParameterSet", 
 			jGenerator -> {
 				if (parameterSet.size() > 0) {
-					jGenerator.writeFieldName("MoleculeParameterSet");
+					jGenerator.writeFieldName("moleculeParameterSet");
 					jGenerator.writeStartArray();
 					Iterator<String> iterator = parameterSet.iterator();
 					while(iterator.hasNext())
@@ -251,15 +251,71 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			    		positionSet.add(jParser.getText());
 				});
 			
-		setJsonField("Comments", 
+		setJsonField("comments", 
 			jGenerator -> {
 				if (!comments.equals(""))
-					jGenerator.writeStringField("Comments", comments);
+					jGenerator.writeStringField("comments", comments);
 			}, 
 			jParser -> comments = jParser.getText());
 		
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
 		
-		//BACKWARDS COMPATABILITY - REMOVE ME WHEN READY
+		setJsonField("ArchiveType",
+				jGenerator -> {
+					if (parent != null)
+						jGenerator.writeStringField("ArchiveType", parent.getClass().getName());
+				}, null);
+				
+			setJsonField("Type", 
+				jGenerator -> jGenerator.writeStringField("Type", this.getClass().getName()), 
+				null);
+			
+			setJsonField("Schema", null,
+					jParser -> inputSchema = jParser.getText());
+				
+			setJsonField("MoleculeDataTableColumnSet", null, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			    		moleculeDataTableColumnSet.add(jParser.getText());
+				});
+				
+			setJsonField("MoleculeSegmentTableNames", null, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				    	ArrayList<String> segemntTableName = new ArrayList<String>();
+				    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+					    	//Then move past field Name - yColumnName...
+					    	jParser.nextToken();
+					    	
+					    	segemntTableName.add(jParser.getText());
+					    	
+					    	//Then move past the field and next field Name - xColumnName...
+					    	jParser.nextToken();
+					    	jParser.nextToken();
+					    	segemntTableName.add(jParser.getText());
+				    	}
+				    	moleculeSegmentTableNames.add(segemntTableName);
+			    	}
+				});
+				
+			setJsonField("MoleculeTagSet", null, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			            tagSet.add(jParser.getText());
+				});
+				
+			setJsonField("MoleculeParameterSet", null, 
+				jParser -> {
+			    	while (jParser.nextToken() != JsonToken.END_ARRAY)
+			            parameterSet.add(jParser.getText());
+				});
+		
 		setJsonField("numImageMetaData", null,
 			jParser -> numMetadata = jParser.getIntValue());
 		
@@ -284,6 +340,9 @@ public abstract class AbstractMoleculeArchiveProperties extends AbstractJsonConv
 			    	moleculeSegmentTableNames.add(segemntTableName);
 		    	}
 			});
+		
+		setJsonField("Comments", null, 
+				jParser -> comments = jParser.getText());
 		
 	}
 	

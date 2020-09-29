@@ -57,7 +57,10 @@ import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements GenericModel {
 
 	private MarsOMEImage image;
-	private int imageIndex;
+	
+	//This is the imageID from the original collection. 
+	//Might not be the same as the imageIndex positions for storage.
+	private int imageID;
 	private int planeIndex;
 	private NonNegativeInteger c;
 	private NonNegativeInteger z;
@@ -88,7 +91,6 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		
 		this.image = image;
 
-		this.imageIndex = imageIndex;
 		this.planeIndex = planeIndex;
 		this.c = md.getPlaneTheC(imageIndex, planeIndex);
 		this.z = md.getPlaneTheZ(imageIndex, planeIndex);
@@ -102,6 +104,15 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		this.posX = -1;
 		this.posY = -1;
 		this.posZ = -1;
+		
+		if (md.getImageID(imageIndex) != null) {
+			try {
+				this.imageID = Integer.valueOf(md.getImageID(imageIndex).substring(6));
+			} catch (NumberFormatException e) {
+				this.imageID = imageIndex;
+			}
+		} else
+			this.imageID = imageIndex;
 	}
 	
 	public MarsOMEPlane(MarsOMEImage image, int imageIndex, int planeIndex, NonNegativeInteger Z, NonNegativeInteger C, NonNegativeInteger T) {
@@ -109,7 +120,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		
 		this.image = image;
 
-		this.imageIndex = imageIndex;
+		this.imageID = imageIndex;
 		this.planeIndex = planeIndex;
 		this.c = C;
 		this.z = Z;
@@ -131,32 +142,32 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		
 		UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
 
-		setJsonField("image", 
-			jGenerator -> jGenerator.writeNumberField("image", imageIndex),
-			jParser -> imageIndex = jParser.getIntValue());
+		setJsonField("imageID", 
+			jGenerator -> jGenerator.writeNumberField("imageID", imageID),
+			jParser -> imageID = jParser.getIntValue());
 
 		setJsonField("plane", 
 			jGenerator -> jGenerator.writeNumberField("plane", planeIndex),
 			jParser -> planeIndex = jParser.getIntValue());
 
-		setJsonField("C", 
+		setJsonField("c", 
 			jGenerator -> {
 				if (c != null)
-					jGenerator.writeNumberField("C", c.getValue());
+					jGenerator.writeNumberField("c", c.getValue());
 			},
 			jParser -> c = new NonNegativeInteger(jParser.getIntValue()));
 		
-		setJsonField("Z", 
+		setJsonField("z", 
 			jGenerator -> {
 				if (z != null)
-					jGenerator.writeNumberField("Z", z.getValue());	
+					jGenerator.writeNumberField("z", z.getValue());	
 			},
 			jParser -> z = new NonNegativeInteger(jParser.getIntValue()));
 		
-		setJsonField("T", 
+		setJsonField("t", 
 			jGenerator -> {
 				if (t != null)
-					jGenerator.writeNumberField("T", t.getValue());
+					jGenerator.writeNumberField("t", t.getValue());
 			},
 			jParser -> t = new NonNegativeInteger(jParser.getIntValue()));
 		
@@ -263,10 +274,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 		 		jGenerator -> jGenerator.writeNumberField("zDrift", zDrift),
 		 		jParser -> zDrift = jParser.getDoubleValue());
 	 	
-	 	setJsonField("StringFields", 
+	 	setJsonField("stringFields", 
 	 		jGenerator -> {
 				if (stringFields.size() > 0) {
-					jGenerator.writeObjectFieldStart("StringFields");
+					jGenerator.writeObjectFieldStart("stringFields");
 					for (String name : stringFields.keySet())
 						jGenerator.writeStringField(name, stringFields.get(name));
 					jGenerator.writeEndObject();
@@ -280,10 +291,10 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 				}
 	 		});
 	 	
-	 	setJsonField("ValueFields", 
+	 	setJsonField("valueFields", 
 		 		jGenerator -> {
 					if (stringFields.size() > 0) {
-						jGenerator.writeObjectFieldStart("ValueFields");
+						jGenerator.writeObjectFieldStart("valueFields");
 						for (String name : valueFields.keySet())
 							jGenerator.writeNumberField(name, valueFields.get(name));
 						jGenerator.writeEndObject();
@@ -297,6 +308,40 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 					}
 		 		});
 	 	
+	 	/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+	 	
+		setJsonField("C", null,
+				jParser -> c = new NonNegativeInteger(jParser.getIntValue()));
+			
+			setJsonField("Z", null,
+				jParser -> z = new NonNegativeInteger(jParser.getIntValue()));
+			
+			setJsonField("T", null,
+				jParser -> t = new NonNegativeInteger(jParser.getIntValue()));
+	 	
+	 	setJsonField("StringFields", null, 
+	 		jParser -> {
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String fieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		stringFields.put(fieldname, jParser.getText());
+				}
+	 		});
+	 	
+	 	setJsonField("ValueFields", null, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		valueFields.put(fieldname, jParser.getDoubleValue());
+					}
+		 		});
 	}
 	
 	@Override
@@ -419,12 +464,12 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements Gener
 			return -1;
 	}
 	
-	public void setImageIndex(int imageIndex) {
-		this.imageIndex = imageIndex;
+	public void setImageID(int imageID) {
+		this.imageID = imageID;
 	}
 	
-	public int getImageIndex() {
-		return imageIndex;
+	public int getImageID() {
+		return imageID;
 	}
 	
 	public void setPlaneIndex(int planeIndex) {

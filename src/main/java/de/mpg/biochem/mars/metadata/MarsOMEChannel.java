@@ -138,22 +138,22 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 	@Override
 	protected void createIOMaps() {
 		
-		setJsonField("ChannelIndex", 
-				jGenerator -> jGenerator.writeNumberField("ChannelIndex", channelIndex),
+		setJsonField("channelIndex", 
+				jGenerator -> jGenerator.writeNumberField("channelIndex", channelIndex),
 				jParser -> channelIndex = jParser.getIntValue());
 		
-		setJsonField("Name", 
-			jGenerator -> jGenerator.writeStringField("Name", name),
+		setJsonField("name", 
+			jGenerator -> jGenerator.writeStringField("name", name),
 			jParser -> name = jParser.getText());
 		
-		setJsonField("ID", 
-			jGenerator -> jGenerator.writeStringField("ID", id),
+		setJsonField("id", 
+			jGenerator -> jGenerator.writeStringField("id", id),
 			jParser -> id = jParser.getText());
 		
-		setJsonField("Binning", 
+		setJsonField("binning", 
 			jGenerator -> {
 					if (binning != null)
-						jGenerator.writeStringField("Binning", binning.getValue());
+						jGenerator.writeStringField("binning", binning.getValue());
 				},
 			jParser -> { 
 				BinningEnumHandler handler = new BinningEnumHandler();
@@ -164,24 +164,56 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 				}
 			});
 
-		setJsonField("Gain",
+		setJsonField("gain",
 			jGenerator -> { 
 				if (gain != null)
-					jGenerator.writeNumberField("Gain", gain.doubleValue());
+					jGenerator.writeNumberField("gain", gain.doubleValue());
 			},
 			jParser -> gain = jParser.getDoubleValue());
 		
 		//Should we keep track of the units here ???
-		setJsonField("Voltage",
+		setJsonField("voltage",
 				jGenerator -> {
 					if (voltage != null)
-						jGenerator.writeNumberField("Voltage", voltage.value().doubleValue());
+						jGenerator.writeNumberField("voltage", voltage.value().doubleValue());
 				},
 				jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
 		
-		setJsonField("DetectorSettingsID",
-				jGenerator -> jGenerator.writeStringField("DetectorSettingsID", detectorSettingsID),
+		setJsonField("detectorSettingsID",
+				jGenerator -> jGenerator.writeStringField("detectorSettingsID", detectorSettingsID),
 				jParser -> detectorSettingsID = jParser.getText());
+		
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
 			
+		setJsonField("ChannelIndex", null,
+				jParser -> channelIndex = jParser.getIntValue());
+		
+		setJsonField("Name", null,
+			jParser -> name = jParser.getText());
+		
+		setJsonField("Binning", null,
+			jParser -> { 
+				BinningEnumHandler handler = new BinningEnumHandler();
+				try {
+					binning = (Binning) handler.getEnumeration(jParser.getText());
+				} catch (EnumerationException e) {
+					e.printStackTrace();
+				}
+			});
+
+		setJsonField("Gain", null,
+			jParser -> gain = jParser.getDoubleValue());
+		
+		setJsonField("Voltage", null,
+				jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
+		
+		setJsonField("DetectorSettingsID", null,
+				jParser -> detectorSettingsID = jParser.getText());
 	}
 }

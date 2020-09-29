@@ -62,7 +62,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Unique ID for storage in maps and universal identification. 
 	 */
-	private String UID;
+	private String uid;
 	
 	/**
 	 * Reference to MoleculeArchive containing the record.
@@ -98,16 +98,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
-		this.UID = UID;
+		this.uid = UID;
 		
 	}
 	
 	@Override
 	protected void createIOMaps() {
 
-		setJsonField("UID",
-			jGenerator -> jGenerator.writeStringField("UID", UID),
-			jParser -> UID = jParser.getText());
+		setJsonField("uid",
+			jGenerator -> jGenerator.writeStringField("uid", uid),
+			jParser -> uid = jParser.getText());
 		
 		setJsonField("type", 
 			jGenerator -> jGenerator.writeStringField("type", this.getClass().getName()),
@@ -197,7 +197,17 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		    	}
 		 	});
 		
-		// FOR BACKWARDS COMPATIBILITY
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+		
+		setJsonField("UID", null,
+				jParser -> uid = jParser.getText());
+		
 		setJsonField("Notes", null, 
 				jParser -> notes = jParser.getText());
 		
@@ -251,7 +261,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the UID.
 	 */
 	public String getUID() {
-		return UID;
+		return uid;
 	}
 	
 	/**

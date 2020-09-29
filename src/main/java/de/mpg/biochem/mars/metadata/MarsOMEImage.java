@@ -479,10 +479,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 
 		UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
 
-		setJsonField("ImageAcquisitionDate", 
+		setJsonField("imageAcquisitionDate", 
 			jGenerator -> {
 				if (imageAquisitionDate != null)
-					jGenerator.writeStringField("ImageAcquisitionDate", imageAquisitionDate.getValue());
+					jGenerator.writeStringField("imageAcquisitionDate", imageAquisitionDate.getValue());
 			},
 			jParser -> {
 				imageAquisitionDate = new Timestamp(jParser.getText());
@@ -492,26 +492,26 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			jGenerator -> jGenerator.writeNumberField("imageID", imageID),
 			jParser -> imageID = jParser.getIntValue());
 		
-		setJsonField("ImageName", 
-			jGenerator -> jGenerator.writeStringField("ImageName", imageName),
+		setJsonField("imageName", 
+			jGenerator -> jGenerator.writeStringField("imageName", imageName),
 			jParser -> imageName = jParser.getText());
 		
-		setJsonField("ImageDescription", 
-			jGenerator -> jGenerator.writeStringField("ImageDescription", imageDescription),
+		setJsonField("imageDescription", 
+			jGenerator -> jGenerator.writeStringField("imageDescription", imageDescription),
 			jParser -> imageDescription = jParser.getText());
 		
-		setJsonField("ID", 
-			jGenerator -> jGenerator.writeStringField("ID", id),
+		setJsonField("id", 
+			jGenerator -> jGenerator.writeStringField("id", id),
 			jParser -> id = jParser.getText());
 		
-		setJsonField("PixelID", 
-			jGenerator -> jGenerator.writeStringField("PixelID", pixelID),
+		setJsonField("pixelID", 
+			jGenerator -> jGenerator.writeStringField("pixelID", pixelID),
 			jParser -> pixelID = jParser.getText());
 		
-		setJsonField("Channels", 
+		setJsonField("channels", 
 				jGenerator -> {
 					if (channels.size() > 0) {
-						jGenerator.writeArrayFieldStart("Channels");
+						jGenerator.writeArrayFieldStart("channels");
 						for (MarsOMEChannel channel : channels.values())
 							channel.toJSON(jGenerator);
 						jGenerator.writeEndArray();
@@ -524,52 +524,52 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 			 	});	
 		
-		setJsonField("DimensionOrder",
+		setJsonField("dimensionOrder",
 			jGenerator -> { 
 				if (dimensionOrder != null)
-					jGenerator.writeStringField("DimensionOrder", dimensionOrder.getValue());
+					jGenerator.writeStringField("dimensionOrder", dimensionOrder.getValue());
 			},
 			jParser -> dimensionOrder = DimensionOrder.valueOf(jParser.getText()));
 		
-		setJsonField("SizeC",
+		setJsonField("sizeC",
 				jGenerator -> { 
 					if (sizeC != null)
-						jGenerator.writeNumberField("SizeC", sizeC.getValue());
+						jGenerator.writeNumberField("sizeC", sizeC.getValue());
 				},
 				jParser -> sizeC = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("SizeT", 
+		setJsonField("sizeT", 
 				jGenerator -> {
 					if (sizeT != null)
-						jGenerator.writeNumberField("SizeT", sizeT.getValue());
+						jGenerator.writeNumberField("sizeT", sizeT.getValue());
 				},
 				jParser -> sizeT = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("SizeX",
+		setJsonField("sizeX",
 				jGenerator -> {
 					if (sizeX != null)
-						jGenerator.writeNumberField("SizeX", sizeX.getValue());
+						jGenerator.writeNumberField("sizeX", sizeX.getValue());
 				},
 				jParser -> sizeX = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("SizeY",
+		setJsonField("sizeY",
 				jGenerator -> {
 					if (sizeY != null)
-						jGenerator.writeNumberField("SizeY", sizeY.getValue());
+						jGenerator.writeNumberField("sizeY", sizeY.getValue());
 				},
 				jParser -> sizeY = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("SizeZ",
+		setJsonField("sizeZ",
 				jGenerator -> {
 					if (sizeZ != null)
-						jGenerator.writeNumberField("SizeZ", sizeZ.getValue());
+						jGenerator.writeNumberField("sizeZ", sizeZ.getValue());
 				},
 				jParser -> sizeZ = new PositiveInteger(jParser.getIntValue()));
 		
-		setJsonField("PixelsPhysicalSizeX",
+		setJsonField("pixelsPhysicalSizeX",
 			jGenerator -> {
 				if (pixelsPhysicalSizeX != null) {
-					jGenerator.writeObjectFieldStart("PixelsPhysicalSizeX");
+					jGenerator.writeObjectFieldStart("pixelsPhysicalSizeX");
 					jGenerator.writeNumberField("value", pixelsPhysicalSizeX.value().doubleValue());
 					jGenerator.writeStringField("units", pixelsPhysicalSizeX.unit().getSymbol());
 					jGenerator.writeEndObject();
@@ -594,10 +594,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				}
 			});
 		
-		setJsonField("PixelsPhysicalSizeY",
+		setJsonField("pixelsPhysicalSizeY",
 				jGenerator -> {
 					if (pixelsPhysicalSizeY != null) {
-						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeY");
+						jGenerator.writeObjectFieldStart("pixelsPhysicalSizeY");
 						jGenerator.writeNumberField("value", pixelsPhysicalSizeY.value().doubleValue());
 						jGenerator.writeStringField("units", pixelsPhysicalSizeY.unit().getSymbol());
 						jGenerator.writeEndObject();
@@ -622,10 +622,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});
 		
-		setJsonField("PixelsPhysicalSizeZ",
+		setJsonField("pixelsPhysicalSizeZ",
 				jGenerator -> {
 					if (pixelsPhysicalSizeZ != null) {
-						jGenerator.writeObjectFieldStart("PixelsPhysicalSizeZ");
+						jGenerator.writeObjectFieldStart("pixelsPhysicalSizeZ");
 						jGenerator.writeNumberField("value", pixelsPhysicalSizeZ.value().doubleValue());
 						jGenerator.writeStringField("units", pixelsPhysicalSizeZ.unit().getSymbol());
 						jGenerator.writeEndObject();
@@ -650,10 +650,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});
 		
-		setJsonField("TimeIncrement",
+		setJsonField("timeIncrement",
 				jGenerator -> {
 					if (timeIncrement != null) {
-						jGenerator.writeObjectFieldStart("TimeIncrement");
+						jGenerator.writeObjectFieldStart("timeIncrement");
 						jGenerator.writeNumberField("value", timeIncrement.value().doubleValue());
 						jGenerator.writeStringField("units", timeIncrement.unit().getSymbol());
 						jGenerator.writeEndObject();
@@ -680,22 +680,22 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});
 		
-		setJsonField("DetectorSerialNumber", 
-				jGenerator -> jGenerator.writeStringField("DetectorSerialNumber", detectorSerialNumber),
+		setJsonField("detectorSerialNumber", 
+				jGenerator -> jGenerator.writeStringField("detectorSerialNumber", detectorSerialNumber),
 				jParser -> detectorSerialNumber = jParser.getText());
 		
-		setJsonField("DetectorModel", 
-				jGenerator -> jGenerator.writeStringField("DetectorModel", detectorModel),
+		setJsonField("detectorModel", 
+				jGenerator -> jGenerator.writeStringField("detectorModel", detectorModel),
 				jParser -> detectorModel = jParser.getText());
 		
-		setJsonField("DetectorManufacturer", 
-				jGenerator -> jGenerator.writeStringField("DetectorManufacturer", detectorManufacturer),
+		setJsonField("detectorManufacturer", 
+				jGenerator -> jGenerator.writeStringField("detectorManufacturer", detectorManufacturer),
 				jParser -> detectorManufacturer = jParser.getText());
 		
-		setJsonField("DetectorType", 
+		setJsonField("detectorType", 
 				jGenerator -> {
 					if (detectorType != null)
-						jGenerator.writeStringField("DetectorType", detectorType.getValue());
+						jGenerator.writeStringField("detectorType", detectorType.getValue());
 				},
 				jParser -> {
 					DetectorTypeEnumHandler handler = new DetectorTypeEnumHandler();
@@ -706,10 +706,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});
 
-		setJsonField("Temperature",
+		setJsonField("temperature",
 				jGenerator -> {
 					if (temperature != null) {
-						jGenerator.writeObjectFieldStart("Temperature");
+						jGenerator.writeObjectFieldStart("temperature");
 						jGenerator.writeNumberField("value", temperature.value().doubleValue());
 						jGenerator.writeStringField("units", temperature.unit().getSymbol());
 						jGenerator.writeEndObject();
@@ -736,10 +736,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 				});	
 		
-		setJsonField("StringFields", 
+		setJsonField("stringFields", 
 		 		jGenerator -> {
 					if (stringFields.size() > 0) {
-						jGenerator.writeObjectFieldStart("StringFields");
+						jGenerator.writeObjectFieldStart("stringFields");
 						for (String name : stringFields.keySet())
 							jGenerator.writeStringField(name, stringFields.get(name));
 						jGenerator.writeEndObject();
@@ -753,10 +753,10 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 		 		});
 		 	
-	 	setJsonField("ValueFields", 
+	 	setJsonField("valueFields", 
 		 		jGenerator -> {
 					if (stringFields.size() > 0) {
-						jGenerator.writeObjectFieldStart("ValueFields");
+						jGenerator.writeObjectFieldStart("valueFields");
 						for (String name : valueFields.keySet())
 							jGenerator.writeNumberField(name, valueFields.get(name));
 						jGenerator.writeEndObject();
@@ -770,15 +770,215 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 					}
 		 		});
 		
-		setJsonField("Planes", 
+		setJsonField("planes", 
 			jGenerator -> {
 				if (marsOMEPlanes.size() > 0) {
-					jGenerator.writeArrayFieldStart("Planes");
+					jGenerator.writeArrayFieldStart("planes");
 					for (MarsOMEPlane plane : marsOMEPlanes.values())
 						plane.toJSON(jGenerator);
 					jGenerator.writeEndArray();
 				}
 		 	},
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					MarsOMEPlane plane = new MarsOMEPlane(jParser, this);
+					marsOMEPlanes.put(plane.getPlaneIndex(), plane);
+				}
+		 	});	
+		
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+		
+		setJsonField("ImageAcquisitionDate", null,
+				jParser -> {
+					imageAquisitionDate = new Timestamp(jParser.getText());
+				});
+			
+		setJsonField("ImageName", null,
+				jParser -> imageName = jParser.getText());
+		
+		setJsonField("ImageDescription", null,
+				jParser -> imageDescription = jParser.getText());
+		
+		setJsonField("ID", null,
+			jParser -> id = jParser.getText());
+		
+		setJsonField("PixelID", null,
+			jParser -> pixelID = jParser.getText());
+		
+		setJsonField("Channels", null,
+				jParser -> {
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						MarsOMEChannel channel = new MarsOMEChannel(jParser);
+						channels.put(channel.getChannelIndex(), channel);
+					}
+			 	});	
+		
+		setJsonField("DimensionOrder", null,
+			jParser -> dimensionOrder = DimensionOrder.valueOf(jParser.getText()));
+		
+		setJsonField("SizeC", null,
+				jParser -> sizeC = new PositiveInteger(jParser.getIntValue()));
+		
+		setJsonField("SizeT", null,
+				jParser -> sizeT = new PositiveInteger(jParser.getIntValue()));
+		
+		setJsonField("SizeX", null,
+				jParser -> sizeX = new PositiveInteger(jParser.getIntValue()));
+		
+		setJsonField("SizeY", null,
+				jParser -> sizeY = new PositiveInteger(jParser.getIntValue()));
+		
+		setJsonField("SizeZ", null,
+				jParser -> sizeZ = new PositiveInteger(jParser.getIntValue()));
+		
+		setJsonField("PixelsPhysicalSizeX", null,
+			jParser -> { 
+				double value = Double.NaN;
+				String units = "";
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String subfieldname = jParser.getCurrentName();
+		    		jParser.nextToken();
+		    		if (subfieldname.equals("value"))
+		    			value = jParser.getDoubleValue();
+		    		
+		    		if (subfieldname.equals("units"))
+		    			units = jParser.getText();
+		    	}
+				try {
+					pixelsPhysicalSizeX = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+				} catch (EnumerationException e) {
+					e.printStackTrace();
+				}
+			});
+		
+		setJsonField("PixelsPhysicalSizeY", null,
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						pixelsPhysicalSizeY = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					} catch (EnumerationException e) {
+						e.printStackTrace();
+					}
+				});
+		
+		setJsonField("PixelsPhysicalSizeZ", null,
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						pixelsPhysicalSizeZ = new Length(value, UnitsLengthEnumHandler.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					} catch (EnumerationException e) {
+						e.printStackTrace();
+					}
+				});
+		
+		setJsonField("TimeIncrement", null,
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					try {
+						UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+						timeIncrement = new Time(value, UnitsTimeEnumHandler.getBaseUnit((UnitsTime) timehandler.getEnumeration(units)));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+		
+		setJsonField("DetectorSerialNumber", null,
+				jParser -> detectorSerialNumber = jParser.getText());
+		
+		setJsonField("DetectorModel", null,
+				jParser -> detectorModel = jParser.getText());
+		
+		setJsonField("DetectorManufacturer", null,
+				jParser -> detectorManufacturer = jParser.getText());
+		
+		setJsonField("DetectorType", null,
+				jParser -> {
+					DetectorTypeEnumHandler handler = new DetectorTypeEnumHandler();
+					try {
+						detectorType = (DetectorType) handler.getEnumeration(jParser.getText());
+					} catch (EnumerationException e) {
+						e.printStackTrace();
+					}
+				});
+
+		setJsonField("Temperature", null,
+				jParser -> { 
+					double value = Double.NaN;
+					String units = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String subfieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		if (subfieldname.equals("value"))
+			    			value = jParser.getDoubleValue();
+			    		
+			    		if (subfieldname.equals("units"))
+			    			units = jParser.getText();
+			    	}
+					UnitsTemperatureEnumHandler handler = new UnitsTemperatureEnumHandler();
+					try {
+						temperature = new Temperature(value, UnitsTemperatureEnumHandler.getBaseUnit((UnitsTemperature) handler.getEnumeration(units)));
+					} catch (EnumerationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});	
+		
+		setJsonField("StringFields", null, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		stringFields.put(fieldname, jParser.getText());
+					}
+		 		});
+		 	
+	 	setJsonField("ValueFields", null, 
+		 		jParser -> {
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			    		String fieldname = jParser.getCurrentName();
+			    		jParser.nextToken();
+			    		valueFields.put(fieldname, jParser.getDoubleValue());
+					}
+		 		});
+		
+		setJsonField("Planes", null,
 			jParser -> {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					MarsOMEPlane plane = new MarsOMEPlane(jParser, this);

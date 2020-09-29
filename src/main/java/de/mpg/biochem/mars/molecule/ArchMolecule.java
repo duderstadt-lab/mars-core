@@ -88,16 +88,18 @@ public class ArchMolecule extends AbstractMolecule {
 	protected void createIOMaps() {
 		super.createIOMaps();
 		
-		setJsonField("ArchTables", 
+		setJsonField("archTables", 
 			jGenerator -> {
 				if (archTables.keySet().size() > 0) {
-					jGenerator.writeArrayFieldStart("ArchTables");
+					jGenerator.writeArrayFieldStart("archTables");
 					for (int slice : archTables.keySet()) {
 							jGenerator.writeStartObject();
 							
+							//FIXME this is pre OME
+							
 							jGenerator.writeNumberField("slice", slice);
 							
-							jGenerator.writeFieldName("Table");
+							jGenerator.writeFieldName("table");
 							archTables.get(slice).toJSON(jGenerator);
 							
 							jGenerator.writeEndObject();
@@ -110,7 +112,7 @@ public class ArchMolecule extends AbstractMolecule {
 			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
 			    		int slice = -1;
 			    	
-			    		//Needed for backwards compatibility when reverse order was used...
+			    		//FIXME this is pre OME
 					    if ("slice".equals(jParser.getCurrentName())) {
 					    	jParser.nextToken();
 					    	slice = jParser.getNumberValue().intValue();
@@ -119,7 +121,7 @@ public class ArchMolecule extends AbstractMolecule {
 				    	//Move to next field
 				    	jParser.nextToken();
 				    	
-				    	MarsTable archTable = new MarsTable("ArchTable " + slice);
+				    	MarsTable archTable = new MarsTable("archTable " + slice);
 				    	
 				    	archTable.fromJSON(jParser);
 				    	
@@ -128,6 +130,5 @@ public class ArchMolecule extends AbstractMolecule {
 			    	}
 		    	}
 			});
-		
 	}
 }

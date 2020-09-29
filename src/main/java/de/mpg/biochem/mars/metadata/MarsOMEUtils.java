@@ -212,7 +212,7 @@ public class MarsOMEUtils {
 			for (int rowIndex=0; rowIndex < table.getRowCount(); rowIndex++) {
 				MarsOMEPlane plane = new MarsOMEPlane();
 				plane.setImage(image);
-				plane.setImageIndex(0);
+				plane.setImageID(0);
 				
 				int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
 				int t = Integer.valueOf(table.getStringValue("Frame", rowIndex));
