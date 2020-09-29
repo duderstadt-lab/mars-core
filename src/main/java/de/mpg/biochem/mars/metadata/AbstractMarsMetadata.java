@@ -212,8 +212,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 */
 	public void merge(MarsMetadata metadata) {
 		super.merge(metadata);
-		logln(LogBuilder.buildTitleBlock("Merged log"));
-		logln("Merged MarsMetadata record " + metadata.getUID() + " was collected on " + metadata.getCollectionDate() + "."); 
+		log(LogBuilder.buildTitleBlock("Merged log"));
+		logln("Merged MarsMetadata record " + metadata.getUID() + "."); 
 		logln("Using microscope " + metadata.getMicroscopeName() + ".");
 		logln("Source was " + metadata.getSourceDirectory() + ".");
 		logln("");
@@ -222,11 +222,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		
 		//Get set of imageIndexes contained in this record..
 		Set<Integer> imageIndexes = new HashSet<Integer>();
-		images().forEach(image -> imageIndexes.add(image.getImage()));
+		images().forEach(image -> imageIndexes.add(image.getImageID()));
 		
-		List<MarsOMEImage> allImages = metadata.images().filter(image -> !imageIndexes.contains(image.getImage())).collect(toList());
+		List<MarsOMEImage> allImages = metadata.images().filter(image -> !imageIndexes.contains(image.getImageID())).collect(toList());
 		allImages.addAll(images.values());
-		allImages.sort(Comparator.comparing(MarsOMEImage::getImage));
+		allImages.sort(Comparator.comparing(MarsOMEImage::getImageID));
 		
 		images.clear();
 		

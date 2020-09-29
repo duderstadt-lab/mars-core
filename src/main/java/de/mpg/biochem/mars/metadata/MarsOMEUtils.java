@@ -124,7 +124,7 @@ public class MarsOMEUtils {
 		
 		//Create MarsOMEImage and fill in all the planes and then add it to the MarsOMEMetadata...
 		MarsOMEImage image = new MarsOMEImage();
-		image.setImage(0);
+		image.setImageID(0);
 		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
 		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
 		image.setSizeZ(new PositiveInteger(1));

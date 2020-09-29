@@ -77,7 +77,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	private Timestamp imageAquisitionDate;
 	
 	//True index of the image (position) from collection.
-	private int image;
+	private int imageID;
 	private String imageName;
 	private String imageDescription;
 	private Map<Integer, MarsOMEChannel> channels = new LinkedHashMap<Integer, MarsOMEChannel>();
@@ -172,10 +172,14 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				}
 			}
 		}
-		if (md.getImageID(imageIndex) != null)
-			this.image = Integer.valueOf(md.getImageID(imageIndex).substring(6));
-		else
-			this.image = imageIndex;
+		if (md.getImageID(imageIndex) != null) {
+			try {
+				this.imageID = Integer.valueOf(md.getImageID(imageIndex).substring(6));
+			} catch (NumberFormatException e) {
+				this.imageID = imageIndex;
+			}
+		} else
+			this.imageID = imageIndex;
 	}
 	
 	private void createPlanesFromDimensions() {
@@ -184,7 +188,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 			for (int c=0; c < sizeC.getValue(); c++)
 				for (int t=0; t < sizeT.getValue(); t++) {
 					int planeIndex = (int) getPlaneIndex(z, c, t);
-					marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, image, planeIndex, 
+					marsOMEPlanes.put(planeIndex, new MarsOMEPlane(this, imageID, planeIndex, 
 							new NonNegativeInteger(z), 
 							new NonNegativeInteger(c),
 							new NonNegativeInteger(t)));
@@ -462,12 +466,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		return sizeZ.getValue();
 	}
 	
-	public void setImage(int image) {
-		this.image = image;
+	public void setImageID(int imageID) {
+		this.imageID = imageID;
 	}
 	
-	public int getImage() {
-		return image;
+	public int getImageID() {
+		return imageID;
 	}
 
 	@Override
@@ -484,9 +488,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 				imageAquisitionDate = new Timestamp(jParser.getText());
 			});
 		
-		setJsonField("image",
-			jGenerator -> jGenerator.writeNumberField("image", image),
-			jParser -> image = jParser.getIntValue());
+		setJsonField("imageID",
+			jGenerator -> jGenerator.writeNumberField("imageID", imageID),
+			jParser -> imageID = jParser.getIntValue());
 		
 		setJsonField("ImageName", 
 			jGenerator -> jGenerator.writeStringField("ImageName", imageName),
@@ -786,7 +790,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	
 	@Override
 	public String toString() {
-		return "Image:" + this.image;
+		return "Image:" + this.imageID;
 	}
 
 	@Override

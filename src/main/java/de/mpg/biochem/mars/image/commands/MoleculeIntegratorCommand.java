@@ -422,7 +422,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	        progressInteger.set(0);
 	        statusService.showStatus(progressInteger.get(), shortIntegrationList.keySet().size(), statusMessage);
 	        
-	        final int imageIndex = marsOMEMetadata.getImage(0).getImage();
+	        final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
 			
 	        //Now we need to use the IntensitiesStack to build the molecule archive...
 	        forkJoinPool.submit(() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> {

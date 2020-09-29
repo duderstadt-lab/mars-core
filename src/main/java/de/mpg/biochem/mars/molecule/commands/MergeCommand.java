@@ -261,16 +261,16 @@ public class MergeCommand extends DynamicCommand {
 					if (metaItem.getUID().equals(duplicateMetaUID)) {
 						listofDuplicates.add(metaItem);
 						for (int imageIndex = 0; imageIndex < metaItem.getImageCount(); imageIndex++) {
-							if (imageIndexes.contains(metaItem.getImage(imageIndex).getImage())) {
-								logService.info("Duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImage() + " found.");
+							if (imageIndexes.contains(metaItem.getImage(imageIndex).getImageID())) {
+								logService.info("Duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImageID() + " found.");
 								logService.info("Are you trying to merge copies of the same dataset?");
 								logService.info("Please resolve the conflict and run the merge command again.");
 								logService.info(LogBuilder.endBlock(false));
-								uiService.showDialog("Merge failed due to duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImage() + ".\n"
+								uiService.showDialog("Merge failed due to duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImageID() + ".\n"
 										+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
 								return;
 							} else {
-								imageIndexes.add(metaItem.getImage(imageIndex).getImage());
+								imageIndexes.add(metaItem.getImage(imageIndex).getImageID());
 							}
 						}
 					}
