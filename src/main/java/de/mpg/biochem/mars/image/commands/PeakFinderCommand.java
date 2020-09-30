@@ -352,6 +352,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		}
 		
 		image.deleteRoi();
+		image.setOverlay(null);
 		
 		//Build log
 		LogBuilder builder = new LogBuilder();
@@ -410,14 +411,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		        progressThread.start();
 		        
 		        if (swapZandT) {
-		        	//forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
-		        	for (int t=0; t < image.getStackSize(); t++) {
+		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
 			        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
 			        	//Don't add to stack unless peaks were detected.
 			        	if (tpeaks.size() > 0)
 			        		PeakStack.put(t, tpeaks);
-		        	}
-			        //})).get();
+			        })).get();
 		        } else {
 			        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
 			        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
