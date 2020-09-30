@@ -97,7 +97,7 @@ import net.imglib2.img.ImagePlusAdapter;
 			mnemonic = 'm'),
 		@Menu(label = "Image", weight = 20,
 			mnemonic = 'i'),
-		@Menu(label = "DNA finder", weight = 1, mnemonic = 'd')})
+		@Menu(label = "DNA Finder", weight = 1, mnemonic = 'd')})
 public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable, Previewable {
 	
 	//GENERAL SERVICES NEEDED
@@ -388,8 +388,8 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 				frameColumn.addValue(previewT);
 				countColumn.addValue(DNASegments.size());
 			}
-			DNACount.add(countColumn);
 			DNACount.add(frameColumn);
+			DNACount.add(countColumn);
 			
 			//Make sure the output table has the correct name
 			getInfo().getMutableOutput("DNACount", MarsTable.class).setLabel(DNACount.getName());
