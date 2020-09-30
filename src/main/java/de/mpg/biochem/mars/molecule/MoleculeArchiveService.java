@@ -119,7 +119,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			    }
 			}
 		} else {
-			System.out.println("The file " + file.getName() + " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
+			logService.warn("The file " + file.getName() + " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
 			return null;
 		}
 		
