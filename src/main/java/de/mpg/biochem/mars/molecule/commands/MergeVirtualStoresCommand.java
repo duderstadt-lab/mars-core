@@ -115,6 +115,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		FilenameFilter fileNameFilter = new FilenameFilter() {
            @Override
            public boolean accept(File dir, String name) {
+	    	  if (name.startsWith("."))
+	     		  return false; 
+        	   
               if (name.endsWith(".yama.store"))
             	  return true;
         	  else

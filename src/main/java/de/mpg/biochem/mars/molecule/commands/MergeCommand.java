@@ -120,6 +120,9 @@ public class MergeCommand extends DynamicCommand {
   
            @Override
            public boolean accept(File dir, String name) {
+        	  if (name.startsWith("."))
+        		  return false;
+        	   
               if(name.lastIndexOf('.') > 0) {
               
                  // get last index for '.' char
