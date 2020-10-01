@@ -288,7 +288,113 @@ public class MarsOMEUtils {
 	public static MarsOMEMetadata translateDNAMetadataToMarsOMEMetadata(OLDMarsMetadata oldMetadata) {
 		MarsOMEMetadata marsOME = new MarsOMEMetadata(oldMetadata.getUID());
 	
-		//BUILD NEW MarsOMEMetadata from OLDMarsMetadata..
+		//First, lets merge in easy stuff...
+		marsOME.setMicroscopeName(oldMetadata.getMicroscopeName());
+		marsOME.setNotes(oldMetadata.getNotes());
+		marsOME.log(oldMetadata.getLog());
+		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
+		oldMetadata.getParameters().keySet().forEach(name -> 
+			marsOME.setParameter(name, oldMetadata.getParameter(name)));
+		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
+		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(bdvSource));
+		oldMetadata.getRegionNames().forEach(name -> marsOME.putRegion(oldMetadata.getRegion(name)));
+		oldMetadata.getPositionNames().forEach(name -> marsOME.putPosition(oldMetadata.getPosition(name)));
+		
+		//Create MarsOMEImage and fill in all the planes and then add it to the MarsOMEMetadata...
+		MarsOMEImage image = new MarsOMEImage();
+		image.setImageID(0);
+		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
+		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
+		image.setSizeZ(new PositiveInteger(1));
+		//image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
+		
+		image.setName(oldMetadata.getSourceDirectory());
+		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
+		
+		MarsTable table = oldMetadata.getDataTable();
+		
+		String xDriftColumnName = "";
+		String yDriftColumnName = "";
+		
+		//Check for drift Columns
+		for (String heading : table.getColumnHeadingList()) {
+			String lower = heading.toLowerCase();
+			if (lower.contains("x") && lower.contains("drift"))
+				xDriftColumnName = heading;
+			if (lower.contains("y") && lower.contains("drift"))
+				yDriftColumnName = heading;
+		}
+		
+		//Discover channel names...
+		Map<Integer, String> channelIndexToName = new HashMap<Integer, String>();
+		
+		//Assume MicroManager format
+		Map<Integer, String> channelNames = new LinkedHashMap<Integer, String>();
+		Map<Integer, String> channelBinning = new LinkedHashMap<Integer, String>();
+		
+		table.rows().forEach(row -> {
+			int channelIndex = Integer.valueOf(row.getStringValue("ChannelIndex"));
+			channelBinning.put(channelIndex, row.getStringValue("Binning"));
+			channelNames.put(channelIndex, row.getStringValue("Channel"));
+		});
+		image.setSizeC(new PositiveInteger(channelNames.size()));
+		image.setSizeT(new PositiveInteger((int)table.getValue("Frame", table.getRowCount() - 1))); 
+		if (table.hasColumn("Width"))
+			image.setSizeX(new PositiveInteger(Integer.valueOf(table.getStringValue("Width", 0))));
+		if (table.hasColumn("Height"))
+			image.setSizeY(new PositiveInteger(Integer.valueOf(table.getStringValue("Height", 0))));
+		
+		BinningEnumHandler handler = new BinningEnumHandler();
+		
+		for (int channelIndex : channelNames.keySet()) {
+			MarsOMEChannel channel = new MarsOMEChannel();
+			channel.setChannelIndex(channelIndex);
+			channel.setName(channelNames.get(channelIndex));
+			try {
+				String binKey = channelBinning.get(channelIndex) + "x" + channelBinning.get(channelIndex);
+				channel.setBinning((Binning) handler.getEnumeration(binKey));
+			} catch (EnumerationException e) {
+				e.printStackTrace();
+			}
+			image.setChannel(channel, channelIndex);
+		}
+		
+		for (int rowIndex=0; rowIndex < table.getRowCount(); rowIndex++) {
+			MarsOMEPlane plane = new MarsOMEPlane();
+			plane.setImage(image);
+			plane.setImageID(0);
+			
+			int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
+			int t = Integer.valueOf(table.getStringValue("Frame", rowIndex));
+			
+			plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t)); 
+			plane.setZ(new NonNegativeInteger(0));
+			plane.setC(new NonNegativeInteger(c));
+			plane.setT(new NonNegativeInteger(t));
+			
+			for (String heading : table.getColumnHeadingList()) {
+				if (xDriftColumnName.equals(heading) || yDriftColumnName.equals(heading))
+					continue;
+				else if (heading.equals("FileName")) {
+					plane.setFilename(table.getStringValue(heading, rowIndex));
+					continue;
+				} else if (heading.equals("Time (s)")) {
+					plane.setDeltaT(new Time(table.getValue("Time (s)", rowIndex), UNITS.SECOND));
+					continue;
+				}
+				
+				//Add all unknown columns as StringFields
+				plane.setStringField(heading, table.getStringValue(heading, rowIndex));
+			}
+			
+			if (!xDriftColumnName.equals(""))
+				plane.setXDrift(table.getValue(xDriftColumnName, rowIndex));
+			if (!yDriftColumnName.equals(""))
+				plane.setYDrift(table.getValue(yDriftColumnName, rowIndex));
+			
+			image.setPlane(plane, 0, c, t);
+		}
+		
 		
 		return marsOME;
 	}
