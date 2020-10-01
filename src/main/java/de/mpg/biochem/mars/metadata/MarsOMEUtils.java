@@ -215,7 +215,7 @@ public class MarsOMEUtils {
 				plane.setImageID(0);
 				
 				int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
-				int t = Integer.valueOf(table.getStringValue("Frame", rowIndex));
+				int t = rowIndex;
 				
 				plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t)); 
 				plane.setZ(new NonNegativeInteger(0));
@@ -326,32 +326,34 @@ public class MarsOMEUtils {
 		}
 		
 		//Discover channel names...
-		Map<Integer, String> channelIndexToName = new HashMap<Integer, String>();
+		Map<String, String> channelToColumnSuffix = new HashMap<String, String>();
+		for (int colIndex = 0; colIndex < table.getColumnCount(); colIndex++) {
+			if (table.get(colIndex).getHeader().startsWith("Channel "))
+				channelToColumnSuffix.put((String) table.get(colIndex).get(0), table.get(colIndex).getHeader().substring(8));
+		}
 		
-		//Assume MicroManager format
-		Map<Integer, String> channelNames = new LinkedHashMap<Integer, String>();
-		Map<Integer, String> channelBinning = new LinkedHashMap<Integer, String>();
+		Map<Integer, String> channelIndexToChannel = new HashMap<Integer, String>();
+		for (String ch : channelToColumnSuffix.keySet())
+			channelIndexToChannel.put(Integer.valueOf(table.getStringValue("ChannelIndex " + channelToColumnSuffix.get(ch), 0)), ch);
 		
-		table.rows().forEach(row -> {
-			int channelIndex = Integer.valueOf(row.getStringValue("ChannelIndex"));
-			channelBinning.put(channelIndex, row.getStringValue("Binning"));
-			channelNames.put(channelIndex, row.getStringValue("Channel"));
-		});
-		image.setSizeC(new PositiveInteger(channelNames.size()));
-		image.setSizeT(new PositiveInteger((int)table.getValue("Frame", table.getRowCount() - 1))); 
-		if (table.hasColumn("Width"))
+		int imageID	= Integer.valueOf(table.getStringValue("PositionIndex " + channelToColumnSuffix.get(channelIndexToChannel.get(0)), 0));
+		image.setImageID(imageID);
+		
+		image.setSizeC(new PositiveInteger(channelIndexToChannel.size()));
+		image.setSizeT(new PositiveInteger(table.getRowCount())); 
+		if (table.hasColumn("Width " + channelIndexToChannel.get(0)))
 			image.setSizeX(new PositiveInteger(Integer.valueOf(table.getStringValue("Width", 0))));
-		if (table.hasColumn("Height"))
+		if (table.hasColumn("Height " + channelIndexToChannel.get(0)))
 			image.setSizeY(new PositiveInteger(Integer.valueOf(table.getStringValue("Height", 0))));
 		
 		BinningEnumHandler handler = new BinningEnumHandler();
 		
-		for (int channelIndex : channelNames.keySet()) {
+		for (int channelIndex : channelIndexToChannel.keySet()) {
 			MarsOMEChannel channel = new MarsOMEChannel();
 			channel.setChannelIndex(channelIndex);
-			channel.setName(channelNames.get(channelIndex));
+			channel.setName(channelIndexToChannel.get(channelIndex));
 			try {
-				String binKey = channelBinning.get(channelIndex) + "x" + channelBinning.get(channelIndex);
+				String binKey = "1x1";
 				channel.setBinning((Binning) handler.getEnumeration(binKey));
 			} catch (EnumerationException e) {
 				e.printStackTrace();
@@ -359,42 +361,49 @@ public class MarsOMEUtils {
 			image.setChannel(channel, channelIndex);
 		}
 		
-		for (int rowIndex=0; rowIndex < table.getRowCount(); rowIndex++) {
-			MarsOMEPlane plane = new MarsOMEPlane();
-			plane.setImage(image);
-			plane.setImageID(0);
-			
-			int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
-			int t = Integer.valueOf(table.getStringValue("Frame", rowIndex));
-			
-			plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t)); 
-			plane.setZ(new NonNegativeInteger(0));
-			plane.setC(new NonNegativeInteger(c));
-			plane.setT(new NonNegativeInteger(t));
-			
-			for (String heading : table.getColumnHeadingList()) {
-				if (xDriftColumnName.equals(heading) || yDriftColumnName.equals(heading))
-					continue;
-				else if (heading.equals("FileName")) {
-					plane.setFilename(table.getStringValue(heading, rowIndex));
-					continue;
-				} else if (heading.equals("Time (s)")) {
-					plane.setDeltaT(new Time(table.getValue("Time (s)", rowIndex), UNITS.SECOND));
-					continue;
+		for (int c = 0; c < channelIndexToChannel.size(); c++)
+			for (int t = 0; t < table.getRowCount(); t++) {
+				MarsOMEPlane plane = new MarsOMEPlane();
+				plane.setImage(image);
+				plane.setImageID(imageID);
+				
+				plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t)); 
+				plane.setZ(new NonNegativeInteger(0));
+				plane.setC(new NonNegativeInteger(c));
+				plane.setT(new NonNegativeInteger(t));
+				
+				for (String heading : table.getColumnHeadingList()) {
+					if (xDriftColumnName.equals(heading) || yDriftColumnName.equals(heading))
+						continue;
+					else if (heading.equals("FileName " + channelToColumnSuffix.get(channelIndexToChannel.get(c)))) {
+						plane.setFilename(table.getStringValue(heading, t));
+						continue;
+					} else if (heading.equals("Time (s) " + channelToColumnSuffix.get(channelIndexToChannel.get(c)))) {
+						plane.setDeltaT(new Time(table.getValue("Time (s) " + channelToColumnSuffix.get(channelIndexToChannel.get(c)), t), UNITS.SECOND));
+						continue;
+					}
+					
+					//Add all unknown columns as StringFields
+					plane.setStringField(heading, table.getStringValue(heading, t));
 				}
 				
-				//Add all unknown columns as StringFields
-				plane.setStringField(heading, table.getStringValue(heading, rowIndex));
+				if (!xDriftColumnName.equals(""))
+					plane.setXDrift(table.getValue(xDriftColumnName, t));
+				if (!yDriftColumnName.equals(""))
+					plane.setYDrift(table.getValue(yDriftColumnName, t));
+				
+				image.setPlane(plane, 0, c, t);
 			}
-			
-			if (!xDriftColumnName.equals(""))
-				plane.setXDrift(table.getValue(xDriftColumnName, rowIndex));
-			if (!yDriftColumnName.equals(""))
-				plane.setYDrift(table.getValue(yDriftColumnName, rowIndex));
-			
-			image.setPlane(plane, 0, c, t);
-		}
 		
+		marsOME.setImage(image, 0);
+		
+		//Build log message
+		LogBuilder builder = new LogBuilder();
+		String log = LogBuilder.buildTitleBlock("Migrated to OME format");
+		log += builder.buildParameterList() + "\n";
+		log += LogBuilder.endBlock();
+		
+		marsOME.logln(log);
 		
 		return marsOME;
 	}
