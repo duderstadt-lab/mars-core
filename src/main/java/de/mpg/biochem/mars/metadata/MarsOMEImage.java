@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.metadata;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,6 +67,8 @@ import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 import ome.xml.meta.OMEXMLMetadataRoot;
 import io.scif.util.FormatTools;
+
+import java.util.stream.IntStream;
 
 public class MarsOMEImage extends AbstractJsonConvertibleRecord implements GenericModel, JsonConvertibleRecord {
 	private Map<Integer, MarsOMEPlane> marsOMEPlanes = new LinkedHashMap<Integer, MarsOMEPlane>();
@@ -415,7 +418,14 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 	}
 	
 	public Stream<MarsOMEPlane> planes() {
-		return marsOMEPlanes.values().stream();
+		ArrayList<Integer> planeIndexes = new ArrayList<Integer>();
+		marsOMEPlanes.keySet().forEach(index -> planeIndexes.add(index));
+		Collections.sort(planeIndexes);
+		
+		ArrayList<MarsOMEPlane> planeList = new ArrayList<MarsOMEPlane>();
+		planeIndexes.stream().forEach(index -> planeList.add(marsOMEPlanes.get(index)));
+		
+		return planeList.stream();
 	}
 	
 	public void setDimensionOrder(DimensionOrder dimensionOrder) {
