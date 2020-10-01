@@ -115,14 +115,14 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class, label = "DNA Finder", menu = {
+@Plugin(type = Command.class, label = "Build DNA Archive", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "MoleculeArchive Suite", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
+		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
+			mnemonic = 'm'),
 		@Menu(label = "Molecule", weight = 20,
 			mnemonic = 'm'),
-		@Menu(label = "Build DNA Archive", weight = 1, mnemonic = 'd')})
+		@Menu(label = "Build DNA Archive", weight = 1, mnemonic = 'b')})
 public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	
 	//GENERAL SERVICES NEEDED
@@ -153,16 +153,13 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	@Parameter(label="y column")
 	private String yColumn = "y_drift_corr";
 	
-	@Parameter(label="Merge 1")
-	private boolean merge1;
-	
 	@Parameter(label="SingleMoleculeArchive 1")
 	private SingleMoleculeArchive archive1;
 	
 	@Parameter(label="SingleMoleculeArchive 1 Name")
 	private String archive1Name = "mol1";
 	
-	@Parameter(label="Merge 2")
+	@Parameter(label="Merge")
 	private boolean merge2;
 	
 	@Parameter(label="SingleMoleculeArchive 2")
@@ -171,7 +168,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	@Parameter(label="SingleMoleculeArchive 2 Name")
 	private String archive2Name = "mol2";
 	
-	@Parameter(label="Merge 3")
+	@Parameter(label="Merge")
 	private boolean merge3;
 	
 	@Parameter(label="SingleMoleculeArchive 3")
@@ -217,54 +214,29 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			DNASegments.add(dnaSegment);
 		}
 		
-		//Will not work properly unless data is added from the top...
-		MarsTable imageMetadataTable;
-		
-		String processingLog = "";
-		String notes = "";
-		if (merge1 && merge2 && merge3) {
-			imageMetadataTable = mergeImageMetaData(archive1.getMetadata(0), archive2.getMetadata(0), archive3.getMetadata(0));
-			processingLog = archive1Name + ": \n" + archive1.getMetadata(0).getLog() //
-					+ archive2Name + ": \n" + archive2.getMetadata(0).getLog() //
-					+ archive3Name + ": \n" + archive3.getMetadata(0).getLog();
-			
-			notes += archive1Name + ": \n" + archive1.getMetadata(0).getNotes() //
-					+ archive2Name + ": \n" + archive2.getMetadata(0).getNotes() //
-					+ archive3Name + ": \n" + archive3.getMetadata(0).getNotes();
-		} else if (merge1 && merge2) {
-			imageMetadataTable = mergeImageMetaData(archive1.getMetadata(0), archive2.getMetadata(0));
-			processingLog = archive1Name + ": \n" + archive1.getMetadata(0).getLog() //
-					+ archive2Name + ": \n" + archive2.getMetadata(0).getLog();
-			
-			notes = archive1Name + ": \n" + archive1.getMetadata(0).getNotes() //
-					+ archive2Name + ": \n" + archive2.getMetadata(0).getNotes();
-		} else if (merge1) {
-			imageMetadataTable = mergeImageMetaData(archive1.getMetadata(0));
-			processingLog = archive1Name + ": \n" + archive1.getMetadata(0).getLog();
-			
-			notes = archive1Name + ": \n" + archive1.getMetadata(0).getNotes();
+		MarsOMEMetadata metadata1 = archive1.getMetadata(0);
+		if (merge2 && merge3) {
+			metadata1.merge(archive2.getMetadata(0));
+			metadata1.merge(archive3.getMetadata(0));
+		} else if (merge2) {
+			metadata1.merge(archive2.getMetadata(0));
 		} else {
-			logService.info("Nothing checked. Aborting");
 			return;
 		}
 		
-		//FIX ME!!!
-		//MarsOMEMetadata mergedMetadata = new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), imageMetadataTable);
-		//mergedMetadata.logln(processingLog);
-		//mergedMetadata.addNote(notes);
-		//mergedMetadata.setParameter("DnaMoleculeCount", rois.length);
+		metadata1.setParameter("DnaMoleculeCount", rois.length);
 		
 		//Build a new DnaMoleculeArchive 
 		dnaMoleculeArchive = new DnaMoleculeArchive("DnaArchive.yama");
-		//dnaMoleculeArchive.putMetadata(mergedMetadata);
+		dnaMoleculeArchive.putMetadata(metadata1);
 		
 		//Build KDTrees for fast searching
 		RadiusNeighborSearchOnKDTree< MoleculePosition > archive1PositionSearcher = null;
 		RadiusNeighborSearchOnKDTree< MoleculePosition > archive2PositionSearcher = null;
 		RadiusNeighborSearchOnKDTree< MoleculePosition > archive3PositionSearcher = null;
 		
-		if (merge1)
-			archive1PositionSearcher = getMoleculeSearcher(archive1);
+
+		archive1PositionSearcher = getMoleculeSearcher(archive1);
 		
 		if (merge2)
 			archive2PositionSearcher = getMoleculeSearcher(archive2);
@@ -274,7 +246,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
-			//dnaMolecule.setMetadataUID(mergedMetadata.getUID());
+			dnaMolecule.setImage(metadata1.getImage(0).getImageID());
 			dnaMolecule.setParameter("Dna_Top_x1", dnaSegment.getX1());
 			dnaMolecule.setParameter("Dna_Top_y1", dnaSegment.getY1());
 			dnaMolecule.setParameter("Dna_Bottom_x2", dnaSegment.getX2());
@@ -282,16 +254,14 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			
 			MarsTable mergedTable = new MarsTable();
 			
-			if (merge1) {
-				ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(archive1PositionSearcher, archive1, dnaSegment); 
-				if (moleculesOnDNA.size() != 0) {
-					addToMergedTable(mergedTable, moleculesOnDNA, archive1, archive1Name, dnaSegment);
-				}
-				dnaMolecule.setParameter("Number_" + archive1Name, moleculesOnDNA.size());
+			ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(archive1PositionSearcher, archive1, dnaSegment); 
+			if (moleculesOnDNA.size() != 0) {
+				addToMergedTable(mergedTable, moleculesOnDNA, archive1, archive1Name, dnaSegment);
 			}
+			dnaMolecule.setParameter("Number_" + archive1Name, moleculesOnDNA.size());
 			
 			if (merge2) {
-				ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2, dnaSegment); 
+				moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2, dnaSegment); 
 				if (moleculesOnDNA.size() != 0) {
 					addToMergedTable(mergedTable, moleculesOnDNA, archive2, archive2Name, dnaSegment);
 				}
@@ -299,7 +269,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			}
 			
 			if (merge3) {
-				ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3, dnaSegment); 
+				moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3, dnaSegment); 
 				if (moleculesOnDNA.size() != 0) {
 					addToMergedTable(mergedTable, moleculesOnDNA, archive3, archive3Name, dnaSegment);
 				}
@@ -309,13 +279,13 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			if (mergedTable.isEmpty())
 				continue;
 			
-			dnaMolecule.setDataTable(mergedTable);
+			dnaMolecule.setTable(mergedTable);
 			dnaMoleculeArchive.put(dnaMolecule);
 		}
 		
 		logService.info(LogBuilder.endBlock(true));
 		
-		log += "\n" + builder.endBlock(true);
+		log += "\n" + LogBuilder.endBlock(true);
 		dnaMoleculeArchive.logln(log);
 		dnaMoleculeArchive.logln("   ");	
 	}
@@ -323,7 +293,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	private void addToMergedTable(MarsTable mergedTable, ArrayList<SingleMolecule> moleculesOnDNA, SingleMoleculeArchive archive, String name, DNASegment dnaSegment) {
 		int index = 1;
 		for (SingleMolecule molecule : moleculesOnDNA) {
-			MarsTable table = molecule.getDataTable().clone();
+			MarsTable table = molecule.getTable().clone();
 			
 			//We need to make sure to fill the table with Double.NaN values
 			//this will over write the scijava default value of 0.0.
@@ -358,43 +328,10 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		}
 	}
 	
-	private MarsTable mergeImageMetaData(MarsMetadata... metadata) {
-		
-		
-		MarsTable mergedTable = new MarsTable();
-		/*
-		//Merge DataTables
-		//Only one slice column and it is the first column
-		MarsTable meta1 = metadata[0].getTable().clone();
-		mergedTable.add(meta1.get(0));
-		for (int col=1; col < meta1.getColumnCount(); col++) {
-			meta1.get(col).setHeader(meta1.get(col).getHeader() + " " + archive1Name);
-			mergedTable.add(meta1.get(col));
-		}
-		
-		if (metadata.length > 1) {
-			MarsTable meta2 = metadata[1].getTable();
-			for (int col=1; col < meta2.getColumnCount(); col++) {
-				meta2.get(col).setHeader(meta2.get(col).getHeader() + " " + archive2Name);
-				mergedTable.add(meta2.get(col));
-			}
-		}
-
-		if (metadata.length > 2) {
-			MarsTable meta3 = metadata[2].getTable();
-			for (int col=1; col < meta3.getColumnCount(); col++) {
-				meta3.get(col).setHeader(meta3.get(col).getHeader() + " " + archive3Name);
-				mergedTable.add(meta3.get(col));
-			}
-		}
-		*/
-		return mergedTable;
-	}
-	
 	private RadiusNeighborSearchOnKDTree< MoleculePosition > getMoleculeSearcher(SingleMoleculeArchive archive) {
 		ArrayList<MoleculePosition> moleculePositionList = new ArrayList<MoleculePosition>();
 		
-		archive.molecules().forEach(molecule ->  moleculePositionList.add(new MoleculePosition(molecule.getUID(), molecule.getDataTable().median("x"), molecule.getDataTable().median("y"))));
+		archive.molecules().forEach(molecule ->  moleculePositionList.add(new MoleculePosition(molecule.getUID(), molecule.getTable().median("x"), molecule.getTable().median("y"))));
 
 		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(moleculePositionList, moleculePositionList);
 		
@@ -456,7 +393,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		builder.addParameter("DNA length in bps", String.valueOf(DNALength));
 		builder.addParameter("xColumn", String.valueOf(xColumn));
 		builder.addParameter("yColumn", String.valueOf(yColumn));
-		builder.addParameter("Merge 1", String.valueOf(merge1));
 		builder.addParameter("SingleMoleculeArchive 1", archive1.getName());
 		builder.addParameter("SingleMoleculeArchive 1 Name", archive1Name);
 		builder.addParameter("Merge 2", String.valueOf(merge2));
