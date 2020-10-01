@@ -1024,6 +1024,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements Gener
 		} else {
 			rows.add(Arrays.asList("Time Increment", ""));
 		}
+		
+		if (dimensionOrder != null)
+			rows.add(Arrays.asList("Dimension Order", dimensionOrder.getValue()));
 
 		if (sizeX != null)
 			rows.add(Arrays.asList("Size X", this.sizeX.toString()));
