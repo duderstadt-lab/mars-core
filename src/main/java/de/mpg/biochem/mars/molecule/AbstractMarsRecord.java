@@ -411,10 +411,10 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Get the value of a parameter.
+	 * Check if a parameter exists.
 	 * 
 	 * @param parameter The string parameter name to retrieve the value for.
-	 * @return Returns the double value for the parameter name given.
+	 * @return Returns true if the parameter exits and false if not.
 	 */
 	public boolean hasParameter(String parameter) {
 		return parameters.containsKey(parameter);
