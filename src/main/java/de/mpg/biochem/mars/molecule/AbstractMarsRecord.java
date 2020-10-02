@@ -74,6 +74,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	//Parameter map for record properties
 	protected LinkedHashMap<String, Double> Parameters;
 	
+	//Parameter map for record String properties
+	protected LinkedHashMap<String, String> stringParameters;
+	
 	//Table housing main record data.
 	protected MarsTable dataTable;
 	
@@ -89,6 +92,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public AbstractMarsRecord() {
 		super();
 		Parameters = new LinkedHashMap<>();
+		stringParameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		dataTable = new MarsTable();
 		regionsOfInterest = new LinkedHashMap<>();
@@ -134,6 +138,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public AbstractMarsRecord(String UID, MarsTable dataTable) {
 		super();
 		Parameters = new LinkedHashMap<>();
+		stringParameters = new LinkedHashMap<>();
 		Tags = new LinkedHashSet<String>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
@@ -167,6 +172,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 				jGenerator.writeObjectFieldStart("Parameters");
 				for (String name:Parameters.keySet())
 					jGenerator.writeNumberField(name, Parameters.get(name));
+				jGenerator.writeEndObject();
+			}
+		}, IOException.class));
+		outputMap.put("stringParameters", MarsUtil.catchConsumerException(jGenerator -> {
+			if (stringParameters.size() > 0) {
+				jGenerator.writeObjectFieldStart("stringParameters");
+				for (String name:stringParameters.keySet())
+					jGenerator.writeStringField(name, stringParameters.get(name));
 				jGenerator.writeEndObject();
 			}
 		}, IOException.class));
@@ -221,6 +234,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
     			} else {
     				Parameters.put(subfieldname, jParser.getDoubleValue());
     			}
+	    	}
+		}, IOException.class));
+		
+		inputMap.put("stringParameters", MarsUtil.catchConsumerException(jParser -> {
+	    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+	    		String subfieldname = jParser.getCurrentName();
+	    		jParser.nextToken();
+    			stringParameters.put(subfieldname, jParser.getText());
 	    	}
 		}, IOException.class));
 		inputMap.put("DataTable", MarsUtil.catchConsumerException(jParser -> {
@@ -412,6 +433,71 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	public LinkedHashMap<String, Double> getParameters() {
 		return Parameters;
+	}
+	
+	/**
+	 * Add or update a parameter value. Parameters are used to store single 
+	 * values associated with the record. For example, this can be the 
+	 * start and stop times for a region of interest. Or calculated features
+	 * such as a slope. Storing parameters with the record data
+	 * allows for easier and more efficient processing and data extraction.
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The double value to set for the parameter name.
+	 */
+	public void setStringParameter(String parameter, String value) {
+		stringParameters.put(parameter, value);
+	}
+	
+	/**
+	 * Remove all parameter values from the record.
+	 */
+	public void removeAllStringParameters() {
+		stringParameters.clear();
+	}
+	
+	/**
+	 * Remove parameter. Removes the name and value pair.
+	 * 
+	 * @param parameter The parameter name to remove.
+	 */
+	public void removeStringParameter(String parameter) {
+		if (stringParameters.containsKey(parameter)) {
+			stringParameters.remove(parameter);
+		}
+	}
+	
+	/**
+	 * Get the value of a parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the double value for the parameter name given.
+	 */
+	public String getStringParameter(String parameter) {
+		if (stringParameters.containsKey(parameter)) {
+			return stringParameters.get(parameter);
+		} else {
+			return "";
+		}
+	}
+	
+	/**
+	 * Get the value of a parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the double value for the parameter name given.
+	 */
+	public boolean hasStringParameter(String parameter) {
+		return stringParameters.containsKey(parameter);
+	}
+	
+	/**
+	 * Get the map for all parameters.
+	 * 
+	 * @return Returns the map of parameter names to values.
+	 */
+	public LinkedHashMap<String, String> getStringParameters() {
+		return stringParameters;
 	}
 	
 	/**

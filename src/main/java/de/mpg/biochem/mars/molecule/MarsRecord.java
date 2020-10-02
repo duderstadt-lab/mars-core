@@ -166,6 +166,53 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	LinkedHashMap<String, Double> getParameters();
 	
 	/**
+	 * Add or update a parameter value. Parameters are used to store single 
+	 * values associated with the record. For example, this can be the 
+	 * start and stop times for a region of interest. Or calculated features
+	 * such as the slope or variance. Storing parameters with the record data
+	 * allows for easier and more efficient processing and data extraction.
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The double value to set for the parameter name.
+	 */
+	void setStringParameter(String parameter, String value);
+	
+	/**
+	 * Remove all parameter values from the record.
+	 */
+	void removeAllStringParameters();
+	
+	/**
+	 * Remove parameter. Removes the name and value pair.
+	 * 
+	 * @param parameter The parameter name to remove.
+	 */
+	void removeStringParameter(String parameter);
+	
+	/**
+	 * Get the value of a parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the double value for the parameter name given.
+	 */
+	String getStringParameter(String parameter);
+	
+	/**
+	 * Get the value of a parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the double value for the parameter name given.
+	 */
+	boolean hasStringParameter(String parameter);
+	
+	/**
+	 * Get the map for all parameters.
+	 * 
+	 * @return Returns the map of parameter names to values.
+	 */
+	LinkedHashMap<String, String> getStringParameters();
+	
+	/**
 	 * Get the {@link MarsTable} DataTable holding the primary data for
 	 * this molecule record.
 	 * 
