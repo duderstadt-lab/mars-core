@@ -178,7 +178,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * 
 	 * @return Returns the map of parameter names to values.
 	 */
-	LinkedHashMap<String, Double> getParameters();
+	LinkedHashMap<String, Object> getParameters();
 	
 	/**
 	 * Add or update a {@link MarsRegion}. This can be a region of
