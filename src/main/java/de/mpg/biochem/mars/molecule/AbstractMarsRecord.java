@@ -46,6 +46,8 @@ import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
+import java.lang.NullPointerException;
+
 /**
  * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsMetadata}. 
  * All {@link MarsRecord}s have a basic set of properties including a UID, notes, 
@@ -429,6 +431,32 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
+	 * Add or update a parameter value. 
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The string value to set for the parameter name.
+	 */
+	public void setParameter(String parameter, String value) {
+		parameters.put(parameter, value);
+		if (parent != null) {
+			parent.properties().addParameter(parameter);
+		}
+	}
+	
+	/**
+	 * Add or update a parameter value. 
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The boolean value to set for the parameter name.
+	 */
+	public void setParameter(String parameter, boolean value) {
+		parameters.put(parameter, value);
+		if (parent != null) {
+			parent.properties().addParameter(parameter);
+		}
+	}
+	
+	/**
 	 * Remove all parameter values from the record.
 	 */
 	public void removeAllParameters() {
@@ -458,6 +486,33 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		} else {
 			return Double.NaN;
 		}
+	}
+	
+	/**
+	 * Get the value of a string parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the string value for the parameter name given.
+	 */
+	public String getStringParameter(String parameter) {
+		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof String) {
+			return (String) parameters.get(parameter);
+		} else {
+			return "";
+		}
+	}
+	
+	/**
+	 * Get the value of a string parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the boolean value for the parameter name given.
+	 */
+	public boolean getBooleanParameter(String parameter) {
+		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Boolean) {
+			return (boolean) parameters.get(parameter);
+		}
+		throw new NullPointerException();
 	}
 	
 	/**

@@ -146,6 +146,22 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	void setParameter(String parameter, double value);
 	
 	/**
+	 * Add or update a parameter value. 
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The string value to set for the parameter name.
+	 */
+	void setParameter(String parameter, String value);
+	
+	/**
+	 * Add or update a parameter value. 
+	 *  
+	 * @param parameter The string parameter name.
+	 * @param value The boolean value to set for the parameter name.
+	 */
+	void setParameter(String parameter, boolean value);
+	
+	/**
 	 * Remove all parameter values from the record.
 	 */
 	void removeAllParameters();
@@ -164,6 +180,22 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @return Returns the double value for the parameter name given.
 	 */
 	double getParameter(String parameter);
+	
+	/**
+	 * Get the value of a string parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the string value for the parameter name given.
+	 */
+	String getStringParameter(String parameter);
+	
+	/**
+	 * Get the value of a string parameter.
+	 * 
+	 * @param parameter The string parameter name to retrieve the value for.
+	 * @return Returns the boolean value for the parameter name given.
+	 */
+	boolean getBooleanParameter(String parameter);
 	
 	/**
 	 * Get the value of a parameter.
