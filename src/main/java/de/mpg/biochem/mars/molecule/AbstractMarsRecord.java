@@ -290,6 +290,15 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			    	}
 				});
 		
+		setJsonField("stringParameters", null, 
+			jParser -> {
+		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
+		    		String field = jParser.getCurrentName();
+		    		jParser.nextToken();
+	    			parameters.put(field, jParser.getText());
+		    	}
+			});
+		
 		setJsonField("RegionsOfInterest", null, 
 				jParser -> {
 					while (jParser.nextToken() != JsonToken.END_ARRAY) {
