@@ -189,7 +189,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		    		    			}
 		    					} else if (type.equals("string")) {
 		    						parameters.put(name, jParser.getValueAsString());
-		    					} else if (jParser.getValueAsString().equals("boolean")) {
+		    					} else if (type.equals("boolean")) {
 		    						parameters.put(name, jParser.getBooleanValue());
 		    					}
 		    				}
