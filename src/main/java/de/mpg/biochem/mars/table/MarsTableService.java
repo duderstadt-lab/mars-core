@@ -74,6 +74,8 @@ import org.scijava.plugin.PluginInfo;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 
+import ij.measure.ResultsTable;
+
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
 public class MarsTableService extends AbstractPTService<MarsTableService> implements ImageJService {
@@ -159,6 +161,22 @@ public class MarsTableService extends AbstractPTService<MarsTableService> implem
 		columns.sort(String::compareToIgnoreCase);
 		
 		return columns;
+	}
+	
+	public MarsTable createTable(ResultsTable resultsTable) {
+		MarsTable table = new MarsTable("Imported IJ1 ResultsTable");
+		
+		String[] columnHeadings = resultsTable.getHeadings();
+		
+		//For now we assume it is entirely numbers
+		for (int i = 0; i < columnHeadings.length; i++) {
+			DoubleColumn col = new DoubleColumn(columnHeadings[i]);
+			for (int row = 0; row < resultsTable.getCounter(); row++)
+				col.add(resultsTable.getValue(columnHeadings[i], row));
+			table.add(col);
+		}
+		
+		return table;
 	}
 	
 	public UIService getUIService() {

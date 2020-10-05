@@ -36,6 +36,7 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 
 import java.awt.Frame;
 import java.util.ArrayList;
@@ -64,6 +65,9 @@ public class IJ1ResultsTableConversionCommand extends DynamicCommand implements 
 	@Parameter
 	private UIService uiService;
 	
+	@Parameter
+	private MarsTableService marsTableService;
+	
 	@Parameter(label="IJ1 Table", choices = {"a", "b", "c"})
 	private String tableName;
     
@@ -91,17 +95,7 @@ public class IJ1ResultsTableConversionCommand extends DynamicCommand implements 
 			return;
 		}
 		
-		table = new MarsTable("Imported IJ1 ResultsTable");
-		
-		String[] columnHeadings = resultsTable.getHeadings();
-		
-		//For now we assume it is entirely numbers
-		for (int i = 0; i < columnHeadings.length; i++) {
-			DoubleColumn col = new DoubleColumn(columnHeadings[i]);
-			for (int row = 0; row < resultsTable.getCounter(); row++)
-				col.add(resultsTable.getValue(columnHeadings[i], row));
-			table.add(col);
-		}
+		table = marsTableService.createTable(resultsTable);
 	}
 	
 	public static ArrayList<String> getResultsTableTitles() {
