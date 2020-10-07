@@ -497,13 +497,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The File the archive was opened from.
 	 */
 	File getFile();
-	
-	/**
-	 * Set the file the archive should save to.
-	 * 
-	 * @param file The File the archive was opened from.
-	 */
-	//void setFile(File file);
 
 	/**
 	 * Set the name of the archive.
@@ -575,22 +568,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
 	 */
 	MoleculeArchiveProperties properties();
-	
-	/**
-	 * Update the {@link MoleculeArchiveProperties}. Updates the global tag 
-	 * list using the tagIndex and updates the record numbers. 
-	 * If in virtual mode, this saves the properties to the virtual store.
-	 * 
-	 * The parameter list and MarsTable column names are not updated 
-	 * because in virtual mode this would require reading all records in the
-	 * archive, since indexes for these items are not maintained. Therefore,
-	 * the accuracy of these elements rely entirely on updates when adding
-	 * and changing records.
-	 * 
-	 * If a complete update is required then use the {@link #rebuildIndexes()} method 
-	 * or corresponding menu item in the MoleculeArchiveWindow.
-	 */
-	void updateProperties();
 	
 	/**
 	 * Create empty MoleculeArchiveProperties record.

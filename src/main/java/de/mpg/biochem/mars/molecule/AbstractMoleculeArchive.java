@@ -429,8 +429,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong saving the indexes.
 	 */
 	public void rebuildIndexes() throws IOException {
-		lock();
-		
 		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
 		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
 		Set<String> newRegionSet = ConcurrentHashMap.newKeySet();
@@ -527,10 +525,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties.setPositionSet(newPositionSet);
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
+		archiveProperties.setNumberOfMolecules(moleculeList.size());
+		archiveProperties.setNumberOfMetadatas(metadataList.size());
 		
-		updateProperties();
-		
-		unlock();
+		if (virtual)
+			saveProperties();
 	}
 	
 	private void saveIndexes() throws IOException {
@@ -558,7 +557,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void save() throws IOException {
 		if (virtual) {
-			updateProperties();
+			saveProperties();
 			saveIndexes();
 		} else if (smileEncoding) {
 			this.file = saveAs(file);
@@ -585,7 +584,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 	
-		updateProperties();
 		toJSON(jGenerator);
 		
 		jGenerator.close();
@@ -614,7 +612,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 	
-		updateProperties();
 		toJSON(jGenerator);
 		
 		jGenerator.close();
@@ -802,8 +799,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties.setParameterSet(newParameterSet);
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
-
-		updateProperties();
+		archiveProperties.setNumberOfMolecules(moleculeList.size());
+		archiveProperties.setNumberOfMetadatas(metadataList.size());
+		
+		saveProperties();
 			
 		saveIndexes(virtualDirectory, jfactory, fileExtension);
 	}
@@ -1849,38 +1848,19 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return archiveProperties;
 	}
 	
-	/**
-	 * Update the {@link MoleculeArchiveProperties}. Updates the global tag 
-	 * list using the tagIndex and updates the record numbers. 
-	 * If in virtual mode, this saves the properties to the virtual store.
-	 * 
-	 * The parameter list and MarsTable column names are not updated 
-	 * because in virtual mode this would require reading all records in the
-	 * archive, since indexes for these items are not maintained. Therefore,
-	 * the accuracy of these elements relay entirely on updates when adding
-	 * and changing records.
-	 * 
-	 * If a complete update is required then use the {@link #rebuildIndexes()} method 
-	 * or corresponding menu item in the MoleculeArchiveWindow.
-	 */
-	public void updateProperties() {
-		archiveProperties.setNumberOfMolecules(moleculeList.size());
-		archiveProperties.setNumberOfMetadatas(metadataList.size());
-		
-		if (virtual) {
-			try {
-				File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties" + storeFileExtension);
-				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
-				
-				JsonGenerator jGenerator = jfactory.createGenerator(stream);
-				archiveProperties.toJSON(jGenerator);
-				jGenerator.close();
-				
-				stream.flush();
-				stream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	private void saveProperties() {
+		try {
+			File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties" + storeFileExtension);
+			OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
+			
+			JsonGenerator jGenerator = jfactory.createGenerator(stream);
+			archiveProperties.toJSON(jGenerator);
+			jGenerator.close();
+			
+			stream.flush();
+			stream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
