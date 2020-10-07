@@ -87,12 +87,22 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void save() throws IOException;
 	
 	/**
-	 * Saves MoleculeAchive to the given file destination. 
+	 * Saves MoleculeAchive to the given file destination in smile format. 
 	 * 
 	 * @param file a yama file destination. If the .yama is not present it will be added.
+	 * @return File with correct extensions where archive was saved.
 	 * @throws IOException if something goes wrong saving the data.
 	 */
-	void saveAs(File file) throws IOException;
+	File saveAs(File file) throws IOException;
+	
+	/**
+	 * Saves MoleculeAchive to the given file destination in json format. 
+	 * 
+	 * @param file a yama.json file destination. If the .yama.json is not present it will be added.
+	 * @return File with correct extensions where archive was saved.
+	 * @throws IOException if something goes wrong saving the data.
+	 */
+	File saveAsJson(File file) throws IOException;
 	
 	/**
 	 * Creates the directory given and a virtual store inside. 
@@ -103,6 +113,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	void saveAsVirtualStore(File virtualDirectory) throws IOException;
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files
+	 * in json format and with .json file extensions. Rebuilds indexes in 
+	 * the process if the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	void saveAsVirtualJsonStore(File virtualDirectory) throws IOException;
 	
 	/**
 	 * Adds a molecule to the archive. If a molecule with the same UID 
@@ -483,7 +503,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param file The File the archive was opened from.
 	 */
-	void setFile(File file);
+	//void setFile(File file);
 
 	/**
 	 * Set the name of the archive.
@@ -523,30 +543,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * Unlock the archive window after processing is done, if one exists.
 	 */
 	void unlock();
-	
-	/**
-	 * Set json output format to SMILE. See Jackson JSON for further details.
-	 */
-	 void setSMILEOutputEncoding();
-	
-	/**
-	 * Set json output format to text.
-	 */
-	void unsetSMILEOutputEncoding();
-	
-	/**
-	 * Check if SMILE is the output encoding.
-	 * 
-	 * @return True if SMILE is the output encoding, false if not.
-	 */
-	boolean isSMILEOutputEncoding();
-	
-	/**
-	 * Check if SMILE is the input encoding when the archive was opened.
-	 * 
-	 * @return True if SMILE was the input encoding, false if not.
-	 */
-	boolean isSMILEInputEncoding();
 	
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new

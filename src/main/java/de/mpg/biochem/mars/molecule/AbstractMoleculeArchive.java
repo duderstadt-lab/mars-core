@@ -199,8 +199,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * For virtual archives we must keep track of the encoding when it was loaded 
 	 * so we always parse correctly even if the output format has been changed.
 	 */
-	protected boolean inputSmileEncoding = true;
-	protected boolean outputSmileEncoding = true;
+	protected boolean smileEncoding = true;
+	protected String storeFileExtension = ".sml";
 	
 	/*
 	 * Thread count. Should be derived from scijava or Fiji in the future.
@@ -328,17 +328,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	    JsonParser jParser = match.createParserWithMatch();
 	    
 	    if (match.getMatchedFormatName().equals("Smile")) {
-	    	inputSmileEncoding = true;
-	    	outputSmileEncoding = true;
+	    	smileEncoding = true;
 	    	jfactory = smileF;
 	    } else if (match.getMatchedFormatName().equals("JSON")) {
-	    	inputSmileEncoding = false;
-	    	outputSmileEncoding = false;
+	    	smileEncoding = false;
 	    	jfactory = jsonF;
 	    } else {
 	    	//We default to Smile
-	    	inputSmileEncoding = true;
-	    	outputSmileEncoding = true;
+	    	smileEncoding = true;
 	    	jfactory = smileF;
 	    }
 	    
@@ -347,6 +344,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	
 	protected void loadVirtualStore(File file) throws JsonParseException, IOException {
 		File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json");
+		if (propertiesFile.exists())
+			storeFileExtension = ".json";
+		else {
+			storeFileExtension = ".sml";
+			propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.sml");
+		}
 		InputStream propertiesInputStream = new BufferedInputStream(new FileInputStream(propertiesFile));
 		JsonParser propertiesJParser = detectEncoding(propertiesInputStream);
 		
@@ -354,7 +357,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		propertiesJParser.close();
 		propertiesInputStream.close();
 		
-		File indexFile = new File(file.getAbsolutePath() + "/indexes.json");
+		File indexFile = new File(file.getAbsolutePath() + "/indexes" + storeFileExtension);
 		if (indexFile.exists()) {
 			InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
 		    JsonParser indexJParser = jfactory.createParser(indexInputStream);
@@ -443,7 +446,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			String[] moleculeFileNameIndex = new File(file.getAbsolutePath() + "/Molecules").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
-					return name.endsWith(".json");
+					return name.endsWith(storeFileExtension);
 				}
 			});
 			
@@ -454,7 +457,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			String[] metadataFileNameIndex = new File(file.getAbsolutePath() + "/Metadata").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
-					return name.endsWith(".json");
+					return name.endsWith(storeFileExtension);
 				}
 			});
 			
@@ -531,11 +534,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	private void saveIndexes() throws IOException {
-		saveIndexes(file, jfactory);
+		saveIndexes(file, jfactory, storeFileExtension);
 	}
 	
-	private void saveIndexes(File directory, JsonFactory jfactory) throws IOException {
-		File indexFile = new File(directory.getAbsolutePath() + "/indexes.json");
+	private void saveIndexes(File directory, JsonFactory jfactory, String fileExtension) throws IOException {
+		File indexFile = new File(directory.getAbsolutePath() + "/indexes" + fileExtension);
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
@@ -557,8 +560,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (virtual) {
 			updateProperties();
 			saveIndexes();
-		} else
-			saveAs(file);
+		} else if (smileEncoding) {
+			this.file = saveAs(file);
+		} else {
+			this.file = saveAsJson(file);
+		}
 	}
 	
 	/**
@@ -567,7 +573,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param file a yama file destination. If the .yama is not present it will be added.
 	 * @throws IOException if something goes wrong saving the data.
 	 */
-	public void saveAs(File file) throws IOException {
+	public File saveAs(File file) throws IOException {
 		String filePath = file.getAbsolutePath();
 		if (!filePath.endsWith(".yama")) {
 			file = new File(filePath + ".yama");
@@ -575,13 +581,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 		
-		//build a new factory just for this output run...
-		JsonFactory jfactory;
-		if (outputSmileEncoding) {
-			jfactory = new SmileFactory();
-		} else {
-			jfactory = new JsonFactory();
-		}
+		JsonFactory jfactory = new SmileFactory();
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 	
@@ -590,9 +590,39 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		jGenerator.close();
 		
-		//flush and close streams...
 		stream.flush();
 		stream.close();
+		
+		return file;
+	}
+	
+	public File saveAsJson(File file) throws IOException {
+		String filePath = file.getAbsolutePath();
+		if (filePath.endsWith(".yama.json")) {
+			//Great! Do nothing.
+		} else if (filePath.endsWith(".yama")) {
+			file = new File(filePath + ".json");
+		} else if (filePath.endsWith(".json")) {
+			file = new File(filePath.substring(0, filePath.length() - 5) + ".yama.json");
+		} else {
+			file = new File(filePath + ".yama.json");
+		}
+		
+		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+		
+		JsonFactory jfactory = new JsonFactory();
+		
+		JsonGenerator jGenerator = jfactory.createGenerator(stream);
+	
+		updateProperties();
+		toJSON(jGenerator);
+		
+		jGenerator.close();
+		
+		stream.flush();
+		stream.close();
+		
+		return file;
 	}
 	
 	@Override
@@ -670,9 +700,22 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					put(createMolecule(jParser));
 			});
 	}
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files
+	 * in json format with .json file extension. Rebuilds indexes in the 
+	 * process if the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	public void saveAsVirtualJsonStore(File virtualDirectory) throws IOException {
+		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json");
+	}
 
 	/**
-	 * Creates the directory given and a virtual store inside. 
+	 * Creates the directory given and a virtual store inside with all files
+	 * in smile format with .sml file extension. This is the default format. 
 	 * Rebuilds indexes in the process if the archive was loaded
 	 * from a virtual store.
 	 * 
@@ -680,6 +723,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	public void saveAsVirtualStore(File virtualDirectory) throws IOException {
+		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml");
+	}
+	
+	private void saveAsVirtualStore(File virtualDirectory, JsonFactory jfactory, String fileExtension) throws IOException {
 		virtualDirectory.mkdirs();
 		File metadataDir = new File(virtualDirectory.getAbsolutePath() + "/Metadata");
 		File moleculesDir = new File(virtualDirectory.getAbsolutePath() + "/Molecules");
@@ -700,14 +747,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
 		
-		//build a new factory just for this output run...
-		JsonFactory jfactory;
-		if (outputSmileEncoding) {
-			jfactory = new SmileFactory();
-		} else {
-			jfactory = new JsonFactory();
-		}
-		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		try {
@@ -715,7 +754,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	try {
 	        		I metaData = getMetadata(metaUID);
 	        		newIndexes.metadataUIDtoTagList.put(metaUID, metaData.getTags());
-					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metaData, jfactory);
+					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metaData, jfactory, fileExtension);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -741,7 +780,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        	
 	        	archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
 	        	try {
-					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory);
+					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory, fileExtension);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -766,7 +805,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		updateProperties();
 			
-		saveIndexes(virtualDirectory, jfactory);
+		saveIndexes(virtualDirectory, jfactory, fileExtension);
 	}
 	
 	/**
@@ -794,7 +833,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			//Would only occur in virtual store ...
 			//Hmm maybe we should throw IOException all the time ?
 			try {
-				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory);
+				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory, storeFileExtension);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -841,7 +880,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 			
 			try {
-				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"), metadata, jfactory);
+				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"), metadata, jfactory, storeFileExtension);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -873,7 +912,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			metadataList.remove(metaUID);
 		}
 		if (virtual) {
-			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + ".json");
+			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + storeFileExtension);
 			if (metadataFile.exists())
 				metadataFile.delete();
 			indexes().metadataUIDs.remove(metaUID);
@@ -922,7 +961,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				
 				recordLocks.get(metaUID).lock();
 				try {
-					File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + ".json");
+					File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + storeFileExtension);
 					
 					//Need to be read/write to ensure lock but the file is only read here.
 					RandomAccessFile raf = new RandomAccessFile(metadataFile, "rw");
@@ -1040,7 +1079,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			moleculeList.remove(UID);
 		}
 		if (virtual) {
-			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 			if (moleculeFile.exists())
 				moleculeFile.delete();
 			indexes().moleculeUIDs.remove(UID);
@@ -1165,13 +1204,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
-	protected void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory) throws IOException {
+	protected void saveMoleculeToFile(File directory, M molecule, JsonFactory jfactory, String fileExtension) throws IOException {
 		if (!recordLocks.containsKey(molecule.getUID()))
 			recordLocks.put(molecule.getUID(), new ReentrantLock());
 		
 		recordLocks.get(molecule.getUID()).lock();
 		try {
-			File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + ".json");
+			File moleculeFile = new File(directory.getAbsolutePath() + "/" + molecule.getUID() + fileExtension);
 			
 			FileOutputStream stream = new FileOutputStream(moleculeFile);
 			FileChannel channel = stream.getChannel();
@@ -1200,13 +1239,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @throws IOException if the MarsMetadata can't be saved to the file given.
 	 */
-	protected void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory) throws IOException {
+	protected void saveMetadataToFile(File directory, I metadata, JsonFactory jfactory, String fileExtension) throws IOException {
 		if (!recordLocks.containsKey(metadata.getUID()))
 			recordLocks.put(metadata.getUID(), new ReentrantLock());
 		
 		recordLocks.get(metadata.getUID()).lock();
 		try {
-			File metadataFile = new File(directory.getAbsolutePath() + "/" + metadata.getUID() + ".json");
+			File metadataFile = new File(directory.getAbsolutePath() + "/" + metadata.getUID() + fileExtension);
 			FileOutputStream stream = new FileOutputStream(metadataFile);
 			FileChannel channel = stream.getChannel();
 			
@@ -1458,7 +1497,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			if (!moleculeHasTag(UID, tag)) {
 				newMoleculeList.add(molecule.getUID());
 			} else if (virtual) {
-				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 				if (moleculeFile.exists())
 					moleculeFile.delete();
 				indexes().moleculeUIDs.remove(UID);
@@ -1484,7 +1523,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			if (!metadataHasTag(UID,tag)) {
 				newMetadataIndex.add(metaData.getUID());
 			} else if (virtual) {
-				File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + UID + ".json");
+				File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + UID + storeFileExtension);
 				if (metadataFile.exists())
 					metadataFile.delete();
 				indexes().metadataUIDs.remove(metaData.getUID());
@@ -1542,7 +1581,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			recordLocks.get(UID).lock();
 			try {
-				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + ".json");
+				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 				
 				if (!moleculeFile.exists()) {
 					logln("Molecule record " + UID + " cannot be found.");
@@ -1684,16 +1723,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return file;
 	}
 	
-	/**
-	 * Set the file the archive should save to. Does
-	 * nothing if called on a virtual archive.
-	 * 
-	 * @param file The file where the archive should be saved.
-	 */
+	/*
 	public void setFile(File file) {
 		if (!virtual)
 			this.file = file;
 	}
+*/
 
 	/**
 	 * Set the name of the archive.
@@ -1748,38 +1783,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (win != null) {
 			win.unlock();
 		}
-	}
-	
-	/**
-	 * Set json output format to SMILE. See Jackson JSON for further details.
-	 */
-	public void setSMILEOutputEncoding() {
-		outputSmileEncoding = true;
-	}
-	
-	/**
-	 * Set json output format to text.
-	 */
-	public void unsetSMILEOutputEncoding() {
-		outputSmileEncoding = false;
-	}
-	
-	/**
-	 * Check if SMILE is the output encoding.
-	 * 
-	 * @return True if SMILE is the output encoding, false if not.
-	 */
-	public boolean isSMILEOutputEncoding() {
-		return outputSmileEncoding;
-	}
-	
-	/**
-	 * Check if SMILE is the input encoding when the archive was opened.
-	 * 
-	 * @return True if SMILE was the input encoding, false if not.
-	 */
-	public boolean isSMILEInputEncoding() {
-		return inputSmileEncoding;
 	}
 	
 	/**
@@ -1866,7 +1869,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		
 		if (virtual) {
 			try {
-				File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json");
+				File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties" + storeFileExtension);
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);

@@ -28,14 +28,10 @@
  */
 package de.mpg.biochem.mars.molecule;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonParser;
-
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchiveProperties.Indexes;
 
 /**
  * Global properties of Molecule Archives are stored in MoleculeArchiveProperties including 
