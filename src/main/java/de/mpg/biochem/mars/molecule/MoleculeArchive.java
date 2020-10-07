@@ -282,6 +282,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	int getChannel(String UID);
 	
 	/**
+	 * Image index for the molecule with the given UID.
+	 * 
+	 * @param UID The UID of the molecule to retrieve the image index of.
+	 * @return The image index of the molecule in question.
+	 */
+	int getImage(String UID);
+	
+	/**
 	 * Comma separated list of tags for the metadata record with the given UID.
 	 * 
 	 * @param UID The UID of the metadata record to retrieve the tag list for.
