@@ -229,7 +229,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		    	}
 			});
 		
-		// FOR BACKWARDS COMPATIBILITY 
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+		
 		setJsonField("DataTable", null, 
 				jParser -> table.fromJSON(jParser));
 		

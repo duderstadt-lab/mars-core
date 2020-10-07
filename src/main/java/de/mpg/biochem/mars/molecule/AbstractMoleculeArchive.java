@@ -55,10 +55,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import de.mpg.biochem.mars.molecule.commands.*;
-
-import org.scijava.ui.DialogPrompt.MessageType;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -88,8 +84,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.stream.Collectors.toList;
 
-import org.scijava.Context;
-import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
 
 /**
@@ -219,6 +213,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param name The name archive.
 	 */
 	public AbstractMoleculeArchive(String name) {
+		super();
 		this.name = name;
 		this.virtual = false;
 		
@@ -237,6 +232,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if there is a problem with the file location.
 	 */
 	public AbstractMoleculeArchive(File file) throws JsonParseException, IOException {
+		super();
 		this.name = file.getName();
 		this.file = file;
 		
@@ -270,6 +266,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if there is a problem with the file provided.
 	 */
 	public AbstractMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+		super();
 		this.name = name;
 		this.file = file;
 		
@@ -299,6 +296,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param table A MarsTable to build the archive from.
 	 */
 	public AbstractMoleculeArchive(String name, MarsTable table) {
+		super();
 		this.name = name;
 		this.virtual = false;
 		
@@ -383,13 +381,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	private void buildFromTable(MarsTable results) {
-		//First we have to index the groups in the table to determine the number of Molecules and their average size...
-		//Here we assume their is a molecule column that defines which data is related to which molecule.
 		LinkedHashMap<Integer, GroupIndices> groups = MarsTableService.find_group_indices(results, "molecule");
 		
-		//We need to generate and add an Metadata entry for the molecules from the the table
-		//This will basically be empty, but as further processing steps occurs the log will be filled in
-		//Also, the DataTable can be updated manually.
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
 		I meta = createMetadata(metaUID);
 		putMetadata(meta);
@@ -403,7 +396,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 		}
 		
-		//Now we need to build the archive from the table, molecule by molecule
 		for (int mol: groups.keySet()) {
 			MarsTable molTable = new MarsTable();
 			for (String header: headers) {
@@ -592,7 +584,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		
+	
+		updateProperties();
 		toJSON(jGenerator);
 		
 		jGenerator.close();
@@ -602,97 +595,82 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		stream.close();
 	}
 	
-	/**
-	 * Write the MoleculeArchive record to JSON. Uses the provided
-	 * JsonGenerator created elsewhere to stream the MoleculeArchive
-	 * record to JSON.
-	 * 
-	 * @param jGenerator A JsonGenerator for stream the MoleculeArchive
-	 * record to JSON.
-	 * 
-	 * @throws IOException if there is a problem writing to the file.
-	 */
-	public void toJSON(JsonGenerator jGenerator) throws IOException {
-		jGenerator.writeStartObject();
-		
-		updateProperties();
-		
-		jGenerator.writeFieldName("properties");
-		archiveProperties.toJSON(jGenerator);
-		
-		if (metadataList.size() > 0) {
-			jGenerator.writeArrayFieldStart("metadata");
-			Iterator<String> iter = metadataList.iterator();
-			while (iter.hasNext()) {
-				getMetadata(iter.next()).toJSON(jGenerator);
-			}
-			jGenerator.writeEndArray();
-		}
-		
-		if (moleculeList.size() > 0) {
-			jGenerator.writeArrayFieldStart("molecules");
-			Iterator<String> iterator = moleculeList.iterator();
-			while (iterator.hasNext()) {
-				get(iterator.next()).toJSON(jGenerator);
-			}
-			jGenerator.writeEndArray();
-		}
-		
-		jGenerator.writeEndObject();
-	}
-	
-	/**
-	 * Read a MoleculeArchive from JSON. Load a MoleculeArchive record
-	 * using the JsonParser stream provided. Only for non-virtual archives.
-	 * If the archive is virtual, different archive objects are stored in 
-	 * individual files whereas this excepts a JsonParser streaming from 
-	 * a single complete MoleculeArchive yama file.
-	 * 
-	 * @param jParser A JsonParser for loading MoleculeArchives.
-	 * 
-     * @throws IOException if there is a problem reading from the stream.
-	 */
-	public void fromJSON(JsonParser jParser) throws IOException {
-		jParser.nextToken();
-		jParser.nextToken();
-		if ("properties".equals(jParser.getCurrentName()) || "MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
-			jParser.nextToken();
-			archiveProperties.fromJSON(jParser);
-		} else
-			return;
-		
-		String fieldBlockName = "";
-		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldName = jParser.getCurrentName();
-			
-			if (fieldName == null)
-		    	continue;
-		    else 
-		    	fieldBlockName = fieldName;
-			
-			if ("metadata".equals(fieldName) || "Metadata".equals(fieldName) || "ImageMetadata".equals(fieldName) || "ImageMetaData".equals(fieldName))
+	@Override
+	protected void createIOMaps() {
+
+		setJsonField("properties", 
+			jGenerator -> {
+				jGenerator.writeFieldName("properties");
+				archiveProperties.toJSON(jGenerator);
+			}, 
+			jParser -> archiveProperties.fromJSON(jParser));	
+			 	
+		setJsonField("metadata", 
+			jGenerator -> {
+				if (metadataList.size() > 0) {
+					jGenerator.writeArrayFieldStart("metadata");
+					Iterator<String> iter = metadataList.iterator();
+					while (iter.hasNext())
+						getMetadata(iter.next()).toJSON(jGenerator);
+					jGenerator.writeEndArray();
+				}
+			 }, 
+			jParser -> {
 				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					putMetadata(createMetadata(jParser));
-			
-			if ("molecules".equals(fieldName) || "Molecules".equals(fieldName))
+			});
+		
+		setJsonField("molecules", 
+			jGenerator -> {
+				if (moleculeList.size() > 0) {
+					jGenerator.writeArrayFieldStart("molecules");
+					Iterator<String> iterator = moleculeList.iterator();
+					while (iterator.hasNext())
+						get(iterator.next()).toJSON(jGenerator);
+					jGenerator.writeEndArray();
+				}
+			 }, 
+			jParser -> {
 				while (jParser.nextToken() != JsonToken.END_ARRAY)
 					put(createMolecule(jParser));
-			
-			//SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it and all substructures that contain arrays or objects
-		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownObjects(jParser);
-		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
-		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownArrays(jParser);
-		    } else {
-		    	//Must just be a normal field... so it won't escape the loop prematurely.
-		    }
-		}
+			});
+		
+		/*
+		 * 
+		 * The fields below are needed for backwards compatibility.
+		 * 
+		 * Please remove for a future release.
+		 * 
+		 */
+		
+		setJsonField("MoleculeArchiveProperties", null, 
+			jParser -> archiveProperties.fromJSON(jParser));
+		
+		setJsonField("Metadata", null, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
+					putMetadata(createMetadata(jParser));
+			});
+		
+		setJsonField("ImageMetadata", null, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
+					putMetadata(createMetadata(jParser));
+			});
+		
+		setJsonField("ImageMetaData", null, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
+					putMetadata(createMetadata(jParser));
+			});
+		
+		setJsonField("Molecules", null, 
+			jParser -> {
+				while (jParser.nextToken() != JsonToken.END_ARRAY)
+					put(createMolecule(jParser));
+			});
 	}
-	
+
 	/**
 	 * Creates the directory given and a virtual store inside. 
 	 * Rebuilds indexes in the process if the archive was loaded
@@ -775,9 +753,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	      forkJoinPool.shutdown();
 	   }
 		
-		if (virtual) {
+		if (virtual)
 			indexes = newIndexes;
-		}
 		
 		archiveProperties.setTagSet(newTagSet);
 		archiveProperties.setRegionSet(newRegionSet);
@@ -787,16 +764,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
 		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
 
-		//Save archive properties
-		File propertiesFile = new File(virtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
-		
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		archiveProperties.toJSON(jGenerator);
-		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
+		updateProperties();
 			
 		saveIndexes(virtualDirectory, jfactory);
 	}
