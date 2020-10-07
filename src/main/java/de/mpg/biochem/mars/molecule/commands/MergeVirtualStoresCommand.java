@@ -42,7 +42,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import org.apache.commons.io.FileUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,13 +68,13 @@ import org.scijava.ui.DialogPrompt.MessageType;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.util.LogBuilder;
-import de.mpg.biochem.mars.util.MarsUtil;
 
 @Plugin(type = Command.class, label = "Merge Virtual Stores", menu = {
 		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -97,16 +100,12 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 	@Parameter(label="Directory", style="directory")
     private File directory;
 
-	@Parameter(label="IO encoding is Smile")
-	private boolean smileEncoding = true;
-
 	@Override
 	public void run() {
 		LogBuilder builder = new LogBuilder();
 
 		String log = LogBuilder.buildTitleBlock("Merge Virtual Stores");
 		builder.addParameter("Directory", directory.getAbsolutePath());
-		builder.addParameter("IO encoding is Smile", String.valueOf(smileEncoding));
 		log += builder.buildParameterList();
 		logService.info(log);
 	
@@ -137,7 +136,15 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ArrayList<String> archiveTypes = new ArrayList<String>();
 			for (File file: archiveDirectoryList) {
 				try {
-					archiveTypes.add(moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json")));
+					File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.sml");
+					if (propertiesFile.exists())
+						archiveTypes.add(moleculeArchiveService.getArchiveTypeFromStore(propertiesFile));
+					else {
+						logService.info("Could not locate " + file.getAbsolutePath() + "/MoleculeArchiveProperties.sml.");
+						logService.info("All archives must be in smile format for merging. Please remove or fix this archive.");
+						logService.error(LogBuilder.endBlock(false));
+						return;
+					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -150,22 +157,13 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 					logService.info("Not all archives are of the same type. Aborting merge.");
 					for (int i=0;i< archiveTypes.size();i++)
 						logService.info(archiveDirectoryList[i].getName() + " is type " + archiveTypes.get(i));
+					logService.error(LogBuilder.endBlock(false));
 					return;
 				}
 			}
 			
 			for (File virtualDirectory: archiveDirectoryList) {
 				MoleculeArchive<?,?,?> archive = moleculeArchiveService.createArchive(archiveType, virtualDirectory);
-				
-				if (archive.isSMILEInputEncoding() && !smileEncoding) {
-					logService.error("IO encoding was set to JSON but " + virtualDirectory.getName() + " has Smile format. All virtual stores to be merged must have the format specified. Aborting...");
-			    	logService.error(LogBuilder.endBlock(false));
-			    	return;
-				} else if (!archive.isSMILEInputEncoding() && smileEncoding) {
-					logService.error("IO encoding was set to Smile but " + virtualDirectory.getName() + " has JSON format. All virtual stores to be merged must have the format specified. Aborting...");
-			    	logService.error(LogBuilder.endBlock(false));
-			    	return;
-				}
 				archives.add(archive);
 			}
 			
@@ -173,15 +171,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();			
 		
-			//Build JSON factory with specified encoding.
-			JsonFactory jfactory;
-			if (smileEncoding) {
-				mergedArchiveType.setSMILEOutputEncoding();
-				jfactory = new SmileFactory();
-			} else {
-				mergedArchiveType.unsetSMILEOutputEncoding();
-				jfactory = new JsonFactory();
-			}
+			JsonFactory jfactory = new SmileFactory();
 			
 			int numMolecules = 0;
 			int numMetadata = 0;
@@ -204,7 +194,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			mergedProperties.setComments(globalComments);
 			
 			try {
-				File propertiesFile = new File(newVirtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.json");
+				File propertiesFile = new File(newVirtualDirectory.getAbsolutePath() + "/MoleculeArchiveProperties.sml");
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
@@ -217,108 +207,113 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				e.printStackTrace();
 			}
 			
-			//Now we need to create the indexes file from all the archive records..
-			ArrayList<String> moleculeIndex = new ArrayList<String>();
-			ArrayList<String> metadataIndex = new ArrayList<String>();
-			Set<String> virtualMoleculesSet = ConcurrentHashMap.newKeySet();
-			Set<String> virtualMetadataSet = ConcurrentHashMap.newKeySet();
+			//read in all MarsMetadata items from all archives - I hope they fit in memory :)
+			ArrayList<MarsMetadata> allMetadataItems = new ArrayList<MarsMetadata>();
+			ArrayList<String> metaUIDs = new ArrayList<String>();
 			
-			ConcurrentMap<String, String> moleculeMetadataUIDIndex = new ConcurrentHashMap<>();
-			ConcurrentMap<String, LinkedHashSet<String>> tagIndex = new ConcurrentHashMap<>();
-			ConcurrentMap<String, Integer> channelIndex = new ConcurrentHashMap<>();
-			ConcurrentMap<String, LinkedHashSet<String>> metadataTagIndex = new ConcurrentHashMap<>();
+			for (MoleculeArchive<?,?,?> archive : archives)
+				archive.metadata().forEach(metadata -> allMetadataItems.add(metadata));
+			
+			Set<String> duplicateMetadataUIDs = new HashSet<String>();
+			
+			//First make a list of duplicates if there are duplicates
+			for (MarsMetadata metaItem : allMetadataItems) {
+				String metaUID = metaItem.getUID();
+				if (metaUIDs.contains(metaUID)) {
+					duplicateMetadataUIDs.add(metaUID);
+				} else {
+					metaUIDs.add(metaUID);
+					metaItem.logln(log);
+				}
+			}
+			
+			Map<String, ArrayList<MarsMetadata>> duplicateMetadatas = new HashMap<String, ArrayList<MarsMetadata>>();
+			
+			for (String duplicateMetaUID : duplicateMetadataUIDs) {
+				Set<Integer> imageIndexes = new HashSet<Integer>();
+				ArrayList<MarsMetadata> listofDuplicates = new ArrayList<MarsMetadata>();
+				for (MarsMetadata metaItem : allMetadataItems) {
+					if (metaItem.getUID().equals(duplicateMetaUID)) {
+						listofDuplicates.add(metaItem);
+						for (int imageIndex = 0; imageIndex < metaItem.getImageCount(); imageIndex++) {
+							if (imageIndexes.contains(metaItem.getImage(imageIndex).getImageID())) {
+								logService.info("Duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImageID() + " found.");
+								logService.info("Are you trying to merge copies of the same dataset?");
+								logService.info("Please resolve the conflict and run the merge virtual stores command again.");
+								logService.info(LogBuilder.endBlock(false));
+								uiService.showDialog("Merge failed due to duplicate metadata record " + duplicateMetaUID + " image " + metaItem.getImage(imageIndex).getImageID() + ".\n"
+										+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
+								return;
+							} else {
+								imageIndexes.add(metaItem.getImage(imageIndex).getImageID());
+							}
+						}
+					}
+				}
+				duplicateMetadatas.put(duplicateMetaUID, listofDuplicates);
+			}
+
+			//Now we need to merge any duplicate Metadata records that contain different positions
+			for (String duplicateMetaUID : duplicateMetadatas.keySet()) {
+				List<MarsMetadata> duplicates = duplicateMetadatas.get(duplicateMetaUID);
+				MarsMetadata mergedMetadata = duplicates.get(0);
+
+				for (int i=1; i< duplicates.size(); i++) {
+					mergedMetadata.merge(duplicates.get(i));
+				}
+
+				for (int i=0; i < allMetadataItems.size(); i++) {
+					if (allMetadataItems.get(i).getUID().equals(duplicateMetaUID)) {
+						allMetadataItems.remove(i);
+						i--;
+					}
+				}
+				allMetadataItems.add(mergedMetadata);
+			}
+			
+			MoleculeArchiveIndex mergedIndex = new MoleculeArchiveIndex();
 			
 			for (MoleculeArchive<?, ?, ?> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
-					if (virtualMoleculesSet.contains(UID)) {
+					if (mergedIndex.moleculeUIDs.contains(UID)) {
 						logService.error("Duplicate molecule entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
 						uiService.showDialog("Merge failed due to duplicate molecule record " + UID + ".\n"
 								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
+						logService.error(LogBuilder.endBlock(false));
 						return;
 					}
-					moleculeIndex.add(UID);
-					virtualMoleculesSet.add(UID);
-					moleculeMetadataUIDIndex.put(UID, archive.getMetadataUIDforMolecule(UID));
+					mergedIndex.moleculeUIDs.add(UID);
+					mergedIndex.moleculeUIDtoMetadataUID.put(UID, archive.getMetadataUIDforMolecule(UID));
 					if (archive.getTagSet(UID) != null)	
-						tagIndex.put(UID, archive.getTagSet(UID));
+						mergedIndex.moleculeUIDtoTagList.put(UID, archive.getTagSet(UID));
 					if (archive.getChannel(UID) > -1)
-						channelIndex.put(UID, archive.getChannel(UID));
+						mergedIndex.moleculeUIDtoChannel.put(UID, archive.getChannel(UID));
+					if (archive.getImage(UID) > -1)
+						mergedIndex.moleculeUIDtoImage.put(UID, archive.getImage(UID));
 				}
 				
 				for (String metaUID : archive.getMetadataUIDs()) {
-					if (virtualMetadataSet.contains(metaUID)) {
-						logService.error("Duplicate metadata entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
-						uiService.showDialog("Merge failed due to duplicate metadata record " + metaUID + ".\n"
-								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
-						return;
-					}
-					metadataIndex.add(metaUID);
-					virtualMetadataSet.add(metaUID);
+					mergedIndex.metadataUIDs.add(metaUID);
 					if (archive.getMetadataTagSet(metaUID) != null)
-						metadataTagIndex.put(metaUID, archive.getMetadataTagSet(metaUID));
+						if (mergedIndex.metadataUIDtoTagList.keySet().contains(metaUID))
+							mergedIndex.metadataUIDtoTagList.get(metaUID).addAll(archive.getMetadataTagSet(metaUID));
+						else
+							mergedIndex.metadataUIDtoTagList.put(metaUID, archive.getMetadataTagSet(metaUID));
 				}
 			}
 			
 			//Let's release the memory used up by the archives..
-			archives = null;
+			//archives = null;
 			
-			//Before we write the new indexes file we should natural order sort the entries.
-			moleculeIndex = (ArrayList<String>)moleculeIndex.stream().sorted().collect(toList());
-			metadataIndex = (ArrayList<String>)metadataIndex.stream().sorted().collect(toList());
-			
-			File indexFile = new File(newVirtualDirectory.getAbsolutePath() + "/indexes.json");
+			File indexFile = new File(newVirtualDirectory.getAbsolutePath() + "/indexes.sml");
 			OutputStream stream;
 			try {
-				stream = new BufferedOutputStream(new FileOutputStream(indexFile));
-				
+				stream = new BufferedOutputStream(new FileOutputStream(indexFile));				
 				JsonGenerator jGenerator = jfactory.createGenerator(stream);
 				
-				jGenerator.writeStartObject();
-	
-				//Write MetadataIndex
-				jGenerator.writeFieldName("MetadataIndex");
-				jGenerator.writeStartArray();
-				for (String metaUID : metadataIndex) {
-					jGenerator.writeStartObject();
-					jGenerator.writeStringField("UID", metaUID);
-					
-					if (metadataTagIndex.containsKey(metaUID)) {
-						jGenerator.writeArrayFieldStart("Tags");
-						for (String tag : metadataTagIndex.get(metaUID)) {
-							jGenerator.writeString(tag);
-						}
-						jGenerator.writeEndArray();
-					}
-					
-					jGenerator.writeEndObject();
-				}
-				jGenerator.writeEndArray();
-				
-				//Write moleculeIndex
-				jGenerator.writeArrayFieldStart("MoleculeIndex");
-				for (String UID : moleculeIndex) {
-					jGenerator.writeStartObject();
-					jGenerator.writeStringField("UID", UID);
-					jGenerator.writeStringField("MetadataUID", moleculeMetadataUIDIndex.get(UID));
-					
-					if (tagIndex.containsKey(UID)) {
-						jGenerator.writeArrayFieldStart("Tags");
-						for (String tag : tagIndex.get(UID)) {
-							jGenerator.writeString(tag);
-						}
-						jGenerator.writeEndArray();
-					}
-					
-					if (channelIndex.containsKey(UID)) {
-						jGenerator.writeNumberField("theC", channelIndex.get(UID));
-					}
-					
-					jGenerator.writeEndObject();
-				}
-				jGenerator.writeEndArray();
+				mergedIndex.toJSON(jGenerator);
 	
 				jGenerator.close();
-				
 				stream.flush();
 				stream.close();
 			} catch (IOException e) {
@@ -342,29 +337,56 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			FilenameFilter nameFilter = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                   if (name.endsWith(".json"))
+                   if (name.startsWith("."))
+      	     		  return false; 
+                	
+                   if (name.endsWith(".sml"))
                  	  return true;
              	  else
              		  return false;
                 }
              };
+             
+             String storeList = "";
+ 			for (int i=0; i<archiveDirectoryList.length; i++) 
+ 				storeList += archiveDirectoryList[i].getName() + ", ";
+ 			if (archiveDirectoryList.length > 0)
+ 				storeList = storeList.substring(0, storeList.length() - 2);
+ 			
+ 			//Now we just need to update the metadata logs.
+ 			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
+ 			log += "Including: " + storeList + "\n";
+ 			log += "In total " + mergedProperties.getNumberOfMetadatas() + " MarsMetadata records were merged.\n";
+ 			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
+ 			log += LogBuilder.endBlock(true) + "\n";
+             
+            for (MarsMetadata marsMetadata : allMetadataItems) {
+            	marsMetadata.logln(log);
+            	File metadataFile = new File(newMetadataDirectory.getAbsolutePath() + "/" + marsMetadata.getUID() + ".sml");
+    			try {
+    				OutputStream metaStream = new BufferedOutputStream(new FileOutputStream(metadataFile));				
+    				JsonGenerator jGenerator = jfactory.createGenerator(metaStream);
+    				
+    				mergedIndex.toJSON(jGenerator);
+    	
+    				jGenerator.close();
+    				metaStream.flush();
+    				metaStream.close();
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+            }
 			
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 			try {
 		        forkJoinPool.submit(() -> virtualStoreDirectoryList.parallelStream().forEach(directory -> { 
 		        	try {
-			        	File[] metaDataRecords = new File(directory.getAbsolutePath() + "/Metadata").listFiles(nameFilter);
-			        	for (File metaDataRecord : metaDataRecords) {
-			        		FileUtils.copyFileToDirectory(metaDataRecord, newMetadataDirectory);
-			        	}
-			        	
 			        	File[] moleculeRecords = new File(directory.getAbsolutePath() + "/Molecules").listFiles(nameFilter);
 			        	for (File moleculeRecord : moleculeRecords) {
 			        		FileUtils.copyFileToDirectory(moleculeRecord, newMoleculeDirectory);
 			        	}
 		        	} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 		        })).get();        
@@ -374,26 +396,6 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		   } finally {
 		      forkJoinPool.shutdown();
 		   }
-			
-			String storeList = "";
-			for (int i=0; i<archiveDirectoryList.length; i++) 
-				storeList += archiveDirectoryList[i].getName() + ", ";
-			if (archiveDirectoryList.length > 0)
-				storeList = storeList.substring(0, storeList.length() - 2);
-			
-			//Now we just need to update the metadata logs.
-			log += "Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store\n";
-			log += "Including: " + storeList + "\n";
-			log += "In total " + mergedProperties.getNumberOfMetadatas() + " MarsMetadata records were merged.\n";
-			log += "In total " + mergedProperties.getNumberOfMolecules() + " molecules were merged.\n";
-			log += LogBuilder.endBlock(true) + "\n";
-			try {
-				SingleMoleculeArchive newArchive = new SingleMoleculeArchive(newVirtualDirectory);
-				newArchive.logln(log);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			
 			logService.info("Merged " + archiveDirectoryList.length + " virtual stores into the output virtual store merged.yama.store");
 			log += "Including: " + storeList + "\n";
@@ -417,13 +419,5 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	public File getDirectory() {
 		return directory;
-	}
-
-	public void setSmileEncoding(boolean smileEncoding) {
-		this.smileEncoding = smileEncoding;
-	}
-
-	public boolean getSmileEncoding() {
-		return smileEncoding;
 	}
 }

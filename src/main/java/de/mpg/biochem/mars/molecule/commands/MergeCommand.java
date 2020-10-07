@@ -102,16 +102,12 @@ public class MergeCommand extends DynamicCommand {
 	@Parameter(label="Directory", style="directory")
     private File directory;
 	
-	@Parameter(label="Use smile encoding")
-	private boolean smileEncoding = true;
-	
 	@Override
 	public void run() {				
 		LogBuilder builder = new LogBuilder();
 		
 		String log = LogBuilder.buildTitleBlock("Merge Archives");
 		builder.addParameter("Directory", directory.getAbsolutePath());
-		builder.addParameter("Use smile encoding", String.valueOf(smileEncoding));
 		log += builder.buildParameterList();
 		logService.info(log);
 		
@@ -123,21 +119,10 @@ public class MergeCommand extends DynamicCommand {
         	  if (name.startsWith("."))
         		  return false;
         	   
-              if(name.lastIndexOf('.') > 0) {
-              
-                 // get last index for '.' char
-                 int lastIndex = name.lastIndexOf('.');
-                 
-                 // get extension
-                 String str = name.substring(lastIndex);
-                 
-                 // match path name extension
-                 if(str.equals(".yama")) {
-                    return true;
-                 }
-              }
-              
-              return false;
+        	  if (name.endsWith(".yama"))
+            	  return true;
+        	  else
+        		  return false;
            }
         };
 		
@@ -304,14 +289,8 @@ public class MergeCommand extends DynamicCommand {
 			try {
 				OutputStream stream = new BufferedOutputStream(new FileOutputStream(fileOUT));
 				
-				JsonGenerator jGenerator;
-				if (smileEncoding) {
-					SmileFactory jfactory = new SmileFactory();
-					jGenerator = jfactory.createGenerator(stream);
-				} else {
-					JsonFactory jfactory = new JsonFactory();
-					jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-				}
+				SmileFactory jfactory = new SmileFactory();
+				JsonGenerator jGenerator = jfactory.createGenerator(stream);
 				
 				//We have to have a starting { for the json...
 				jGenerator.writeStartObject();
@@ -373,13 +352,5 @@ public class MergeCommand extends DynamicCommand {
 	
 	public File getDirectory() {
 		return directory;
-	}
-	
-	public void setSmileEncoding(boolean smileEncoding) {
-		this.smileEncoding = smileEncoding;
-	}
-	
-	public boolean getSmileEncoding() {
-		return smileEncoding;
 	}
 }
