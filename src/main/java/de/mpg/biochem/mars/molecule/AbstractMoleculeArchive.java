@@ -747,10 +747,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		try {
 			forkJoinPool.submit(() -> metadataList.parallelStream().forEach(metaUID -> { 
 	        	try {
-	        		I metaData = getMetadata(metaUID);
+	        		I metadata = getMetadata(metaUID);
 	        		newIndexes.metadataUIDs.add(metaUID);
-	        		newIndexes.metadataUIDtoTagList.put(metaUID, metaData.getTags());
-					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metaData, jfactory, fileExtension);
+	        		if (!metadata.hasNoTags())
+	        			newIndexes.metadataUIDtoTagList.put(metaUID, metadata.getTags());
+					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metadata, jfactory, fileExtension);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
@@ -760,7 +761,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	        forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
 	        	newIndexes.moleculeUIDs.add(UID);
-	        	newIndexes.moleculeUIDtoTagList.put(UID, molecule.getTags());
+	        	if (!molecule.hasNoTags())
+	        		newIndexes.moleculeUIDtoTagList.put(UID, molecule.getTags());
 	        	if (molecule.getChannel() > -1)
 	        		newIndexes.moleculeUIDtoChannel.put(UID, molecule.getChannel());
 	        	if (molecule.getImage() > -1)
@@ -1142,7 +1144,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return A set containing all tags for the given molecule.
 	 */
 	public LinkedHashSet<String> getTagSet(String UID) {
-		return indexes().moleculeUIDtoTagList.get(UID);
+		if (!virtual)
+			return moleculeMap.get(UID).getTags();
+		else
+			return indexes().moleculeUIDtoTagList.get(UID);
 	}
 	
 	/**
@@ -1152,7 +1157,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return The channel index of the molecule in question.
 	 */
 	public int getChannel(String UID) {
-		if (indexes().moleculeUIDtoChannel.containsKey(UID))
+		if (!virtual) {
+			return moleculeMap.get(UID).getChannel();
+		} else if (indexes().moleculeUIDtoChannel.containsKey(UID))
 			return indexes().moleculeUIDtoChannel.get(UID);
 		else 
 			return -1;
@@ -1165,7 +1172,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return The image index of the molecule in question.
 	 */
 	public int getImage(String UID) {
-		if (indexes().moleculeUIDtoImage.containsKey(UID))
+		if (!virtual) {
+			return moleculeMap.get(UID).getImage();
+		} else if (indexes().moleculeUIDtoImage.containsKey(UID))
 			return indexes().moleculeUIDtoImage.get(UID);
 		else 
 			return -1;
@@ -1205,7 +1214,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return The set of tags for the given MarsMetadata record.
 	 */
 	public LinkedHashSet<String> getMetadataTagSet(String UID) {
-		return indexes().metadataUIDtoTagList.get(UID);
+		if (!virtual)
+			return metadataMap.get(UID).getTags();
+		else 
+			return indexes().metadataUIDtoTagList.get(UID);
 	}
 	
 	/**
