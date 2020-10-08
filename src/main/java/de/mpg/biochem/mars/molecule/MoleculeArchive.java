@@ -122,7 +122,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsVirtualJsonStore(File virtualDirectory) throws IOException;
+	void saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
 	
 	/**
 	 * Adds a molecule to the archive. If a molecule with the same UID 
