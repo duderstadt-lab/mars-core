@@ -313,11 +313,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties = createProperties();
 		archiveProperties.setParent(this);
 		
-		if (virtual) {
-			recordLocks = new ConcurrentHashMap<>();
-		} else {
-			moleculeMap = new ConcurrentHashMap<>();
-		}
+		recordLocks = new ConcurrentHashMap<>();
+		moleculeMap = new ConcurrentHashMap<>();
 	}
 	
 	protected JsonParser detectEncoding(InputStream inputStream) throws IOException {
@@ -449,7 +446,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			});
 			
 			for (int i=0;i<moleculeFileNameIndex.length;i++) {
-				String UID = moleculeFileNameIndex[i].substring(0, moleculeFileNameIndex[i].length() - 5);
+				String UID = moleculeFileNameIndex[i].substring(0, moleculeFileNameIndex[i].length() - storeFileExtension.length());
 				newIndexes.moleculeUIDs.add(UID);
 			}
 			
@@ -460,7 +457,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			});
 			
 			for (int i=0;i<metadataFileNameIndex.length;i++) {
-				String UID = metadataFileNameIndex[i].substring(0, metadataFileNameIndex[i].length() - 5);
+				String UID = metadataFileNameIndex[i].substring(0, metadataFileNameIndex[i].length() - storeFileExtension.length());
 				newIndexes.metadataUIDs.add(UID);
 			}
 			
@@ -530,20 +527,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties.setNumberOfMetadatas(metadataList.size());
 		
 		if (virtual)
-			saveProperties();
+			saveProperties(file, jfactory, storeFileExtension);
 	}
 	
 	private void saveIndexes() throws IOException {
-		saveIndexes(file, jfactory, storeFileExtension);
+		saveIndexes(indexes(), file, jfactory, storeFileExtension);
 	}
 	
-	private void saveIndexes(File directory, JsonFactory jfactory, String fileExtension) throws IOException {
+	private void saveIndexes(MoleculeArchiveIndex moleculeArchiveIndex, File directory, JsonFactory jfactory, String fileExtension) throws IOException {
 		File indexFile = new File(directory.getAbsolutePath() + "/indexes" + fileExtension);
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
 		
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 		
-		indexes().toJSON(jGenerator);
+		moleculeArchiveIndex.toJSON(jGenerator);
 
 		jGenerator.close();
 		
@@ -558,7 +555,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void save() throws IOException {
 		if (virtual) {
-			saveProperties();
+			saveProperties(file, jfactory, storeFileExtension);
 			saveIndexes();
 		} else if (smileEncoding) {
 			this.file = saveAs(file);
@@ -751,6 +748,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			forkJoinPool.submit(() -> metadataList.parallelStream().forEach(metaUID -> { 
 	        	try {
 	        		I metaData = getMetadata(metaUID);
+	        		newIndexes.metadataUIDs.add(metaUID);
 	        		newIndexes.metadataUIDtoTagList.put(metaUID, metaData.getTags());
 					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metaData, jfactory, fileExtension);
 	        	} catch (IOException e) {
@@ -761,6 +759,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			//Generate all molecule record files and indexes at the same time...
 	        forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> { 
 	        	M molecule = get(UID);
+	        	newIndexes.moleculeUIDs.add(UID);
 	        	newIndexes.moleculeUIDtoTagList.put(UID, molecule.getTags());
 	        	if (molecule.getChannel() > -1)
 	        		newIndexes.moleculeUIDtoChannel.put(UID, molecule.getChannel());
@@ -792,9 +791,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	      forkJoinPool.shutdown();
 	   }
 		
-		if (virtual)
-			indexes = newIndexes;
-		
 		archiveProperties.setTagSet(newTagSet);
 		archiveProperties.setRegionSet(newRegionSet);
 		archiveProperties.setPositionSet(newPositionSet);
@@ -805,9 +801,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		archiveProperties.setNumberOfMolecules(moleculeList.size());
 		archiveProperties.setNumberOfMetadatas(metadataList.size());
 		
-		saveProperties();
-			
-		saveIndexes(virtualDirectory, jfactory, fileExtension);
+		saveProperties(virtualDirectory, jfactory, fileExtension);
+		saveIndexes(newIndexes, virtualDirectory, jfactory, fileExtension);
+		
+		if (virtual)
+			indexes = newIndexes;
 	}
 	
 	/**
@@ -1748,6 +1746,17 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public File getFile() {
 		return file;
 	}
+	
+	/**
+	 * Set the file the archive should save to. Does
+	 * nothing if called on a virtual archive.
+	 * 
+	 * @param file The File where the archive should be saved.
+	 */
+	public void setFile(File file) {
+		if (!virtual)
+			this.file = file;
+	}
 
 	/**
 	 * Set the name of the archive.
@@ -1868,9 +1877,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return archiveProperties;
 	}
 	
-	private void saveProperties() {
+	private void saveProperties(File directory, JsonFactory jfactory, String fileExtension) {
 		try {
-			File propertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties" + storeFileExtension);
+			File propertiesFile = new File(directory.getAbsolutePath() + "/MoleculeArchiveProperties" + fileExtension);
 			OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
 			
 			JsonGenerator jGenerator = jfactory.createGenerator(stream);

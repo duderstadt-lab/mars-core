@@ -131,12 +131,6 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 */
 	void setTable(MarsTable table);
 	
-	@Deprecated
-	MarsTable getDataTable();
-	
-	@Deprecated
-	void setDataTable(MarsTable table);
-	
 	/**
 	 * Add or update a segments table ({@link MarsTable}) generated 
 	 * using the x column and y column names. The {@link KCPCommand} performs

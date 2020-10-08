@@ -120,7 +120,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 					jGenerator.writeEndArray();
 				}, 
 				jParser -> {
-					jParser.nextToken();
 			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    			String metaUID = "NULL";
 			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -128,6 +127,7 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 			    				jParser.nextToken();
 			    				metaUID = jParser.getText();
 			    				metadataUIDs.add(metaUID);
+			    				System.out.println("metaUID " + metaUID);
 			    			}
 			    			
 			    			if ("Tags".equals(jParser.getCurrentName())) {
@@ -146,7 +146,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 		
 		setJsonField("imageMetaDataIndex", null, 
 				jParser -> {
-					jParser.nextToken();
 			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    			String metaUID = "NULL";
 			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -172,7 +171,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 		
 		setJsonField("ImageMetadataIndex", null, 
 				jParser -> {
-					jParser.nextToken();
 			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    			String metaUID = "NULL";
 			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -225,7 +223,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 					jGenerator.writeEndArray();
 				},
 				jParser -> {
-					jParser.nextToken();
 		    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
 		    			String UID = "NULL";
 			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
@@ -233,6 +230,7 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 			    				jParser.nextToken();
 			    				UID = jParser.getText();
 			    				moleculeUIDs.add(UID);
+			    				System.out.println("UID " + UID);
 			    			}
 			    			
 			    			if ("ImageMetaDataUID".equals(jParser.getCurrentName()) || "ImageMetadataUID".equals(jParser.getCurrentName()) || "MetadataUID".equals(jParser.getCurrentName())) {
@@ -264,7 +262,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 		
 		setJsonField("moleculeIndex", null,
 			jParser -> {
-				jParser.nextToken();
 	    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
 	    			String UID = "NULL";
 		    		while (jParser.nextToken() != JsonToken.END_OBJECT) {

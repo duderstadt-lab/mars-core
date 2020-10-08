@@ -370,17 +370,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 		return table;
 	}
 	
-	@Deprecated
-	public MarsTable getDataTable() {
-		return table;
-	}
-	
-	@Deprecated
-	public void setDataTable(MarsTable table) {
-		this.table.clear();
-		this.table = table;
-	}
-	
 	/**
 	 * Set the {@link MarsTable} holding the primary data for
 	 * this record. Usually this is tracking or intensity 
@@ -390,7 +379,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements Mol
 	 * record.
 	 */
 	public void setTable(MarsTable table) {
-		this.table.clear();
 		this.table = table;
 	}
 	

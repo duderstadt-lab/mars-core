@@ -56,6 +56,8 @@ import org.scijava.prefs.PrefService;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -74,6 +76,9 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
     
     @Parameter
     private LogService logService;
+    
+    @Parameter
+    private UIService uiService;
     
     @Parameter
     private ScriptService scriptService;
@@ -164,10 +169,8 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			Constructor<?> constructor = clazz.getConstructor(String.class);
 			return (MoleculeArchive<?,?,?>)constructor.newInstance("archive");
 		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
+			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -179,10 +182,8 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			Constructor<?> constructor = clazz.getConstructor(File.class);
 			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
 		} catch (ClassNotFoundException e) {
-			System.err.println(archiveType + " type not found. Is the class in the classpath?");
-			e.printStackTrace();
+			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

@@ -505,6 +505,13 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The File the archive was opened from.
 	 */
 	File getFile();
+	
+	/**
+	 * Set the file the archive should save to.
+	 * 
+	 * @param file The File the archive was opened from.
+	 */
+	void setFile(File file);
 
 	/**
 	 * Set the name of the archive.

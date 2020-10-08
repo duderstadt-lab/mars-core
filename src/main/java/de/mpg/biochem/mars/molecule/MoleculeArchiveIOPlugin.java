@@ -108,9 +108,17 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 			logService.error("File not found.");
 		String archiveType;
 		
-		if (file.isDirectory())
-			archiveType = moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
-		else 
+		if (file.isDirectory()) {
+			File smlPropertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.sml");
+			if (smlPropertiesFile.exists())
+				archiveType = moleculeArchiveService.getArchiveTypeFromStore(smlPropertiesFile);
+			else if (new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json").exists())
+				archiveType = moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
+			else {
+				uiService.showDialog("The virtual store directory given can not be opened because it does not contain a MoleculeArchiveProperties file.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				return null;
+			}
+		} else 
 			archiveType = moleculeArchiveService.getArchiveTypeFromYama(file);
 		
 		String name = file.getName();
