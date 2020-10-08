@@ -704,7 +704,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	public void saveAsVirtualJsonStore(File virtualDirectory) throws IOException {
+	public void saveAsJsonVirtualStore(File virtualDirectory) throws IOException {
 		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json");
 	}
 
