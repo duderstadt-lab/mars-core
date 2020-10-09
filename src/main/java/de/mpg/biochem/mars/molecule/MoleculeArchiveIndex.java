@@ -179,7 +179,6 @@ public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
 			    				jParser.nextToken();
 			    				UID = jParser.getText();
 			    				moleculeUIDs.add(UID);
-			    				System.out.println("UID " + UID);
 			    			}
 			    			
 			    			if ("metadataUID".equals(jParser.getCurrentName())) {
