@@ -884,6 +884,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		builder.addParameter("ROI y0", String.valueOf(y0));
 		builder.addParameter("ROI width", String.valueOf(width));
 		builder.addParameter("ROI height", String.valueOf(height));
+		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(this.gaussSigma));
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -960,6 +961,14 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		return height;
 	}
 	
+	public void setChannel(int channel) {
+		this.channel = String.valueOf(channel);
+	}
+	
+	public int getChannel() {
+		return Integer.valueOf(channel);
+	}
+	
 	public void setGaussianSigma(double gaussSigma) {
 		this.gaussSigma = gaussSigma;
 	}
@@ -1000,19 +1009,19 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		return optimalDNALength;
 	}
 	
-	public void setyDNAEndSearchRadius(int yDNAEndSearchRadius) {
+	public void setYDNAEndSearchRadius(int yDNAEndSearchRadius) {
 		this.yDNAEndSearchRadius = yDNAEndSearchRadius;
 	}
 	
-	public int getyDNAEndSearchRadius() {
+	public int getYDNAEndSearchRadius() {
 		return yDNAEndSearchRadius;
 	}
 	
-	public void setxDNAEndSearchRadius(int xDNAEndSearchRadius) {
+	public void setXDNAEndSearchRadius(int xDNAEndSearchRadius) {
 		this.xDNAEndSearchRadius = xDNAEndSearchRadius;
 	}
 	
-	public int getxDNAEndSearchRadius() {
+	public int getXDNAEndSearchRadius() {
 		return xDNAEndSearchRadius;
 	}
 	
@@ -1076,7 +1085,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		this.allFrames = allFrames;
 	}
 	
-	public boolean getProcessAllSlices() {
+	public boolean getProcessAllFrames() {
 		return allFrames;
 	}
 	

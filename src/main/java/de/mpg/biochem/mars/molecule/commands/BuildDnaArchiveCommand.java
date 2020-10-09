@@ -388,7 +388,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		//builder.addParameter("useROI", String.valueOf(useROI));
 		builder.addParameter("Search radius around DNA", String.valueOf(radius));
 		builder.addParameter("DNA length in bps", String.valueOf(DNALength));
 		builder.addParameter("xColumn", String.valueOf(xColumn));
@@ -401,6 +400,86 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		builder.addParameter("Merge 3", String.valueOf(merge3));
 		builder.addParameter("SingleMoleculeArchive 3", archive3.getName());
 		builder.addParameter("SingleMoleculeArchive 3 Name", archive3Name);
+	}
+	
+	public void setDNASearchRadius(double radius) {
+		this.radius = radius;
+	}
+	
+	public double getDNASearchRadius() {
+		return radius;
+	}
+	
+	public void setDNALength(int DNALength) {
+		this.DNALength = DNALength;
+	}
+	
+	public int getDNALength() {
+		return DNALength;
+	}
+	
+	public void setXColumn(String xColumn) {
+		this.xColumn = xColumn;
+	}
+	
+	public String getXColumn() {
+		return xColumn;
+	}
+	
+	public void setYColumn(String yColumn) {
+		this.yColumn = yColumn;
+	}
+	
+	public String getYColumn() {
+		return yColumn;
+	}
+	
+	public void setArchive1(SingleMoleculeArchive archive1) {
+		this.archive1 = archive1;
+	}
+	
+	public SingleMoleculeArchive getArchive1() {
+		return archive1;
+	}
+	
+	public void setArchive1Name(String archive1Name) {
+		this.archive1Name = archive1Name;
+	}
+	
+	public String getArchive1Name() {
+		return archive1Name;
+	}
+	
+	public void setArchive2(SingleMoleculeArchive archive2) {
+		this.archive2 = archive2;
+	}
+	
+	public SingleMoleculeArchive getArchive2() {
+		return archive2;
+	}
+	
+	public void setArchive2Name(String archive2Name) {
+		this.archive2Name = archive2Name;
+	}
+	
+	public String getArchive2Name() {
+		return archive2Name;
+	}
+	
+	public void setArchive3(SingleMoleculeArchive archive3) {
+		this.archive3 = archive3;
+	}
+	
+	public SingleMoleculeArchive getArchive3() {
+		return archive3;
+	}
+	
+	public void setArchive3Name(String archive3Name) {
+		this.archive3Name = archive3Name;
+	}
+	
+	public String getArchive3Name() {
+		return archive3Name;
 	}
 	
 	class MoleculePosition implements RealLocalizable {
