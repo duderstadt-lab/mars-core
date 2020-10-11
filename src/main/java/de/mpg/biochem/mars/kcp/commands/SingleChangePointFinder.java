@@ -57,6 +57,7 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -81,7 +82,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 	    private MoleculeArchiveService moleculeArchiveService;
 	    
 	    @Parameter(label="MoleculeArchive")
-	  	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
+	  	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 	    
 	    @Parameter(label="X Column", choices = {"a", "b", "c"})
 		private String Xcolumn;
@@ -468,11 +469,11 @@ public class SingleChangePointFinder extends DynamicCommand implements Command, 
 			builder.addParameter("Tags", tags);
 		}
 		
-		public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
+		public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
 			this.archive = archive;
 		}
 		
-		public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
+		public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
 			return archive;
 		}
 		

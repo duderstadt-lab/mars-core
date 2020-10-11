@@ -39,7 +39,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.metadata.*;
 
-public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
+public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, ArchMoleculeArchiveProperties, ArchMoleculeArchiveIndex> {
 	
 	public ArchMoleculeArchive(String name) {
 		super(name);
@@ -57,12 +57,12 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, M
 		super(name, file);
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties() {
-		return new SingleMoleculeArchiveProperties();
+	public ArchMoleculeArchiveProperties createProperties() {
+		return new ArchMoleculeArchiveProperties();
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
-		return new SingleMoleculeArchiveProperties(jParser);
+	public ArchMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+		return new ArchMoleculeArchiveProperties(jParser);
 	}
 	
 	/**
@@ -93,5 +93,15 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, M
 	
 	public ArchMolecule createMolecule(String UID, MarsTable table) {
 		return new ArchMolecule(UID, table);
+	}
+
+	@Override
+	public ArchMoleculeArchiveIndex createIndex() {
+		return new ArchMoleculeArchiveIndex();
+	}
+
+	@Override
+	public ArchMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+		return new ArchMoleculeArchiveIndex(jParser);
 	}
 }

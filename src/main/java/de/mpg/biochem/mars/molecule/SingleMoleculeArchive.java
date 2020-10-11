@@ -52,7 +52,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * <p>
  * @author Karl Duderstadt
  */
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
+public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties, SingleMoleculeArchiveIndex> {
 	
 	/**
 	 * Creates an empty SingleMoleculeArchive with the given name. 
@@ -180,5 +180,15 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	 */
 	public SingleMolecule createMolecule(String UID, MarsTable table) {
 		return new SingleMolecule(UID, table);
+	}
+
+	@Override
+	public SingleMoleculeArchiveIndex createIndex() {
+		return new SingleMoleculeArchiveIndex();
+	}
+
+	@Override
+	public SingleMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+		return new SingleMoleculeArchiveIndex(jParser);
 	}
 }

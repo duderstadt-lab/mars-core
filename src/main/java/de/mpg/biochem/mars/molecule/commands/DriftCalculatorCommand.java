@@ -50,6 +50,7 @@ import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
@@ -80,7 +81,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
     
     @Parameter(label="Background Tag")
     private String backgroundTag = "background";
@@ -304,7 +305,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 	}
 	
 	//Fix me...
-	public static void calcDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, String backgroundTag, String input_x, String input_y, 
+	public static void calcDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, String backgroundTag, String input_x, String input_y, 
 			String output_x, String output_y, boolean use_incomplete_traces, String mode, String zeroPoint) {
 			//Build log message
 			LogBuilder builder = new LogBuilder();
@@ -471,7 +472,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		builder.addParameter("mode", mode);
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
 		this.archive = archive;
 	}
 	
@@ -499,7 +500,7 @@ public class DriftCalculatorCommand extends DynamicCommand implements Command {
 		this.zeroPoint = zeroPoint;
 	}
 	
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
 		return archive;
 	}
 	

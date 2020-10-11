@@ -59,6 +59,8 @@ public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata
 	
 	Map<String, Integer> getMoleculeUIDtoChannelMap();
 	
+	Map<String, String> getMoleculeUIDtoMetadataUIDMap();
+	
 	String getMetadataUIDforMolecule(String UID);
 	
 	void save(File directory, JsonFactory jfactory, String fileExtension) throws IOException;

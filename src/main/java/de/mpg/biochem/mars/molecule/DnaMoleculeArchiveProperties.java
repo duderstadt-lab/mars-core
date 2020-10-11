@@ -34,13 +34,13 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 
-public class SingleMoleculeArchiveProperties extends AbstractMoleculeArchiveProperties<SingleMolecule, MarsOMEMetadata> {
+public class DnaMoleculeArchiveProperties extends AbstractMoleculeArchiveProperties<DnaMolecule, MarsOMEMetadata> {
 	
-	public SingleMoleculeArchiveProperties() {
+	public DnaMoleculeArchiveProperties() {
 		super();
 	}
 	
-	public SingleMoleculeArchiveProperties(JsonParser jParser) throws IOException {
+	public DnaMoleculeArchiveProperties(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
 }

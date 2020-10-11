@@ -433,4 +433,8 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	public String getMetadataUIDforMolecule(String UID) {
 		return moleculeUIDtoMetadataUID.get(UID);
 	}
+	
+	public Map<String, String> getMoleculeUIDtoMetadataUIDMap() {
+		return moleculeUIDtoMetadataUID;
+	}
 }

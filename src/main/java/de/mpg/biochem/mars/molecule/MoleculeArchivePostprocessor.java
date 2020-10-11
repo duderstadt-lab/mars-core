@@ -49,15 +49,15 @@ public class MoleculeArchivePostprocessor extends AbstractPostprocessorPlugin {
 		for (String key:module.getOutputs().keySet()) {
 			Object obj = module.getOutputs().get(key);
 			if (obj instanceof MoleculeArchive) {
-				moleculeArchiveService.addArchive((MoleculeArchive<?,?,?>)obj); 
-				scriptService.addAlias(((MoleculeArchive<?,?,?>)obj).getClass());
+				moleculeArchiveService.addArchive((MoleculeArchive<?,?,?,?>)obj); 
+				scriptService.addAlias(((MoleculeArchive<?,?,?,?>)obj).getClass());
 			}
 		}
 		
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj != null && obj instanceof MoleculeArchive) {
-				((MoleculeArchive<?,?,?>)obj).unlock(); 
+				((MoleculeArchive<?,?,?,?>)obj).unlock(); 
 			}
 		}
 	}

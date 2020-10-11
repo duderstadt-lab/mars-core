@@ -41,7 +41,7 @@ import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties> {
+public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, DnaMoleculeArchiveProperties, DnaMoleculeArchiveIndex> {
 	
 	public DnaMoleculeArchive(String name) {
 		super(name);
@@ -59,12 +59,12 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Mar
 		super(name, file);
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties() {
-		return new SingleMoleculeArchiveProperties();
+	public DnaMoleculeArchiveProperties createProperties() {
+		return new DnaMoleculeArchiveProperties();
 	}
 	
-	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
-		return new SingleMoleculeArchiveProperties(jParser);
+	public DnaMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+		return new DnaMoleculeArchiveProperties(jParser);
 	}
 	
 	/**
@@ -95,5 +95,15 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Mar
 	
 	public DnaMolecule createMolecule(String UID, MarsTable table) {
 		return new DnaMolecule(UID, table);
+	}
+
+	@Override
+	public DnaMoleculeArchiveIndex createIndex() {
+		return new DnaMoleculeArchiveIndex();
+	}
+
+	@Override
+	public DnaMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+		return new DnaMoleculeArchiveIndex(jParser);
 	}
 }

@@ -46,7 +46,7 @@ public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 		for (String key:module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj != null && obj instanceof MoleculeArchive) {
-				((MoleculeArchive<?,?,?>)obj).lock(); 
+				((MoleculeArchive<?,?,?,?>)obj).lock(); 
 			}
 		}
 	}

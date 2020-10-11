@@ -1086,7 +1086,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		}
 		
 		//Getters and Setters
-	    public MoleculeArchive<?,?,?> getArchive() {
+	    public SingleMoleculeArchive getArchive() {
 	    	return archive;
 	    }
 		

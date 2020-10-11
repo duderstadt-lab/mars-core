@@ -49,6 +49,7 @@ import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -80,7 +81,7 @@ public class SegmentDistributionBuilder {
 	private boolean bootstrap_Segments = false;
 	private boolean bootstrap_Molecules = false;
 	
-	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 	private ArrayList<String> UIDs;
 	private String yColumnName, xColumnName;
 	
@@ -96,7 +97,7 @@ public class SegmentDistributionBuilder {
 	//Need to determine the number of threads
 	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 	
-	public SegmentDistributionBuilder(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
+	public SegmentDistributionBuilder(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, ArrayList<String> UIDs, String yColumnName, String xColumnName, double Dstart, double Dend, int bins, LogService logService, StatusService statusService) {
 		this.archive = archive;
 		this.UIDs = UIDs;
 		this.yColumnName = yColumnName;

@@ -47,6 +47,7 @@ import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
@@ -75,7 +76,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
     private UIService uiService;
 	
     @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive;
+    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
     
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String header =
@@ -262,7 +263,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return TtoColumn;
 	}
 	
-	public static void correctDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive, int from, int to, String meta_x, 
+	public static void correctDrift(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, int from, int to, String meta_x, 
 			String meta_y, String input_x, String input_y, String output_x, String output_y, boolean retainCoordinates) {
 			//Build log message
 			LogBuilder builder = new LogBuilder();
@@ -372,11 +373,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		builder.addParameter("correct original coordinates", String.valueOf(retainCoordinates));
 	}
 	
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
 		this.archive = archive;
 	}
 	
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties> getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
 		return archive;
 	}
 	

@@ -68,7 +68,7 @@ public class ImportVirtualStoreCommand extends DynamicCommand {
 		moleculeArchiveIOPlugin.setContext(getContext());
 		
 		try {
-			MoleculeArchive<?,?,?> archive = moleculeArchiveIOPlugin.open(file.getAbsolutePath());
+			MoleculeArchive<?,?,?,?> archive = moleculeArchiveIOPlugin.open(file.getAbsolutePath());
 			
 			final boolean newStyleIO =
 					optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();

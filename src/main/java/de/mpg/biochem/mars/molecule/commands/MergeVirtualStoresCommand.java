@@ -109,7 +109,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 		log += builder.buildParameterList();
 		logService.info(log);
 	
-		ArrayList<MoleculeArchive<?,?,?>> archives = new ArrayList<MoleculeArchive<?,?,?>>();
+		ArrayList<MoleculeArchive<?,?,?,?>> archives = new ArrayList<MoleculeArchive<?,?,?,?>>();
 		
 		FilenameFilter fileNameFilter = new FilenameFilter() {
            @Override
@@ -163,21 +163,21 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			}
 			
 			for (File virtualDirectory: archiveDirectoryList) {
-				MoleculeArchive<?,?,?> archive = moleculeArchiveService.createArchive(archiveType, virtualDirectory);
+				MoleculeArchive<?,?,?,?> archive = moleculeArchiveService.createArchive(archiveType, virtualDirectory);
 				archives.add(archive);
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
-			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();			
+			MoleculeArchive<?,?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
+			MoleculeArchiveProperties<?,?> mergedProperties = mergedArchiveType.createProperties();			
 		
 			JsonFactory jfactory = new SmileFactory();
 			
 			int numMolecules = 0;
 			int numMetadata = 0;
 			String globalComments = "";
-			for (MoleculeArchive<?,?,?> archive : archives) {
-				MoleculeArchiveProperties properties = archive.properties();
+			for (MoleculeArchive<?,?,?,?> archive : archives) {
+				MoleculeArchiveProperties<?,?> properties = archive.properties();
 				numMolecules += properties.getNumberOfMolecules();
 				numMetadata += properties.getNumberOfMetadatas();
 				globalComments += "Comments from Merged Archive " + archive.getName() + ":\n" + properties.getComments() + "\n";
@@ -211,7 +211,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			ArrayList<MarsMetadata> allMetadataItems = new ArrayList<MarsMetadata>();
 			ArrayList<String> metaUIDs = new ArrayList<String>();
 			
-			for (MoleculeArchive<?,?,?> archive : archives)
+			for (MoleculeArchive<?,?,?,?> archive : archives)
 				archive.metadata().forEach(metadata -> allMetadataItems.add(metadata));
 			
 			Set<String> duplicateMetadataUIDs = new HashSet<String>();
@@ -271,34 +271,34 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				allMetadataItems.add(mergedMetadata);
 			}
 			
-			AbstractMoleculeArchiveIndex mergedIndex = new AbstractMoleculeArchiveIndex();
+			MoleculeArchiveIndex<?, ?> mergedIndex = mergedArchiveType.createIndex();
 			
-			for (MoleculeArchive<?, ?, ?> archive : archives) {
+			for (MoleculeArchive<?,?,?,?> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
-					if (mergedIndex.moleculeUIDs.contains(UID)) {
+					if (mergedIndex.getMoleculeUIDSet().contains(UID)) {
 						logService.error("Duplicate molecule entry found in virtual store " + archive.getName() + ". Resolve conflict and try merge again. Aborting...");
 						uiService.showDialog("Merge failed due to duplicate molecule record " + UID + ".\n"
 								+ "Please resolve the conflict before merging.", MessageType.ERROR_MESSAGE);
 						logService.error(LogBuilder.endBlock(false));
 						return;
 					}
-					mergedIndex.moleculeUIDs.add(UID);
-					mergedIndex.moleculeUIDtoMetadataUID.put(UID, archive.getMetadataUIDforMolecule(UID));
+					mergedIndex.getMoleculeUIDSet().add(UID);
+					mergedIndex.getMoleculeUIDtoMetadataUIDMap().put(UID, archive.getMetadataUIDforMolecule(UID));
 					if (archive.getTagSet(UID) != null)	
-						mergedIndex.moleculeUIDtoTagList.put(UID, archive.getTagSet(UID));
+						mergedIndex.getMoleculeUIDtoTagListMap().put(UID, archive.getTagSet(UID));
 					if (archive.getChannel(UID) > -1)
-						mergedIndex.moleculeUIDtoChannel.put(UID, archive.getChannel(UID));
+						mergedIndex.getMoleculeUIDtoChannelMap().put(UID, archive.getChannel(UID));
 					if (archive.getImage(UID) > -1)
-						mergedIndex.moleculeUIDtoImage.put(UID, archive.getImage(UID));
+						mergedIndex.getMoleculeUIDtoImageMap().put(UID, archive.getImage(UID));
 				}
 				
 				for (String metaUID : archive.getMetadataUIDs()) {
-					mergedIndex.metadataUIDs.add(metaUID);
+					mergedIndex.getMetadataUIDSet().add(metaUID);
 					if (archive.getMetadataTagSet(metaUID) != null)
-						if (mergedIndex.metadataUIDtoTagList.keySet().contains(metaUID))
-							mergedIndex.metadataUIDtoTagList.get(metaUID).addAll(archive.getMetadataTagSet(metaUID));
+						if (mergedIndex.getMetadataUIDtoTagListMap().keySet().contains(metaUID))
+							mergedIndex.getMetadataUIDtoTagListMap().get(metaUID).addAll(archive.getMetadataTagSet(metaUID));
 						else
-							mergedIndex.metadataUIDtoTagList.put(metaUID, archive.getMetadataTagSet(metaUID));
+							mergedIndex.getMetadataUIDtoTagListMap().put(metaUID, archive.getMetadataTagSet(metaUID));
 				}
 			}
 			

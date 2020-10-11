@@ -44,7 +44,7 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * 
  * @author Karl Duderstadt
  */
-public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties> {
+public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties, DefaultMoleculeArchiveIndex> {
 	
 	/**
 	 * Creates an empty DefaultMoleculeArchive with the given name. 
@@ -170,5 +170,15 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	 */
 	public DefaultMolecule createMolecule(String UID, MarsTable table) {
 		return new DefaultMolecule(UID, table);
+	}
+
+	@Override
+	public DefaultMoleculeArchiveIndex createIndex() {
+		return new DefaultMoleculeArchiveIndex();
+	}
+
+	@Override
+	public DefaultMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+		return new DefaultMoleculeArchiveIndex(jParser);
 	}
 }

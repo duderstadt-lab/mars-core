@@ -150,7 +150,7 @@ public class MergeCommand extends DynamicCommand {
 			}
 			
 			//No conflicts found so we start building and writing the merged file
-			MoleculeArchive<?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
+			MoleculeArchive<?,?,?,?> mergedArchiveType = moleculeArchiveService.createArchive(archiveType);
 			MoleculeArchiveProperties mergedProperties = mergedArchiveType.createProperties();
 			
 			mergedProperties.setParent(mergedArchiveType);

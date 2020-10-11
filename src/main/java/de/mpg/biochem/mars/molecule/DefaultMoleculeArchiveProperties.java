@@ -32,7 +32,9 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
 
-public class DefaultMoleculeArchiveProperties extends AbstractMoleculeArchiveProperties {
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+
+public class DefaultMoleculeArchiveProperties extends AbstractMoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> {
 	//There is no implementation. 
 	public DefaultMoleculeArchiveProperties() {
 		super();
@@ -43,7 +45,7 @@ public class DefaultMoleculeArchiveProperties extends AbstractMoleculeArchivePro
 	}
 	
 	@Override
-	public void merge(MoleculeArchiveProperties properties, String archiveName) {
+	public void merge(MoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> properties, String archiveName) {
 		super.merge(properties, archiveName);
 	}
 }

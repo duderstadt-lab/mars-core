@@ -163,11 +163,11 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return archiveType;
 	}
 	
-	public MoleculeArchive<?,?,?> createArchive(String archiveType) {
+	public MoleculeArchive<?,?,?,?> createArchive(String archiveType) {
 		try {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(String.class);
-			return (MoleculeArchive<?,?,?>)constructor.newInstance("archive");
+			return (MoleculeArchive<?,?,?,?>)constructor.newInstance("archive");
 		} catch (ClassNotFoundException e) {
 			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		} catch (Exception e) {
@@ -176,11 +176,11 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return null;
 	}
 	
-	public MoleculeArchive<?,?,?> createArchive(String archiveType, File file) {
+	public MoleculeArchive<?,?,?,?> createArchive(String archiveType, File file) {
 		try {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(File.class);
-			return (MoleculeArchive<?,?,?>)constructor.newInstance(file);
+			return (MoleculeArchive<?,?,?,?>)constructor.newInstance(file);
 		} catch (ClassNotFoundException e) {
 			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		} catch (Exception e) {
@@ -210,7 +210,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public boolean rename(String oldName, String newName) {
-		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
 		
 		if (archives.stream().anyMatch(archive -> archive.getName().equals(oldName))) {
 			logService.error("No MoleculeArchive exists with the name " + oldName + ".");
@@ -221,7 +221,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 			logService.error("A MoleculeArchive is already open with the name " + newName + ". Choose another name.");
 			return false;
 		} else {
-			MoleculeArchive<?,?,?> archive = archives.stream().filter(a -> a.getName().equals(oldName)).findFirst().get();
+			MoleculeArchive<?,?,?,?> archive = archives.stream().filter(a -> a.getName().equals(oldName)).findFirst().get();
 			archive.setName(newName);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -230,7 +230,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
 		
 		archives.forEach(archive -> columnSet.addAll(archive.properties().getColumnSet()));
 		
@@ -244,7 +244,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	
 	public Set<ArrayList<String>> getSegmentTableNames() {
 		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
-		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
 	
 		archives.forEach(archive -> segTableNames.addAll(archive.properties().getSegmentsTableNames()));
 		
@@ -252,7 +252,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 	}
 	
 	public ArrayList<String> getArchiveNames() {
-		List<MoleculeArchive<?,?,?>> archives = getArchives();
+		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
 		
 		return (ArrayList<String>) archives.stream().map(archive -> archive.getName()).collect(Collectors.toList());
 	}
@@ -265,16 +265,16 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return getArchives().stream().anyMatch(a -> a.equals(archive));
 	}
 	
-	public MoleculeArchive<?,?,?> getArchive(String name) {
-		List<MoleculeArchive<?,?,?>> archives = getArchives();
-		for (MoleculeArchive<?,?,?> archive : archives)
+	public MoleculeArchive<?,?,?,?> getArchive(String name) {
+		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
+		for (MoleculeArchive<?,?,?,?> archive : archives)
 			if (archive.getName().equals(name))
 				return archive;
 		
 		return null;
 	}
 	
-	public List<MoleculeArchive<?,?,?>> getArchives() { 
+	public List<MoleculeArchive<?,?,?,?>> getArchives() { 
 		return (List) objectService.getObjects(MoleculeArchive.class);
 	}
 	
