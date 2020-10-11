@@ -28,8 +28,12 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+
+import com.fasterxml.jackson.core.JsonFactory;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 
@@ -41,7 +45,7 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
  * 
  * @author Karl Duderstadt
  */
-public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
+public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMetadata> extends JsonConvertibleRecord {
 	
 	/**
 	 * Get the Json input schema for the archive. Returns a string
@@ -331,12 +335,41 @@ public interface MoleculeArchiveProperties extends JsonConvertibleRecord {
 	 * @param properties MoleculeArchiveProperties record to merge into this one.
 	 * @param archiveName Name of the archive that is being merged with this one.
 	 */
-	void merge(MoleculeArchiveProperties properties, String archiveName);
+	void merge(MoleculeArchiveProperties<M, I> properties, String archiveName);
+	
+	/**
+	 * Save the archive properties to a file.
+	 * 
+	 * @param directory Folder to save to.
+	 * @param jfactory JsonFactory to use when saving.
+	 * @param fileExtension The file extension (.json or .sml).
+	 */
+	void save(File directory, JsonFactory jfactory, String fileExtension) throws IOException;
+	
+	/**
+	 * Clear contents of all global sets and records counts. Does not clear
+	 * comments. Used when rebuilding indexes.
+	 */
+	void clear();
+	
+	/**
+	 * Update global sets to include molecule properties.
+	 * 
+	 * @param molecule The {@link Molecule} to add the properties from.
+	 */
+	void addMoleculeProperties(M molecule);
+	
+	/**
+	 * Update global sets to include metadata properties.
+	 * 
+	 * @param metadata The {@link MarsMetadata} to add the properties from.
+	 */
+	void addMetadataProperties(I metadata);
 	
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive);
+	void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?,?>, ? extends MoleculeArchiveIndex<?,?>> archive);
 }

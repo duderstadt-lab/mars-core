@@ -69,7 +69,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	/**
 	 * Reference to MoleculeArchive containing the record.
 	 */
-	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> parent;
+	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?,?>, ? extends MoleculeArchiveIndex<?,?>> parent;
 	
 	private String notes;
 	private LinkedHashSet<String> tags;
@@ -694,7 +694,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties> archive) {
+	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?,?>, ? extends MoleculeArchiveIndex<?,?>> archive) {
 		parent = archive;
 	}
 }

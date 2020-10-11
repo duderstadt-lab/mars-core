@@ -144,8 +144,8 @@ import org.scijava.table.*;
  * @param <I> MarsMetadata type.
  * @param <P> MoleculeArchiveProperties type.
  */
-public abstract class AbstractMoleculeArchive<M extends Molecule, I extends MarsMetadata, P extends MoleculeArchiveProperties> 
-	extends AbstractJsonConvertibleRecord implements MoleculeArchive<M, I, P> {
+public abstract class AbstractMoleculeArchive<M extends Molecule, I extends MarsMetadata, P extends MoleculeArchiveProperties<M, I>, X extends MoleculeArchiveIndex<M, I>> 
+	extends AbstractJsonConvertibleRecord implements MoleculeArchive<M, I, P, X> {
 	
 	protected String name;
 	
@@ -161,7 +161,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	protected JsonFactory jfactory;
 	
+	/*
+	 * Archive properties.
+	 */
 	protected P archiveProperties;
+	
+	/*
+	 * Record index used for virtual archives.
+	 */
+	protected MoleculeArchiveIndex<M, I> archiveIndex;
 	
 	/*
 	 * List of metadata UIDs. All write operations must be placed in synchronized blocks. synchronized(metadataList) { ... }
@@ -187,8 +195,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * Map from molecule UID to Molecule object. Left null in virtual memory mode.
 	 */
 	protected ConcurrentMap<String, M> moleculeMap;
-	
-	protected MoleculeArchiveIndex indexes;
 	
 	/*
 	 * Set to true if working from a virtual store.
@@ -359,7 +365,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			InputStream indexInputStream = new BufferedInputStream(new FileInputStream(indexFile));
 		    JsonParser indexJParser = jfactory.createParser(indexInputStream);
 		    
-			indexes(indexJParser);
+			index(indexJParser);
 		    
 			indexJParser.close();
 			indexInputStream.close();
@@ -426,18 +432,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong saving the indexes.
 	 */
 	public void rebuildIndexes() throws IOException {
-		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
-		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
-		Set<String> newRegionSet = ConcurrentHashMap.newKeySet();
-		Set<String> newPositionSet = ConcurrentHashMap.newKeySet();
-		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
-		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
-		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
+		properties().clear();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
 		if (virtual) {
-			MoleculeArchiveIndex newIndexes = new MoleculeArchiveIndex();
+			MoleculeArchiveIndex<M,I> newIndex = createIndex();
 			
 			String[] moleculeFileNameIndex = new File(file.getAbsolutePath() + "/Molecules").list(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
@@ -447,7 +447,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			for (int i=0;i<moleculeFileNameIndex.length;i++) {
 				String UID = moleculeFileNameIndex[i].substring(0, moleculeFileNameIndex[i].length() - storeFileExtension.length());
-				newIndexes.moleculeUIDs.add(UID);
+				newIndex.getMoleculeUIDSet().add(UID);
 			}
 			
 			String[] metadataFileNameIndex = new File(file.getAbsolutePath() + "/Metadata").list(new FilenameFilter() {
@@ -458,30 +458,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			
 			for (int i=0;i<metadataFileNameIndex.length;i++) {
 				String UID = metadataFileNameIndex[i].substring(0, metadataFileNameIndex[i].length() - storeFileExtension.length());
-				newIndexes.metadataUIDs.add(UID);
+				newIndex.getMetadataUIDSet().add(UID);
 			}
 			
 		   try {
-		        forkJoinPool.submit(() -> newIndexes.moleculeUIDs.parallelStream().forEach(UID -> { 
+		        forkJoinPool.submit(() -> newIndex.getMoleculeUIDSet().parallelStream().forEach(UID -> { 
 		        	M molecule = get(UID);
-		        	newIndexes.moleculeUIDtoTagList.put(UID, molecule.getTags());
-		        	newIndexes.moleculeUIDtoChannel.put(UID, molecule.getChannel());
-		        	newIndexes.moleculeUIDtoImage.put(UID, molecule.getImage());
-		        	newIndexes.moleculeUIDtoMetadataUID.put(UID, molecule.getMetadataUID());
-		        	
-		        	newParameterSet.addAll(molecule.getParameters().keySet());
-		        	newTagSet.addAll(molecule.getTags());
-		        	newRegionSet.addAll(molecule.getRegionNames());
-		        	newPositionSet.addAll(molecule.getPositionNames());
-		        	if (molecule.getChannel() > -1)
-		        		newChannelSet.add(molecule.getChannel());
-		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
-		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
+		        	newIndex.addMolecule(molecule);
+		        	properties().addMoleculeProperties(molecule);
 		        })).get();    
 		        
-		        forkJoinPool.submit(() -> newIndexes.metadataUIDs.parallelStream().forEach(metaUID -> { 
-		        	I metaData = getMetadata(metaUID);
-		        	newIndexes.metadataUIDtoTagList.put(metaUID, metaData.getTags());
+		        forkJoinPool.submit(() -> newIndex.getMetadataUIDSet().parallelStream().forEach(metaUID -> { 
+		        	I metadata = getMetadata(metaUID);
+		        	newIndex.addMetadata(metadata);
+		        	properties().addMetadataProperties(metadata);
 		        })).get();
 		   } catch (InterruptedException | ExecutionException e ) {
 		    	e.printStackTrace();
@@ -489,63 +479,37 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		      forkJoinPool.shutdown();
 		   }
 			
-		   moleculeList = (ArrayList<String>)newIndexes.moleculeUIDs.stream().sorted().collect(toList());
-		   metadataList = (ArrayList<String>)newIndexes.metadataUIDs.stream().sorted().collect(toList());
+		   moleculeList = (ArrayList<String>)newIndex.getMoleculeUIDSet().stream().sorted().collect(toList());
+		   metadataList = (ArrayList<String>)newIndex.getMetadataUIDSet().stream().sorted().collect(toList());
 		   
-		   this.indexes = newIndexes;
-		   saveIndexes();
+		   this.archiveIndex = newIndex;
+		   
+		   properties().setNumberOfMolecules(moleculeList.size());
+		   properties().setNumberOfMetadatas(metadataList.size());
+		   
+		   index().save(file, jfactory, storeFileExtension);
+		   properties().save(file, jfactory, storeFileExtension);
 		} else {
 			try {
 		        forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> { 
 		        	M molecule = get(UID);
-		        	
-		        	newParameterSet.addAll(molecule.getParameters().keySet());
-		        	newTagSet.addAll(molecule.getTags());
-		        	newRegionSet.addAll(molecule.getRegionNames());
-		        	newPositionSet.addAll(molecule.getPositionNames());
-		        	if (molecule.getChannel() > -1)
-		        		newChannelSet.add(molecule.getChannel());
-		        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
-		        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
+		        	properties().addMoleculeProperties(molecule);
 		        })).get();    
+		        
+		        forkJoinPool.submit(() -> metadataList.parallelStream().forEach(metaUID -> { 
+		        	I metadata = getMetadata(metaUID);
+		        	properties().addMetadataProperties(metadata);
+		        })).get();
+		        
 		   } catch (InterruptedException | ExecutionException e ) {
 		    	e.printStackTrace();
 		   } finally {
 		      forkJoinPool.shutdown();
 		   }
 			
+			properties().setNumberOfMolecules(moleculeList.size());
+			properties().setNumberOfMetadatas(metadataList.size());
 		}
-		
-		archiveProperties.setTagSet(newTagSet);
-		archiveProperties.setChannelSet(newChannelSet);
-		archiveProperties.setParameterSet(newParameterSet);
-		archiveProperties.setRegionSet(newRegionSet);
-		archiveProperties.setPositionSet(newPositionSet);
-		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
-		archiveProperties.setNumberOfMolecules(moleculeList.size());
-		archiveProperties.setNumberOfMetadatas(metadataList.size());
-		
-		if (virtual)
-			saveProperties(file, jfactory, storeFileExtension);
-	}
-	
-	private void saveIndexes() throws IOException {
-		saveIndexes(indexes(), file, jfactory, storeFileExtension);
-	}
-	
-	private void saveIndexes(MoleculeArchiveIndex moleculeArchiveIndex, File directory, JsonFactory jfactory, String fileExtension) throws IOException {
-		File indexFile = new File(directory.getAbsolutePath() + "/indexes" + fileExtension);
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(indexFile));
-		
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-		
-		moleculeArchiveIndex.toJSON(jGenerator);
-
-		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
 	}
 	
 	/**
@@ -555,8 +519,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void save() throws IOException {
 		if (virtual) {
-			saveProperties(file, jfactory, storeFileExtension);
-			saveIndexes();
+			properties().save(file, jfactory, storeFileExtension);
+			index().save(file, jfactory, storeFileExtension);
 		} else if (smileEncoding) {
 			this.file = saveAs(file);
 		} else {
@@ -576,18 +540,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			file = new File(filePath + ".yama");
 		}
 		
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-		
-		JsonFactory jfactory = new SmileFactory();
-		
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-	
-		toJSON(jGenerator);
-		
-		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
+		MarsUtil.writeJsonRecord(this, file, new SmileFactory());
 		
 		return file;
 	}
@@ -604,18 +557,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			file = new File(filePath + ".yama.json");
 		}
 		
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-		
-		JsonFactory jfactory = new JsonFactory();
-		
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
-	
-		toJSON(jGenerator);
-		
-		jGenerator.close();
-		
-		stream.flush();
-		stream.close();
+		MarsUtil.writeJsonRecord(this, file, new JsonFactory());
 		
 		return file;
 	}
@@ -729,18 +671,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		metadataDir.mkdirs();
 		moleculesDir.mkdirs();
 
-		//We will generate the index as we save records...
-		MoleculeArchiveIndex newIndexes = new MoleculeArchiveIndex();
-		
-		//Let's also rebuild the parameter index stored in the archiveProperties
-		Set<String> newParameterSet = ConcurrentHashMap.newKeySet();
-		Set<String> newTagSet = ConcurrentHashMap.newKeySet();
-		Set<String> newRegionSet = ConcurrentHashMap.newKeySet();
-		Set<String> newPositionSet = ConcurrentHashMap.newKeySet();
-		Set<Integer> newChannelSet = ConcurrentHashMap.newKeySet();
-		Set<String> newMoleculeDataTableColumnSet = ConcurrentHashMap.newKeySet();
-		
-		Set<ArrayList<String>> newMoleculeSegmentTableNames = ConcurrentHashMap.newKeySet();
+		MoleculeArchiveIndex<M, I> newIndex = createIndex();
+		properties().clear();
 		
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		
@@ -748,66 +680,38 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			forkJoinPool.submit(() -> metadataList.parallelStream().forEach(metaUID -> { 
 	        	try {
 	        		I metadata = getMetadata(metaUID);
-	        		newIndexes.metadataUIDs.add(metaUID);
-	        		if (!metadata.hasNoTags())
-	        			newIndexes.metadataUIDtoTagList.put(metaUID, metadata.getTags());
+	        		newIndex.addMetadata(metadata);
+	        		properties().addMetadataProperties(metadata);
 					saveMetadataToFile(new File(virtualDirectory.getAbsolutePath() + "/Metadata"), metadata, jfactory, fileExtension);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
 	        })).get();
 			
-			//Generate all molecule record files and indexes at the same time...
 	        forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> { 
-	        	M molecule = get(UID);
-	        	newIndexes.moleculeUIDs.add(UID);
-	        	if (!molecule.hasNoTags())
-	        		newIndexes.moleculeUIDtoTagList.put(UID, molecule.getTags());
-	        	if (molecule.getChannel() > -1)
-	        		newIndexes.moleculeUIDtoChannel.put(UID, molecule.getChannel());
-	        	if (molecule.getImage() > -1)
-	        		newIndexes.moleculeUIDtoImage.put(UID, molecule.getImage());
-	        	newIndexes.moleculeUIDtoMetadataUID.put(UID, molecule.getMetadataUID());
-	        	
-	        	newParameterSet.addAll(molecule.getParameters().keySet());
-	        	newTagSet.addAll(molecule.getTags());
-	        	newRegionSet.addAll(molecule.getRegionNames());
-	        	newPositionSet.addAll(molecule.getPositionNames());
-	        	if (molecule.getChannel() > -1)
-	        		newChannelSet.add(molecule.getChannel());
-	        	newMoleculeDataTableColumnSet.addAll(molecule.getTable().getColumnHeadingList());
-	        	
-	        	newMoleculeSegmentTableNames.addAll(molecule.getSegmentsTableNames());
-	        	
-	        	archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
 	        	try {
+	        		M molecule = get(UID);
+		        	newIndex.addMolecule(molecule);
+		        	properties().addMoleculeProperties(molecule);
 					saveMoleculeToFile(new File(virtualDirectory.getAbsolutePath() + "/Molecules"), molecule, jfactory, fileExtension);
 	        	} catch (IOException e) {
 	        		e.printStackTrace();
 	        	}
 	        })).get();        
 	   } catch (InterruptedException | ExecutionException e ) {
-	        // handle exceptions
 	    	e.printStackTrace();
 	   } finally {
 	      forkJoinPool.shutdown();
 	   }
+		   
+	   properties().setNumberOfMolecules(moleculeList.size());
+	   properties().setNumberOfMetadatas(metadataList.size());
+	   
+	   index().save(file, jfactory, storeFileExtension);
+	   properties().save(file, jfactory, storeFileExtension);
 		
-		archiveProperties.setTagSet(newTagSet);
-		archiveProperties.setRegionSet(newRegionSet);
-		archiveProperties.setPositionSet(newPositionSet);
-		archiveProperties.setChannelSet(newChannelSet);
-		archiveProperties.setParameterSet(newParameterSet);
-		archiveProperties.setColumnSet(newMoleculeDataTableColumnSet);
-		archiveProperties.setSegmentsTableNames(newMoleculeSegmentTableNames);
-		archiveProperties.setNumberOfMolecules(moleculeList.size());
-		archiveProperties.setNumberOfMetadatas(metadataList.size());
-		
-		saveProperties(virtualDirectory, jfactory, fileExtension);
-		saveIndexes(newIndexes, virtualDirectory, jfactory, fileExtension);
-		
-		if (virtual)
-			indexes = newIndexes;
+	   if (virtual)
+			this.archiveIndex = newIndex;
 	}
 	
 	/**
@@ -820,32 +724,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void put(M molecule) {		
 		if (virtual) {
-			//Need to make sure all write operations to moleculeList 
-			//are synchronized to avoid two threads working at the same time
-			//during a write operation
-			//We check with a set for speed, then add to index
-			if (!indexes().moleculeUIDs.contains(molecule.getUID())) {
+			if (!index().getMoleculeUIDSet().contains(molecule.getUID())) {
 				synchronized(moleculeList) {
 					moleculeList.add(molecule.getUID());
 				}
-				indexes().moleculeUIDs.add(molecule.getUID());
+				index().getMoleculeUIDSet().add(molecule.getUID());
 				archiveProperties.setNumberOfMolecules(moleculeList.size());
 			}
-			//For the moment we don't through IOException here...
-			//Would only occur in virtual store ...
-			//Hmm maybe we should throw IOException all the time ?
 			try {
 				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory, storeFileExtension);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			updateTagIndex(molecule);
-			updateChannelIndex(molecule);
-			updateImageIndex(molecule);
+			index().addMolecule(molecule);
 		} else if (!moleculeMap.containsKey(molecule.getUID())) {
-			//If working in memory and the key is already in the map
-			//there is only one copy and all changes have already been saved
-			//otherwise, we add it as a new record.
 			synchronized(moleculeList) {
 				moleculeList.add(molecule.getUID());
 			}
@@ -874,11 +766,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void putMetadata(I metadata) {		
 		//If virtual we save the metadata to file
 		if (virtual) {
-			if (!indexes().metadataUIDs.contains(metadata.getUID())) {
+			if (!index().getMetadataUIDSet().contains(metadata.getUID())) {
 				synchronized(metadataList) {	
 					metadataList.add(metadata.getUID());
 				}
-				indexes().metadataUIDs.add(metadata.getUID());
+				index().getMetadataUIDSet().add(metadata.getUID());
 				archiveProperties.setNumberOfMetadatas(metadataList.size());
 			}
 			
@@ -887,7 +779,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			updateMetadataTagIndex(metadata);
+			index().addMetadata(metadata);
 		}
 		
 		if (!metadataMap.containsKey(metadata.getUID())) {
@@ -918,7 +810,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + storeFileExtension);
 			if (metadataFile.exists())
 				metadataFile.delete();
-			indexes().metadataUIDs.remove(metaUID);
+			index().getMetadataUIDSet().remove(metaUID);
 		}
 		
 		if (metadataMap.containsKey(metaUID))
@@ -1085,7 +977,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 			if (moleculeFile.exists())
 				moleculeFile.delete();
-			indexes().moleculeUIDs.remove(UID);
+			index().getMoleculeUIDSet().remove(UID);
 		} else {
 			moleculeMap.remove(UID);
 		}
@@ -1121,7 +1013,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (UID == null)
 			 return null;
 		else if (virtual) {
-			tags = indexes().moleculeUIDtoTagList.get(UID);
+			tags = index().getMoleculeUIDtoTagListMap().get(UID);
 		} else {
 			tags = get(UID).getTags();
 		}
@@ -1147,7 +1039,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (!virtual)
 			return moleculeMap.get(UID).getTags();
 		else
-			return indexes().moleculeUIDtoTagList.get(UID);
+			return index().getMoleculeUIDtoTagListMap().get(UID);
 	}
 	
 	/**
@@ -1159,8 +1051,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public int getChannel(String UID) {
 		if (!virtual) {
 			return moleculeMap.get(UID).getChannel();
-		} else if (indexes().moleculeUIDtoChannel.containsKey(UID))
-			return indexes().moleculeUIDtoChannel.get(UID);
+		} else if (index().getMoleculeUIDtoChannelMap().containsKey(UID))
+			return index().getMoleculeUIDtoChannelMap().get(UID);
 		else 
 			return -1;
 	}
@@ -1174,8 +1066,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public int getImage(String UID) {
 		if (!virtual) {
 			return moleculeMap.get(UID).getImage();
-		} else if (indexes().moleculeUIDtoImage.containsKey(UID))
-			return indexes().moleculeUIDtoImage.get(UID);
+		} else if (index().getMoleculeUIDtoImageMap().containsKey(UID))
+			return index().getMoleculeUIDtoImageMap().get(UID);
 		else 
 			return -1;
 	}
@@ -1191,7 +1083,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (UID == null)
 			 return null;
 		else if (virtual) {
-			tags = indexes().metadataUIDtoTagList.get(UID);
+			tags = index().getMetadataUIDtoTagListMap().get(UID);
 		} else {
 			tags = getMetadata(UID).getTags();
 		}
@@ -1217,7 +1109,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (!virtual)
 			return metadataMap.get(UID).getTags();
 		else 
-			return indexes().metadataUIDtoTagList.get(UID);
+			return index().getMetadataUIDtoTagListMap().get(UID);
 	}
 	
 	/**
@@ -1286,48 +1178,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			jGenerator.close();
 		} finally {
 			recordLocks.get(metadata.getUID()).unlock();
-		}
-	}
-	
-	private void updateMetadataTagIndex(I metadata) {
-		if (virtual) {
-			if (metadata.getTags().size() > 0) {
-				indexes().metadataUIDtoTagList.put(metadata.getUID(), metadata.getTags());
-			} else {
-				indexes().metadataUIDtoTagList.remove(metadata.getUID());
-			}
-		}
-	}
-
-	private void updateTagIndex(M molecule) {
-		if (virtual) {
-			if (molecule.getTags().size() > 0) {
-				indexes().moleculeUIDtoTagList.put(molecule.getUID(), molecule.getTags());
-				archiveProperties.addAllTags(molecule.getTags());
-			} else {
-				indexes().moleculeUIDtoTagList.remove(molecule.getUID());
-			}
-		}
-	}
-	
-	private void updateChannelIndex(M molecule) {
-		if (virtual) {
-			if (molecule.getChannel() > -1) {
-				indexes().moleculeUIDtoChannel.put(molecule.getUID(), molecule.getChannel());
-				archiveProperties.addChannel(molecule.getChannel());
-			} else {
-				indexes().moleculeUIDtoChannel.remove(molecule.getUID());
-			}
-		}
-	}
-	
-	private void updateImageIndex(M molecule) {
-		if (virtual) {
-			if (molecule.getImage() > -1) {
-				indexes().moleculeUIDtoImage.put(molecule.getUID(), molecule.getImage());
-			} else {
-				indexes().moleculeUIDtoImage.remove(molecule.getUID());
-			}
 		}
 	}
 	
@@ -1408,7 +1258,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (indexes().moleculeUIDtoTagList.containsKey(UID) && indexes().moleculeUIDtoTagList.get(UID).contains(tag))
+				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index().getMoleculeUIDtoTagListMap().get(UID).contains(tag))
 					return true;
 				else
 					return false;
@@ -1429,9 +1279,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasNoTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (indexes().moleculeUIDtoTagList.containsKey(UID) && indexes().moleculeUIDtoTagList.get(UID).isEmpty())
+				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index().getMoleculeUIDtoTagListMap().get(UID).isEmpty())
 					return true;
-				else if (indexes().moleculeUIDtoTagList.containsKey(UID) && !indexes().moleculeUIDtoTagList.get(UID).isEmpty())
+				else if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && !index().getMoleculeUIDtoTagListMap().get(UID).isEmpty())
 					return false;
 				else
 					return true;
@@ -1451,8 +1301,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public LinkedHashSet<String> moleculeTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (indexes().moleculeUIDtoTagList.containsKey(UID))
-					return indexes().moleculeUIDtoTagList.get(UID);
+				if (index().getMoleculeUIDtoTagListMap().containsKey(UID))
+					return index().getMoleculeUIDtoTagListMap().get(UID);
 				else
 					return new LinkedHashSet<String>();
 			} else
@@ -1472,7 +1322,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (indexes().moleculeUIDtoTagList.containsKey(UID) && indexes().moleculeUIDtoTagList.get(UID).size() > 0)
+				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index().getMoleculeUIDtoTagListMap().get(UID).size() > 0)
 					return true;
 				else
 					return false;
@@ -1494,7 +1344,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean metadataHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (indexes().metadataUIDtoTagList.containsKey(UID) && indexes().metadataUIDtoTagList.get(UID).contains(tag))
+				if (index().getMetadataUIDtoTagListMap().containsKey(UID) && index().getMetadataUIDtoTagListMap().get(UID).contains(tag))
 					return true;
 				else
 					return false;
@@ -1536,8 +1386,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 				if (moleculeFile.exists())
 					moleculeFile.delete();
-				indexes().moleculeUIDs.remove(UID);
-				indexes().moleculeUIDtoTagList.remove(UID);
+				index().getMoleculeUIDSet().remove(UID);
+				index().getMoleculeUIDtoTagListMap().remove(UID);
 			}
 		}
 		
@@ -1562,8 +1412,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + UID + storeFileExtension);
 				if (metadataFile.exists())
 					metadataFile.delete();
-				indexes().metadataUIDs.remove(metaData.getUID());
-				indexes().metadataUIDtoTagList.remove(UID);
+				index().getMetadataUIDSet().remove(metaData.getUID());
+				index().getMetadataUIDtoTagListMap().remove(UID);
 			}
 		}
 		
@@ -1580,7 +1430,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public boolean contains(String UID) {
 		if (virtual) {
-			return indexes().moleculeUIDs.contains(UID);
+			return index().getMoleculeUIDSet().contains(UID);
 		} else {
 			return moleculeMap.containsKey(UID);
 		}
@@ -1595,7 +1445,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public boolean containsMetadata(String UID) {
 		if (virtual) {
-			return indexes().metadataUIDs.contains(UID);
+			return index().getMetadataUIDSet().contains(UID);
 		} else {
 			return metadataMap.containsKey(UID);
 		}
@@ -1725,7 +1575,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public String getMetadataUIDforMolecule(String UID) {
 		if (virtual)
-			return indexes().moleculeUIDtoMetadataUID.get(UID);
+			return index().getMetadataUIDforMolecule(UID);
 		else 
 			return get(UID).getMetadataUID();
 	}
@@ -1889,40 +1739,34 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return archiveProperties;
 	}
 	
-	private void saveProperties(File directory, JsonFactory jfactory, String fileExtension) {
-		try {
-			File propertiesFile = new File(directory.getAbsolutePath() + "/MoleculeArchiveProperties" + fileExtension);
-			OutputStream stream = new BufferedOutputStream(new FileOutputStream(propertiesFile));
-			
-			JsonGenerator jGenerator = jfactory.createGenerator(stream);
-			archiveProperties.toJSON(jGenerator);
-			jGenerator.close();
-			
-			stream.flush();
-			stream.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private MoleculeArchiveIndex indexes() {
-		MoleculeArchiveIndex idx = indexes;
+	private MoleculeArchiveIndex<M, I> index() {
+		MoleculeArchiveIndex<M, I> idx = archiveIndex;
 		if (idx == null) {
-			idx = new MoleculeArchiveIndex();
-			indexes = idx;
+			idx = createIndex();
+			archiveIndex = idx;
 		}
 		return idx;
 	}
 	
-	private MoleculeArchiveIndex indexes(JsonParser jParser) throws IOException {
-		MoleculeArchiveIndex idx = new MoleculeArchiveIndex(jParser);
+	private MoleculeArchiveIndex<M, I> index(JsonParser jParser) throws IOException {
+		MoleculeArchiveIndex<M, I> idx = createIndex(jParser);
 		if (idx != null) {
-			indexes = idx;
-			moleculeList = (ArrayList<String>)indexes.moleculeUIDs.stream().sorted().collect(toList());
-			metadataList = (ArrayList<String>)indexes.metadataUIDs.stream().sorted().collect(toList());
+			archiveIndex = idx;
+			moleculeList = (ArrayList<String>)archiveIndex.getMoleculeUIDSet().stream().sorted().collect(toList());
+			metadataList = (ArrayList<String>)archiveIndex.getMetadataUIDSet().stream().sorted().collect(toList());
 		}
 		return idx;
 	}
+	
+	/**
+	 * Create empty MoleculeArchiveIndex.
+	 */
+	public abstract X createIndex();
+	
+	/**
+	 * Create MoleculeArchiveIndex using JsonParser stream.
+	 */
+	public abstract X createIndex(JsonParser jParser) throws IOException;
 	
 	/**
 	 * Create empty MoleculeArchiveProperties record.

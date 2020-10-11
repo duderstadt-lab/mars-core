@@ -69,7 +69,8 @@ import de.mpg.biochem.mars.table.MarsTable;
  * @param <I> MarsMetadata type.
  * @param <P> MoleculeArchiveProperties type.
  */
-public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P extends MoleculeArchiveProperties> extends JsonConvertibleRecord {
+public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P extends MoleculeArchiveProperties<M, I>, X extends MoleculeArchiveIndex<M, I>> 
+	extends JsonConvertibleRecord {
 	
 	/**
 	 * Rebuild all indexes by inspecting the contents of store directories. 
@@ -577,12 +578,28 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void logln(String str);
 	
 	/**
+	 * Create empty MoleculeArchiveIndex.
+	 * 
+	 * @return An empty MoleculeArchiveIndex.
+	 */
+	public X createIndex();
+	
+	/**
+	 * Create empty MoleculeArchiveIndex using the JsonParser stream given.
+	 * 
+	 * @param jParser JsonParser to use to create the MoleculeArchiveIndex.
+	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
+	 * @return MoleculeArchiveIndex created using the JsonParser stream.
+	 */
+	public X createIndex(JsonParser jParser) throws IOException;
+	
+	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information about the archive.
 	 * This includes numbers of records, comments, and global lists of table columns, tags, and parameters. 
 	 * 
-	 * @return The {@link MoleculeArchiveProperties} for this {@link AbstractMoleculeArchive}.
+	 * @return The {@link MoleculeArchiveProperties} for the {@link MoleculeArchive}.
 	 */
-	MoleculeArchiveProperties properties();
+	MoleculeArchiveProperties<M, I> properties();
 	
 	/**
 	 * Create empty MoleculeArchiveProperties record.

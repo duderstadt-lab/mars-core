@@ -28,326 +28,38 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonFactory;
 
-public class MoleculeArchiveIndex extends AbstractJsonConvertibleRecord {
-	
-	/*
-	 * The set of molecule UIDs.
-	 */
-	public Set<String> moleculeUIDs;
-	
-	/*
-	 * The set of metadata UIDs.
-	 */
-	public Set<String> metadataUIDs;
-	
-	/*
-	 * Map from molecule UID to tag set.
-	 */
-	public ConcurrentMap<String, LinkedHashSet<String>> moleculeUIDtoTagList;
-	
-	/*
-	 * Map from metadata UID to tag set.
-	 */
-	public ConcurrentMap<String, LinkedHashSet<String>> metadataUIDtoTagList;
-	
-	/*
-	 * Map from molecule UID to channel index.
-	 */
-	public ConcurrentMap<String, Integer> moleculeUIDtoChannel;
-	
-	/*
-	 * Map from molecule UID to channel index.
-	 */
-	public ConcurrentMap<String, Integer> moleculeUIDtoImage;
-	
-	/*
-	 * Map from molecule UID to metadata UID.
-	 */
-	public ConcurrentMap<String, String> moleculeUIDtoMetadataUID;
-	
-	public MoleculeArchiveIndex() {
-		super();
-		initializeVariables();
-	}
-	
-	public MoleculeArchiveIndex(JsonParser jParser) throws IOException {
-		super();
-		initializeVariables();
-		fromJSON(jParser);
-	}
-	
-	private void initializeVariables() {
-		moleculeUIDtoTagList = new ConcurrentHashMap<>();
-		moleculeUIDtoChannel = new ConcurrentHashMap<>();
-		moleculeUIDtoImage = new ConcurrentHashMap<>();
-		metadataUIDtoTagList = new ConcurrentHashMap<>();
-		moleculeUIDtoMetadataUID = new ConcurrentHashMap<>();
-		
-		moleculeUIDs = ConcurrentHashMap.newKeySet();
-		metadataUIDs = ConcurrentHashMap.newKeySet();
-	}
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 
-	@Override
-	protected void createIOMaps() {
-		
-		setJsonField("metadata", 
-				jGenerator -> {
-					jGenerator.writeFieldName("metadata");
-					jGenerator.writeStartArray();
-					for (String metaUID : metadataUIDs) {
-						jGenerator.writeStartObject();
-						jGenerator.writeStringField("uid", metaUID);
-						
-						if (metadataUIDtoTagList.containsKey(metaUID)) {
-							jGenerator.writeArrayFieldStart("tags");
-							for (String tag : metadataUIDtoTagList.get(metaUID)) {
-								jGenerator.writeString(tag);
-							}
-							jGenerator.writeEndArray();
-						}
-						
-						jGenerator.writeEndObject();
-					}
-					jGenerator.writeEndArray();
-				}, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String metaUID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("uid".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				metaUID = jParser.getText();
-			    				metadataUIDs.add(metaUID);
-			    			}
-			    			
-			    			if ("tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	if (!metaUID.equals("NULL"))
-			    		    		metadataUIDtoTagList.put(metaUID, tags);
-			    			}
-			    		}
-			    		
-			        }
-				});
-		
-		setJsonField("molecules",
-				jGenerator -> {
-					jGenerator.writeArrayFieldStart("molecules");
-					for (String UID : moleculeUIDs) {
-						jGenerator.writeStartObject();
-						jGenerator.writeStringField("uid", UID);
-						jGenerator.writeStringField("metadataUID", moleculeUIDtoMetadataUID.get(UID));
-						
-						if (moleculeUIDtoTagList.containsKey(UID)) {
-							jGenerator.writeArrayFieldStart("tags");
-							for (String tag : moleculeUIDtoTagList.get(UID)) {
-								jGenerator.writeString(tag);
-							}
-							jGenerator.writeEndArray();
-						}
-						
-						if (moleculeUIDtoChannel.containsKey(UID)) {
-							jGenerator.writeNumberField("channel", moleculeUIDtoChannel.get(UID));
-						}
-						
-						if (moleculeUIDtoImage.containsKey(UID)) {
-							jGenerator.writeNumberField("image", moleculeUIDtoImage.get(UID));
-						}
-						
-						jGenerator.writeEndObject();
-					}
-					jGenerator.writeEndArray();
-				},
-				jParser -> {
-		    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String UID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("uid".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				UID = jParser.getText();
-			    				moleculeUIDs.add(UID);
-			    			}
-			    			
-			    			if ("metadataUID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				moleculeUIDtoMetadataUID.put(UID, jParser.getText());
-			    			}
-			    			
-			    			if ("tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	moleculeUIDtoTagList.put(UID, tags);
-			    			}
-			    			
-			    			if ("channel".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    		    	moleculeUIDtoChannel.put(UID, jParser.getIntValue());
-			    			}
-			    			
-			    			if ("image".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    		    	moleculeUIDtoImage.put(UID, jParser.getIntValue());
-			    			}
-			    		}
-		    		}
-				});
-		
-		
-		/*
-		 * 
-		 * The fields below are needed for backwards compatibility.
-		 * 
-		 * Please remove for a future release.
-		 * 
-		 */
-
-		setJsonField("MetadataIndex", null, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String metaUID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("UID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				metaUID = jParser.getText();
-			    				metadataUIDs.add(metaUID);
-			    				System.out.println("metaUID " + metaUID);
-			    			}
-			    			
-			    			if ("Tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	if (!metaUID.equals("NULL"))
-			    		    		metadataUIDtoTagList.put(metaUID, tags);
-			    			}
-			    		}
-			    		
-			        }
-				});
-		
-		setJsonField("imageMetaDataIndex", null, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String metaUID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("UID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				metaUID = jParser.getText();
-			    				metadataUIDs.add(metaUID);
-			    			}
-			    			
-			    			if ("Tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	if (!metaUID.equals("NULL"))
-			    		    		metadataUIDtoTagList.put(metaUID, tags);
-			    			}
-			    		}
-			    		
-			        }
-				});
-		
-		setJsonField("ImageMetadataIndex", null, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String metaUID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("UID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				metaUID = jParser.getText();
-			    				metadataUIDs.add(metaUID);
-			    			}
-			    			
-			    			if ("Tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	if (!metaUID.equals("NULL"))
-			    		    		metadataUIDtoTagList.put(metaUID, tags);
-			    			}
-			    		}
-			    		
-			        }
-				});
-		
-		setJsonField("MoleculeIndex", null,
-				jParser -> {
-		    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    			String UID = "NULL";
-			    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    			if("UID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				UID = jParser.getText();
-			    				moleculeUIDs.add(UID);
-			    				System.out.println("UID " + UID);
-			    			}
-			    			
-			    			if ("ImageMetaDataUID".equals(jParser.getCurrentName()) || "ImageMetadataUID".equals(jParser.getCurrentName()) || "MetadataUID".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				moleculeUIDtoMetadataUID.put(UID, jParser.getText());
-			    			}
-			    			
-			    			if ("Tags".equals(jParser.getCurrentName())) {
-			    				jParser.nextToken();
-			    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-			    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    		            tags.add(jParser.getText());
-			    		        }
-			    		    	moleculeUIDtoTagList.put(UID, tags);
-			    			}
-			    		}
-		    		}
-				});
-		
-		setJsonField("moleculeIndex", null,
-			jParser -> {
-	    		while (jParser.nextToken() != JsonToken.END_ARRAY) {
-	    			String UID = "NULL";
-		    		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    			if("UID".equals(jParser.getCurrentName())) {
-		    				jParser.nextToken();
-		    				UID = jParser.getText();
-		    				moleculeUIDs.add(UID);
-		    			}
-		    			
-		    			if ("ImageMetaDataUID".equals(jParser.getCurrentName()) || "ImageMetadataUID".equals(jParser.getCurrentName()) || "MetadataUID".equals(jParser.getCurrentName())) {
-		    				jParser.nextToken();
-		    				moleculeUIDtoMetadataUID.put(UID, jParser.getText());
-		    			}
-		    			
-		    			if ("Tags".equals(jParser.getCurrentName())) {
-		    				jParser.nextToken();
-		    				LinkedHashSet<String> tags = new LinkedHashSet<String>();
-		    		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    		            tags.add(jParser.getText());
-		    		        }
-		    		    	moleculeUIDtoTagList.put(UID, tags);
-		    			}
-		    		}
-	    		}
-			});
-	}
+public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata> extends JsonConvertibleRecord {
+	void addMolecule(M molecule);
+	
+	void addMetadata(I metadata);
+	
+	boolean containsMoleculeUID(String UID);
+	
+	boolean containsMetadataUID(String metadataUID);
+	
+	Set<String> getMoleculeUIDSet();
+	
+	Set<String> getMetadataUIDSet();
+	
+	Map<String, LinkedHashSet<String>> getMetadataUIDtoTagListMap();
+	
+	Map<String, LinkedHashSet<String>> getMoleculeUIDtoTagListMap();
+	
+	Map<String, Integer> getMoleculeUIDtoImageMap();
+	
+	Map<String, Integer> getMoleculeUIDtoChannelMap();
+	
+	String getMetadataUIDforMolecule(String UID);
+	
+	void save(File directory, JsonFactory jfactory, String fileExtension) throws IOException;
 }

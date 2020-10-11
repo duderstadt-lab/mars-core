@@ -271,7 +271,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				allMetadataItems.add(mergedMetadata);
 			}
 			
-			MoleculeArchiveIndex mergedIndex = new MoleculeArchiveIndex();
+			AbstractMoleculeArchiveIndex mergedIndex = new AbstractMoleculeArchiveIndex();
 			
 			for (MoleculeArchive<?, ?, ?> archive : archives) {
 				for (String UID : archive.getMoleculeUIDs()) {
