@@ -238,6 +238,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 	
 	@Override
 	public void initialize() {
+		if (imageDisplay == null)
+			return;
+		
 		dataset = (Dataset) imageDisplay.getActiveView().getData();
 		image = convertService.convert(imageDisplay, ImagePlus.class);
 

@@ -366,6 +366,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		@Override
 		public void initialize() {
+			if (imageDisplay == null)
+				return;
+			
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 
