@@ -172,17 +172,24 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected MoleculeArchiveIndex<M, I> archiveIndex;
 	
 	/*
-	 * List of metadata UIDs. All write operations must be placed in synchronized blocks. synchronized(metadataList) { ... }
-	 */
-	protected ArrayList<String> metadataList;
-	
-	/*
-	 * Map from metadata UID to MarsMetadata object 
+	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized with metadataList always. 
 	 */
 	protected ConcurrentMap<String, I> metadataMap;
 	
 	/*
-	 * List of molecule UIDs. All write operations must be placed in synchronized blocks. synchronized(moleculeList) { ... }
+	 * List of metadata UIDs. Items should match keys in metadataMap always. 
+	 * All write operations must be placed in synchronized blocks. synchronized(metadataList) { ... }
+	 */
+	protected ArrayList<String> metadataList;
+	
+	/*
+	 * Map from molecule UID to Molecule object. Keys should be synchronized with moleculeList always. Left null in virtual memory mode.
+	 */
+	protected ConcurrentMap<String, M> moleculeMap;
+	
+	/*
+	 * List of molecule UIDs. Items should match keys in moleculeMap always. 
+	 * All write operations must be placed in synchronized blocks. synchronized(moleculeList) { ... }
 	 */
 	protected ArrayList<String> moleculeList;
 	
@@ -190,11 +197,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * Map from molecule UID to ReentrantLock to ensure thread blocking when accessing molecule files.
 	 */
 	protected ConcurrentMap<String, ReentrantLock> recordLocks;
-	
-	/*
-	 * Map from molecule UID to Molecule object. Left null in virtual memory mode.
-	 */
-	protected ConcurrentMap<String, M> moleculeMap;
 	
 	/*
 	 * Set to true if working from a virtual store.
@@ -724,35 +726,28 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	public void put(M molecule) {		
 		if (virtual) {
-			if (!index().getMoleculeUIDSet().contains(molecule.getUID())) {
+			if (!index().getMoleculeUIDSet().contains(molecule.getUID()))
 				synchronized(moleculeList) {
 					moleculeList.add(molecule.getUID());
 				}
-				index().getMoleculeUIDSet().add(molecule.getUID());
-				archiveProperties.setNumberOfMolecules(moleculeList.size());
-			}
+			
+			index().addMolecule(molecule);
+			
 			try {
 				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"), molecule, jfactory, storeFileExtension);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			index().addMolecule(molecule);
 		} else if (!moleculeMap.containsKey(molecule.getUID())) {
+			molecule.setParent(this);
+			moleculeMap.put(molecule.getUID(), molecule);	
 			synchronized(moleculeList) {
 				moleculeList.add(molecule.getUID());
 			}
-			molecule.setParent(this);
-			moleculeMap.put(molecule.getUID(), molecule);
-			archiveProperties.setNumberOfMolecules(moleculeList.size());
 		}
-		archiveProperties.addAllColumns(molecule.getTable().getColumnHeadingList());
-		archiveProperties.addAllSegmentsTableNames(molecule.getSegmentsTableNames());
-		if (molecule.getTags().size() > 0)
-			archiveProperties.addAllTags(molecule.getTags());
-		if (molecule.getChannel() > -1)
-			archiveProperties.addChannel(molecule.getChannel());
-		archiveProperties.addAllRegions(molecule.getRegionNames());
-		archiveProperties.addAllPositions(molecule.getPositionNames());
+		
+		properties().addMoleculeProperties(molecule);
+		properties().setNumberOfMolecules(moleculeList.size());
 	}
 	
 	/**
@@ -766,34 +761,31 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void putMetadata(I metadata) {		
 		//If virtual we save the metadata to file
 		if (virtual) {
-			if (!index().getMetadataUIDSet().contains(metadata.getUID())) {
+			if (!index().getMetadataUIDSet().contains(metadata.getUID()))
 				synchronized(metadataList) {	
 					metadataList.add(metadata.getUID());
 				}
-				index().getMetadataUIDSet().add(metadata.getUID());
-				archiveProperties.setNumberOfMetadatas(metadataList.size());
-			}
+			
+			index().addMetadata(metadata);
 			
 			try {
 				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"), metadata, jfactory, storeFileExtension);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			index().addMetadata(metadata);
 		}
 		
+		//Also, do this in virtual mode to lazy load records into memory.
 		if (!metadataMap.containsKey(metadata.getUID())) {
-			//If the key is already in the map
-			//there is only one copy and all changes have already been saved
-			//otherwise, we add it as a new record.
-			synchronized(metadataList) {	
-				if (!metadataList.contains(metadata.getUID()))
-					metadataList.add(metadata.getUID());
-			}
 			metadata.setParent(this);
 			metadataMap.put(metadata.getUID(), metadata);
-			archiveProperties.setNumberOfMetadatas(metadataList.size());
+			synchronized(metadataList) {	
+				metadataList.add(metadata.getUID());
+			}
 		}
+		
+		properties().addMetadataProperties(metadata);
+		properties().setNumberOfMetadatas(metadataList.size());
 	}
 	
 	/**
@@ -803,19 +795,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param metaUID the UID of the metadata record to remove.
 	 */
 	public void removeMetadata(String metaUID) {
-		synchronized(metadataList) {
-			metadataList.remove(metaUID);
-		}
 		if (virtual) {
+			index().removeMetadata(metaUID);
 			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + metaUID + storeFileExtension);
 			if (metadataFile.exists())
 				metadataFile.delete();
-			index().getMetadataUIDSet().remove(metaUID);
 		}
 		
 		if (metadataMap.containsKey(metaUID))
 			metadataMap.remove(metaUID);
 		
+		synchronized(metadataList) {
+			metadataList.remove(metaUID);
+		}
+		
+		properties().setNumberOfMetadatas(metadataList.size());
 	}
 
 	/**
@@ -932,7 +926,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @return The global comments String.
 	 */
 	public String getComments() {
-		return archiveProperties.getComments();
+		return properties().getComments();
 	}
 	
 	/**
@@ -942,7 +936,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param comments A string of global comments to set.
 	 */
 	public void setComments(String comments) {
-		archiveProperties.setComments(comments);
+		properties().setComments(comments);
 	}
 	
 	/**
@@ -970,17 +964,18 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param UID The UID of the molecule record to remove.
 	 */
 	public void remove(String UID) {
-		synchronized(moleculeList) {
-			moleculeList.remove(UID);
-		}
 		if (virtual) {
 			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
 			if (moleculeFile.exists())
 				moleculeFile.delete();
-			index().getMoleculeUIDSet().remove(UID);
+			index().removeMolecule(UID);
 		} else {
 			moleculeMap.remove(UID);
 		}
+		synchronized(moleculeList) {
+			moleculeList.remove(UID);
+		}
+		properties().setNumberOfMolecules(moleculeList.size());
 	}
 	
 	/**
@@ -1359,6 +1354,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * performance by using multiple threads. Provides a way to add tags
 	 * resulting from machine learning using python.
 	 * 
+	 * In virtual mode, this adds tags directly to the records as well as the index.
+	 * 
 	 * @param tagMap The UID to tag map for add to molecules.
 	 */
 	public void addMoleculeTags(HashMap<String, String> tagMap) {
@@ -1375,24 +1372,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param tag Molecule records with this tag will be removed.
 	 */
 	public void deleteMoleculesWithTag(String tag) {
-		ArrayList<String> newMoleculeList = new ArrayList<String>();
-		
-		for (String UID : moleculeList) {
-			M molecule = get(UID);
-			
-			if (!moleculeHasTag(UID, tag)) {
-				newMoleculeList.add(molecule.getUID());
-			} else if (virtual) {
-				File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" + UID + storeFileExtension);
-				if (moleculeFile.exists())
-					moleculeFile.delete();
-				index().getMoleculeUIDSet().remove(UID);
-				index().getMoleculeUIDtoTagListMap().remove(UID);
-			}
-		}
-		
-		moleculeList = newMoleculeList;
-		archiveProperties.setNumberOfMolecules(moleculeList.size());	
+		ArrayList<String> deleteUIDs = (ArrayList<String>)getMoleculeUIDs().parallelStream().filter(UID -> moleculeHasTag(UID, tag)).collect(toList());
+		deleteUIDs.parallelStream().forEach(UID -> remove(UID));
 	}
 	
 	/**
@@ -1400,25 +1381,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @param tag MarsMetadata records with this tag will be removed.
 	 */
-	public void deleteMetadataRecordsWithTag(String tag) {
-		ArrayList<String> newMetadataIndex = new ArrayList<String>();
-		
-		for (String UID : metadataList) {
-			I metaData = getMetadata(UID);
-			
-			if (!metadataHasTag(UID,tag)) {
-				newMetadataIndex.add(metaData.getUID());
-			} else if (virtual) {
-				File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" + UID + storeFileExtension);
-				if (metadataFile.exists())
-					metadataFile.delete();
-				index().getMetadataUIDSet().remove(metaData.getUID());
-				index().getMetadataUIDtoTagListMap().remove(UID);
-			}
-		}
-		
-		metadataList = newMetadataIndex;
-		archiveProperties.setNumberOfMetadatas(metadataList.size());
+	public void deleteMetadatasWithTag(String tag) {
+		ArrayList<String> deleteMetadataUIDs = (ArrayList<String>)getMetadataUIDs().parallelStream().filter(UID -> metadataHasTag(UID, tag)).collect(toList());
+		deleteMetadataUIDs.parallelStream().forEach(metadataUID -> removeMetadata(metadataUID));
 	}
 	
 	/**
@@ -1661,18 +1626,16 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * Lock the archive window during processing, if one exists.
 	 */
 	public void lock() {
-		if (win != null) {
+		if (win != null)
 			win.lock();
-		}
 	}
 	
 	/**
 	 * Unlock the archive window after processing is done, if one exists.
 	 */
 	public void unlock() {
-		if (win != null) {
+		if (win != null)
 			win.unlock();
-		}
 	}
 	
 	/**
@@ -1682,6 +1645,16 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void naturalOrderSortMoleculeIndex() {
 		synchronized (moleculeList) {
 			moleculeList = (ArrayList<String>)moleculeList.stream().sorted().collect(toList());
+		}
+	}
+	
+	/**
+	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
+	 * records or after recovery to ensure the molecule records preserve an order.
+	 */
+	public void naturalOrderSortMetadataIndex() {
+		synchronized (metadataList) {
+			metadataList = (ArrayList<String>)metadataList.stream().sorted().collect(toList());
 		}
 	}
 	

@@ -41,7 +41,15 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
 public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata> extends JsonConvertibleRecord {
 	void addMolecule(M molecule);
 	
+	void removeMolecule(M molecule);
+	
+	void removeMolecule(String UID);
+	
 	void addMetadata(I metadata);
+	
+	void removeMetadata(I metadata);
+	
+	void removeMetadata(String metadataUID);
 	
 	boolean containsMoleculeUID(String UID);
 	

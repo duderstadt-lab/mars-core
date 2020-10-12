@@ -394,7 +394,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param tag metadata records with this tag will be removed.
 	 */
-	void deleteMetadataRecordsWithTag(String tag);
+	void deleteMetadatasWithTag(String tag);
 	
 	/**
 	 * Used to check if there is a molecule record with the UID given.
@@ -558,6 +558,12 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * records or after recovery to ensure the molecule records preserve an order.
 	 */
 	void naturalOrderSortMoleculeIndex();
+	
+	/**
+	 * Natural Order Sort all Metadata UIDs in the index. Run after adding new
+	 * records or after recovery to ensure the metadata records preserve an order.
+	 */
+	void naturalOrderSortMetadataIndex();
 	
 	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing plugins 

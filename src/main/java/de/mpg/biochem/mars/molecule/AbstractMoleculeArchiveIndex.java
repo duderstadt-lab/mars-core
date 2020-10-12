@@ -382,11 +382,36 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
     	moleculeUIDtoImage.put(molecule.getUID(), molecule.getImage());
     	moleculeUIDtoMetadataUID.put(molecule.getUID(), molecule.getMetadataUID());
 	}
+	
+	@Override
+	public void removeMolecule(Molecule molecule) {
+		removeMolecule(molecule.getUID());
+	}
+	
+	@Override
+	public void removeMolecule(String UID) {
+		moleculeUIDs.remove(UID);
+		moleculeUIDtoTagList.remove(UID);
+    	moleculeUIDtoChannel.remove(UID);
+    	moleculeUIDtoImage.remove(UID);
+    	moleculeUIDtoMetadataUID.remove(UID);
+	}
 
 	@Override
 	public void addMetadata(I metadata) {
 		metadataUIDs.add(metadata.getUID());
 		metadataUIDtoTagList.put(metadata.getUID(), metadata.getTags());
+	}
+	
+	@Override
+	public void removeMetadata(I metadata) {
+		removeMetadata(metadata.getUID());
+	}
+	
+	@Override
+	public void removeMetadata(String metadataUID) {
+		metadataUIDs.remove(metadataUID);
+		metadataUIDtoTagList.remove(metadataUID);
 	}
 
 	@Override
