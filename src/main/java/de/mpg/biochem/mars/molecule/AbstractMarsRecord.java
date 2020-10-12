@@ -525,13 +525,55 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	}
 	
 	/**
-	 * Check if a parameter exists.
+	 * Returns true if any type of parameter has the name give.
 	 * 
-	 * @param parameter The string parameter name to retrieve the value for.
-	 * @return Returns true if the parameter exits and false if not.
+	 * @param parameter The parameter name to check for.
+	 * @return Returns true if a parameter with the name exists.
 	 */
 	public boolean hasParameter(String parameter) {
 		return parameters.containsKey(parameter);
+	}
+	
+	/**
+	 * Returns true if the double parameter exists.
+	 * 
+	 * @param parameter The double parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	@Override
+	public boolean hasDoubleParameter(String parameter) {
+		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Double)
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * Returns true if the string parameter exists.
+	 * 
+	 * @param parameter The string parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	@Override
+	public boolean hasStringParameter(String parameter) {
+		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof String)
+			return true;
+		else
+			return false;
+	}
+
+	/**
+	 * Returns true if the boolean parameter exists.
+	 * 
+	 * @param parameter The boolean parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	@Override
+	public boolean hasBooleanParameter(String parameter) {
+		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Boolean)
+			return true;
+		else
+			return false;
 	}
 	
 	/**

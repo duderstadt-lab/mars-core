@@ -198,12 +198,36 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	boolean getBooleanParameter(String parameter);
 	
 	/**
-	 * Get the value of a parameter.
+	 * Returns true if any type of parameter has the name give.
 	 * 
-	 * @param parameter The string parameter name to retrieve the value for.
-	 * @return Returns the double value for the parameter name given.
+	 * @param parameter The parameter name to check for.
+	 * @return Returns true if a parameter with the name exists.
 	 */
 	boolean hasParameter(String parameter);
+	
+	/**
+	 * Returns true if the double parameter exists.
+	 * 
+	 * @param parameter The double parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	boolean hasDoubleParameter(String parameter);
+	
+	/**
+	 * Returns true if the string parameter exists.
+	 * 
+	 * @param parameter The string parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	boolean hasStringParameter(String parameter);
+	
+	/**
+	 * Returns true if the boolean parameter exists.
+	 * 
+	 * @param parameter The boolean parameter name to check for.
+	 * @return Returns true if a parameter with this name exists.
+	 */
+	boolean hasBooleanParameter(String parameter);
 	
 	/**
 	 * Get the map for all parameters.
