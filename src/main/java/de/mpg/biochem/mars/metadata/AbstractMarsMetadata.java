@@ -419,6 +419,9 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	}
 	
 	public String getCollectionDate() {
-		return images.get(0).getAquisitionDate().getValue();
+		if (images.get(0) != null && images.get(0).getAquisitionDate() != null)
+			return images.get(0).getAquisitionDate().getValue();
+		else
+			return null;
 	}
 }
