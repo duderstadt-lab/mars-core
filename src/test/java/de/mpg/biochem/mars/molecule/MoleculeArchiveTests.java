@@ -44,6 +44,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.scijava.Context;
 import org.scijava.table.DoubleColumn;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEImage;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
@@ -51,6 +52,8 @@ import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableTests;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadataRoot;
@@ -64,71 +67,69 @@ public class MoleculeArchiveTests {
 	@TempDir
 	static File sharedTempDir;
 	
-	static MoleculeArchiveService moleculeArchiveService;
 	static Context context;
+	
+	static MoleculeArchive<?,?,?,?> archive;
 	
 	@BeforeAll
     public static void setup() {
         context = new Context();
-        moleculeArchiveService = new MoleculeArchiveService();
-        context.inject(moleculeArchiveService);
+        archive = generateSingleMoleculeArchive();
+        archive.naturalOrderSortMoleculeIndex();
     }
 	
 	@Test
 	@Order(1)
-	void generateMoleculeArchive() {
-		generateSingleMoleculeArchive();
+	void saveAsMoleculeArchive() throws IOException {
+		archive.saveAs(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama"));
 	}
 	
 	@Test
 	@Order(2)
-	void saveAsMoleculeArchive() throws IOException {
-		generateSingleMoleculeArchive().saveAs(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama"));
+	void loadMoleculeArchive() throws IOException {
+		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
+		context.inject(ioPlugin);
+		
+		MoleculeArchive<?,?,?,?> reloadedArchive = ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama");
+		isEqual(archive, reloadedArchive);
 	}
 	
 	@Test
 	@Order(3)
 	void saveAsJsonMoleculeArchive() throws IOException {
-		generateSingleMoleculeArchive().saveAsJson(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json"));
+		archive.saveAsJson(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json"));
 	}
-	
-	@Test
-	@Order(4)
-	void saveAsVirtualMoleculeArchive() throws IOException {
-		generateSingleMoleculeArchive().saveAsVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/"));
-	}
-	
+
 	@Test
 	@Order(5)
-	void saveAsJsonVirtualMoleculeArchive() throws IOException {
-		generateSingleMoleculeArchive().saveAsJsonVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/"));
-	}
-	
-	@Test
-	@Order(6)
-	void loadMoleculeArchive() throws IOException {
-		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
-		context.inject(ioPlugin);
-		
-		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama");
-	}
-	
-	@Test
-	@Order(7)
 	void loadJsonMoleculeArchive() throws IOException {
 		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
 		context.inject(ioPlugin);
 		
-		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json");
+		MoleculeArchive<?,?,?,?> reloadedArchive = ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json");
+		isEqual(archive, reloadedArchive);
 	}
 	
 	@Test
-	@Order(8)
+	@Order(6)
+	void saveAsVirtualMoleculeArchive() throws IOException {
+		archive.saveAsVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/"));
+	}
+	
+	@Test
+	@Order(7)
 	void loadVirtualMoleculeArchive() throws IOException {
 		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
 		context.inject(ioPlugin);
 		
-		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/");
+		MoleculeArchive<?,?,?,?> reloadedArchive = ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/");
+		isEqual(archive, reloadedArchive);
+	}
+	
+	@Test
+	@Order(8)
+	void saveAsJsonVirtualMoleculeArchive() throws IOException {
+		archive.saveAsJsonVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/"));
 	}
 	
 	@Test
@@ -137,8 +138,74 @@ public class MoleculeArchiveTests {
 		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
 		context.inject(ioPlugin);
 		
-		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/");
+		MoleculeArchive<?,?,?,?> reloadedArchive = ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/");
+		isEqual(archive, reloadedArchive);
 	}
+	
+	void isEqual(MoleculeArchive<?,?,?,?> archive1, MoleculeArchive<?,?,?,?> archive2) {
+  		
+		assertEquals(archive1.getNumberOfMetadatas(), archive2.getNumberOfMetadatas());
+		assertEquals(archive1.getNumberOfMolecules(), archive2.getNumberOfMolecules());
+		
+		for (int mol = 0; mol < archive1.getNumberOfMolecules(); mol++)
+			isEqual(archive1.get(mol), archive2.get(mol));
+  		
+  	}
+  	
+  	void isEqual(Molecule molecule1, Molecule molecule2) {
+  		
+  		assertEquals(molecule1.getUID(), molecule2.getUID());
+  		assertEquals(molecule1.getMetadataUID(), molecule2.getMetadataUID());
+  		assertEquals(molecule1.getImage(), molecule2.getImage());
+  		assertEquals(molecule1.getChannel(), molecule2.getChannel());
+  		assertEquals(molecule1.getTags(), molecule2.getTags());
+  		assertEquals(molecule1.getNotes(), molecule2.getNotes());
+  		assertEquals(molecule1.getParameters(), molecule2.getParameters());
+  		
+  		isEqual(molecule1.getTable(), molecule2.getTable());
+  	}
+  	
+  	public static boolean isEqual(MarsMetadata metadata1, MarsMetadata metadata2) {
+  		
+  		return false;
+  	}
+  	
+  	void isEqual(MoleculeArchiveProperties<?,?> properties1, MoleculeArchiveProperties<?,?> properties2) {
+  		
+  		assertEquals(properties1.getNumberOfMolecules(), properties2.getNumberOfMolecules());
+  		assertEquals(properties1.getNumberOfMetadatas(), properties2.getNumberOfMetadatas());
+  		assertEquals(properties1.getColumnSet(), properties2.getColumnSet());
+  		assertEquals(properties1.getTagSet(), properties2.getTagSet());
+  		
+  	}
+  	
+  	public static boolean isEqual(MoleculeArchiveIndex<?,?> index1, MoleculeArchiveIndex<?,?> index2) {
+  		
+  		return false;
+  	}
+  	
+  	void isEqual(MarsTable table1, MarsTable table2) {
+  		//Assumes all columns contain only doubles
+  		
+  		assertEquals(table1.size(), table2.size());
+		assertEquals(table1.getColumnCount(), table2.getColumnCount());
+		assertEquals(table1.getRowCount(), table2.getRowCount());
+
+		// check column headers and data
+		for (int col = 0; col < table1.getColumnCount(); col++) {
+			assertEquals(table1.getColumnHeader(col), table2.getColumnHeader(col));
+			for (int row = 0; row < table1.getColumnCount(); row++)
+				assertEquals(table1.getValue(col, row), table2.getValue(col, row));
+		}
+  	}
+  	
+  	void isEqual(MarsRegion region1, MarsRegion region2) {
+
+  	}
+  	
+  	void isEqual(MarsPosition position1, MarsPosition position2) {
+
+  	}
 	
 	public static SingleMoleculeArchive generateSingleMoleculeArchive() {
 		SingleMoleculeArchive archive = new SingleMoleculeArchive("testMoleculeArchive");
@@ -152,8 +219,12 @@ public class MoleculeArchiveTests {
 			molecule.setImage(0);
 			molecule.setChannel(0);
 			molecule.setMetadataUID(metadata.getUID());
-			if (ran.nextDouble() < 0.3)
+			if (ran.nextDouble() < 0.3) {
 				molecule.addTag("below30");
+				molecule.setParameter("below30", ran.nextDouble());
+				molecule.setParameter("below30", true);
+				molecule.setParameter("below30", "below30");
+			}
 			if (ran.nextDouble() < 0.1)
 				molecule.addTag("below10");
 			archive.put(molecule);

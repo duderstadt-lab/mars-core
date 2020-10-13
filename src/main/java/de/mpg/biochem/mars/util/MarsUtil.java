@@ -54,12 +54,16 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEImage;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
