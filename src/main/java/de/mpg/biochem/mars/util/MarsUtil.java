@@ -42,6 +42,8 @@ import java.lang.reflect.Constructor;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.scijava.table.DoubleColumn;
+
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -52,10 +54,22 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.metadata.MarsOMEChannel;
+import de.mpg.biochem.mars.metadata.MarsOMEImage;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
+import ome.units.UNITS;
+import ome.units.quantity.Length;
+import ome.xml.model.enums.DimensionOrder;
+import ome.xml.model.primitives.NonNegativeInteger;
+import ome.xml.model.primitives.PositiveInteger;
 
 import java.nio.file.attribute.PosixFilePermission;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
@@ -66,6 +80,7 @@ import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
 
 import java.util.EnumSet;
+import java.util.Random;
 import java.util.Set;
 
 public class MarsUtil {

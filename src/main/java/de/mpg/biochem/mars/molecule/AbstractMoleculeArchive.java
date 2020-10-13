@@ -709,8 +709,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	   properties().setNumberOfMolecules(moleculeList.size());
 	   properties().setNumberOfMetadatas(metadataList.size());
 	   
-	   index().save(virtualDirectory, jfactory, storeFileExtension);
-	   properties().save(virtualDirectory, jfactory, storeFileExtension);
+	   newIndex.save(virtualDirectory, jfactory, fileExtension);
+	   properties().save(virtualDirectory, jfactory, fileExtension);
 		
 	   if (virtual)
 			this.archiveIndex = newIndex;

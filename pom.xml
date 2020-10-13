@@ -97,7 +97,7 @@
 		<jackson-dataformat-smile.version>${jackson.version}</jackson-dataformat-smile.version>
 		<base58-codec.version>1.2.0</base58-codec.version>
 		<decimal4j.version>1.0.3</decimal4j.version>
-		<junit-jupiter.version>5.2.0</junit-jupiter.version>
+		<junit-jupiter.version>5.5.2</junit-jupiter.version>
 		<junit-jupiter-api.version>${junit-jupiter.version}</junit-jupiter-api.version>
 		<junit-jupiter-engine.version>${junit-jupiter.version}</junit-jupiter-engine.version>
 	</properties>
@@ -200,6 +200,18 @@
 			<version>${junit-jupiter-engine.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+		    <groupId>org.junit.jupiter</groupId>
+		    <artifactId>junit-jupiter-params</artifactId>
+		    <version>${junit-jupiter.version}</version>
+		    <scope>test</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-simple</artifactId>
+		    <version>1.7.30</version>
+		    <scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<repositories>
@@ -221,6 +233,13 @@
                     </compilerArgs>
                 </configuration>
       </plugin>
+      <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<configuration>
+				<trimStackTrace>false</trimStackTrace>
+			</configuration>
+		</plugin>
     </plugins>
 		<resources>
 			<resource>

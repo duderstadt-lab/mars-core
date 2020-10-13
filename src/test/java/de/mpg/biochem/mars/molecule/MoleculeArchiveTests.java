@@ -30,13 +30,17 @@ package de.mpg.biochem.mars.molecule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
@@ -46,32 +50,62 @@ import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableTests;
 import de.mpg.biochem.mars.util.MarsMath;
+import ome.units.UNITS;
+import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadataRoot;
 import ome.xml.model.MapPair;
+import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
 
 public class MoleculeArchiveTests {
-
-	private static SingleMoleculeArchive inMemoryArchive, virtualArchive;
 	
-	@BeforeAll
-    public static void init() {
-		inMemoryArchive = generateMoleculeArchive();
-    }
+	@TempDir
+	static File sharedTempDir;
 	
 	@Test
-	void moleculeArchiveCoreFunctions() {
-		//assertEquals(4869.277227, table.max("col1", "col0", 3, 3.5));
+	@Order(1)
+	void generateMoleculeArchive() {
+		generateSingleMoleculeArchive();
 	}
 	
-	public static SingleMoleculeArchive generateMoleculeArchive() {
+	@Test
+	@Order(2)
+	void saveAsMoleculeArchive() throws IOException {
+		generateSingleMoleculeArchive().saveAs(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama"));
+	}
+	
+	@Test
+	@Order(3)
+	void saveAsJsonMoleculeArchive() throws IOException {
+		generateSingleMoleculeArchive().saveAsJson(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json"));
+	}
+	
+	@Test
+	@Order(4)
+	void saveAsVirtualMoleculeArchive() throws IOException {
+		generateSingleMoleculeArchive().saveAsVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/"));
+	}
+	
+	@Test
+	@Order(5)
+	void saveAsJsonVirtualMoleculeArchive() throws IOException {
+		generateSingleMoleculeArchive().saveAsJsonVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/"));
+	}
+	
+	
+	public static SingleMoleculeArchive generateSingleMoleculeArchive() {
 		SingleMoleculeArchive archive = new SingleMoleculeArchive("testMoleculeArchive");
+		
+		MarsOMEMetadata metadata = generateMetadata(1, 1, 30);
 		
 		Random ran = new Random();
 		for (int i=0 ; i < 100; i++) {
 			SingleMolecule molecule = new SingleMolecule(MarsMath.getUUID58());
 			molecule.setTable(generateRandomTable(30));
+			molecule.setImage(0);
+			molecule.setChannel(0);
+			molecule.setMetadataUID(metadata.getUID());
 			if (ran.nextDouble() < 0.3)
 				molecule.addTag("below30");
 			if (ran.nextDouble() < 0.1)
@@ -79,7 +113,7 @@ public class MoleculeArchiveTests {
 			archive.put(molecule);
 		}
 		
-		archive.putMetadata(generateMetadata(1, 1, 30));
+		archive.putMetadata(metadata);
 		
 		return archive;
 	}
@@ -92,20 +126,21 @@ public class MoleculeArchiveTests {
 		//image.setID(id);
 		//image.setPixelID(pixelID);
 		//image.setAquisitionDate(imageAquisitionDate);
-		//image.setName(imageName);
+		image.setName("simulated");
 		//image.setDescription(imageDescription);
 		
 		//create channels
 		for (int channelIndex=0; channelIndex < cNum; channelIndex++) {
 			MarsOMEChannel channel = new MarsOMEChannel();
+			channel.setChannelIndex(channelIndex);
 			image.setChannel(channel, channelIndex);
 		}
 		
-		//image.setPixelsPhysicalSizeX(pixelsPhysicalSizeX);
-		//image.setPixelsPhysicalSizeX(pixelsPhysicalSizeY);
-		//image.setPixelsPhysicalSizeX(pixelsPhysicalSizeZ);
+		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
+		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
+		image.setPixelsPhysicalSizeZ(new Length(1.0d, UNITS.PIXEL));
 		
-		//image.setDimensionOrder(dimensionOrder);
+		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
 		
 		image.setSizeC(new PositiveInteger(cNum));
 		image.setSizeT(new PositiveInteger(tNum));
@@ -114,46 +149,17 @@ public class MoleculeArchiveTests {
 		image.setSizeZ(new PositiveInteger(zNum));
 		
 		//Build Planes
-		//For now we just have one channel and one z point so plane number is tNum
-		/*
 		for (int t = 0; t < tNum; t++) {
-			MarsOMEPlane plane = new MarsOMEPlane();
+			MarsOMEPlane plane = new MarsOMEPlane(image, 0, t, new NonNegativeInteger(0), new NonNegativeInteger(0), new NonNegativeInteger(t));
 			plane.setC(new NonNegativeInteger(0));
 			plane.setT(new NonNegativeInteger(t));
 			plane.setZ(new NonNegativeInteger(0));
 			image.setPlane(plane, 0, 0, t);
 		}
 		
-		
-		if (md.getInstrumentCount() > 0) {
-			detectorSerialNumber = md.getDetectorSerialNumber(0, imageIndex);
-			detectorModel = md.getDetectorModel(0, imageIndex);
-			detectorManufacturer = md.getDetectorManufacturer(0, imageIndex);
-			detectorType = md.getDetectorType(0, imageIndex);
-		}
-		*/
-		
 		metadata.setImage(image, 0);
 		
 		return metadata;
-	}
-	
-	public static MarsTable generateTable() {
-		MarsTable table = new MarsTable();
-		DoubleColumn tCol = new DoubleColumn("T");
-		DoubleColumn xCol = new DoubleColumn("x");
-		DoubleColumn yCol = new DoubleColumn("y");
-		for (int t=0; t < MarsTableTests.XYNaNs.length; t++) {
-			tCol.add((double)t);
-			xCol.add(MarsTableTests.XYNaNs[t][0]);
-			yCol.add(MarsTableTests.XYNaNs[t][1]);
-		}
-		
-		table.add(tCol);
-		table.add(xCol);
-		table.add(yCol);
-		
-		return table;
 	}
 	
 	public static MarsTable generateRandomTable(int tNum) {
