@@ -134,7 +134,7 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 		return archiveType;
 	}
 	
-	public String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
+	public static String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		
 		//Here we automatically detect the format of the JSON file

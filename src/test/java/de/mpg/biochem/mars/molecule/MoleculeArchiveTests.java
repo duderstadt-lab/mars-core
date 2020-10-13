@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.scijava.Context;
 import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
@@ -62,6 +63,16 @@ public class MoleculeArchiveTests {
 	
 	@TempDir
 	static File sharedTempDir;
+	
+	static MoleculeArchiveService moleculeArchiveService;
+	static Context context;
+	
+	@BeforeAll
+    public static void setup() {
+        context = new Context();
+        moleculeArchiveService = new MoleculeArchiveService();
+        context.inject(moleculeArchiveService);
+    }
 	
 	@Test
 	@Order(1)
@@ -93,6 +104,41 @@ public class MoleculeArchiveTests {
 		generateSingleMoleculeArchive().saveAsJsonVirtualStore(new File(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/"));
 	}
 	
+	@Test
+	@Order(6)
+	void loadMoleculeArchive() throws IOException {
+		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
+		context.inject(ioPlugin);
+		
+		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama");
+	}
+	
+	@Test
+	@Order(7)
+	void loadJsonMoleculeArchive() throws IOException {
+		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
+		context.inject(ioPlugin);
+		
+		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeJsonTestArchive.yama.json");
+	}
+	
+	@Test
+	@Order(8)
+	void loadVirtualMoleculeArchive() throws IOException {
+		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
+		context.inject(ioPlugin);
+		
+		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/singleMoleculeTestArchive.yama.store/");
+	}
+	
+	@Test
+	@Order(9)
+	void loadJsonVirtualMoleculeArchive() throws IOException {
+		MoleculeArchiveIOPlugin ioPlugin = new MoleculeArchiveIOPlugin();
+		context.inject(ioPlugin);
+		
+		ioPlugin.open(sharedTempDir.getAbsoluteFile() + "/jsonSingleMoleculeTestArchive.yama.store/");
+	}
 	
 	public static SingleMoleculeArchive generateSingleMoleculeArchive() {
 		SingleMoleculeArchive archive = new SingleMoleculeArchive("testMoleculeArchive");
