@@ -266,13 +266,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements Command
 		}
 		
 		//Ensures that MarsMicromangerFormat correctly sets the ImageID based on the position.
-		//Ensures that MarsMicromangerFormat correctly sets the ImageID based on the position.
 		try {
 			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata.getDoubleAnnotationID(0).equals("ImageID")) {
 				omexmlMetadata.setImageID("Image:" + omexmlMetadata.getDoubleAnnotationValue(0).intValue(), 0);
 			}
 		} catch (NullPointerException e) {
-			//Do nothing. May of the omexmlmetadata methods give NullPointerException if fields are not set.
+			//Do nothing. Many of the omexmlmetadata methods give NullPointerException if fields are not set.
 		}
 		
 		imageID = omexmlMetadata.getImageID(0);

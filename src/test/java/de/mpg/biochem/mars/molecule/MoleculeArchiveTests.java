@@ -204,8 +204,39 @@ public class MoleculeArchiveTests {
   	
   	void isEqual(MarsOMEImage image1, MarsOMEImage image2) {
   		assertEquals(image1.getImageID(), image2.getImageID());
-  		
-  		//ADD the result of the paramters here !!!!!
+  		if (image1.getDescription() != null)
+  			assertEquals(image1.getDescription(), image2.getDescription());
+  		if (image1.getDetectorManufacturer() != null)
+  			assertEquals(image1.getDetectorManufacturer(), image2.getDetectorManufacturer());
+  		if (image1.getDetectorModel() != null)
+  			assertEquals(image1.getDetectorModel(), image2.getDetectorModel());
+  		if (image1.getDetectorSerialNumber() != null)
+  			assertEquals(image1.getDetectorSerialNumber(), image2.getDetectorSerialNumber());
+  		if (image1.getDetectorType() != null)
+  			assertEquals(image1.getDetectorType().getValue(), image2.getDetectorType().getValue());
+  		assertEquals(image1.getDimensionOrder().getValue(), image2.getDimensionOrder().getValue());
+  		if (image1.getID() != null)	
+  			assertEquals(image1.getID(), image2.getID());
+  		assertEquals(image1.getName(), image2.getName());
+  		if (image1.getPixelID() != null)
+  			assertEquals(image1.getPixelID(), image2.getPixelID());
+  		assertEquals(image1.getPixelsPhysicalSizeX().unit().getSymbol(), image2.getPixelsPhysicalSizeX().unit().getSymbol());
+  		assertEquals(image1.getPixelsPhysicalSizeX().value().doubleValue(), image2.getPixelsPhysicalSizeX().value().doubleValue());
+  		assertEquals(image1.getPixelsPhysicalSizeY().unit().getSymbol(), image2.getPixelsPhysicalSizeY().unit().getSymbol());
+  		assertEquals(image1.getPixelsPhysicalSizeY().value().doubleValue(), image2.getPixelsPhysicalSizeY().value().doubleValue());
+  		assertEquals(image1.getPixelsPhysicalSizeZ().unit().getSymbol(), image2.getPixelsPhysicalSizeZ().unit().getSymbol());
+  		assertEquals(image1.getPixelsPhysicalSizeZ().value().doubleValue(), image2.getPixelsPhysicalSizeZ().value().doubleValue());
+  		assertEquals(image1.getPlaneCount(), image2.getPlaneCount());
+  		assertEquals(image1.getSizeC(), image2.getSizeC());
+  		assertEquals(image1.getSizeT(), image2.getSizeT());
+  		assertEquals(image1.getSizeX(), image2.getSizeX());
+  		assertEquals(image1.getSizeY(), image2.getSizeY());
+  		assertEquals(image1.getSizeZ(), image2.getSizeZ());
+  		if (image1.getTemperature() != null) {
+  			assertEquals(image1.getTemperature().unit().getSymbol(), image2.getTemperature().unit().getSymbol());
+  			assertEquals(image1.getTemperature().value().doubleValue(), image2.getTemperature().value().doubleValue());
+  		}
+  		assertEquals(image1.getTimeIncrementInSeconds(), image2.getTimeIncrementInSeconds());
   		
   		for (int channelIndex = 0; channelIndex < image1.getChannels().size(); channelIndex++)
   			isEqual(image1.getChannel(channelIndex), image2.getChannel(channelIndex));
