@@ -439,7 +439,6 @@ public class MoleculeArchiveTests {
 		table.add(tCol);
 		table.add(xCol);
 		table.add(yCol);
-		
 		return table;
 	}
 }
