@@ -67,7 +67,7 @@ import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
  */
 public abstract class AbstractMolecule extends AbstractMarsRecord implements Molecule {
 
-	private String metadataUID;
+	private String metadataUID = "";
 	private int channel = -1;
 	private int image = -1;
 	private MarsTable table = new MarsTable();
