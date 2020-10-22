@@ -542,7 +542,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 	                    try {
 	        		        while(progressUpdating.get()) {
 	        		        	Thread.sleep(100);
-	        		        	statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle());
+	        		        	if (swapZandT)
+	        		        		statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle());
+	        		        	else
+	        		        		statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle());
 	        		        }
 	                    } catch (Exception e) {
 	                        e.printStackTrace();
