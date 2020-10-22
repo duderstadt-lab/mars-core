@@ -3,6 +3,7 @@ package de.mpg.biochem.mars.util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
@@ -20,7 +21,7 @@ import org.scijava.ui.swing.widget.*;
  * 
  * @author Curtis Rueden
  * 
- * Ensure list changes are recognized when doRefresh() is called.
+ * Small edits to ensure list changes are recognized when doRefresh() is called.
  * 
  * @author Karl Duderstadt
  */
@@ -47,7 +48,7 @@ public class MarsSwingChoiceWidget extends SwingInputWidget<String> implements
 		if (comboBox.getItemCount() > 0)
 			return comboBox.getSelectedItem().toString();
 		else
-			return "";
+			return null;
 	}
 
 	// -- WrapperPlugin methods --
@@ -77,12 +78,12 @@ public class MarsSwingChoiceWidget extends SwingInputWidget<String> implements
 
 	@Override
 	public void doRefresh() {
-		final String[] items = get().getChoices();
+		final String[] choices = get().getChoices();
 		
-		if (!listsEqual(items, comboItemList())) {
+		if (!Arrays.equals(choices, comboBoxItems())) {
 			comboBox.removeAllItems();	
-			for (int i=0; i<items.length; i++)
-				comboBox.addItem(items[i]);
+			for (int i=0; i<choices.length; i++)
+				comboBox.addItem(choices[i]);
 		} else {
 			final Object value = get().getValue();
 			if (value.equals(comboBox.getSelectedItem())) return;
@@ -90,18 +91,7 @@ public class MarsSwingChoiceWidget extends SwingInputWidget<String> implements
 		}
 	}
 	
-	private boolean listsEqual(String[] list1, String[] list2) {
-		if (list1.length != list2.length)
-			return false;
-		
-		for (int i=0; i< list1.length; i++)
-			if (!list1[i].equals(list2[i]))
-				return false;
-		
-		return true;
-	}
-	
-	private String[] comboItemList() {
+	private String[] comboBoxItems() {
 		String[] comboItems = new String[comboBox.getItemCount()];
 		for (int i=0; i <comboBox.getItemCount(); i++)
 			comboItems[i] = comboBox.getItemAt(i);
