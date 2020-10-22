@@ -76,6 +76,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
@@ -84,11 +86,19 @@ import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
+import io.scif.Metadata;
+import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.TranslatorService;
+import loci.common.services.ServiceException;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imglib2.type.numeric.RealType;
+import ome.xml.meta.OMEXMLMetadata;
 import ij.io.FileSaver;
 
 /**
@@ -121,26 +131,26 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
     @Parameter
     private DatasetService datasetService;
     
-    @Parameter(label="Image to correct", choices = {"a", "b", "c"})
-	private String imageName;
+    @Parameter
+    private TranslatorService translatorService;
+    
+    @Parameter
+    private OMEXMLService omexmlService;
+    
+    @Parameter
+	private ConvertService convertService;
+    
+    @Parameter(label = "Image to correct")
+	private ImageDisplay imageDisplay;
+    
+    @Parameter(label="Channel", choices = {"a", "b", "c"})
+	private String channel = "0";
     
     @Parameter(label="Background image", choices = {"a", "b", "c"})
-	private String backgroundName;
-	
-	//@Parameter(label = "Image to correct")
-	//private ImagePlus image; 
-	
-	//@Parameter(label = "Background image")
-	//private ImagePlus backgroundImage;
+	private String backgroundImageName;
 	
 	@Parameter(label="Electronic offset")
 	private double electronicOffset = 0;
-	
-	@Parameter(label="Save sequence to directory")
-	private boolean saveToDisk = true;
-	
-	@Parameter(label="Output Directory", style="directory", required=false)
-    private File directory;
 	
 	//For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
@@ -149,30 +159,44 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	ImageProcessor backgroundIp;
 	double maximumPixelValue;
 	
-	private ImagePlus image, backgroundImage;
+	private Dataset dataset;
+	private ImagePlus image;
+	private ImagePlus backgroundImage;
 	
 	@Override
-	public void initialize() {		
-		final MutableModuleItem<String> imageItems = getInfo().getMutableInput("imageName", String.class);
-		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput("backgroundName", String.class);
+	public void initialize() {
+		if (imageDisplay == null)
+			return;
+		
+		dataset = (Dataset) imageDisplay.getActiveView().getData();
+		image = convertService.convert(imageDisplay, ImagePlus.class);
+		
+		final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
+		long channelCount = dataset.getChannels();
+		ArrayList<String> channels = new ArrayList<String>();
+		for (int ch=0; ch<channelCount; ch++)
+			channels.add(String.valueOf(ch));
+		channelItems.setChoices(channels);
+		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
+		
+		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput("backgroundImageName", String.class);
 		
 		//Super Hacky IJ1 workaround for issues in scijava/scifio related to getting images.
 		int numberOfImages = WindowManager.getImageCount();
 		List<String> imageNames = new ArrayList<String>();
 		
-		for (int i = 0; i < numberOfImages; i++)
-			imageNames.add(WindowManager.getImage(i + 1).getTitle());
-		
-		//List<String> imageNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
-		
-		imageItems.setChoices(imageNames);
+		for (int i = 0; i < numberOfImages; i++) {
+			ImagePlus img = WindowManager.getImage(i + 1);
+			if (img.getStackSize() == 1)
+				imageNames.add(img.getTitle());
+		}
+
 		backgroundItems.setChoices(imageNames);
 	}
 	
 	@Override
 	public void run() {
-		image = WindowManager.getImage(imageName);
-		backgroundImage = WindowManager.getImage(backgroundName);
+		backgroundImage = WindowManager.getImage(backgroundImageName);
 		
 		//Build log
 		LogBuilder builder = new LogBuilder();
@@ -203,9 +227,10 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 		}
 		
 		//Need to determine the number of threads
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		//final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		//ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(1);
 	    try {
 	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
 	    	//Waiting call back to update the progress bar!!
@@ -214,7 +239,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
                     try {
         		        while(progressUpdating.get()) {
         		        	Thread.sleep(100);
-        		        	statusService.showStatus(framesDone.intValue(), image.getStackSize(), "Correcting beam profile for " + image.getTitle());
+        		        	statusService.showStatus(framesDone.intValue(), image.getNFrames(), "Correcting beam profile for " + image.getTitle());
         		        }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -226,7 +251,7 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	        
 	        //This will spawn a bunch of threads that will correct the beam profile in individual frames
 	        //in parallel
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize()).parallel().forEach(i -> correctFrame(i))).get();
+	        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> correctFrame(Integer.valueOf(channel), t))).get();
 	        
 	        progressUpdating.set(false);
 	        
@@ -244,41 +269,28 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 
 	    //Need to add if statement to check if headless or not
 	    //This might crash a headless run...
-	    if (!saveToDisk)
-	    	image.updateAndDraw();
+	    image.updateAndDraw();
 	    logService.info(LogBuilder.endBlock(true));
 	}
 	
-	public void correctFrame(int slice) {
-		ImageProcessor currentImage = image.getStack().getProcessor(slice);
+	public void correctFrame(int channel, int t) {
+		ImageStack stack = image.getImageStack();
+		int index = image.getStackIndex(channel + 1, 1, t + 1);
 		
-		ImageProcessor newImage; 
-		if (saveToDisk) 
-			newImage = currentImage.createProcessor(currentImage.getWidth(), currentImage.getHeight());
-		else 
-			newImage = currentImage;
-		
+		ImageProcessor processor = stack.getProcessor(index);
+
 		// subtract electronic offset and
 		// divide by background
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
 				
 				double backgroundValue = (backgroundIp.getf(x, y) - electronicOffset) / (maximumPixelValue - electronicOffset);
-				double value = currentImage.getf(x, y) - electronicOffset;
+				double value = processor.getf(x, y) - electronicOffset;
 				
-				newImage.setf(x, y, (float)Math.abs(value / backgroundValue));
+				processor.setf(x, y, (float)Math.abs(value / backgroundValue));
 			}
 		}
-		
-		if (saveToDisk) {
-			ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice), newImage);
-			String infoString = (String)image.getStack().getSliceLabel(slice);
-			if (infoString.contains("{")) 
-				img.setProperty("Info", infoString.substring(infoString.indexOf("{")));
-			FileSaver saver = new FileSaver(img);
-			saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack().getShortSliceLabel(slice) + ".tif");
-		}
-		
+
 		framesDone.incrementAndGet();
 	}
 	
@@ -292,9 +304,6 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 			builder.addParameter("Background Image Directory", backgroundImage.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
-		builder.addParameter("Save to Disk", String.valueOf(saveToDisk));
-		if (saveToDisk)
-			builder.addParameter("Directory", directory.getAbsolutePath());
 	}
 	
 	public void setImage(ImagePlus image) {
@@ -320,21 +329,4 @@ public class BeamProfileCorrectionCommand<T extends RealType< T >> extends Dynam
 	public double getElectronicOffset() {
 		return electronicOffset;
 	}
-	
-	public void setSaveToDisk(boolean saveToDisk) {
-		this.saveToDisk = saveToDisk;
-	}
-	
-	public boolean getSaveToDisk() {
-		return saveToDisk;
-	}
-	
-	public void setDirectory(File directory) {
-		this.directory = directory;
-	}
-	
-	public File getDirectory() {
-		return directory;
-	}
-
 }
