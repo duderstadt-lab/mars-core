@@ -461,7 +461,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 			}
 			
+			image.setOverlay(null);
 			image.deleteRoi();
+			
 			
 			//Check that imageFormat setting is correct...
 			String metaDataLogMessage = "";
