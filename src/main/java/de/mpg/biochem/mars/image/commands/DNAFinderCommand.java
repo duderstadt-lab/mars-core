@@ -483,18 +483,18 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		double[] sigma = {gaussSigma, gaussSigma};
 		
 		opService.filter().derivativeGauss(output, input, derivatives, sigma);
-		tImage = ImageJFunctions.wrap(output, "guass filtered");
+		ImagePlus derivativeImage = ImageJFunctions.wrap(output, "guass filtered");
 		
-		ArrayList<Peak> positivePeaks = findPeaks(tImage, false);
-		ArrayList<Peak> negativePeaks = findPeaks(tImage, true);
+		ArrayList<Peak> positivePeaks = findPeaks(derivativeImage, false);
+		ArrayList<Peak> negativePeaks = findPeaks(derivativeImage, true);
 		
 		if (!positivePeaks.isEmpty() || !negativePeaks.isEmpty()) {
 		
 			if (fitPeaks) {
-				positivePeaks = fitPeaks(tImage.getProcessor(), positivePeaks, false);
+				positivePeaks = fitPeaks(derivativeImage.getProcessor(), positivePeaks, false);
 				positivePeaks = removeNearestNeighbors(positivePeaks);
 				
-				negativePeaks = fitPeaks(tImage.getProcessor(), negativePeaks, true);
+				negativePeaks = fitPeaks(derivativeImage.getProcessor(), negativePeaks, true);
 				negativePeaks = removeNearestNeighbors(negativePeaks);
 			}
 			
