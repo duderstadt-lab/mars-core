@@ -82,7 +82,7 @@ import ome.xml.model.primitives.Timestamp;
 import ome.units.quantity.Time;
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 
-import de.mpg.biochem.mars.image.DogPeakFinder;
+import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
@@ -705,7 +705,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
 			ArrayList<Peak> peaks;
 			
-			DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
+			PeakFinder finder = new PeakFinder(threshold, minimumDistance, findNegativePeaks);
 			
 			if (useDogFilter) {
 				// Convert image to FloatType for better numeric precision

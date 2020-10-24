@@ -67,13 +67,13 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 import net.imglib2.KDTree;
 
-public class DogPeakFinder<T extends RealType<T>> {
+public class PeakFinder<T extends RealType<T>> {
 	
 	private double threshold = 46;
 	private int minimumDistance = 8;
 	private boolean findNegativePeaks = false;
 	
-	public DogPeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks) {
+	public PeakFinder(double threshold, int minimumDistance, boolean findNegativePeaks) {
 		this.threshold = threshold;
 		this.minimumDistance = minimumDistance;
 		this.findNegativePeaks = findNegativePeaks;

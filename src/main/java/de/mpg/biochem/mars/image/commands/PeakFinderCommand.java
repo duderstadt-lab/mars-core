@@ -79,7 +79,8 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.RealRect;
 
-import de.mpg.biochem.mars.image.DogPeakFinder;
+import de.mpg.biochem.mars.image.PeakFinder;
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.molecule.*;
@@ -290,8 +291,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
 	
 	//For peak integration
-	private ArrayList<int[]> innerOffsets;
-	private ArrayList<int[]> outerOffsets;
+	private List<int[]> innerOffsets;
+	private List<int[]> outerOffsets;
 	
 	private Dataset dataset;
 	private ImagePlus image;
@@ -369,8 +370,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		logService.info(log);
 		
 		//Used to store peak list for single frame operations
-		ArrayList<Peak> peaks = new ArrayList<Peak>();
-		
+		List<Peak> peaks;
 		
 		boolean[] vary = new boolean[5];
 		vary[0] = true;
@@ -381,7 +381,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		fitter = new PeakFitter(vary);
 		
-		BuildOffsets();
+		innerOffsets = MarsImageUtils.innerIntegrationOffsets(integrationInnerRadius);
+		outerOffsets = MarsImageUtils.outerIntegrationOffsets(integrationInnerRadius, integrationOuterRadius);
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
@@ -443,15 +444,21 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		 }
 			
 		} else {
-			if (swapZandT)
+			int t = image.getFrame() - 1;
+			if (swapZandT) {
 				image.setSlice(previewT + 1);
-			else
+				t = image.getCurrentSlice() - 1;
+			} else
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			if (swapZandT)
-				peaks = findPeaks(selectedImage, image.getCurrentSlice() - 1);
-			else
-				peaks = findPeaks(selectedImage, image.getFrame() - 1);
+			
+			Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
+													(Img< T >)ImagePlusAdapter.wrap(selectedImage);
+
+			peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+										  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
+
 			if (fitPeaks) {
 				peaks = fitPeaks(selectedImage.getProcessor(), peaks);
 				peaks = removeNearestNeighbors(peaks);
@@ -537,29 +544,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	private void BuildOffsets() {
-		innerOffsets = new ArrayList<int[]>();
-		outerOffsets = new ArrayList<int[]>();
-		
-		for (int y = -integrationOuterRadius; y <= integrationOuterRadius; y++) {
-			for (int x = -integrationOuterRadius; x <= integrationOuterRadius; x++) {
-				double d = Math.round(Math.sqrt(x * x + y * y));
-	
-				if (d <= integrationInnerRadius) {
-					int[] pos = new int[2];
-					pos[0] = x;
-					pos[1] = y;
-					innerOffsets.add(pos);
-				} else if (d <= integrationOuterRadius) {
-					int[] pos = new int[2];
-					pos[0] = x;
-					pos[1] = y;
-					outerOffsets.add(pos);
-				}
-			}
-		}
-	}
-	
 	private ArrayList<Peak> findPeaksInT(int channel, int t) {
 		ImageStack stack = image.getImageStack();
 		int index = t + 1;
@@ -604,43 +588,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			}
 		}
 		return pCount;
-	}
-	
-	public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
-		ArrayList<Peak> peaks;
-		
-		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
-		
-		if (useDogFilter) {
-			// Convert image to FloatType for better numeric precision
-	        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
-
-	        // Create the filtering result
-	        Img<FloatType> dog = opService.create().img(converted);
-
-	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
-			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
-
-	        // Do the DoG filtering using ImageJ Ops
-			opService.filter().dog(dog, converted, sigma2, sigma1);
-
-	        if (useROI) {
-		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
-			} else {
-				peaks = finder.findPeaks(dog, t);
-			}
-		} else {
-			if (useROI) {
-		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
-			} else {
-				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), t);
-			}
-		}
-		
-		if (peaks == null)
-			peaks = new ArrayList<Peak>();
-		
-		return peaks;
 	}
 	
 	public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
@@ -865,7 +812,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
+			
+			Img< T > filteredImg = (useDogFilter) ? (Img< T >) MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
+													(Img< T >)ImagePlusAdapter.wrap(selectedImage);
+			
+			List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+											   MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks);
 			
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 			if (!peaks.isEmpty()) {

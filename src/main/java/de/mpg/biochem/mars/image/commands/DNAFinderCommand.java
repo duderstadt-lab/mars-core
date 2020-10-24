@@ -610,7 +610,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 	public ArrayList<Peak> findPeaks(ImagePlus imp, boolean findNegativePeaks) {
 		ArrayList<Peak> peaks;
 		
-		DogPeakFinder finder = new DogPeakFinder(threshold, minimumDistance, findNegativePeaks);
+		PeakFinder finder = new PeakFinder(threshold, minimumDistance, findNegativePeaks);
 		
 		if (useDogFilter) {
 			// Convert image to FloatType for better numeric precision
