@@ -89,6 +89,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
@@ -275,18 +276,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	@Parameter(label="Peaks", type = ItemIO.OUTPUT)
 	private MarsTable peakTable;
 	
-	//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
-	private PeakFitter fitter;
-	
 	//A map with peak lists for each frame for an image stack
-	private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
+	private ConcurrentMap<Integer, List<Peak>> PeakStack;
 	
 	//box region for analysis added to the image.
 	private Rectangle rect;
 	private Roi startingRoi;
-	
-	//For the progress thread
-	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
 	
@@ -345,6 +340,9 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			preFrame.setValue(this, image.getFrame() - 1);
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
+
+		final MutableModuleItem<Integer> preT = getInfo().getMutableInput("previewT", Integer.class);
+		preT.setValue(this, image.convertIndexToPosition(image.getCurrentSlice())[2] - 1);
 	}
 	
 	@Override
@@ -360,26 +358,12 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		
 		//Build log
 		LogBuilder builder = new LogBuilder();
-		
 		String log = LogBuilder.buildTitleBlock("Peak Finder");
-		
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
 		logService.info(log);
-		
-		//Used to store peak list for single frame operations
-		List<Peak> peaks;
-		
-		boolean[] vary = new boolean[5];
-		vary[0] = true;
-		vary[1] = true;
-		vary[2] = true;
-		vary[3] = true;
-		vary[4] = true;
-		
-		fitter = new PeakFitter(vary);
+
+		List<Peak> peaks = new ArrayList<>();
 		
 		innerOffsets = MarsImageUtils.innerIntegrationOffsets(integrationInnerRadius);
 		outerOffsets = MarsImageUtils.outerIntegrationOffsets(integrationInnerRadius, integrationOuterRadius);
@@ -389,59 +373,24 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		if (allFrames) {
 			PeakStack = new ConcurrentHashMap<>();
 			
-			//Need to determine the number of threads
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-			
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		    try {
-		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-		    	//Waiting call back to update the progress bar!!
-		    	Thread progressThread = new Thread() {
-		            public synchronized void run() {
-	                    try {
-	        		        while(progressUpdating.get()) {
-	        		        	Thread.sleep(100);
-	        		        	if (swapZandT)
-	        		        		statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle());
-	        		        	else
-	        		        		statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle());
-	        		        }
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-		            }
-		        };
-
-		        progressThread.start();
-		        
-		        if (swapZandT) {
-		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
-			        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
-			        	//Don't add to stack unless peaks were detected.
-			        	if (tpeaks.size() > 0)
-			        		PeakStack.put(t, tpeaks);
-			        })).get();
-		        } else {
-			        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
-			        	ArrayList<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
-			        	//Don't add to stack unless peaks were detected.
-			        	if (tpeaks.size() > 0)
-			        		PeakStack.put(t, tpeaks);
-			        })).get();
-		        }
-		        	
-		        progressUpdating.set(false);
-		        
-		        statusService.showProgress(100, 100);
-		        statusService.showStatus("Peak search for " + image.getTitle() + " - Done!");
-		        
-		 } catch (InterruptedException | ExecutionException e) {
-		        //handle exceptions
-		    	e.printStackTrace();
-				logService.info(LogBuilder.endBlock(false));
-		 } finally {
-		       forkJoinPool.shutdown();
-		 }
+			if (swapZandT)
+				MarsUtil.multithreadConsumers(statusService, logService, 
+						() -> statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
+				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
+				        	
+				        	if (tpeaks.size() > 0)
+				        		PeakStack.put(t, tpeaks);
+				        }));
+			else
+				MarsUtil.multithreadConsumers(statusService, logService, 
+						() -> statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
+				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
+				        	
+				        	if (tpeaks.size() > 0)
+				        		PeakStack.put(t, tpeaks);
+				        }));
 			
 		} else {
 			int t = image.getFrame() - 1;
@@ -451,18 +400,21 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			} else
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			
-			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			
-			Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
-													(Img< T >)ImagePlusAdapter.wrap(selectedImage);
-
-			peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
-										  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
-
-			if (fitPeaks) {
-				peaks = fitPeaks(selectedImage.getProcessor(), peaks);
-				peaks = removeNearestNeighbors(peaks);
-			}
+				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
+				
+				Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
+														(Img< T >)ImagePlusAdapter.wrap(selectedImage);
+	
+				peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+											  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
+	
+				if (fitPeaks) {
+					peaks = MarsImageUtils.fitPeaks(selectedImage.getProcessor(), peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, rect);
+					peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
+				}
+				
+				if (integrate)
+					MarsImageUtils.integratePeaks(selectedImage.getProcessor(), peaks, innerOffsets, outerOffsets, rect);
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
@@ -508,7 +460,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			
 			if (allFrames)
 				for (int i=0;i<PeakStack.size() ; i++) {
-					ArrayList<Peak> framePeaks = PeakStack.get(i);
+					List<Peak> framePeaks = PeakStack.get(i);
 					for (int j=0;j<framePeaks.size();j++)
 						framePeaks.get(j).addToColumns(columns);
 				}
@@ -530,9 +482,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				//This is slow probably because of the continuous GUI updating, but I am not sure a solution
 				//There is only one add method for the RoiManager and you can only add one Roi at a time.
 				int peakNumber = 1;
-				for (int i=0;i < PeakStack.size() ; i++) {
+				for (int i=0;i < PeakStack.size() ; i++)
 					peakNumber = AddToManager(PeakStack.get(i), Integer.valueOf(channel), i, peakNumber);
-				}
 			} else {
 				AddToManager(peaks, Integer.valueOf(channel), 0);
 			}
@@ -544,30 +495,37 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	private ArrayList<Peak> findPeaksInT(int channel, int t) {
+	private List<Peak> findPeaksInT(int channel, int t) {
 		ImageStack stack = image.getImageStack();
 		int index = t + 1;
 		if (!swapZandT)
 			index = image.getStackIndex(channel + 1, 1, t + 1);
 		
 		ImageProcessor processor = stack.getProcessor(index);
-
-		//Now we do the peak search and find all peaks and fit them for the current frame and return the result
-		//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
-		ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + t + 1, processor.duplicate()), t));
+		ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
 		
-		//After fitting some peaks may have moved within the mininmum distance
-		//So we remove these always favoring the ones having lower fit error in x and y
-		peaks = removeNearestNeighbors(peaks);
+		Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(im, dogFilterRadius, opService) : 
+												(Img< T >)ImagePlusAdapter.wrap(im);
+
+		List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+									  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
+
+		if (fitPeaks) {
+			peaks = MarsImageUtils.fitPeaks(processor, peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, rect);
+			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
+		}
+		
+		if (integrate)
+			MarsImageUtils.integratePeaks(processor, peaks, innerOffsets, outerOffsets, rect);
 		
 		return peaks;
 	}
 	
-	private void AddToManager(ArrayList<Peak> peaks, int channel, int t) {
+	private void AddToManager(List<Peak> peaks, int channel, int t) {
 		AddToManager(peaks, channel, t, 0);
 	}
 	
-	private int AddToManager(ArrayList<Peak> peaks, int channel, int t, int startingPeakNum) {
+	private int AddToManager(List<Peak> peaks, int channel, int t, int startingPeakNum) {
 		if (roiManager == null)
 			roiManager = new RoiManager();
 		int pCount = startingPeakNum;
@@ -588,217 +546,6 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			}
 		}
 		return pCount;
-	}
-	
-	public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
-		
-		ArrayList<Peak> newList = new ArrayList<Peak>();
-		
-		int fitWidth = fitRadius * 2 + 1;
-		
-		for (Peak peak: positionList) {
-			
-			imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
-			
-			double[] p = new double[5];
-			p[0] = Double.NaN;
-			p[1] = Double.NaN;
-			p[2] = peak.getX();
-			p[3] = peak.getY();
-			p[4] = dogFilterRadius/2;
-			double[] e = new double[5];
-			
-			fitter.fitPeak(imp, p, e, findNegativePeaks);
-			
-			// First we reset valid since it was set to false for all peaks
-			// during the finding step to avoid finding the same peak twice.
-			peak.setValid();
-			
-			for (int i = 0; i < p.length && peak.isValid(); i++) {
-				if (Double.isNaN(p[i]))
-					peak.setNotValid();
-			}
-
-			//If the x, y, sigma values are negative reject the peak
-			//but we can have negative height p[0] or baseline p[1]
-			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
-				peak.setNotValid();
-			}
-			
-			double Rsquared = 0;
-			if (peak.isValid()) {
-				Gaussian2D gauss = new Gaussian2D(p);
-				Rsquared = calcR2(gauss, imp);
-				if (Rsquared <= RsquaredMin)
-					peak.setNotValid();
-			}
-			
-			if (peak.isValid()) {
-				peak.setValues(p);
-				peak.setRsquared(Rsquared);
-				
-				//Integrate intensity
-				if (integrate) {
-					//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
-					//Math.round() is be an alternative option...
-					double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
-					peak.setIntensity(intensity[0]);
-				}
-				
-				newList.add(peak);
-			}
-		}
-		return newList;
-	}
-	
-	private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
-		double SSres = 0;
-		double SStot = 0;
-		double mean = 0;
-		double count = 0;
-		
-		Rectangle roi = imp.getRoi();
-		
-		//First determine mean
-		for (int y = roi.y; y < roi.y + roi.height; y++) {
-			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				mean += (double)getPixelValue(imp, x, y, rect);
-				count++;
-			}
-		}
-		
-		mean = mean/count;
-		
-		for (int y = roi.y; y < roi.y + roi.height; y++) {
-			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				double value = (double)getPixelValue(imp, x, y, rect);
-				SStot += (value - mean)*(value - mean);
-				
-				double prediction = gauss.getValue(x, y);
-				SSres += (value - prediction)*(value - prediction);
-			}
-		}
-		
-		return 1 - SSres / SStot;
-	}
-	
-	private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
-		if (x == Double.NaN || y == Double.NaN) {
-			double[] NULLinten = new double[2];
-			NULLinten[0] = Double.NaN;
-			NULLinten[1] = Double.NaN;
-			return NULLinten;
-		}
-		
-		double Intensity = 0;
-		int innerPixels = 0;
-		ArrayList<Float> outerPixelValues = new ArrayList<Float>();
-		
-		for (int[] circleOffset: innerOffsets) {
-			Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
-			innerPixels++;
-		}
-		
-		for (int[] circleOffset: outerOffsets) {
-			outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
-		}
-		
-		//Find the Median background value...
-		Collections.sort(outerPixelValues);
-		double outerMedian;
-		if (outerPixelValues.size() % 2 == 0)
-		    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
-		else
-		    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
-		
-		Intensity -= outerMedian*innerPixels;
-		
-		double[] inten = new double[2];
-		inten[0] = Intensity;
-		inten[1] = outerMedian;
-
-		return inten;
-	}
-	
-	private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
-		//First for x if needed
-		if (x < subregion.x) {
-			int before = subregion.x - x;
-			if (before > subregion.width)
-				before = subregion.width - before % subregion.width;
-			x = subregion.x + before - 1;
-		} else if (x > subregion.x + subregion.width - 1) {
-			int beyond = x - (subregion.x + subregion.width - 1);
-			if (beyond > subregion.width)
-				beyond = subregion.width - beyond % subregion.width;
-			x = subregion.x + subregion.width - beyond; 
-		}
-			
-		//Then for y
-		if (y < subregion.y) {
-			int before = subregion.y - y;
-			if (before > subregion.height)
-				before = subregion.height - before % subregion.height;
-			y = subregion.y + before - 1;
-		} else if (y > subregion.y + subregion.height - 1) {
-			int beyond = y - (subregion.y + subregion.height - 1);
-			if (beyond > subregion.height)
-				beyond = subregion.height - beyond % subregion.height;
-			y = subregion.y + subregion.height - beyond;  
-		}
-		
-		return proc.getf(x, y);
-	}
-	
-	public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
-		if (peakList.size() < 2)
-			return peakList;
-		
-		//Sort the list from highest to lowest Rsquared
-		Collections.sort(peakList, new Comparator<Peak>(){
-			@Override
-			public int compare(Peak o1, Peak o2) {
-				return Double.compare(o2.getRSquared(), o1.getRSquared());		
-			}
-		});
-		
-		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
-		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
-		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
-
-		//Allows for fast search of nearest peaks...
-		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
-		
-		RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( possiblePeakTree );
-		
-		//As we loop through all possible peaks and remove those that are too close
-		//we will add all the selected peaks to a new array 
-		//that will serve as the finalList of actual peaks
-		//This whole process is to remove pixels near the center peak pixel that are also above the detection threshold but all part of the same peak...
-		ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
-			
-		//Reset all to valid for new search
-		for (int i=peakList.size()-1;i>=0;i--) {
-			peakList.get(i).setValid();
-		}
-		
-		//It is really important to remember here that possiblePeaks and KDTreePossiblePeaks are different lists but point to the same elements
-		//That means if we setNotValid in one it is changing the same object in another that is required for the stuff below to work.
-		for (int i=0;i<peakList.size();i++) {
-			Peak peak = peakList.get(i);
-			if (peak.isValid()) {
-				finalPeaks.add(peak);
-				
-				//Then we remove all possible peaks within the minimumDistance...
-				//This will include the peak we just added to the peaks list...
-				radiusSearch.search(peak, minimumDistance, false);
-				
-				for (int j = 0 ; j < radiusSearch.numNeighbors() ; j++ ) {
-					radiusSearch.getSampler(j).get().setNotValid();
-				}
-			}
-		}
-		return finalPeaks;
 	}
 	
 	@Override
@@ -994,8 +741,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		return generatePeakTable;
 	}
 	
-	public void setMinimumRsquared(double Rsquared) {
-		this.RsquaredMin = Rsquared;
+	public void setMinimumRsquared(double RsquaredMin) {
+		this.RsquaredMin = RsquaredMin;
 	}
 	
 	public double getMinimumRsquared() {

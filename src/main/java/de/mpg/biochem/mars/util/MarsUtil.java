@@ -41,7 +41,10 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
+import org.scijava.app.StatusService;
+import org.scijava.log.LogService;
 import org.scijava.table.DoubleColumn;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -54,6 +57,7 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEImage;
@@ -84,10 +88,55 @@ import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MarsUtil {
+	
+	public static void multithreadConsumers(StatusService statusService, 
+			LogService logService, Runnable updateStatus, Runnable task) {
+		
+		final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+		
+		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		try {
+			Thread progressThread = new Thread() {
+		        public synchronized void run() {
+		            try {
+				        while(progressUpdating.get()) {
+				        	Thread.sleep(100);
+				        	updateStatus.run();
+				        }
+		            } catch (Exception e) {
+		                e.printStackTrace();
+		            }
+		        }
+		    };
+		
+		    progressThread.start();
+		    
+		    forkJoinPool.submit(task).get();
+		    
+		    progressUpdating.set(false);
+		    
+		    statusService.showProgress(100, 100);
+		    statusService.showStatus("Peak search done!");
+		        
+		 } catch (InterruptedException | ExecutionException e) {
+		        //handle exceptions
+		    	e.printStackTrace();
+				logService.info(LogBuilder.endBlock(false));
+		 } finally {
+		       forkJoinPool.shutdown();
+		 }
+	}
 	
 	/**
 	 * Return Json String in pretty print format.
