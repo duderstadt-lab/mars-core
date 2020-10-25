@@ -83,6 +83,7 @@ import ome.units.quantity.Time;
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 
 import de.mpg.biochem.mars.image.PeakFinder;
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
@@ -94,6 +95,7 @@ import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 import io.scif.Format;
 import io.scif.FormatException;
 import io.scif.Metadata;
@@ -335,7 +337,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		private PeakTracker tracker;
 		
 		//A map with peak lists for each frame for an image stack
-		private ConcurrentMap<Integer, ArrayList<Peak>> PeakStack;
+		private ConcurrentMap<Integer, List<Peak>> PeakStack;
 		
 		//A map that will hold all Slice information if the image was opened
 		//as an IJ1 image.
@@ -344,18 +346,14 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		//box region for analysis added to the image.
 		private Rectangle rect;
 		private Roi startingRoi;
-		//private String[] filenames;
-		
-		//For the progress thread
-		private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 		
 		//array for max error margins.
 		private double[] maxDifference;
 		private boolean[] ckMaxDifference;
 		
 		//For peak integration
-		private ArrayList<int[]> innerOffsets;
-		private ArrayList<int[]> outerOffsets;
+		private List<int[]> innerOffsets;
+		private List<int[]> outerOffsets;
 		
 		private Dataset dataset;
 		private ImagePlus image;
@@ -500,22 +498,9 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				e1.printStackTrace();
 			}
 			
-			boolean[] vary = new boolean[5];
-			vary[0] = true;
-			vary[1] = true;
-			vary[2] = true;
-			vary[3] = true;
-			vary[4] = true;
-			
-			fitter = new PeakFitter(vary);
-			
-			BuildOffsets();
-			
 			//Build log
 			LogBuilder builder = new LogBuilder();
-			
 			String log = LogBuilder.buildTitleBlock("Peak Tracker");
-			
 			addInputParameterLog(builder);
 			log += builder.buildParameterList();
 			if (!metaDataLogMessage.equals("")) {
@@ -526,70 +511,41 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 			
-			//Need to determine the number of threads
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+			List<Peak> peaks = new ArrayList<>();
 			
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			innerOffsets = MarsImageUtils.innerIntegrationOffsets(integrationInnerRadius);
+			outerOffsets = MarsImageUtils.outerIntegrationOffsets(integrationInnerRadius, integrationOuterRadius);
 			
 			//Output first part of log message...
 			logService.info(log);
 			
 			double starttime = System.currentTimeMillis();
 			logService.info("Finding and Fitting Peaks...");
-		    try {
-		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-		    	//Waiting call back to update the progress bar!!
-		    	Thread progressThread = new Thread() {
-		            public synchronized void run() {
-	                    try {
-	        		        while(progressUpdating.get()) {
-	        		        	Thread.sleep(100);
-	        		        	if (swapZandT)
-	        		        		statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle());
-	        		        	else
-	        		        		statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle());
-	        		        }
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-		            }
-		        };
-
-		        progressThread.start();
-		        
-		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-		        //peaks with the frame number as a key in the map for each list...
-		        if (swapZandT) {
-		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
-			        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), t);
-			        	//Don't add to stack unless peaks were detected.
-			        	if (peaks.size() > 0)
-			        		PeakStack.put(t, peaks);
-			        })).get();
-		        } else {
-			        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
-			        	ArrayList<Peak> peaks = findPeaksInT(Integer.valueOf(channel), t);
-			        	//Don't add to stack unless peaks were detected.
-			        	if (peaks.size() > 0)
-			        		PeakStack.put(t, peaks);
-			        })).get();
-		        }
-		        
-		        progressUpdating.set(false);
-		        
-		        statusService.showStatus(1, 1, "Peak search for " + image.getTitle() + " - Done!");
-		        
-		   } catch (InterruptedException | ExecutionException e) {
-		        // handle exceptions
-		    	e.printStackTrace();
-				logService.info(LogBuilder.endBlock(false));
-		   } finally {
-		      forkJoinPool.shutdown();
-		   }
+			
+			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+			
+			if (swapZandT)
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
+						() -> statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
+				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
+				        	
+				        	if (tpeaks.size() > 0)
+				        		PeakStack.put(t, tpeaks);
+				        }), PARALLELISM_LEVEL);
+			else
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
+						() -> statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
+				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
+				        	
+				        	if (tpeaks.size() > 0)
+				        		PeakStack.put(t, tpeaks);
+				        }), PARALLELISM_LEVEL);
 		    
 		    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		    
-		    //Now we have filled the PeakStack with all the peaks found and fitted for each frame and we need to connect them using the peak tracker
+		    //Now we have filled the PeakStack with all the peaks found and fit them in each frame and we need to connect them using the peak tracker
 		    maxDifference = new double[6]; 
 		    maxDifference[0] = Double.NaN;
 		    maxDifference[1] = Double.NaN;
@@ -653,31 +609,8 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				archive.logln("   ");	
 			}
 		}
-
-		private void BuildOffsets() {
-			innerOffsets = new ArrayList<int[]>();
-			outerOffsets = new ArrayList<int[]>();
-			
-			for (int y = -integrationOuterRadius; y <= integrationOuterRadius; y++) {
-				for (int x = -integrationOuterRadius; x <= integrationOuterRadius; x++) {
-					double d = Math.round(Math.sqrt(x * x + y * y));
 		
-					if (d <= integrationInnerRadius) {
-						int[] pos = new int[2];
-						pos[0] = x;
-						pos[1] = y;
-						innerOffsets.add(pos);
-					} else if (d <= integrationOuterRadius) {
-						int[] pos = new int[2];
-						pos[0] = x;
-						pos[1] = y;
-						outerOffsets.add(pos);
-					}
-				}
-			}
-		}
-		
-		private ArrayList<Peak> findPeaksInT(int channel, int t) {
+		private List<Peak> findPeaksInT(int channel, int t) {
 			ImageStack stack = image.getImageStack();
 			int index = t + 1;
 			if (!swapZandT)
@@ -691,265 +624,21 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				metaDataStack.put(t, label);
 			}
 
-			//Now we do the peak search and find all peaks and fit them for the current frame and return the result
-			//which will be put in the concurrentHashMap PeakStack above with the frame as the key.
-			ArrayList<Peak> peaks = fitPeaks(processor, findPeaks(new ImagePlus("frame " + t + 1, processor.duplicate()), t));
+			ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
 			
-			//After fitting some peaks may have moved within the mininmum distance
-			//So we remove these always favoring the ones having lower fit error in x and y
-			peaks = removeNearestNeighbors(peaks);
+			Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(im, dogFilterRadius, opService) : 
+													(Img< T >)ImagePlusAdapter.wrap(im);
+
+			List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+										  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
+
+			peaks = MarsImageUtils.fitPeaks(processor, peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, rect);
+			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
+			
+			if (integrate)
+				MarsImageUtils.integratePeaks(processor, peaks, innerOffsets, outerOffsets, rect);
 			
 			return peaks;
-		}
-
-		public ArrayList<Peak> findPeaks(ImagePlus imp, int t) {
-			ArrayList<Peak> peaks;
-			
-			PeakFinder finder = new PeakFinder(threshold, minimumDistance, findNegativePeaks);
-			
-			if (useDogFilter) {
-				// Convert image to FloatType for better numeric precision
-		        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
-
-		        // Create the filtering result
-		        Img<FloatType> dog = opService.create().img(converted);
-
-		        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
-				final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
-
-		        // Do the DoG filtering using ImageJ Ops
-				opService.filter().dog(dog, converted, sigma2, sigma1);
-
-		        if (useROI) {
-			    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
-				} else {
-					peaks = finder.findPeaks(dog, t);
-				}
-			} else {
-				if (useROI) {
-			    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
-				} else {
-					peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), t);
-				}
-			}
-			
-			if (peaks == null)
-				peaks = new ArrayList<Peak>();
-			
-			return peaks;
-		}
-		
-		public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList) {
-			
-			ArrayList<Peak> newList = new ArrayList<Peak>();
-			
-			int fitWidth = fitRadius * 2 + 1;
-			
-			for (Peak peak: positionList) {
-				
-				imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
-				
-				double[] p = new double[5];
-				p[0] = Double.NaN;
-				p[1] = Double.NaN;
-				p[2] = peak.getX();
-				p[3] = peak.getY();
-				p[4] = dogFilterRadius/2;
-				double[] e = new double[5];
-				
-				fitter.fitPeak(imp, p, e, findNegativePeaks);
-				
-				// First we reset valid since it was set to false for all peaks
-				// during the finding step to avoid finding the same peak twice.
-				peak.setValid();
-				
-				for (int i = 0; i < p.length && peak.isValid(); i++) {
-					if (Double.isNaN(p[i]))
-						peak.setNotValid();
-				}
-
-				//If the x, y, sigma values are negative reject the peak
-				//but we can have negative height p[0] or baseline p[1]
-				if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
-					peak.setNotValid();
-				}
-				
-				double Rsquared = 0;
-				if (peak.isValid()) {
-					Gaussian2D gauss = new Gaussian2D(p);
-					Rsquared = calcR2(gauss, imp);
-					if (Rsquared <= RsquaredMin)
-						peak.setNotValid();
-				}
-				
-				if (peak.isValid()) {
-					peak.setValues(p);
-					peak.setRsquared(Rsquared);
-					
-					//Integrate intensity
-					if (integrate) {
-						//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
-						//Math.round() is be an alternative option...
-						double[] intensity = integratePeak(imp, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), rect);
-						peak.setIntensity(intensity[0]);
-					}
-					
-					newList.add(peak);
-				}
-			}
-			return newList;
-		}
-		
-		private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
-			double SSres = 0;
-			double SStot = 0;
-			double mean = 0;
-			double count = 0;
-			
-			Rectangle roi = imp.getRoi();
-			
-			//First determine mean
-			for (int y = roi.y; y < roi.y + roi.height; y++) {
-				for (int x = roi.x; x < roi.x + roi.width; x++) {
-					mean += (double)getPixelValue(imp, x, y, rect);
-					count++;
-				}
-			}
-			
-			mean = mean/count;
-			
-			for (int y = roi.y; y < roi.y + roi.height; y++) {
-				for (int x = roi.x; x < roi.x + roi.width; x++) {
-					double value = (double)getPixelValue(imp, x, y, rect);
-					SStot += (value - mean)*(value - mean);
-					
-					double prediction = gauss.getValue(x, y);
-					SSres += (value - prediction)*(value - prediction);
-				}
-			}
-			
-			return 1 - SSres / SStot;
-		}
-		
-		private double[] integratePeak(ImageProcessor ip, int x, int y, Rectangle region) {
-			if (x == Double.NaN || y == Double.NaN) {
-				double[] NULLinten = new double[2];
-				NULLinten[0] = Double.NaN;
-				NULLinten[1] = Double.NaN;
-				return NULLinten;
-			}
-			
-			double Intensity = 0;
-			int innerPixels = 0;
-			
-			ArrayList<Float> outerPixelValues = new ArrayList<Float>();
-			
-			for (int[] circleOffset: innerOffsets) {
-				Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
-				innerPixels++;
-			}
-			
-			for (int[] circleOffset: outerOffsets) {
-				outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
-			}
-			
-			//Find the Median background value...
-			Collections.sort(outerPixelValues);
-			double outerMedian;
-			if (outerPixelValues.size() % 2 == 0)
-			    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
-			else
-			    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
-			
-			Intensity -= outerMedian*innerPixels;
-			
-			double[] inten = new double[2];
-			inten[0] = Intensity;
-			inten[1] = outerMedian;
-
-			return inten;
-		}
-		
-		//Infinite Mirror images to prevent out of bounds issues
-		private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
-			//First for x if needed
-			if (x < subregion.x) {
-				int before = subregion.x - x;
-				if (before > subregion.width)
-					before = subregion.width - before % subregion.width;
-				x = subregion.x + before - 1;
-			} else if (x > subregion.x + subregion.width - 1) {
-				int beyond = x - (subregion.x + subregion.width - 1);
-				if (beyond > subregion.width)
-					beyond = subregion.width - beyond % subregion.width;
-				x = subregion.x + subregion.width - beyond; 
-			}
-				
-			//Then for y
-			if (y < subregion.y) {
-				int before = subregion.y - y;
-				if (before > subregion.height)
-					before = subregion.height - before % subregion.height;
-				y = subregion.y + before - 1;
-			} else if (y > subregion.y + subregion.height - 1) {
-				int beyond = y - (subregion.y + subregion.height - 1);
-				if (beyond > subregion.height)
-					beyond = subregion.height - beyond % subregion.height;
-				y = subregion.y + subregion.height - beyond;  
-			}
-			
-			return proc.getf(x, y);
-		}
-		
-		public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
-			if (peakList.size() < 2)
-				return peakList;
-			
-			//Sort the list from highest to lowest Rsquared
-			Collections.sort(peakList, new Comparator<Peak>(){
-				@Override
-				public int compare(Peak o1, Peak o2) {
-					return Double.compare(o2.getRSquared(), o1.getRSquared());		
-				}
-			});
-			
-			//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
-			//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
-			ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
-			
-			//Allows for fast search of nearest peaks...
-			KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
-			
-			RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( possiblePeakTree );
-			
-			//As we loop through all possible peaks and remove those that are too close
-			//we will add all the selected peaks to a new array 
-			//that will serve as the finalList of actual peaks
-			//This whole process is to remove pixels near the center peak pixel that are also above the detection threshold but all part of the same peak...
-			ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
-				
-			//Reset all to valid for new search
-			for (int i=peakList.size()-1;i>=0;i--) {
-				peakList.get(i).setValid();
-			}
-			
-			//It is really important to remember here that possiblePeaks and KDTreePossiblePeaks are different lists but point to the same elements
-			//That means if we setNotValid in one it is changing the same object in another that is required for the stuff below to work.
-			for (int i=0;i<peakList.size();i++) {
-				Peak peak = peakList.get(i);
-				if (peak.isValid()) {
-					finalPeaks.add(peak);
-					
-					//Then we remove all possible peaks within the minimumDistance...
-					//This will include the peak we just added to the peaks list...
-					radiusSearch.search(peak, minimumDistance, false);
-					
-					for (int j = 0 ; j < radiusSearch.numNeighbors() ; j++ ) {
-						radiusSearch.getSampler(j).get().setNotValid();
-					}
-				}
-			}
-			return finalPeaks;
 		}
 		
 		private void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata, Map<Integer, String> metaDataStack) {
@@ -980,7 +669,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				//e1.printStackTrace();
 			}
 		}
-		
+		/*
 		//Utility methods
 		//Generate a unique ID using a hash of all headerlabel information...
 		private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
@@ -990,7 +679,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			return MarsMath.getFNV1aBase58(allLabels);
 		}
-		
+		*/
 		//Returns the time when the frame was collected in milliseconds since 1970
 		//Makes sure to properly round microsecond information.
 		private long getNorPixMillisecondTime(String strTime) throws ParseException {
@@ -1024,7 +713,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 				
 				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-				ArrayList<Peak> peaks = findPeaks(selectedImage, previewT);
+				
+				Img< T > filteredImg = (useDogFilter) ? (Img< T >) MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
+														(Img< T >)ImagePlusAdapter.wrap(selectedImage);
+				
+				List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
+												   MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks);
 				
 				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 				if (!peaks.isEmpty()) {
@@ -1056,7 +750,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		/** Called when the {@link #preview} parameter value changes. */
 		protected void previewChanged() {
-			// When preview box is unchecked, reset the Roi back to how it was before...
 			if (!preview) cancel();
 		}
 		

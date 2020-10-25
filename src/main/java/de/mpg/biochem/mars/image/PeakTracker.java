@@ -60,6 +60,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,7 +103,7 @@ public class PeakTracker {
 	//private Set<PeakLink> possibleLinks; 
 	
 	//Stores the list of possible links from each T as a list with the key of that T.
-	private ConcurrentMap<Integer, ArrayList<PeakLink>> possibleLinks;
+	private ConcurrentMap<Integer, List<PeakLink>> possibleLinks;
 	
 	private LogService logService;
 	
@@ -123,7 +124,7 @@ public class PeakTracker {
 			searchRadius = maxDifference[3];
 	}
 	
-	public void track(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, SingleMoleculeArchive archive, int channel) {
+	public void track(ConcurrentMap<Integer, List<Peak>> PeakStack, SingleMoleculeArchive archive, int channel) {
 		//The metadata information should have been added already
 		//this should always be a new archive so there can only be one metadata item added
 		//at index 0.
@@ -183,7 +184,7 @@ public class PeakTracker {
 		
 		//This will keep track of the first peak for each trajectory
 		//I think since the loop below goes from T 1 forward we should always get the first T with the peak.
-		ArrayList<Peak> trajectoryFirstT = new ArrayList<Peak>();
+		List<Peak> trajectoryFirstT = new ArrayList<Peak>();
 		
 		
 		//We also need to check if a link has already been made within the local region
@@ -195,7 +196,7 @@ public class PeakTracker {
 		starttime = System.currentTimeMillis();
 		
 		for (int t=0;t<possibleLinks.size();t++) {
-			ArrayList<PeakLink> tPossibleLinks = possibleLinks.get(t);
+			List<PeakLink> tPossibleLinks = possibleLinks.get(t);
 			if (tPossibleLinks != null) { 
 				for (int i=0; i<tPossibleLinks.size();i++) {
 					Peak from = tPossibleLinks.get(i).getFrom();
@@ -270,11 +271,11 @@ public class PeakTracker {
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 	}
 	
-	private void findPossibleLinks(ConcurrentMap<Integer, ArrayList<Peak>> PeakStack, int t) {
+	private void findPossibleLinks(ConcurrentMap<Integer, List<Peak>> PeakStack, int t) {
 		if (!PeakStack.containsKey(t))
 			return;
 		
-		ArrayList<PeakLink> tPossibleLinks = new ArrayList<PeakLink>();
+		List<PeakLink> tPossibleLinks = new ArrayList<PeakLink>();
 		
 		int endT = t + (int)maxDifference[5];
 		
