@@ -67,6 +67,7 @@ import net.imglib2.KDTree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -485,24 +486,29 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		opService.filter().derivativeGauss(output, input, derivatives, sigma);
 		ImagePlus derivativeImage = ImageJFunctions.wrap(output, "guass filtered");
 		
-		ArrayList<Peak> positivePeaks = findPeaks(derivativeImage, false);
-		ArrayList<Peak> negativePeaks = findPeaks(derivativeImage, true);
+		Img< T > filteredImg = (useDogFilter) ? (Img< T >) MarsImageUtils.dogFilter(derivativeImage, dogFilterRadius, opService) : 
+												(Img< T >)ImagePlusAdapter.wrap(derivativeImage);
+
+		List<Peak> positivePeaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, false, x0, y0, width, height) :
+									          MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, false);
 		
+		List<Peak> negativePeaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, true, x0, y0, width, height) :
+			  							      MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, true);
+
 		if (!positivePeaks.isEmpty() || !negativePeaks.isEmpty()) {
 		
 			if (fitPeaks) {
-				positivePeaks = fitPeaks(derivativeImage.getProcessor(), positivePeaks, false);
-				positivePeaks = removeNearestNeighbors(positivePeaks);
+				positivePeaks = MarsImageUtils.fitPeaks(derivativeImage.getProcessor(), positivePeaks, fitRadius, dogFilterRadius, false, RsquaredMin, rect);
+				positivePeaks = MarsImageUtils.removeNearestNeighbors(positivePeaks, minimumDistance);
 				
-				negativePeaks = fitPeaks(derivativeImage.getProcessor(), negativePeaks, true);
-				negativePeaks = removeNearestNeighbors(negativePeaks);
+				negativePeaks = MarsImageUtils.fitPeaks(derivativeImage.getProcessor(), negativePeaks, fitRadius, dogFilterRadius, true, RsquaredMin, rect);
+				negativePeaks = MarsImageUtils.removeNearestNeighbors(negativePeaks, minimumDistance);
 			}
 			
 			//make sure they are all valid
 			//then we can remove them as we go.
 			for (int i=0; i< negativePeaks.size();i++)
 					negativePeaks.get(i).setValid();
-		
 		
 			KDTree<Peak> negativePeakTree = new KDTree<Peak>(negativePeaks, negativePeaks);
 			RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( negativePeakTree );
@@ -605,215 +611,6 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 			}
 		}
 		return dnaCount;
-	}
-	
-	public ArrayList<Peak> findPeaks(ImagePlus imp, boolean findNegativePeaks) {
-		ArrayList<Peak> peaks;
-		
-		PeakFinder finder = new PeakFinder(threshold, minimumDistance, findNegativePeaks);
-		
-		if (useDogFilter) {
-			// Convert image to FloatType for better numeric precision
-	        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
-
-	        // Create the filtering result
-	        Img<FloatType> dog = opService.create().img(converted);
-
-	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
-			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
-
-	        // Do the DoG filtering using ImageJ Ops
-	        opService.filter().dog(dog, converted, sigma2, sigma1);
-
-	        if (useROI) {
-		    	peaks = finder.findPeaks(dog, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
-			} else {
-				peaks = finder.findPeaks(dog);
-			}
-		} else {
-			if (useROI) {
-		    	peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ), Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1));
-			} else {
-				peaks = finder.findPeaks((Img< T >)ImagePlusAdapter.wrap( imp ));
-			}
-		}
-		
-		if (peaks == null)
-			peaks = new ArrayList<Peak>();
-		
-		return peaks;
-	}
-	
-	public ArrayList<Peak> fitPeaks(ImageProcessor imp, ArrayList<Peak> positionList, boolean fitNegativePeaks) {
-		ArrayList<Peak> newList = new ArrayList<Peak>();
-		
-		boolean[] vary = new boolean[5];
-		vary[0] = true;
-		vary[1] = true;
-		vary[2] = true;
-		vary[3] = true;
-		vary[4] = true;
-		
-		PeakFitter fitter = new PeakFitter(vary);
-		
-		int fitWidth = fitRadius * 2 + 1;
-		
-		for (Peak peak: positionList) {
-			
-			imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
-			
-			double[] p = new double[5];
-			p[0] = Double.NaN;
-			p[1] = Double.NaN;
-			p[2] = peak.getX();
-			p[3] = peak.getY();
-			p[4] = dogFilterRadius/2;
-			double[] e = new double[5];
-			
-			fitter.fitPeak(imp, p, e, fitNegativePeaks);
-			
-			// First we reset valid since it was set to false for all peaks
-			// during the finding step to avoid finding the same peak twice.
-			peak.setValid();
-			
-			for (int i = 0; i < p.length && peak.isValid(); i++) {
-				if (Double.isNaN(p[i]))
-					peak.setNotValid();
-			}
-
-			//If the x, y, sigma values are negative reject the peak
-			//but we can have negative height p[0] or baseline p[1]
-			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
-				peak.setNotValid();
-			}
-			
-			double Rsquared = 0;
-			if (peak.isValid()) {
-				Gaussian2D gauss = new Gaussian2D(p);
-				Rsquared = calcR2(gauss, imp);
-				if (Rsquared <= RsquaredMin)
-					peak.setNotValid();
-			}
-			
-			if (peak.isValid()) {
-				peak.setValues(p);
-				peak.setRsquared(Rsquared);				
-				newList.add(peak);
-			}
-		}
-		return newList;
-	}
-	
-	private double calcR2(Gaussian2D gauss, ImageProcessor imp) {
-		double SSres = 0;
-		double SStot = 0;
-		double mean = 0;
-		double count = 0;
-		
-		Rectangle roi = imp.getRoi();
-		
-		//First determine mean
-		for (int y = roi.y; y < roi.y + roi.height; y++) {
-			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				mean += (double)getPixelValue(imp, x, y, rect);
-				count++;
-			}
-		}
-		
-		mean = mean/count;
-		
-		for (int y = roi.y; y < roi.y + roi.height; y++) {
-			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				double value = (double)getPixelValue(imp, x, y, rect);
-				SStot += (value - mean)*(value - mean);
-				
-				double prediction = gauss.getValue(x, y);
-				SSres += (value - prediction)*(value - prediction);
-			}
-		}
-		
-		return 1 - SSres / SStot;
-	}
-	
-	private static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
-		//First for x if needed
-		if (x < subregion.x) {
-			int before = subregion.x - x;
-			if (before > subregion.width)
-				before = subregion.width - before % subregion.width;
-			x = subregion.x + before - 1;
-		} else if (x > subregion.x + subregion.width - 1) {
-			int beyond = x - (subregion.x + subregion.width - 1);
-			if (beyond > subregion.width)
-				beyond = subregion.width - beyond % subregion.width;
-			x = subregion.x + subregion.width - beyond; 
-		}
-			
-		//Then for y
-		if (y < subregion.y) {
-			int before = subregion.y - y;
-			if (before > subregion.height)
-				before = subregion.height - before % subregion.height;
-			y = subregion.y + before - 1;
-		} else if (y > subregion.y + subregion.height - 1) {
-			int beyond = y - (subregion.y + subregion.height - 1);
-			if (beyond > subregion.height)
-				beyond = subregion.height - beyond % subregion.height;
-			y = subregion.y + subregion.height - beyond;  
-		}
-		
-		return proc.getf(x, y);
-	}
-	
-	public ArrayList<Peak> removeNearestNeighbors(ArrayList<Peak> peakList) {
-		if (peakList.size() < 2)
-			return peakList;
-		
-		//Sort the list from lowest to highest XYErrors
-		Collections.sort(peakList, new Comparator<Peak>(){
-			@Override
-			public int compare(Peak o1, Peak o2) {
-				return Double.compare(o1.getXError() + o1.getYError(), o2.getXError() + o2.getYError());		
-			}
-		});
-		
-		//We have to make a copy to pass to the KDTREE because it will change the order and we have already sorted from lowest to highest to pick center of peaks in for loop below.
-		//This is a shallow copy, which means it contains exactly the same elements as the first list, but the order can be completely different...
-		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
-		
-		//Allows for fast search of nearest peaks...
-		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks, KDTreePossiblePeaks);
-		
-		RadiusNeighborSearchOnKDTree< Peak > radiusSearch = new RadiusNeighborSearchOnKDTree< Peak >( possiblePeakTree );
-		
-		//As we loop through all possible peaks and remove those that are too close
-		//we will add all the selected peaks to a new array 
-		//that will serve as the finalList of actual peaks
-		//This whole process is to remove pixels near the center peak pixel that are also above the detection threshold but all part of the same peak...
-		ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
-			
-		//Reset all to valid for new search
-		for (int i=peakList.size()-1;i>=0;i--) {
-			peakList.get(i).setValid();
-		}
-		
-		//It is really important to remember here that possiblePeaks and KDTreePossiblePeaks are different lists but point to the same elements
-		//That means if we setNotValid in one it is changing the same object in another that is required for the stuff below to work.
-		for (int i=0;i<peakList.size();i++) {
-			Peak peak = peakList.get(i);
-			if (peak.isValid()) {
-				finalPeaks.add(peak);
-				
-				//Then we remove all possible peaks within the minimumDistance...
-				//This will include the peak we just added to the peaks list...
-				radiusSearch.search(peak, minimumDistance, false);
-				
-				for (int j = 0 ; j < radiusSearch.numNeighbors() ; j++ ) {
-					radiusSearch.getSampler(j).get().setNotValid();
-				}
-			}
-		}
-		return finalPeaks;
 	}
 	
 	@Override
