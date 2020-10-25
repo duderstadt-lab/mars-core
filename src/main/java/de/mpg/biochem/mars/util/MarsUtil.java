@@ -98,14 +98,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MarsUtil {
 	
-	public static void multithreadConsumers(StatusService statusService, 
-			LogService logService, Runnable updateStatus, Runnable task) {
+	public static void forkJoinPoolBuilder(StatusService statusService, 
+			LogService logService, Runnable updateStatus, Runnable task, int numThreads) {
 		
 		final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 		
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(numThreads);
 		try {
 			Thread progressThread = new Thread() {
 		        public synchronized void run() {
@@ -125,9 +123,6 @@ public class MarsUtil {
 		    forkJoinPool.submit(task).get();
 		    
 		    progressUpdating.set(false);
-		    
-		    statusService.showProgress(100, 100);
-		    statusService.showStatus("Peak search done!");
 		        
 		 } catch (InterruptedException | ExecutionException e) {
 		        //handle exceptions
@@ -135,6 +130,8 @@ public class MarsUtil {
 				logService.info(LogBuilder.endBlock(false));
 		 } finally {
 		       forkJoinPool.shutdown();
+		       statusService.showProgress(100, 100);
+			   statusService.showStatus("Peak search done!");
 		 }
 	}
 	

@@ -341,6 +341,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
 
+		//Doesn't work, probably because of a bug in scijava.
 		final MutableModuleItem<Integer> preT = getInfo().getMutableInput("previewT", Integer.class);
 		preT.setValue(this, image.convertIndexToPosition(image.getCurrentSlice())[2] - 1);
 	}
@@ -373,24 +374,26 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 		if (allFrames) {
 			PeakStack = new ConcurrentHashMap<>();
 			
+			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+			
 			if (swapZandT)
-				MarsUtil.multithreadConsumers(statusService, logService, 
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
 						() -> statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle()), 
 						() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
 				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
 				        	
 				        	if (tpeaks.size() > 0)
 				        		PeakStack.put(t, tpeaks);
-				        }));
+				        }), PARALLELISM_LEVEL);
 			else
-				MarsUtil.multithreadConsumers(statusService, logService, 
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
 						() -> statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle()), 
 						() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
 				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
 				        	
 				        	if (tpeaks.size() > 0)
 				        		PeakStack.put(t, tpeaks);
-				        }));
+				        }), PARALLELISM_LEVEL);
 			
 		} else {
 			int t = image.getFrame() - 1;
