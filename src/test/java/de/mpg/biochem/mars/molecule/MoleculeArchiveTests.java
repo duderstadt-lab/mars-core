@@ -37,11 +37,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.scijava.Context;
+import org.scijava.io.IOService;
+import org.scijava.options.OptionsService;
+import org.scijava.plugin.Parameter;
 import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
@@ -54,6 +58,8 @@ import de.mpg.biochem.mars.table.MarsTableTests;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
+import io.scif.services.DatasetIOService;
+import net.imagej.ops.OpService;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadataRoot;
@@ -65,18 +71,31 @@ import ome.xml.model.primitives.PositiveInteger;
 public class MoleculeArchiveTests {
 	
 	@TempDir
-	static File sharedTempDir;
+	protected static File sharedTempDir;
 	
-	static Context context;
+	protected static Context context;
 	
-	static MoleculeArchive<?,?,?,?> archive;
+	protected static MoleculeArchive<?,?,?,?> archive;
+	
+	protected static Context createContext() {
+		return new Context(MoleculeArchiveService.class,
+		OptionsService.class);
+	}
 	
 	@BeforeAll
     public static void setup() {
-        context = new Context();
+		context = createContext();
         archive = generateSingleMoleculeArchive();
         archive.naturalOrderSortMoleculeIndex();
     }
+	
+	@AfterAll
+	public static synchronized void cleanUp() {
+		if (context != null) {
+			context.dispose();
+			context = null;
+		}
+	}
 	
 	@Test
 	@Order(1)
