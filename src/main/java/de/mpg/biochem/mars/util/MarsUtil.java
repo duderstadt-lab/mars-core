@@ -131,7 +131,7 @@ public class MarsUtil {
 		 } finally {
 		       forkJoinPool.shutdown();
 		       statusService.showProgress(100, 100);
-			   statusService.showStatus("Peak search done!");
+			   statusService.showStatus("Done!");
 		 }
 	}
 	
