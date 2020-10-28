@@ -39,13 +39,14 @@ import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;
 import net.imglib2.KDTree;
+import net.imglib2.RandomAccess;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
-
+import net.imagej.Dataset;
 import net.imagej.ops.OpService;
 
 public class MarsImageUtils {

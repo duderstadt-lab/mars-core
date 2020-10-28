@@ -60,6 +60,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 import net.imagej.Dataset;
 import net.imagej.display.ImageDisplay;
 import net.imglib2.KDTree;
@@ -233,7 +234,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 	private MarsTable DNATable;
 	
 	//A map with peak lists for each slice for an image stack
-	private ConcurrentMap<Integer, ArrayList<DNASegment>> DNAStack;
+	private ConcurrentMap<Integer, List<DNASegment>> DNAStack;
 	
 	//box region for analysis added to the image.
 	private Rectangle rect;
@@ -319,7 +320,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		logService.info(log);
 		
 		//Used to store dna list for single frame operations
-		ArrayList<DNASegment> DNASegments = new ArrayList<DNASegment>();
+		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 		
 		//Used to store dna list for multiframe search
 		DNAStack = new ConcurrentHashMap<>();
@@ -327,54 +328,21 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding DNAs...");
 		if (allFrames) {
-			//Need to determine the number of threads
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		    try {
-		    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-		    	//Waiting call back to update the progress bar!!
-		    	Thread progressThread = new Thread() {
-		            public synchronized void run() {
-	                    try {
-	        		        while(progressUpdating.get()) {
-	        		        	Thread.sleep(100);
-	        		        	if (swapZandT)
-	        		        		statusService.showStatus(DNAStack.size(), image.getStackSize(), "Finding DNAs for " + image.getTitle());
-	        		        	else
-	        		        		statusService.showStatus(DNAStack.size(), image.getNFrames(), "Finding DNAs for " + image.getTitle());
-	        		        }
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-		            }
-		        };
-
-		        progressThread.start();
-		        
-		        //This will spawn a bunch of threads that will analyze frames individually in parallel and put the results into the PeakStack map as lists of
-		        //peaks with the slice number as a key in the map for each list...
-		        if (swapZandT)
-		        	forkJoinPool.submit(() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> DNAStack.put(t, findDNAsInT(Integer.valueOf(channel), t)))).get();
-		        else 
-		        	forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> DNAStack.put(t, findDNAsInT(Integer.valueOf(channel), t)))).get();
-		        
-		        progressUpdating.set(false);
-		        
-		        statusService.showProgress(100, 100);
-		        statusService.showStatus("DNA search for " + image.getTitle() + " - Done!");
-		        
-		 } catch (InterruptedException | ExecutionException e) {
-		        //handle exceptions
-		    	e.printStackTrace();
-				logService.info(LogBuilder.endBlock(false));
-		 } finally {
-		       forkJoinPool.shutdown();
-		 }
+		    final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
-		} else {
+			if (swapZandT)
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
+						() -> statusService.showStatus(DNAStack.size(), image.getStackSize(), "Finding DNAs for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> DNAStack.put(t, findDNAsInT(Integer.valueOf(channel), t))), PARALLELISM_LEVEL);
+			else
+				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
+						() -> statusService.showStatus(DNAStack.size(), image.getNFrames(), "Finding DNAs for " + image.getTitle()), 
+						() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> DNAStack.put(t, findDNAsInT(Integer.valueOf(channel), t))), PARALLELISM_LEVEL);
+			
+		} else
 			DNASegments = findDNAsInT(Integer.valueOf(channel), previewT);
-		}
+		
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
 		if (generateDNACountTable) {
@@ -408,7 +376,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 			if (allFrames) {
 				int row = 0;
 				for (int t=0;t < DNAStack.size(); t++) {
-					ArrayList<DNASegment> tDNAs = DNAStack.get(t);
+					List<DNASegment> tDNAs = DNAStack.get(t);
 					for (int j=0;j<tDNAs.size();j++) {
 						DNATable.appendRow();
 						DNATable.setValue("T", row, t);
@@ -463,7 +431,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	private ArrayList<DNASegment> findDNAsInT(int channel, int t) {
+	private List<DNASegment> findDNAsInT(int channel, int t) {
 		ImageStack stack = image.getImageStack();
 		int index = t + 1;
 		if (!swapZandT)
@@ -473,8 +441,8 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		return findDNAs(tImage, t);
 	}
 	
-	private ArrayList<DNASegment> findDNAs(ImagePlus tImage, int t) {
-		ArrayList<DNASegment> DNASegments = new ArrayList<DNASegment>();
+	private List<DNASegment> findDNAs(ImagePlus tImage, int t) {
+		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 		
 		//Bit of ugliness here going from IJ1 to IJ2 and back...
 		//Should make an IJ2 peak detector.
@@ -585,11 +553,11 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		segment.setMedianIntensity((int)table.median("col"));
 	}
 	
-	private void AddToManager(ArrayList<DNASegment> segments, int channel, int t) {
+	private void AddToManager(List<DNASegment> segments, int channel, int t) {
 		AddToManager(segments, channel, t, 0);
 	}
 	
-	private int AddToManager(ArrayList<DNASegment> segments, int channel, int t, int startingPeakNum) {
+	private int AddToManager(List<DNASegment> segments, int channel, int t, int startingPeakNum) {
 		if (roiManager == null)
 			roiManager = new RoiManager();
 		int dnaCount = startingPeakNum;
@@ -624,7 +592,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			
 			ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-			ArrayList<DNASegment> segments = findDNAs(selectedImage, previewT);
+			List<DNASegment> segments = findDNAs(selectedImage, previewT);
 			
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tDNACount", String.class);
 			if (segments.size() > 0) {

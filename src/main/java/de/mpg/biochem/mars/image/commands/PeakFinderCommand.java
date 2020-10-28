@@ -298,7 +298,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 	public void initialize() {
 		if (imageDisplay == null)
 			return;
-		
+			
 		dataset = (Dataset) imageDisplay.getActiveView().getData();
 		image = convertService.convert(imageDisplay, ImagePlus.class);
 		
@@ -310,7 +310,7 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 			rect = image.getRoi().getBounds();
 			startingRoi = image.getRoi();
 		}
-		
+
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
 		long channelCount = dataset.getChannels();
 		ArrayList<String> channels = new ArrayList<String>();
@@ -402,22 +402,8 @@ public class PeakFinderCommand<T extends RealType< T >> extends DynamicCommand i
 				t = image.getCurrentSlice() - 1;
 			} else
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-			
-				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
-				
-				Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
-														(Img< T >)ImagePlusAdapter.wrap(selectedImage);
-	
-				peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
-											  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
-	
-				if (fitPeaks) {
-					peaks = MarsImageUtils.fitPeaks(selectedImage.getProcessor(), peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, rect);
-					peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
-				}
-				
-				if (integrate)
-					MarsImageUtils.integratePeaks(selectedImage.getProcessor(), peaks, innerOffsets, outerOffsets, rect);
+
+			peaks = findPeaksInT(Integer.valueOf(channel), t);
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
