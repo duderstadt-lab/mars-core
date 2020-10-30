@@ -57,7 +57,10 @@ package de.mpg.biochem.mars.image;
 import java.awt.Rectangle;
 
 import de.mpg.biochem.mars.util.LevenbergMarquardt;
-import ij.process.ImageProcessor;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
 
 public class PeakFitter {
 	
@@ -134,12 +137,12 @@ public class PeakFitter {
 		this.precision = allowable_error;
 	}
 	
-	public void fitPeak(ImageProcessor ip, double[] p, double[] e) {
-		fitPeak(ip, p, e, false);
+	public < T extends RealType< T > & NativeType< T >> void fitPeak(RandomAccessible< T > img, double[] p, double[] e, Rectangle roi) {
+		fitPeak(img, p, e, roi, false);
 	}
 
-	public void fitPeak(ImageProcessor ip, double[] p, double[] e, boolean findNegativePeaks) {
-		Rectangle roi = ip.getRoi();
+	public < T extends RealType< T > & NativeType< T >> void fitPeak(RandomAccessible< T > img, double[] p, double[] e, Rectangle roi, boolean findNegativePeaks) {
+		//Rectangle roi = ip.getRoi();
 			
 		double[][] xs = new double[roi.width * roi.height][2];
 		double[] ys = new double[xs.length];
@@ -148,11 +151,13 @@ public class PeakFitter {
 		int max = 0;
 		int min = 0;
 		
+		RandomAccess< T > ra = img.randomAccess();
+		
 		for (int y = roi.y; y < roi.y + roi.height; y++) {
 			for (int x = roi.x; x < roi.x + roi.width; x++) {
 				xs[n][0] = x;
 				xs[n][1] = y;
-				ys[n] = ip.getf(x, y);
+				ys[n] = ra.setPositionAndGet(x, y).getRealDouble();
 				
 				if (ys[n] > ys[max])
 					max = n;
@@ -174,7 +179,7 @@ public class PeakFitter {
 		
 		if (!Double.isNaN(p[2]) && !Double.isNaN(p[3])) {
 			p[0] = ys[min];
-			p[1] = ip.getf((int)p[2], (int)p[3]) - p[0];
+			p[1] = ra.setPositionAndGet((int)p[2], (int)p[3]).getRealDouble() - p[0];
 		}
 		
 		for (int i = 0; i < p.length; i++)

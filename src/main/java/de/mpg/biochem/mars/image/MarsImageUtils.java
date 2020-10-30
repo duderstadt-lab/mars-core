@@ -35,18 +35,32 @@ import java.util.Comparator;
 import java.util.List;
 
 import de.mpg.biochem.mars.util.Gaussian2D;
-import ij.ImagePlus;
-import ij.gui.Roi;
-import ij.process.ImageProcessor;
+//import ij.ImagePlus;
+//import ij.gui.Roi;
+//import ij.process.ImageProcessor;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
+import net.imglib2.util.Util;
+import net.imglib2.IterableInterval;
+import net.imglib2.Cursor;
+
 import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.ImgPlusMetadata;
+import net.imagej.axis.Axes;
+import net.imagej.axis.AxisType;
 import net.imagej.ops.OpService;
 
 public class MarsImageUtils {
@@ -87,11 +101,11 @@ public class MarsImageUtils {
 		return outerOffsets;
 	}
 	
-	public static <T extends RealType< T >> List<Peak> findPeaks(Img< T > img, int t, 
+	public static < T extends RealType< T > & NativeType< T >> List<Peak> findPeaks(RandomAccessible< T > img, Interval interval, int t, 
 			double threshold, int minimumDistance, boolean findNegativePeaks) {
 		
 		PeakFinder<T> finder = new PeakFinder<T>(threshold, minimumDistance, findNegativePeaks);
-		ArrayList<Peak> peaks = finder.findPeaks(img, t);
+		ArrayList<Peak> peaks = finder.findPeaks(img, interval, t);
 		
 		if (peaks == null)
 			peaks = new ArrayList<Peak>();
@@ -99,27 +113,25 @@ public class MarsImageUtils {
 		return peaks;
 	}
 	
-	public static <T extends RealType< T >> Img<FloatType> dogFilter(ImagePlus imp, double dogFilterRadius, OpService opService) {
-		Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
-		
-        Img<FloatType> dog = opService.create().img(converted);
+	public static < T extends RealType< T >> RandomAccessibleInterval< FloatType > dogFilter(RandomAccessibleInterval< T > img, double dogFilterRadius, OpService opService) {
+		Img< FloatType > converted = opService.convert().float32(Views.iterable(img));
+		Img<FloatType> dog = opService.create().img(converted);
 
         final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
 		final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
-
+		
 		opService.filter().dog(dog, converted, sigma2, sigma1);
 		
 		return dog;
 	}
 	
-	public static <T extends RealType< T >> List<Peak> findPeaksInRoi(Img< T > img, int t, 
-			double threshold, int minimumDistance, boolean findNegativePeaks, 
-			int x0, int y0, int width, int height) {
+	public static < T extends RealType< T > & NativeType< T >> List<Peak> findPeaksInRoi(RandomAccessible< T > img, Interval interval, int t, 
+			double threshold, int minimumDistance, boolean findNegativePeaks) {
 		ArrayList<Peak> peaks;
 		
 		PeakFinder< T > finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
 		
-		peaks = finder.findPeaks(img, Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1), t);
+		peaks = finder.findPeaks(img, interval, t);
 		
 		if (peaks == null)
 			peaks = new ArrayList<Peak>();
@@ -127,9 +139,9 @@ public class MarsImageUtils {
 		return peaks;
 	}
 	
-	public static List<Peak> fitPeaks(ImageProcessor imp, List<Peak> positionList, 
+	public static < T extends RealType< T > & NativeType< T >> List<Peak> fitPeaks(RandomAccessible< T > img, List<Peak> positionList, 
 		int fitRadius, double dogFilterRadius, boolean findNegativePeaks, 
-		double RsquaredMin, Rectangle region) {
+		double RsquaredMin, Interval interval) {
 		
 		List<Peak> newList = new ArrayList<Peak>();
 		
@@ -137,9 +149,12 @@ public class MarsImageUtils {
 		
 		PeakFitter fitter = new PeakFitter();
 		
+		RandomAccessible< T > rae = Views.extendMirrorSingle(Views.interval(img, interval));
+		RandomAccess< T > ra = rae.randomAccess(); 
+		
 		for (Peak peak: positionList) {
 			
-			imp.setRoi(new Roi(peak.getX() - fitRadius, peak.getY() - fitRadius, fitWidth, fitWidth));
+			Rectangle subregion = new Rectangle((int) (peak.getX() - fitRadius), (int) (peak.getY() - fitRadius), fitWidth, fitWidth);
 			
 			double[] p = new double[5];
 			p[0] = Double.NaN;
@@ -149,7 +164,7 @@ public class MarsImageUtils {
 			p[4] = dogFilterRadius/2;
 			double[] e = new double[5];
 			
-			fitter.fitPeak(imp, p, e, findNegativePeaks);
+			fitter.fitPeak(rae, p, e, subregion, findNegativePeaks);
 			
 			// First we reset valid since it was set to false for all peaks
 			// during the finding step to avoid finding the same peak twice.
@@ -169,7 +184,7 @@ public class MarsImageUtils {
 			double Rsquared = 0;
 			if (peak.isValid()) {
 				Gaussian2D gauss = new Gaussian2D(p);
-				Rsquared = calcR2(gauss, imp, region);
+				Rsquared = calcR2(gauss, ra, subregion);
 				if (Rsquared <= RsquaredMin)
 					peak.setNotValid();
 			}
@@ -184,18 +199,16 @@ public class MarsImageUtils {
 	}
 
 	
-	public static double calcR2(Gaussian2D gauss, ImageProcessor imp, Rectangle region) {
+	public static < T extends RealType< T > & NativeType< T >> double calcR2(Gaussian2D gauss, RandomAccess< T > ra, Rectangle roi) {
 		double SSres = 0;
 		double SStot = 0;
 		double mean = 0;
 		double count = 0;
 		
-		Rectangle roi = imp.getRoi();
-		
 		//First determine mean
 		for (int y = roi.y; y < roi.y + roi.height; y++) {
 			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				mean += (double)getPixelValue(imp, x, y, region);
+				mean += ra.setPositionAndGet(x, y).getRealDouble();
 				count++;
 			}
 		}
@@ -204,7 +217,7 @@ public class MarsImageUtils {
 		
 		for (int y = roi.y; y < roi.y + roi.height; y++) {
 			for (int x = roi.x; x < roi.x + roi.width; x++) {
-				double value = (double)getPixelValue(imp, x, y, region);
+				double value = ra.setPositionAndGet(x, y).getRealDouble();
 				SStot += (value - mean)*(value - mean);
 				
 				double prediction = gauss.getValue(x, y);
@@ -213,55 +226,6 @@ public class MarsImageUtils {
 		}
 		
 		return 1 - SSres / SStot;
-	}
-	
-	public static void integratePeaks(ImageProcessor ip, List<Peak> peaks, List<int[]> innerOffsets, List<int[]> outerOffsets, Rectangle region) {
-		for (Peak peak: peaks) {
-			//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
-			//Math.round() is be an alternative option...
-			double[] intensity = integratePeak(ip, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), region, innerOffsets, outerOffsets);
-			peak.setIntensity(intensity[0]);
-		}
-	}
-	
-	public static double[] integratePeak(ImageProcessor ip, int x, int y, 
-			Rectangle region, List<int[]> innerOffsets, List<int[]> outerOffsets) {
-		
-		if (x == Double.NaN || y == Double.NaN) {
-			double[] NULLinten = new double[2];
-			NULLinten[0] = Double.NaN;
-			NULLinten[1] = Double.NaN;
-			return NULLinten;
-		}
-		
-		double Intensity = 0;
-		int innerPixels = 0;
-		ArrayList<Float> outerPixelValues = new ArrayList<Float>();
-		
-		for (int[] circleOffset: innerOffsets) {
-			Intensity += (double)getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region);
-			innerPixels++;
-		}
-		
-		for (int[] circleOffset: outerOffsets) {
-			outerPixelValues.add(getPixelValue(ip, x + circleOffset[0], y + circleOffset[1], region));
-		}
-		
-		//Find the Median background value...
-		Collections.sort(outerPixelValues);
-		double outerMedian;
-		if (outerPixelValues.size() % 2 == 0)
-		    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
-		else
-		    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
-		
-		Intensity -= outerMedian*innerPixels;
-		
-		double[] inten = new double[2];
-		inten[0] = Intensity;
-		inten[1] = outerMedian;
-
-		return inten;
 	}
 	
 	public static List<Peak> removeNearestNeighbors(List<Peak> peakList, int minimumDistance) {
@@ -315,32 +279,88 @@ public class MarsImageUtils {
 		return finalPeaks;
 	}
 	
-	public static float getPixelValue(ImageProcessor proc, int x, int y, Rectangle subregion) {
-		
-		if (x < subregion.x) {
-			int before = subregion.x - x;
-			if (before > subregion.width)
-				before = subregion.width - before % subregion.width;
-			x = subregion.x + before - 1;
-		} else if (x > subregion.x + subregion.width - 1) {
-			int beyond = x - (subregion.x + subregion.width - 1);
-			if (beyond > subregion.width)
-				beyond = subregion.width - beyond % subregion.width;
-			x = subregion.x + subregion.width - beyond; 
+	public static < T extends RealType< T > & NativeType< T >> void integratePeaks(RandomAccessible< T > img, Interval interval, List<Peak> peaks, List<int[]> innerOffsets, List<int[]> outerOffsets) {
+		for (Peak peak: peaks) {
+			//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
+			//Math.round() is be an alternative option...
+			double[] intensity = integratePeak(img, interval, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), innerOffsets, outerOffsets);
+			peak.setIntensity(intensity[0]);
 		}
-			
-		if (y < subregion.y) {
-			int before = subregion.y - y;
-			if (before > subregion.height)
-				before = subregion.height - before % subregion.height;
-			y = subregion.y + before - 1;
-		} else if (y > subregion.y + subregion.height - 1) {
-			int beyond = y - (subregion.y + subregion.height - 1);
-			if (beyond > subregion.height)
-				beyond = subregion.height - beyond % subregion.height;
-			y = subregion.y + subregion.height - beyond;  
+	}
+	
+	public static < T extends RealType< T > & NativeType< T >> double[] integratePeak(RandomAccessible< T > img, Interval interval,
+			int x, int y, List<int[]> innerOffsets, List<int[]> outerOffsets) {
+		
+		RandomAccessibleInterval< T > view = Views.interval( img, interval );
+		
+		if (x == Double.NaN || y == Double.NaN) {
+			double[] NULLinten = new double[2];
+			NULLinten[0] = Double.NaN;
+			NULLinten[1] = Double.NaN;
+			return NULLinten;
 		}
 		
-		return proc.getf(x, y);
+		double intensity = 0;
+		int innerPixels = 0;
+		ArrayList<Double> outerPixelValues = new ArrayList<Double>();
+		
+		RandomAccess< T > ra = Views.extendMirrorSingle( view ).randomAccess(interval);
+		
+		for (int[] circleOffset: innerOffsets) {
+			intensity += ra.setPositionAndGet(x + circleOffset[0], y + circleOffset[1]).getRealDouble();
+			innerPixels++;
+		}
+		
+		for (int[] circleOffset: outerOffsets) {
+			outerPixelValues.add(ra.setPositionAndGet(x + circleOffset[0], y + circleOffset[1]).getRealDouble());
+		}
+		
+		//Find the Median background value...
+		Collections.sort(outerPixelValues);
+		double outerMedian;
+		if (outerPixelValues.size() % 2 == 0)
+		    outerMedian = ((double)outerPixelValues.get(outerPixelValues.size()/2) + (double)outerPixelValues.get(outerPixelValues.size()/2 - 1))/2;
+		else
+		    outerMedian = (double) outerPixelValues.get(outerPixelValues.size()/2);
+		
+		intensity -= outerMedian*innerPixels;
+		
+		double[] inten = new double[2];
+		inten[0] = intensity;
+		inten[1] = outerMedian;
+
+		return inten;
+	}
+	
+	public static < T extends RealType< T > & NativeType< T >> RandomAccessibleInterval< T > getFrameImg( final ImgPlus< T > img, final int z, final int c, final int t )
+	{
+		RandomAccessible< T > frameImg;
+		final int cDim = img.dimensionIndex( Axes.CHANNEL );
+		if ( cDim < 0 )
+		{
+			frameImg = img;
+		}
+		else
+		{
+			frameImg = Views.hyperSlice( img, cDim, c );
+		}
+
+		int timeDim = img.dimensionIndex( Axes.TIME );
+		if ( timeDim >= 0 )
+		{
+			if ( cDim >= 0 && timeDim > cDim )
+			{
+				timeDim--;
+			}
+			frameImg = Views.hyperSlice( frameImg, timeDim, t );
+		}
+		
+		int zDim = img.dimensionIndex( Axes.Z );
+		if ( zDim >= 0 )
+		{
+			frameImg = Views.hyperSlice( frameImg, zDim, z );
+		}
+		
+		return Views.interval(frameImg, Intervals.createMinSize(0, 0, img.dimension(0), img.dimension(1)));
 	}
 }

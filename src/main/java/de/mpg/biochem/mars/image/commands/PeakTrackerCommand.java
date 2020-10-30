@@ -116,7 +116,11 @@ import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.KDTree;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
@@ -186,7 +190,7 @@ import net.imglib2.img.ImagePlusAdapter;
 		@Menu(label = "Image", weight = 20,
 			mnemonic = 'm'),
 		@Menu(label = "Peak Tracker", weight = 10, mnemonic = 'p')})
-public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand implements Command, Initializable {
+public class PeakTrackerCommand< T extends RealType< T > & NativeType< T >> extends DynamicCommand implements Command, Initializable {
 	//GENERAL SERVICES NEEDED
 		@Parameter(required=false)
 		private RoiManager roiManager;
@@ -330,9 +334,6 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
 		private SingleMoleculeArchive archive;
 		
-		//instance of a PeakFitter to use for all the peak fitting operations by passing an image and pixel index list and getting back subpixel fits..
-		private PeakFitter fitter;
-		
 		//instance of a PeakTracker used for linking all the peaks between detected in each frame.
 		private PeakTracker tracker;
 		
@@ -345,6 +346,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		
 		//box region for analysis added to the image.
 		private Rectangle rect;
+		private Interval interval;
 		private Roi startingRoi;
 		
 		//array for max error margins.
@@ -455,8 +457,10 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		public void run() {
 			if (useROI) {
 				rect = new Rectangle(x0,y0,width - 1,height - 1);
+				interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
 			} else {
 				rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
+				interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
 			}
 			
 			image.setOverlay(null);
@@ -511,7 +515,7 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 			
 			metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
 			
-			List<Peak> peaks = new ArrayList<>();
+			//List<Peak> peaks = new ArrayList<>();
 			
 			innerOffsets = MarsImageUtils.innerIntegrationOffsets(integrationInnerRadius);
 			outerOffsets = MarsImageUtils.outerIntegrationOffsets(integrationInnerRadius, integrationOuterRadius);
@@ -624,19 +628,23 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				metaDataStack.put(t, label);
 			}
 
-			ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
+			//ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
 			
-			Img< T > filteredImg = (useDogFilter) ? (Img< T >)MarsImageUtils.dogFilter(im, dogFilterRadius, opService) : 
-													(Img< T >)ImagePlusAdapter.wrap(im);
-
-			List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, t, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
-										  MarsImageUtils.findPeaks(filteredImg, t, threshold, minimumDistance, findNegativePeaks);
-
-			peaks = MarsImageUtils.fitPeaks(processor, peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, rect);
+			RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
+			
+			List<Peak> peaks = new ArrayList<Peak>();
+			
+			if (useDogFilter) {
+				RandomAccessibleInterval< FloatType > filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
+				peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+			} else
+				peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+			
+			peaks = MarsImageUtils.fitPeaks(img, peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, interval);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 			
 			if (integrate)
-				MarsImageUtils.integratePeaks(processor, peaks, innerOffsets, outerOffsets, rect);
+				MarsImageUtils.integratePeaks(img, interval, peaks, innerOffsets, outerOffsets);
 			
 			return peaks;
 		}
@@ -705,6 +713,12 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 		@Override
 		public void preview() {	
 			if (preview) {
+				if (useROI) {
+					interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
+				} else {
+					interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
+				}
+				
 				image.setOverlay(null);
 				image.deleteRoi();
 				if (swapZandT || norpixFormat || image.getNFrames() < 2) {
@@ -712,13 +726,15 @@ public class PeakTrackerCommand<T extends RealType< T >> extends DynamicCommand 
 				} else
 					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 				
-				ImagePlus selectedImage = new ImagePlus("current frame", image.getImageStack().getProcessor(image.getCurrentSlice()));
+				RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, Integer.valueOf(channel), previewT);
 				
-				Img< T > filteredImg = (useDogFilter) ? (Img< T >) MarsImageUtils.dogFilter(selectedImage, dogFilterRadius, opService) : 
-														(Img< T >)ImagePlusAdapter.wrap(selectedImage);
+				List<Peak> peaks = new ArrayList<Peak>();
 				
-				List<Peak> peaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks, x0, y0, width, height) :
-												   MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, findNegativePeaks);
+				if (useDogFilter) {
+					RandomAccessibleInterval< FloatType > filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
+					peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+				} else
+					peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold, minimumDistance, findNegativePeaks);
 				
 				final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 				if (!peaks.isEmpty()) {

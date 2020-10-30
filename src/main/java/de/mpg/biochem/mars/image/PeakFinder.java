@@ -59,15 +59,18 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.util.Intervals;
 import net.imglib2.Cursor;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 import net.imglib2.KDTree;
+import net.imglib2.RandomAccessible;
 
-public class PeakFinder<T extends RealType<T>> {
+public class PeakFinder< T extends RealType< T > & NativeType< T >> {
 	
 	private double threshold = 46;
 	private int minimumDistance = 8;
@@ -79,35 +82,33 @@ public class PeakFinder<T extends RealType<T>> {
 		this.findNegativePeaks = findNegativePeaks;
 	}
 	
-	public ArrayList<Peak> findPeaks(Img<T> image) {
-		return findPeaks(image, -1);
-	}
-	
-	public ArrayList<Peak> findPeaks(Img<T> image, int slice) {
+	/*
+	public ArrayList<Peak> findPeaks(RandomAccessible< T > img, int t) {
 		long[] min = new long[2];
 		long[] max = new long[2];
-		image.min(min);
-		image.max(max);
-		FinalInterval interval = Intervals.createMinMax( min[0], min[1], max[0], max[1] ); 
-		return findPeaks(image, interval, slice);
+		img.min(min);
+		img.max(max);
+		Interval interval = Intervals.createMinMax( min[0], min[1], max[0], max[1] ); 
+		return findPeaks(image, interval, t);
+	}
+	*/
+	
+	public ArrayList<Peak> findPeaks(RandomAccessible< T > img, Interval interval) {
+		return findPeaks(img, interval, -1);
 	}
 	
-	public ArrayList<Peak> findPeaks(Img<T> image, FinalInterval interval) {
-		return findPeaks(image, interval, -1);
-	}
-	
-	public ArrayList<Peak> findPeaks(Img<T> image, FinalInterval interval, int slice) {
+	public ArrayList<Peak> findPeaks(RandomAccessible< T > img, Interval interval, int t) {
 		
 		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>(); 
 		
-		Cursor< T > roiCursor = Views.interval( image, interval ).cursor();
+		Cursor< T > roiCursor = Views.interval( img, interval ).cursor();
 		
 		if (!findNegativePeaks) {
 			while (roiCursor.hasNext()) {
 				 double pixel = roiCursor.next().getRealDouble();
 				 
 				 if ( pixel > threshold ) {
-					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
+					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, t));
 		         }
 			}
 		
@@ -126,7 +127,7 @@ public class PeakFinder<T extends RealType<T>> {
 				 double pixel = roiCursor.next().getRealDouble();
 				 
 				 if ( pixel < threshold*(-1) ) {
-					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, slice));
+					 possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor.getIntPosition(1), pixel, t));
 		         }
 			}
 		

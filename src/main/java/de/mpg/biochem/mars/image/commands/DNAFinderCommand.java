@@ -63,7 +63,10 @@ import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import net.imagej.Dataset;
 import net.imagej.display.ImageDisplay;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.KDTree;
+import net.imglib2.RandomAccessibleInterval;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,6 +241,7 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 	
 	//box region for analysis added to the image.
 	private Rectangle rect;
+	private Interval interval;
 	private Roi startingRoi;
 	
 	//For the progress thread
@@ -301,8 +305,10 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 	public void run() {
 		if (useROI) {
 			rect = new Rectangle(x0,y0,width - 1,height - 1);
+			interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
 		} else {
 			rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
+			interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
 		}
 		
 		image.deleteRoi();
@@ -447,29 +453,34 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 		//Bit of ugliness here going from IJ1 to IJ2 and back...
 		//Should make an IJ2 peak detector.
 		final Img<DoubleType> input = ImagePlusAdapter.wrap( tImage );
-		Img<DoubleType> output = opService.create().img(input, new DoubleType());
+		Img<DoubleType> gradImage = opService.create().img(input, new DoubleType());
 		int[] derivatives = {0, 1};
 		double[] sigma = {gaussSigma, gaussSigma};
 		
-		opService.filter().derivativeGauss(output, input, derivatives, sigma);
-		ImagePlus derivativeImage = ImageJFunctions.wrap(output, "guass filtered");
-		
-		Img< T > filteredImg = (useDogFilter) ? (Img< T >) MarsImageUtils.dogFilter(derivativeImage, dogFilterRadius, opService) : 
-												(Img< T >)ImagePlusAdapter.wrap(derivativeImage);
+		opService.filter().derivativeGauss(gradImage, input, derivatives, sigma);
+		//ImagePlus derivativeImage = ImageJFunctions.wrap(output, "guass filtered");
 
-		List<Peak> positivePeaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, false, x0, y0, width, height) :
-									          MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, false);
+		List<Peak> positivePeaks = new ArrayList<Peak>();
+		List<Peak> negativePeaks = new ArrayList<Peak>();
 		
-		List<Peak> negativePeaks = (useROI) ? MarsImageUtils.findPeaksInRoi(filteredImg, previewT, threshold, minimumDistance, true, x0, y0, width, height) :
-			  							      MarsImageUtils.findPeaks(filteredImg, previewT, threshold, minimumDistance, true);
+		if (useDogFilter) {
+			RandomAccessibleInterval< FloatType > filteredImg = MarsImageUtils.dogFilter(gradImage, dogFilterRadius, opService);
+			positivePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, false);
+			positivePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, true);
+		} else {
+			positivePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT, threshold, minimumDistance, false);
+			positivePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT, threshold, minimumDistance, true);
+		}
 
 		if (!positivePeaks.isEmpty() || !negativePeaks.isEmpty()) {
-		
+			
 			if (fitPeaks) {
-				positivePeaks = MarsImageUtils.fitPeaks(derivativeImage.getProcessor(), positivePeaks, fitRadius, dogFilterRadius, false, RsquaredMin, rect);
+				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
+				
+				positivePeaks = MarsImageUtils.fitPeaks(gradImage, positivePeaks, fitRadius, dogFilterRadius, false, RsquaredMin, interval);
 				positivePeaks = MarsImageUtils.removeNearestNeighbors(positivePeaks, minimumDistance);
 				
-				negativePeaks = MarsImageUtils.fitPeaks(derivativeImage.getProcessor(), negativePeaks, fitRadius, dogFilterRadius, true, RsquaredMin, rect);
+				negativePeaks = MarsImageUtils.fitPeaks(gradImage, negativePeaks, fitRadius, dogFilterRadius, true, RsquaredMin, interval);
 				negativePeaks = MarsImageUtils.removeNearestNeighbors(negativePeaks, minimumDistance);
 			}
 			
@@ -584,6 +595,12 @@ public class DNAFinderCommand<T extends RealType< T >> extends DynamicCommand im
 	@Override
 	public void preview() {
 		if (preview) {
+			if (useROI) {
+				interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
+			} else {
+				interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
+			}
+			
 			image.setOverlay(null);
 			image.deleteRoi();
 			if (swapZandT || image.getNFrames() < 2) {
