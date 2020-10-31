@@ -124,10 +124,7 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	
 	/**
 	 * SERVICES
-	 */
-	@Parameter(required=false)
-	private RoiManager roiManager;
-	
+	 */	
 	@Parameter
 	private LogService logService;
 	
@@ -155,6 +152,9 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	/**
 	 * ROI
 	 */
+	@Parameter(required=false)
+	private RoiManager roiManager;
+	
 	@Parameter(label="Use ROI", persist=false)
 	private boolean useROI = true;
 	
@@ -170,12 +170,12 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	@Parameter(label="ROI height", persist=false)
 	private int height;
 	
-	@Parameter(label="Channel", choices = {"a", "b", "c"})
-	private String channel = "0";
-	
 	/**
 	 * FINDER SETTINGS
 	 */
+    @Parameter(label="Channel", choices = {"a", "b", "c"})
+	private String channel = "0";
+    
 	@Parameter(label="Use DoG filter")
 	private boolean useDogFilter = true;
 	
@@ -264,7 +264,7 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	/**
 	 * Map from t to peak list
 	 */
-	private ConcurrentMap<Integer, List<Peak>> PeakStack;
+	private ConcurrentMap<Integer, List<Peak>> peakStack;
 	
 	private boolean swapZandT = false;
 	private Interval interval;
@@ -278,11 +278,13 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	
 	@Override
 	public void initialize() {
-		if (imageDisplay == null)
+		if (imageDisplay != null) {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+		} else if (dataset != null)
+			image = convertService.convert(dataset, ImagePlus.class);
+		else
 			return;
-			
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
-		image = convertService.convert(imageDisplay, ImagePlus.class);
 		
 		Rectangle rect;
 		if (image.getRoi() == null) {
@@ -347,19 +349,19 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
 		if (allFrames) {
-			PeakStack = new ConcurrentHashMap<>();
+			peakStack = new ConcurrentHashMap<>();
 			
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
 			int frameCount = (swapZandT) ? image.getStackSize() : image.getNFrames();
 			
 			MarsUtil.forkJoinPoolBuilder(statusService, logService, 
-					() -> statusService.showStatus(PeakStack.size(), frameCount, "Finding Peaks for " + image.getTitle()), 
+					() -> statusService.showStatus(peakStack.size(), frameCount, "Finding Peaks for " + image.getTitle()), 
 					() -> IntStream.range(0, frameCount).parallel().forEach(t -> { 
 			        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, fitPeaks, integrate);
 			        	
 			        	if (tpeaks.size() > 0)
-			        		PeakStack.put(t, tpeaks);
+			        		peakStack.put(t, tpeaks);
 			        }), PARALLELISM_LEVEL);
 			
 		} else {
@@ -399,8 +401,8 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 	
 	@SuppressWarnings("unchecked")
 	private List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter, boolean fitPeaks, boolean integrate) {
-		RandomAccessibleInterval< T > img = (swapZandT) ? MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), t, -1, -1) :
-														  MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
+		RandomAccessibleInterval< T > img = (swapZandT) ? MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), t, -1, -1) :
+														  MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
 		
 		List<Peak> peaks = new ArrayList<Peak>();
 		
@@ -428,9 +430,9 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 		DoubleColumn countColumn = new DoubleColumn("peaks");
 		
 		if (allFrames) {
-			for (int t : PeakStack.keySet()) {
+			for (int t : peakStack.keySet()) {
 				frameColumn.addValue(t);
-				countColumn.addValue(PeakStack.get(t).size());
+				countColumn.addValue(peakStack.get(t).size());
 			}
 		} else {
 			frameColumn.addValue(previewT);
@@ -461,8 +463,8 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 				columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
 		
 		if (allFrames)
-			for (int i=0;i<PeakStack.size() ; i++) {
-				List<Peak> framePeaks = PeakStack.get(i);
+			for (int i=0;i<peakStack.size() ; i++) {
+				List<Peak> framePeaks = peakStack.get(i);
 				for (int j=0;j<framePeaks.size();j++)
 					framePeaks.get(j).addToColumns(columns);
 			}
@@ -481,8 +483,8 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> exten
 		
 		if (allFrames) {
 			int peakNumber = 1;
-			for (int i=0;i < PeakStack.size() ; i++)
-				peakNumber = addToRoiManager(PeakStack.get(i), Integer.valueOf(channel), i, peakNumber);
+			for (int i=0;i < peakStack.size() ; i++)
+				peakNumber = addToRoiManager(peakStack.get(i), Integer.valueOf(channel), i, peakNumber);
 		} else
 			addToRoiManager(peaks, Integer.valueOf(channel), 0, 0);
 

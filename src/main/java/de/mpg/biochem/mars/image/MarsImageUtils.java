@@ -35,16 +35,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import de.mpg.biochem.mars.util.Gaussian2D;
-//import ij.ImagePlus;
-//import ij.gui.Roi;
-//import ij.process.ImageProcessor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
@@ -52,15 +47,9 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import net.imglib2.util.Util;
-import net.imglib2.IterableInterval;
-import net.imglib2.Cursor;
 
-import net.imagej.Dataset;
 import net.imagej.ImgPlus;
-import net.imagej.ImgPlusMetadata;
 import net.imagej.axis.Axes;
-import net.imagej.axis.AxisType;
 import net.imagej.ops.OpService;
 
 public class MarsImageUtils {
@@ -124,24 +113,9 @@ public class MarsImageUtils {
 		
 		return dog;
 	}
-	
-	public static < T extends RealType< T > & NativeType< T >> List<Peak> findPeaksInRoi(RandomAccessible< T > img, Interval interval, int t, 
-			double threshold, int minimumDistance, boolean findNegativePeaks) {
-		ArrayList<Peak> peaks;
-		
-		PeakFinder< T > finder = new PeakFinder< T >(threshold, minimumDistance, findNegativePeaks);
-		
-		peaks = finder.findPeaks(img, interval, t);
-		
-		if (peaks == null)
-			peaks = new ArrayList<Peak>();
-		
-		return peaks;
-	}
-	
+
 	public static < T extends RealType< T > & NativeType< T >> List<Peak> fitPeaks(RandomAccessible< T > img, List<Peak> positionList, 
-		int fitRadius, double dogFilterRadius, boolean findNegativePeaks, 
-		double RsquaredMin, Interval interval) {
+		int fitRadius, double initialRadius, boolean findNegativePeaks, double RsquaredMin, Interval interval) {
 		
 		List<Peak> newList = new ArrayList<Peak>();
 		
@@ -161,13 +135,11 @@ public class MarsImageUtils {
 			p[1] = Double.NaN;
 			p[2] = peak.getX();
 			p[3] = peak.getY();
-			p[4] = dogFilterRadius/2;
+			p[4] = initialRadius/2;
 			double[] e = new double[5];
 			
 			fitter.fitPeak(rae, p, e, subregion, findNegativePeaks);
 			
-			// First we reset valid since it was set to false for all peaks
-			// during the finding step to avoid finding the same peak twice.
 			peak.setValid();
 			
 			for (int i = 0; i < p.length && peak.isValid(); i++) {
@@ -175,8 +147,6 @@ public class MarsImageUtils {
 					peak.setNotValid();
 			}
 
-			//If the x, y, sigma values are negative reject the peak
-			//but we can have negative height p[0] or baseline p[1]
 			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
 				peak.setNotValid();
 			}
@@ -205,7 +175,6 @@ public class MarsImageUtils {
 		double mean = 0;
 		double count = 0;
 		
-		//First determine mean
 		for (int y = roi.y; y < roi.y + roi.height; y++) {
 			for (int x = roi.x; x < roi.x + roi.width; x++) {
 				mean += ra.setPositionAndGet(x, y).getRealDouble();
@@ -282,7 +251,6 @@ public class MarsImageUtils {
 	public static < T extends RealType< T > & NativeType< T >> void integratePeaks(RandomAccessible< T > img, Interval interval, List<Peak> peaks, List<int[]> innerOffsets, List<int[]> outerOffsets) {
 		for (Peak peak: peaks) {
 			//Type casting from double to int rounds down always, so we have to add 0.5 offset to be correct.
-			//Math.round() is be an alternative option...
 			double[] intensity = integratePeak(img, interval, (int)(peak.getX() + 0.5), (int)(peak.getY() + 0.5), innerOffsets, outerOffsets);
 			peak.setIntensity(intensity[0]);
 		}
@@ -315,7 +283,6 @@ public class MarsImageUtils {
 			outerPixelValues.add(ra.setPositionAndGet(x + circleOffset[0], y + circleOffset[1]).getRealDouble());
 		}
 		
-		//Find the Median background value...
 		Collections.sort(outerPixelValues);
 		double outerMedian;
 		if (outerPixelValues.size() % 2 == 0)
@@ -332,7 +299,7 @@ public class MarsImageUtils {
 		return inten;
 	}
 	
-	public static < T extends RealType< T > & NativeType< T >> RandomAccessibleInterval< T > getFrameImg( final ImgPlus< T > img, final int z, final int c, final int t )
+	public static < T extends RealType< T > & NativeType< T >> RandomAccessibleInterval< T > get2DHyperSlice( final ImgPlus< T > img, final int z, final int c, final int t )
 	{
 		RandomAccessible< T > frameImg;
 		final int cDim = img.dimensionIndex( Axes.CHANNEL );

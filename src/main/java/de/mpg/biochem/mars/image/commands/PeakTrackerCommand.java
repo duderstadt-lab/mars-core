@@ -630,7 +630,7 @@ public class PeakTrackerCommand< T extends RealType< T > & NativeType< T >> exte
 
 			//ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
 			
-			RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
+			RandomAccessibleInterval< T > img = MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
 			
 			List<Peak> peaks = new ArrayList<Peak>();
 			
@@ -726,7 +726,7 @@ public class PeakTrackerCommand< T extends RealType< T > & NativeType< T >> exte
 				} else
 					image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 				
-				RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, Integer.valueOf(channel), previewT);
+				RandomAccessibleInterval< T > img = MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, Integer.valueOf(channel), previewT);
 				
 				List<Peak> peaks = new ArrayList<Peak>();
 				
