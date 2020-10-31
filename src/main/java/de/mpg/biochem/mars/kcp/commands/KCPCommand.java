@@ -37,7 +37,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
+
+import net.imagej.ops.Initializable;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
@@ -49,24 +50,21 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.table.*;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.kcp.KCP;
 import de.mpg.biochem.mars.kcp.Segment;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
-import net.imagej.ops.Initializable;
-import org.scijava.table.*;
 
 @Plugin(type = Command.class, headless = true, label = "Change Point Finder",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,

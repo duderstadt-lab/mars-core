@@ -32,8 +32,9 @@ package de.mpg.biochem.mars.kcp.commands;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.decimal4j.util.DoubleRounder;
+import net.imagej.ops.Initializable;
 
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -51,7 +52,6 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsRegion;
-import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,

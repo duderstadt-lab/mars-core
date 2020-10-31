@@ -10,10 +10,10 @@ import javax.swing.JPanel;
 
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.widget.*;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.InputWidget;
 import org.scijava.widget.WidgetModel;
-import org.scijava.ui.swing.widget.*;
 
 /**
  * Swing implementation of multiple choice selector widget using a

@@ -29,10 +29,12 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import org.decimal4j.util.DoubleRounder;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import org.scijava.ItemIO;
-import org.scijava.ItemVisibility;
+import net.imagej.ops.Initializable;
+
+import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -45,23 +47,13 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
-import net.imagej.ops.Initializable;
-import org.scijava.table.DoubleColumn;
-
-import java.util.concurrent.ConcurrentHashMap;
 import de.mpg.biochem.mars.util.*;
 
 @Plugin(type = Command.class, label = "Region Difference Calculator", menu = {

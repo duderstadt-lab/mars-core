@@ -30,7 +30,6 @@
 package de.mpg.biochem.mars.molecule.commands;
 
 import org.decimal4j.util.DoubleRounder;
-
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -42,14 +41,10 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
-import java.util.HashMap;
-
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
-
-import org.scijava.table.DoubleColumn;
 
 @Plugin(type = Command.class, label = "Add time", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

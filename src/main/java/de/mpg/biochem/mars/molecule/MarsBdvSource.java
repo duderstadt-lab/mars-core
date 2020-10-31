@@ -34,7 +34,6 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.util.MarsUtil;
 import net.imglib2.realtransform.AffineTransform3D;
 
 public class MarsBdvSource extends AbstractJsonConvertibleRecord implements

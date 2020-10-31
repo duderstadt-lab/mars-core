@@ -35,7 +35,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import de.mpg.biochem.mars.util.Gaussian2D;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.ops.OpService;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
@@ -49,9 +51,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.ops.OpService;
+import de.mpg.biochem.mars.util.Gaussian2D;
 
 public class MarsImageUtils {
 

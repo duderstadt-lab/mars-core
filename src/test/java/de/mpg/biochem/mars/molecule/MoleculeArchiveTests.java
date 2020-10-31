@@ -33,9 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.AfterAll;
@@ -44,9 +41,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.scijava.Context;
-import org.scijava.io.IOService;
 import org.scijava.options.OptionsService;
-import org.scijava.plugin.Parameter;
 import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
@@ -55,16 +50,11 @@ import de.mpg.biochem.mars.metadata.MarsOMEImage;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.table.MarsTableTests;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
-import io.scif.services.DatasetIOService;
-import net.imagej.ops.OpService;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
-import ome.xml.meta.OMEXMLMetadataRoot;
-import ome.xml.model.MapPair;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;

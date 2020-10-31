@@ -29,92 +29,35 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
-import ij.gui.Line;
-import ij.gui.Overlay;
-import ij.gui.PointRoi;
+import java.util.ArrayList;
 
-import org.scijava.module.MutableModuleItem;
-import org.apache.commons.math3.stat.descriptive.rank.Median;
+import net.imagej.ops.OpService;
+import net.imglib2.KDTree;
+import net.imglib2.RealLocalizable;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
-import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.util.RealRect;
-import org.scijava.widget.ChoiceWidget;
+import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.image.*;
-import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.metadata.*;
-import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
-import io.scif.config.SCIFIOConfig;
-import io.scif.config.SCIFIOConfig.ImgMode;
-import io.scif.img.ImgIOException;
-import io.scif.img.ImgOpener;
-import io.scif.img.SCIFIOImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.display.OverlayService;
-import net.imglib2.Cursor;
-import net.imglib2.KDTree;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
-
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imagej.ops.Ops;
-
-import org.scijava.table.DoubleColumn;
-import io.scif.img.IO;
-import io.scif.img.ImgIOException;
-
-import java.awt.Color;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-
-import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.Views;
-import net.imglib2.img.ImagePlusAdapter;
+import ij.gui.Line;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
 
 @Plugin(type = Command.class, label = "Build DNA Archive", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

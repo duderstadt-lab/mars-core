@@ -59,32 +59,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+
+import net.imglib2.KDTree;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
+import org.scijava.table.DoubleColumn;
 
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
-import ij.IJ;
-import org.scijava.table.DoubleColumn;
-import net.imglib2.KDTree;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import ome.units.quantity.Length;
 
 public class PeakTracker {
 

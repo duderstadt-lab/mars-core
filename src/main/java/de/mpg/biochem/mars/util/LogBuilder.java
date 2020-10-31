@@ -34,8 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
 
-import java.util.Properties;
-
 public class LogBuilder {
 
 	private ArrayList<String[]> parameters;

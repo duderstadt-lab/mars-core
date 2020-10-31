@@ -32,7 +32,6 @@ package de.mpg.biochem.mars.metadata;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,19 +40,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
-import de.mpg.biochem.mars.util.MarsUtil;
 import ome.units.UNITS;
-import ome.units.quantity.Length;
 import ome.units.quantity.Time;
-import ome.units.unit.Unit;
 import ome.xml.meta.OMEXMLMetadata;
-import ome.xml.model.MapPair;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsTime;
-import ome.xml.model.primitives.NonNegativeInteger;
-import ome.xml.model.primitives.Timestamp;
-
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
+import ome.xml.model.primitives.NonNegativeInteger;
 
 public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 	GenericModel

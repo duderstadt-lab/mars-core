@@ -30,11 +30,9 @@
 package de.mpg.biochem.mars.image;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import ij.util.StringSorter;
 
 // Has some small parts of imagej1 FolderOpener.java

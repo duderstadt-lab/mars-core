@@ -38,10 +38,10 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.table.MarsTable;
-import ome.xml.meta.OMEXMLMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
+import de.mpg.biochem.mars.table.MarsTable;
+import ome.xml.meta.OMEXMLMetadata;
 
 public class OLDMarsMetadata extends AbstractMarsRecord implements
 	MarsMetadata

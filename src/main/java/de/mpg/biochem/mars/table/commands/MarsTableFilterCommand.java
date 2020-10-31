@@ -29,14 +29,10 @@
 
 package de.mpg.biochem.mars.table.commands;
 
-import java.awt.AWTEvent;
-import java.awt.Choice;
-import java.awt.TextField;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Vector;
 
-import org.scijava.app.StatusService;
+import net.imagej.ops.Initializable;
+
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
@@ -46,14 +42,11 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
-import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
-import org.scijava.widget.FileWidget;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
-import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Filter", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

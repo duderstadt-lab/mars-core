@@ -37,10 +37,9 @@ import javax.swing.JPanel;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.widget.SwingInputWidget;
 import org.scijava.widget.*;
 import org.scijava.widget.WidgetModel;
-
-import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**
  * Swing implementation of multiple choice selector widget for MarsTable.

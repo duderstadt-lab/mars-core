@@ -62,6 +62,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import net.imglib2.type.numeric.RealType;
+
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -74,10 +76,9 @@ import org.scijava.plugin.Plugin;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import ij.ImagePlus;
+import ij.io.FileSaver;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import net.imglib2.type.numeric.RealType;
-import ij.io.FileSaver;
 
 /**
  * This command calculates the gradient (slope) of consecutive pixels in the y

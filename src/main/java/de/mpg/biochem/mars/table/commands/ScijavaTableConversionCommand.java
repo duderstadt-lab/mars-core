@@ -29,31 +29,23 @@
 
 package de.mpg.biochem.mars.table.commands;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import net.imagej.ops.Initializable;
+
+import org.scijava.ItemIO;
 import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
+import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
+import org.scijava.object.ObjectService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.Table;
 import org.scijava.table.TableDisplay;
-import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.table.MarsTableIOPlugin;
-import net.imagej.ops.Initializable;
-
-import org.scijava.Context;
-import org.scijava.ItemIO;
-import org.scijava.command.DynamicCommand;
-import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
-import org.scijava.object.ObjectService;
-import org.scijava.options.OptionsService;
-import java.util.stream.Collectors;
 
 @Plugin(type = Command.class, label = "Import TableDisplay", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

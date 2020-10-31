@@ -29,29 +29,18 @@
 
 package de.mpg.biochem.mars.util;
 
-import java.io.File;
 import java.io.IOException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
-import de.mpg.biochem.mars.image.MoleculeIntegrator;
-import de.mpg.biochem.mars.image.PeakTracker;
+import com.fasterxml.jackson.core.JsonParser;
+
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
-import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
-import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
-import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
-import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 
 /**
  * This class provides a simple region definition. Usually this a region in time

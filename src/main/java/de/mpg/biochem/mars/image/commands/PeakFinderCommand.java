@@ -55,12 +55,29 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import ij.ImagePlus;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
-import ij.gui.PointRoi;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.IntStream;
 
-import org.scijava.module.MutableModuleItem;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -71,47 +88,24 @@ import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.table.DoubleColumn;
+import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.display.ImageDisplay;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-
-import net.imagej.ImgPlus;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.stream.IntStream;
-
-import net.imagej.ops.Initializable;
-import org.scijava.table.DoubleColumn;
-
-import org.scijava.widget.NumberWidget;
-
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-
-import net.imagej.ops.OpService;
+import ij.ImagePlus;
+import ij.gui.PointRoi;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
 
 @Plugin(type = Command.class, label = "Peak Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

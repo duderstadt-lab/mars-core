@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.scijava.Context;
 import org.scijava.options.OptionsService;
 
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 
 public class DNAFinderCommandTest {

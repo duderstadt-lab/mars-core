@@ -32,7 +32,6 @@ package de.mpg.biochem.mars.molecule.commands;
 import java.io.File;
 import java.io.IOException;
 
-import org.scijava.Context;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;

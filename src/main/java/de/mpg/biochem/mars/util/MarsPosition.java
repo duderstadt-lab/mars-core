@@ -30,9 +30,8 @@
 package de.mpg.biochem.mars.util;
 
 import java.io.IOException;
-import com.fasterxml.jackson.core.JsonGenerator;
+
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.*;

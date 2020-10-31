@@ -4,18 +4,17 @@ package de.mpg.biochem.mars.image;
 import java.io.IOException;
 import java.util.Random;
 
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.axis.Axes;
+import net.imagej.axis.AxisType;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.scijava.Context;
-import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;
-
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.axis.AxisType;
-import net.imagej.axis.Axes;
 
 import de.mpg.biochem.mars.util.Gaussian2D;
 

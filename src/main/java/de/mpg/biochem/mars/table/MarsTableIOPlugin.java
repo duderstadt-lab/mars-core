@@ -36,7 +36,6 @@ import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
-import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.object.ObjectService;
 import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;

@@ -57,11 +57,12 @@ package de.mpg.biochem.mars.image;
 
 import java.awt.Rectangle;
 
-import de.mpg.biochem.mars.util.LevenbergMarquardt;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+
+import de.mpg.biochem.mars.util.LevenbergMarquardt;
 
 public class PeakFitter {
 

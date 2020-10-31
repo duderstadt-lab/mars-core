@@ -29,14 +29,9 @@
 
 package de.mpg.biochem.mars.table;
 
-import org.scijava.app.StatusService;
-import org.scijava.plugin.Parameter;
-import org.scijava.table.*;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -50,16 +45,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.Iterator;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -71,14 +65,17 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
-import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.util.MarsMath;
-import de.mpg.biochem.mars.util.MarsUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.app.StatusService;
+import org.scijava.plugin.Parameter;
+import org.scijava.table.*;
+
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 
 /**
  * Mars implementation of a scijava results table. All numbers are stored as

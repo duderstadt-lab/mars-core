@@ -29,15 +29,15 @@ f * #%L
 
 package de.mpg.biochem.mars.molecule;
 
+import static java.util.stream.Collectors.toList;
+
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -48,11 +48,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -65,6 +65,8 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.*;
 
+import org.scijava.table.*;
+
 import de.mpg.biochem.mars.image.MoleculeIntegrator;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
@@ -74,18 +76,12 @@ import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
 import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
-import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
+import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.table.GroupIndices;
-import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.*;
-
-import java.util.concurrent.locks.ReentrantLock;
-
-import static java.util.stream.Collectors.toList;
-
-import org.scijava.table.*;
 
 /**
  * Abstract superclass for the primary storage structure of Mars datasets.

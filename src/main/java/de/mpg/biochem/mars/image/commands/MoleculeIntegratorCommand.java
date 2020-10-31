@@ -56,31 +56,28 @@
 package de.mpg.biochem.mars.image.commands;
 
 import java.awt.Rectangle;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
 
 import org.decimal4j.util.DoubleRounder;
-import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
@@ -89,14 +86,10 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.image.MoleculeIntegrator;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
@@ -104,12 +97,8 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
-import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.GenericDialog;
-import ij.gui.PointRoi;
 import ij.gui.Roi;
-import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import io.scif.Metadata;
@@ -118,13 +107,7 @@ import io.scif.ome.OMEMetadata;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
 import ome.xml.meta.OMEXMLMetadata;
-
-import org.scijava.table.DoubleColumn;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of

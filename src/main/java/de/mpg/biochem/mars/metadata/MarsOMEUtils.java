@@ -30,16 +30,16 @@
 package de.mpg.biochem.mars.metadata;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
+
+import net.imagej.Dataset;
+import net.imagej.axis.Axes;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;
@@ -50,8 +50,6 @@ import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.handlers.BinningEnumHandler;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
-import ome.xml.model.primitives.Timestamp;
-import net.imagej.axis.Axes;
 
 public class MarsOMEUtils {
 

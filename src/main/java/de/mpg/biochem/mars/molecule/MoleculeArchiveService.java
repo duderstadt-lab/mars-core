@@ -41,25 +41,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.scif.services.FormatService;
-
-import org.scijava.app.StatusService;
-import org.scijava.display.DisplayService;
-import org.scijava.event.EventHandler;
-import org.scijava.event.EventService;
-import org.scijava.event.SciJavaEvent;
-import org.scijava.log.LogService;
-import org.scijava.object.ObjectService;
-import org.scijava.plugin.AbstractPTService;
-import org.scijava.plugin.Parameter;
-import org.scijava.plugin.Plugin;
-import org.scijava.prefs.PrefService;
-import org.scijava.script.ScriptService;
-import org.scijava.service.Service;
-import org.scijava.ui.UIService;
-import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.ui.DialogPrompt.OptionType;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -68,8 +49,21 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
-import de.mpg.biochem.mars.metadata.MarsMetadata;
 import net.imagej.ImageJService;
+
+import org.scijava.display.DisplayService;
+import org.scijava.log.LogService;
+import org.scijava.object.ObjectService;
+import org.scijava.plugin.AbstractPTService;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.script.ScriptService;
+import org.scijava.service.Service;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
+import org.scijava.ui.UIService;
+
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)

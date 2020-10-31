@@ -31,11 +31,8 @@ package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
 
-import org.scijava.Context;
-
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.table.MarsTable;
 import ome.xml.meta.OMEXMLMetadata;
 
 public class MarsOMEMetadata extends AbstractMarsMetadata {

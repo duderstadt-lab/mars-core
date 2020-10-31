@@ -29,51 +29,29 @@
 
 package de.mpg.biochem.mars.table;
 
-import java.awt.Frame;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.nio.file.*;
 import java.nio.charset.*;
+import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.scijava.command.Command;
+import net.imagej.ImageJService;
+
 import org.scijava.display.DisplayService;
-import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
-import org.scijava.io.event.DataOpenedEvent;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
-//import org.scijava.object.ObjectService;
-import org.scijava.object.event.ObjectCreatedEvent;
-import org.scijava.service.*;
-import org.scijava.plugin.Parameter;
-import org.scijava.ui.UIService;
-
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.event.MarsTableDeletedEvent;
-
-import org.scijava.table.*;
-import net.imglib2.type.numeric.RealType;
-import net.imagej.ImageJService;
-import net.imagej.display.WindowService;
-
 import org.scijava.plugin.AbstractPTService;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.plugin.PluginInfo;
 import org.scijava.script.ScriptService;
+import org.scijava.service.*;
 import org.scijava.service.Service;
+import org.scijava.table.*;
+import org.scijava.ui.UIService;
 
 import ij.measure.ResultsTable;
 

@@ -57,8 +57,9 @@ package de.mpg.biochem.mars.image;
 
 import java.util.Map;
 
-import org.scijava.table.DoubleColumn;
 import net.imglib2.RealLocalizable;
+
+import org.scijava.table.DoubleColumn;
 
 public class Peak implements RealLocalizable {
 

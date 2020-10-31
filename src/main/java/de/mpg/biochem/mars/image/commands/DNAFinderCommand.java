@@ -29,15 +29,31 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
-import ij.gui.Line;
-import ij.gui.Overlay;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
-import org.scijava.module.MutableModuleItem;
+import net.imagej.Dataset;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
+import net.imglib2.KDTree;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -49,52 +65,27 @@ import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.table.DoubleColumn;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.*;
-import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.Gaussian2D;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
-import net.imagej.Dataset;
-import net.imagej.display.ImageDisplay;
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
-import net.imglib2.KDTree;
-import net.imglib2.RandomAccessibleInterval;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
-
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import org.scijava.table.DoubleColumn;
-
-import java.awt.Color;
-import java.awt.Rectangle;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-
-import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.img.ImagePlusAdapter;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.Line;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
+import ij.process.ImageProcessor;
 
 @Plugin(type = Command.class, label = "DNA Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

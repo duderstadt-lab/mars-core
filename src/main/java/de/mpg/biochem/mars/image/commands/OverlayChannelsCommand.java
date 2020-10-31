@@ -55,25 +55,26 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imglib2.img.Img;
-import net.imglib2.realtransform.AffineTransform2D;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
+import net.imagej.DatasetService;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
+import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.*;
+import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.NumericType;
 import net.imglib2.view.*;
-import net.imglib2.RealRandomAccess;
-import net.imglib2.RealRandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -81,7 +82,6 @@ import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
@@ -94,21 +94,6 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
-import ij.gui.Roi;
-import ij.process.ImageProcessor;
-
-import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Plugin(type = Command.class, label = "Overlay Channels", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

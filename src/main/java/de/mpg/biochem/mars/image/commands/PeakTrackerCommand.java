@@ -55,17 +55,32 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.PointRoi;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.IntStream;
 
-import org.scijava.module.DefaultMutableModuleItem;
-import org.scijava.module.MutableModuleItem;
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+
 import org.decimal4j.util.DoubleRounder;
-import org.scijava.Context;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -74,106 +89,39 @@ import org.scijava.command.DynamicCommand;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.UIService;
+import org.scijava.widget.NumberWidget;
 
-import ome.xml.model.primitives.PositiveInteger;
-import ome.xml.model.primitives.Timestamp;
-import ome.units.quantity.Time;
-import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
-
-import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.image.PeakFitter;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
-import io.scif.Format;
-import io.scif.FormatException;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.PointRoi;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
+import ij.process.ImageProcessor;
 import io.scif.Metadata;
-import io.scif.config.SCIFIOConfig;
-import io.scif.config.SCIFIOConfig.ImgMode;
-import io.scif.filters.AbstractMetadataWrapper;
-import io.scif.img.ImgIOException;
-import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
 import io.scif.ome.OMEMetadata;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
-import io.scif.util.SCIFIOMetadataTools;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
-import net.imglib2.KDTree;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPoint;
-import net.imglib2.algorithm.neighborhood.HyperSphereShape;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-
-import org.scijava.table.DoubleColumn;
-import org.scijava.ui.DialogPrompt;
-import org.scijava.ui.UIService;
-import org.scijava.widget.NumberWidget;
-
-import io.scif.img.IO;
-
-import java.awt.image.ColorModel;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-
-import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
-import ome.units.UNITS;
 import ome.units.quantity.Length;
+import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
@@ -181,7 +129,8 @@ import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
-import net.imglib2.img.ImagePlusAdapter;
+import ome.xml.model.primitives.PositiveInteger;
+import ome.xml.model.primitives.Timestamp;
 
 @Plugin(type = Command.class, label = "Peak Tracker", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

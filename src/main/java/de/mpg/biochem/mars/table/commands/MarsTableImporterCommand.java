@@ -33,6 +33,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
+import org.scijava.menu.MenuConstants;
+import org.scijava.options.OptionsService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -40,11 +43,6 @@ import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableIOPlugin;
-
-import org.scijava.Context;
-import org.scijava.command.DynamicCommand;
-import org.scijava.menu.MenuConstants;
-import org.scijava.options.OptionsService;
 
 @Plugin(type = Command.class, label = "Open table", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

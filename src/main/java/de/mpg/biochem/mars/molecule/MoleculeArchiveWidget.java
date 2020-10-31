@@ -38,12 +38,11 @@ import javax.swing.JPanel;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.widget.SwingInputWidget;
 import org.scijava.widget.*;
 import org.scijava.widget.WidgetModel;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-
-import org.scijava.ui.swing.widget.SwingInputWidget;
 
 /**
  * Swing implementation of multiple choice selector widget for MoleculeArchive

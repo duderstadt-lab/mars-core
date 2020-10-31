@@ -29,12 +29,12 @@
 
 package de.mpg.biochem.mars.molecule;
 
+import org.scijava.Priority;
 import org.scijava.module.Module;
 import org.scijava.module.process.AbstractPreprocessorPlugin;
 import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.Priority;
 
 @Plugin(type = PreprocessorPlugin.class, priority = Priority.VERY_LOW - 2)
 public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {

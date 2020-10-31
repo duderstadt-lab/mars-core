@@ -29,43 +29,24 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Properties;
-
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileFilter;
-
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
-import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
-import org.scijava.widget.FileWidget;
 
-import com.fasterxml.jackson.core.JsonParseException;
-
-import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import de.mpg.biochem.mars.molecule.Molecule;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
-import net.imagej.ops.Initializable;
-
-import javax.swing.filechooser.FileSystemView;
 
 @Plugin(type = Command.class, label = "Build archive from table", menu = {
 	@Menu(label = MenuConstants.PLUGINS_LABEL,

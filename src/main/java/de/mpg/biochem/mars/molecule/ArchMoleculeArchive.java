@@ -32,13 +32,11 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
-import org.scijava.Context;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.metadata.*;
+import de.mpg.biochem.mars.table.MarsTable;
 
 public class ArchMoleculeArchive extends
 	AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, ArchMoleculeArchiveProperties, ArchMoleculeArchiveIndex>

@@ -31,8 +31,15 @@ package de.mpg.biochem.mars.roi.commands;
 
 import java.awt.Point;
 import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.util.ArrayList;
+
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccess;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
+import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -54,13 +61,6 @@ import ij.ImagePlus;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import net.imagej.ops.OpService;
-import net.imglib2.RandomAccess;
-import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.Img;
-import net.imglib2.realtransform.AffineTransform2D;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 @Plugin(type = Command.class, label = "Transform ROIs", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

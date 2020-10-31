@@ -40,7 +40,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 /**
  * Abstract superclass for molecule records. Molecule records act as the storage

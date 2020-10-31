@@ -29,25 +29,21 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.IOException;
+import java.lang.NullPointerException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
-
-import java.lang.NullPointerException;
 
 /**
  * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and

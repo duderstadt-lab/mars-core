@@ -44,32 +44,27 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import io.scif.util.FormatTools;
 import ome.units.UNITS;
-import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
 import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
+import ome.xml.meta.OMEXMLMetadataRoot;
 import ome.xml.model.MapPair;
-import ome.xml.model.enums.Binning;
 import ome.xml.model.enums.DetectorType;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.enums.UnitsTemperature;
 import ome.xml.model.enums.UnitsTime;
-import ome.xml.model.enums.handlers.BinningEnumHandler;
+import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTemperatureEnumHandler;
 import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
-import ome.xml.model.enums.handlers.DetectorTypeEnumHandler;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
-import ome.xml.meta.OMEXMLMetadataRoot;
-import io.scif.util.FormatTools;
-
-import java.util.stream.IntStream;
 
 public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	GenericModel, JsonConvertibleRecord

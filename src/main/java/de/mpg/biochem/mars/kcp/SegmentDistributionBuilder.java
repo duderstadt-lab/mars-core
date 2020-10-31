@@ -31,9 +31,7 @@ package de.mpg.biochem.mars.kcp;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -44,19 +42,14 @@ import java.util.stream.IntStream;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
-import org.scijava.plugin.Parameter;
+import org.scijava.table.*;
 
-import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
-
-import org.scijava.table.*;
-import org.scijava.ui.UIService;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 public class SegmentDistributionBuilder {

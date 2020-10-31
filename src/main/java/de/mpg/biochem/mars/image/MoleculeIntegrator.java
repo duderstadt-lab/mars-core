@@ -59,10 +59,7 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
-import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
-import ij.gui.Roi;
 import ij.process.ImageProcessor;
 
 /**

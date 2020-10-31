@@ -59,17 +59,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
-import net.imglib2.util.Intervals;
 import net.imglib2.Cursor;
-import net.imglib2.img.Img;
+import net.imglib2.Interval;
+import net.imglib2.KDTree;
+import net.imglib2.RandomAccessible;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
-import net.imglib2.KDTree;
-import net.imglib2.RandomAccessible;
 
 public class PeakFinder<T extends RealType<T> & NativeType<T>> {
 

@@ -55,20 +55,22 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.display.ImageDisplay;
+import net.imglib2.type.numeric.RealType;
 
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
@@ -77,30 +79,13 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.metadata.MarsOMEUtils;
-import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
-import ij.gui.GenericDialog;
-import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import io.scif.Metadata;
-import io.scif.img.SCIFIOImgPlus;
-import io.scif.ome.OMEMetadata;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
-import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.ImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imglib2.type.numeric.RealType;
-import ome.xml.meta.OMEXMLMetadata;
-import ij.io.FileSaver;
 
 /**
  * This command corrects images that have a beam profile. The command requires

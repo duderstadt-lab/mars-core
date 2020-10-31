@@ -30,15 +30,14 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.MarsUtil;
 
 public class ArchMolecule extends AbstractMolecule {
 
