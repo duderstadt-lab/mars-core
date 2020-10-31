@@ -55,11 +55,8 @@
 package de.mpg.biochem.mars.image.commands;
 
 import ij.ImagePlus;
-import ij.ImageStack;
-import ij.Prefs;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
 import ij.gui.PointRoi;
 
 import org.scijava.module.MutableModuleItem;
@@ -76,77 +73,42 @@ import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.util.RealRect;
 
-import de.mpg.biochem.mars.image.PeakFinder;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
-import de.mpg.biochem.mars.image.PeakFitter;
-import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.util.Gaussian2D;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
-import io.scif.config.SCIFIOConfig;
-import io.scif.config.SCIFIOConfig.ImgMode;
-import io.scif.img.ImgIOException;
-import io.scif.img.ImgOpener;
-import io.scif.img.SCIFIOImgPlus;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.display.ImageDisplay;
-import net.imagej.display.OverlayService;
-import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
-import net.imglib2.KDTree;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RealPoint;
 
 import net.imagej.ImgPlus;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
-import io.scif.img.IO;
 
 import org.scijava.widget.NumberWidget;
 
-import java.awt.Image;
-import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 
-import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
-import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 
 import net.imagej.ops.OpService;
 
@@ -158,9 +120,11 @@ import net.imagej.ops.OpService;
 		@Menu(label = "Image", weight = 20,
 			mnemonic = 'i'),
 		@Menu(label = "Peak Finder", weight = 1, mnemonic = 'p')})
-public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  extends DynamicCommand implements Command, Initializable, Previewable {
+public class PeakFinderCommand< T extends RealType< T > & NativeType< T >> extends DynamicCommand implements Command, Initializable, Previewable {
 	
-	//GENERAL SERVICES NEEDED
+	/**
+	 * SERVICES
+	 */
 	@Parameter(required=false)
 	private RoiManager roiManager;
 	
@@ -182,11 +146,15 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
     @Parameter
 	private DatasetService datasetService;
 	
-	//INPUT IMAGE
+	/**
+	 * IMAGE
+	 */
     @Parameter(label = "Image to search for Peaks")
 	private ImageDisplay imageDisplay;
 	
-	//ROI SETTINGS
+	/**
+	 * ROI
+	 */
 	@Parameter(label="Use ROI", persist=false)
 	private boolean useROI = true;
 	
@@ -205,7 +173,9 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 	@Parameter(label="Channel", choices = {"a", "b", "c"})
 	private String channel = "0";
 	
-	//PEAK FINDER SETTINGS
+	/**
+	 * FINDER SETTINGS
+	 */
 	@Parameter(label="Use DoG filter")
 	private boolean useDogFilter = true;
 	
@@ -245,7 +215,9 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 	@Parameter(label="Process all frames")
 	private boolean allFrames;
 	
-	//PEAK FITTER
+	/**
+	 * FITTER SETTINGS
+	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String PeakFitterMessage =
 		"Peak fitter settings:";
@@ -274,35 +246,35 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 	@Parameter(label="Outer radius")
 	private int integrationOuterRadius = 3;
 	
-	//Which columns to write in peak table
+	/**
+	 * VERBOSE
+	 */
 	@Parameter(label="Verbose output")
 	private boolean verbose = true;
 	
-	//OUTPUT PARAMETERS
+	/**
+	 * OUTPUTS
+	 */
 	@Parameter(label="Peak Count", type = ItemIO.OUTPUT)
 	private MarsTable peakCount;
 	
 	@Parameter(label="Peaks", type = ItemIO.OUTPUT)
 	private MarsTable peakTable;
 	
-	//A map with peak lists for each frame for an image stack
+	/**
+	 * Map from t to peak list
+	 */
 	private ConcurrentMap<Integer, List<Peak>> PeakStack;
 	
-	//box region for analysis added to the image.
-	private Rectangle rect;
+	private boolean swapZandT = false;
 	private Interval interval;
 	private Roi startingRoi;
 
 	public static final String[] TABLE_HEADERS_VERBOSE = {"baseline", "height", "sigma", "R2"};
-	
-	//For peak integration
 	private List<int[]> innerOffsets;
 	private List<int[]> outerOffsets;
-	
 	private Dataset dataset;
 	private ImagePlus image;
-	
-	private boolean swapZandT = false;
 	
 	@Override
 	public void initialize() {
@@ -312,6 +284,7 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 		dataset = (Dataset) imageDisplay.getActiveView().getData();
 		image = convertService.convert(imageDisplay, ImagePlus.class);
 		
+		Rectangle rect;
 		if (image.getRoi() == null) {
 			rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput("useROI", Boolean.class);
@@ -351,25 +324,15 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
 
-		//Doesn't work, probably because of a bug in scijava.
+		//Doesn't update, probably because of a bug in scijava.
 		final MutableModuleItem<Integer> preT = getInfo().getMutableInput("previewT", Integer.class);
 		preT.setValue(this, image.convertIndexToPosition(image.getCurrentSlice())[2] - 1);
 	}
 	
 	@Override
 	public void run() {	
-		if (useROI) {
-			rect = new Rectangle(x0,y0,width - 1,height - 1);
-			interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
-		} else {
-			rect = new Rectangle(0,0,image.getWidth()-1,image.getHeight()-1);
-			interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
-		}
+		updateInterval();
 		
-		image.deleteRoi();
-		image.setOverlay(null);
-		
-		//Build log
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Peak Finder");
 		addInputParameterLog(builder);
@@ -388,24 +351,16 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 			
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 			
-			if (swapZandT)
-				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
-						() -> statusService.showStatus(PeakStack.size(), image.getStackSize(), "Finding Peaks for " + image.getTitle()), 
-						() -> IntStream.range(0, image.getStackSize()).parallel().forEach(t -> { 
-				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
-				        	
-				        	if (tpeaks.size() > 0)
-				        		PeakStack.put(t, tpeaks);
-				        }), PARALLELISM_LEVEL);
-			else
-				MarsUtil.forkJoinPoolBuilder(statusService, logService, 
-						() -> statusService.showStatus(PeakStack.size(), image.getNFrames(), "Finding Peaks for " + image.getTitle()), 
-						() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> { 
-				        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
-				        	
-				        	if (tpeaks.size() > 0)
-				        		PeakStack.put(t, tpeaks);
-				        }), PARALLELISM_LEVEL);
+			int frameCount = (swapZandT) ? image.getStackSize() : image.getNFrames();
+			
+			MarsUtil.forkJoinPoolBuilder(statusService, logService, 
+					() -> statusService.showStatus(PeakStack.size(), frameCount, "Finding Peaks for " + image.getTitle()), 
+					() -> IntStream.range(0, frameCount).parallel().forEach(t -> { 
+			        	List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, fitPeaks, integrate);
+			        	
+			        	if (tpeaks.size() > 0)
+			        		PeakStack.put(t, tpeaks);
+			        }), PARALLELISM_LEVEL);
 			
 		} else {
 			int t = image.getFrame() - 1;
@@ -415,102 +370,45 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 			} else
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 
-			peaks = findPeaksInT(Integer.valueOf(channel), t);
+			peaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, fitPeaks, integrate);
 		}
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		
-		if (generatePeakCountTable) {
-			logService.info("Generating peak count table..");
-			peakCount = new MarsTable("Peak Count - " + image.getTitle());
-			DoubleColumn frameColumn = new DoubleColumn("T");
-			DoubleColumn countColumn = new DoubleColumn("peaks");
-			
-			if (allFrames) {
-				for (int i=0;i < PeakStack.size() ; i++) {
-					frameColumn.addValue(i);
-					countColumn.addValue(PeakStack.get(i).size());
-				}
-			} else {
-				frameColumn.addValue(previewT);
-				countColumn.addValue(peaks.size());
-			}
-			peakCount.add(frameColumn);
-			peakCount.add(countColumn);
-			
-			//Make sure the output table has the correct name
-			getInfo().getMutableOutput("peakCount", MarsTable.class).setLabel(peakCount.getName());
-		}
+		if (generatePeakCountTable)
+			generatePeakCountTable(peaks);
 		
-		if (generatePeakTable) {
-			logService.info("Generating peak table..");
-			//build a table with all peaks
-			peakTable = new MarsTable("Peaks - " + image.getTitle());
-			
-			Map<String, DoubleColumn> columns = new LinkedHashMap<String, DoubleColumn>();
-			
-			columns.put("T", new DoubleColumn("T"));
-			columns.put("x", new DoubleColumn("x"));
-			columns.put("y", new DoubleColumn("y"));
-			
-			if (integrate) 
-				columns.put("Intensity", new DoubleColumn("Intensity"));
-			
-			if (verbose)
-				for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
-					columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
-			
-			if (allFrames)
-				for (int i=0;i<PeakStack.size() ; i++) {
-					List<Peak> framePeaks = PeakStack.get(i);
-					for (int j=0;j<framePeaks.size();j++)
-						framePeaks.get(j).addToColumns(columns);
-				}
-			else
-				for (int j=0;j<peaks.size();j++)
-					peaks.get(j).addToColumns(columns);
-			
-			for(String key : columns.keySet())
-				peakTable.add(columns.get(key));	
-			
-			//Make sure the output table has the correct name
-			getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable.getName());
-		}
+		if (generatePeakTable)
+			generatePeakTable(peaks);
 		
-		if (addToRoiManager) {
-			logService.info("Adding Peaks to the RoiManger. This might take a while...");
-			if (allFrames) {
-				//loop through map and frames and add to Manager
-				//This is slow probably because of the continuous GUI updating, but I am not sure a solution
-				//There is only one add method for the RoiManager and you can only add one Roi at a time.
-				int peakNumber = 1;
-				for (int i=0;i < PeakStack.size() ; i++)
-					peakNumber = AddToManager(PeakStack.get(i), Integer.valueOf(channel), i, peakNumber);
-			} else {
-				AddToManager(peaks, Integer.valueOf(channel), 0);
-			}
-			statusService.showStatus("Done adding ROIs to Manger");
-		}
+		if (addToRoiManager)
+			addToRoiManager(peaks);
+		
 		image.setRoi(startingRoi);
 		
 		logService.info("Finished in " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	private List<Peak> findPeaksInT(int channel, int t) {
-		//ImageStack stack = image.getImageStack();
-		//int index = t + 1;
-		//if (!swapZandT)
-		//	index = image.getStackIndex(channel + 1, 1, t + 1);
-		
-		RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
+	private void updateInterval() {
+		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1) :
+			  				  Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
+
+		image.deleteRoi();
+		image.setOverlay(null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter, boolean fitPeaks, boolean integrate) {
+		RandomAccessibleInterval< T > img = (swapZandT) ? MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), t, -1, -1) :
+														  MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, channel, t);
 		
 		List<Peak> peaks = new ArrayList<Peak>();
 		
 		if (useDogFilter) {
 			RandomAccessibleInterval< FloatType > filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
-			peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+			peaks = MarsImageUtils.findPeaks(filteredImg, interval, t, threshold, minimumDistance, findNegativePeaks);
 		} else
-			peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+			peaks = MarsImageUtils.findPeaks(img, interval, t, threshold, minimumDistance, findNegativePeaks);
 		
 		if (fitPeaks) {
 			peaks = MarsImageUtils.fitPeaks(img, peaks, fitRadius, dogFilterRadius, findNegativePeaks, RsquaredMin, interval);
@@ -523,11 +421,75 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 		return peaks;
 	}
 	
-	private void AddToManager(List<Peak> peaks, int channel, int t) {
-		AddToManager(peaks, channel, t, 0);
+	private void generatePeakCountTable(List<Peak> peaks) {
+		logService.info("Generating peak count table..");
+		peakCount = new MarsTable("Peak Count - " + image.getTitle());
+		DoubleColumn frameColumn = new DoubleColumn("T");
+		DoubleColumn countColumn = new DoubleColumn("peaks");
+		
+		if (allFrames) {
+			for (int t : PeakStack.keySet()) {
+				frameColumn.addValue(t);
+				countColumn.addValue(PeakStack.get(t).size());
+			}
+		} else {
+			frameColumn.addValue(previewT);
+			countColumn.addValue(peaks.size());
+		}
+		peakCount.add(frameColumn);
+		peakCount.add(countColumn);
+		peakCount.sort("T");
+		
+		getInfo().getMutableOutput("peakCount", MarsTable.class).setLabel(peakCount.getName());
 	}
 	
-	private int AddToManager(List<Peak> peaks, int channel, int t, int startingPeakNum) {
+	private void generatePeakTable(List<Peak> peaks) {
+		logService.info("Generating peak table..");
+		peakTable = new MarsTable("Peaks - " + image.getTitle());
+		
+		Map<String, DoubleColumn> columns = new LinkedHashMap<String, DoubleColumn>();
+		
+		columns.put("T", new DoubleColumn("T"));
+		columns.put("x", new DoubleColumn("x"));
+		columns.put("y", new DoubleColumn("y"));
+		
+		if (integrate) 
+			columns.put("Intensity", new DoubleColumn("Intensity"));
+		
+		if (verbose)
+			for (int i=0;i<TABLE_HEADERS_VERBOSE.length;i++)
+				columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(TABLE_HEADERS_VERBOSE[i]));
+		
+		if (allFrames)
+			for (int i=0;i<PeakStack.size() ; i++) {
+				List<Peak> framePeaks = PeakStack.get(i);
+				for (int j=0;j<framePeaks.size();j++)
+					framePeaks.get(j).addToColumns(columns);
+			}
+		else
+			for (int j=0;j<peaks.size();j++)
+				peaks.get(j).addToColumns(columns);
+		
+		for(String key : columns.keySet())
+			peakTable.add(columns.get(key));	
+		
+		getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable.getName());
+	}
+	
+	private void addToRoiManager(List<Peak> peaks) {
+		logService.info("Adding Peaks to the RoiManger. This might take a while...");
+		
+		if (allFrames) {
+			int peakNumber = 1;
+			for (int i=0;i < PeakStack.size() ; i++)
+				peakNumber = addToRoiManager(PeakStack.get(i), Integer.valueOf(channel), i, peakNumber);
+		} else
+			addToRoiManager(peaks, Integer.valueOf(channel), 0, 0);
+
+		statusService.showStatus("Done adding ROIs to Manger");
+	}
+
+	private int addToRoiManager(List<Peak> peaks, int channel, int t, int startingPeakNum) {
 		if (roiManager == null)
 			roiManager = new RoiManager();
 		int pCount = startingPeakNum;
@@ -553,28 +515,14 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 	@Override
 	public void preview() {	
 		if (preview) {
-			if (useROI) {
-				interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
-			} else {
-				interval = Intervals.createMinMax(0, 0, image.getWidth()-1,image.getHeight()-1);
-			}
+			updateInterval();
 			
-			image.setOverlay(null);
-			image.deleteRoi();
-			if (swapZandT || image.getNFrames() < 2) {
+			if (swapZandT)
 				image.setSlice(previewT + 1);
-			} else
+			else
 				image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 			
-			RandomAccessibleInterval< T > img = MarsImageUtils.getFrameImg((ImgPlus< T >) dataset.getImgPlus(), 0, Integer.valueOf(channel), previewT);
-			
-			List<Peak> peaks = new ArrayList<Peak>();
-			
-			if (useDogFilter) {
-				RandomAccessibleInterval< FloatType > filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
-				peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT, threshold, minimumDistance, findNegativePeaks);
-			} else
-				peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold, minimumDistance, findNegativePeaks);
+			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT, useDogFilter, false, false);
 			
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput("tPeakCount", String.class);
 			if (!peaks.isEmpty()) {
@@ -606,7 +554,6 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 	
 	/** Called when the {@link #preview} parameter value changes. */
 	protected void previewChanged() {
-		// When preview box is unchecked, reset the Roi back to how it was before...
 		if (!preview) cancel();
 	}
 	
@@ -616,10 +563,12 @@ public class PeakFinderCommand< T extends RealType< T > & NativeType< T >>  exte
 			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
-		builder.addParameter("ROI x0", String.valueOf(x0));
-		builder.addParameter("ROI y0", String.valueOf(y0));
-		builder.addParameter("ROI width", String.valueOf(width));
-		builder.addParameter("ROI height", String.valueOf(height));
+		if (useROI) {
+			builder.addParameter("ROI x0", String.valueOf(x0));
+			builder.addParameter("ROI y0", String.valueOf(y0));
+			builder.addParameter("ROI width", String.valueOf(width));
+			builder.addParameter("ROI height", String.valueOf(height));
+		}
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
