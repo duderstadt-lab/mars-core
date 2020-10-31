@@ -52,6 +52,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
+
 package de.mpg.biochem.mars.image.commands;
 
 import net.imagej.Dataset;
@@ -109,189 +110,212 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@Plugin(type = Command.class, label = "Overlay Channels", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Image", weight = 20,
-			mnemonic = 'm'),
-		@Menu(label = "Overlay Channels", weight = 60, mnemonic = 'o')})
-public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T > > extends DynamicCommand implements Command {
-	
+@Plugin(type = Command.class, label = "Overlay Channels", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
+				label = "Overlay Channels", weight = 60, mnemonic = 'o') })
+public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
+	extends DynamicCommand implements Command
+{
+
 	@Parameter
 	private LogService logService;
-	
+
 	@Parameter
 	private StatusService statusService;
-	
-    @Parameter
+
+	@Parameter
 	private ConvertService convertService;
-    
-    @Parameter
-    private DatasetService datasetService;
-	
-    @Parameter(label="Add To Me", choices = {"a", "b", "c"})
+
+	@Parameter
+	private DatasetService datasetService;
+
+	@Parameter(label = "Add To Me", choices = { "a", "b", "c" })
 	private String addToMeName;
-	
-    @Parameter(label="Transform Me", choices = {"a", "b", "c"})
+
+	@Parameter(label = "Transform Me", choices = { "a", "b", "c" })
 	private String transformMeName;
 
-	@Parameter(label= "Keep originals")
+	@Parameter(label = "Keep originals")
 	private boolean keep = false;
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String affineTitle =
-			"Affine2D Transformation Matrix:";
-	
-	@Parameter(label="m00")
+	private final String affineTitle = "Affine2D Transformation Matrix:";
+
+	@Parameter(label = "m00")
 	private double m00;
-	
-	@Parameter(label="m01")
+
+	@Parameter(label = "m01")
 	private double m01;
-	
-	@Parameter(label="m02")
+
+	@Parameter(label = "m02")
 	private double m02;
-	
-	@Parameter(label="m10")
+
+	@Parameter(label = "m10")
 	private double m10;
-	
-	@Parameter(label="m11")
+
+	@Parameter(label = "m11")
 	private double m11;
-	
-	@Parameter(label="m12")
+
+	@Parameter(label = "m12")
 	private double m12;
-	
-	@Parameter(label="Merged Image", type = ItemIO.OUTPUT)
+
+	@Parameter(label = "Merged Image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
-	
-	//A map from slice to new transformed image
+
+	// A map from slice to new transformed image
 	private ConcurrentMap<Integer, ImagePlus> transformedImageMap;
-	
-	//For the progress thread
+
+	// For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-	
+
 	private ImagePlus addToMe, transformMe;
-	
+
 	@Override
-	public void initialize() {		
-		final MutableModuleItem<String> addToMeItems = getInfo().getMutableInput("addToMeName", String.class);
-		final MutableModuleItem<String> transformMeItems = getInfo().getMutableInput("transformMeName", String.class);
-		
-		//Super Hacky IJ1 workaround for issues in scijava/scifio related to getting images.
+	public void initialize() {
+		final MutableModuleItem<String> addToMeItems = getInfo().getMutableInput(
+			"addToMeName", String.class);
+		final MutableModuleItem<String> transformMeItems = getInfo()
+			.getMutableInput("transformMeName", String.class);
+
+		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
+		// getting images.
 		int numberOfImages = WindowManager.getImageCount();
 		List<String> imageNames = new ArrayList<String>();
-		
+
 		for (int i = 0; i < numberOfImages; i++)
 			imageNames.add(WindowManager.getImage(i + 1).getTitle());
 
-		//List<String> datasetNames = datasetService.getDatasets().stream().map(dataset -> dataset.getName()).collect(Collectors.toList());
-		
+		// List<String> datasetNames =
+		// datasetService.getDatasets().stream().map(dataset ->
+		// dataset.getName()).collect(Collectors.toList());
+
 		addToMeItems.setChoices(imageNames);
 		transformMeItems.setChoices(imageNames);
 	}
-	
+
 	@Override
 	public void run() {
-		//Dataset addToMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
-		//Dataset transformMeDataset = datasetService.getDatasets().stream().filter(dataset -> dataset.getName().equals(addToMeName)).findFirst().get();
-		
-		//addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
-		//transformMe = convertService.convert(transformMeDataset, ImagePlus.class);
+		// Dataset addToMeDataset =
+		// datasetService.getDatasets().stream().filter(dataset ->
+		// dataset.getName().equals(addToMeName)).findFirst().get();
+		// Dataset transformMeDataset =
+		// datasetService.getDatasets().stream().filter(dataset ->
+		// dataset.getName().equals(addToMeName)).findFirst().get();
+
+		// addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
+		// transformMe = convertService.convert(transformMeDataset,
+		// ImagePlus.class);
 		addToMe = WindowManager.getImage(addToMeName);
 		transformMe = WindowManager.getImage(transformMeName);
-		
-		//Build log
+
+		// Build log
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Overlay Channels");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
+
 		logService.info(log);
-		
+
 		transformedImageMap = new ConcurrentHashMap<>();
-		
-		//Need to determine the number of threads
+
+		// Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
+
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		
+
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
-		
+
 		ImageStack oldStack = transformMe.getImageStack();
-		
+
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
-	    try {
-	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-	    	//Waiting call back to update the progress bar!!
-	    	Thread progressThread = new Thread() {
-	            public synchronized void run() {
-                    try {
-        		        while(progressUpdating.get()) {
-        		        	Thread.sleep(100);
-        		        	statusService.showStatus(transformedImageMap.size(), transformMe.getStackSize(), "Transforming " + transformMe.getTitle());
-        		        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-	            }
-	        };
+		try {
+			// Start a thread to keep track of the progress of the number of frames
+			// that have been processed.
+			// Waiting call back to update the progress bar!!
+			Thread progressThread = new Thread() {
 
-	        progressThread.start();
-	        
-	        forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMe.getStackSize()).parallel().forEach(slice -> { 
-	        	ImagePlus sliceImage = new ImagePlus("slice "+slice, oldStack.getProcessor(slice));
-	        	
-	        	Img< T > img = ImagePlusAdapter.wrap(sliceImage);
-	            
-	        	RandomAccessibleInterval< T > ra = Views.interval( Views.raster( RealViews.affine(Views.interpolate( Views.extendZero( img ), new NLinearInterpolatorFactory() ), transform ) ), img );
+				public synchronized void run() {
+					try {
+						while (progressUpdating.get()) {
+							Thread.sleep(100);
+							statusService.showStatus(transformedImageMap.size(), transformMe
+								.getStackSize(), "Transforming " + transformMe.getTitle());
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
 
-	            ImagePlus transImg = ImageJFunctions.wrap( ra , "transformed");
-	        	
-	        	transformedImageMap.put(slice, transImg);
-	        })).get();
-	        
-	        //Now we have a map with all the transformed images. We just need to add them to a new stack
-	        //and then merge with the untransformed image.
-			ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe.getHeight());
-			
-			//I think this just works with references, so it should be super fast...
-			//otherwise the stack could be made in the parallel stream but might need 
-			//to be placed in a synchronize block...
-			for (int slice=1;slice<=transformedImageMap.size();slice++)
+			progressThread.start();
+
+			forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMe
+				.getStackSize()).parallel().forEach(slice -> {
+					ImagePlus sliceImage = new ImagePlus("slice " + slice, oldStack
+						.getProcessor(slice));
+
+					Img<T> img = ImagePlusAdapter.wrap(sliceImage);
+
+					RandomAccessibleInterval<T> ra = Views.interval(Views.raster(RealViews
+						.affine(Views.interpolate(Views.extendZero(img),
+							new NLinearInterpolatorFactory()), transform)), img);
+
+					ImagePlus transImg = ImageJFunctions.wrap(ra, "transformed");
+
+					transformedImageMap.put(slice, transImg);
+				})).get();
+
+			// Now we have a map with all the transformed images. We just need to add
+			// them to a new stack
+			// and then merge with the untransformed image.
+			ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe
+				.getHeight());
+
+			// I think this just works with references, so it should be super fast...
+			// otherwise the stack could be made in the parallel stream but might need
+			// to be placed in a synchronize block...
+			for (int slice = 1; slice <= transformedImageMap.size(); slice++)
 				newStack.addSlice(transformedImageMap.get(slice).getProcessor());
-			
+
 			ImagePlus[] images = new ImagePlus[2];
 			images[0] = addToMe;
 			images[1] = new ImagePlus("transformed", newStack);
 
 			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
-	        
-	        progressUpdating.set(false);
-	        
-	        statusService.showStatus(1, 1, "Transformations of " + transformMe.getTitle() + " - Done!");
-	        
-	   } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
-	    	e.printStackTrace();
+
+			progressUpdating.set(false);
+
+			statusService.showStatus(1, 1, "Transformations of " + transformMe
+				.getTitle() + " - Done!");
+
+		}
+		catch (InterruptedException | ExecutionException e) {
+			// handle exceptions
+			e.printStackTrace();
 			logService.info(LogBuilder.endBlock(false));
 			return;
-	   } finally {
-	      forkJoinPool.shutdown();
-	   }
-	    
-	    logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-		
+		}
+		finally {
+			forkJoinPool.shutdown();
+		}
+
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+			starttime) / 60000, 2) + " minutes.");
+
 		logService.info(LogBuilder.endBlock(true));
-		
+
 		if (!keep) {
 			transformMe.changes = false;
 			transformMe.close();
-			
+
 			addToMe.changes = false;
 			addToMe.close();
 		}
@@ -299,14 +323,20 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image 1", addToMe.getTitle());
-		if (addToMe.getOriginalFileInfo() != null && addToMe.getOriginalFileInfo().directory != null) {
-			builder.addParameter("Image 1 Directory", addToMe.getOriginalFileInfo().directory);
+		if (addToMe.getOriginalFileInfo() != null && addToMe
+			.getOriginalFileInfo().directory != null)
+		{
+			builder.addParameter("Image 1 Directory", addToMe
+				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Image 2", transformMe.getTitle());
-		if (transformMe.getOriginalFileInfo() != null && transformMe.getOriginalFileInfo().directory != null) {
-			builder.addParameter("Image 2 Directory", transformMe.getOriginalFileInfo().directory);
+		if (transformMe.getOriginalFileInfo() != null && transformMe
+			.getOriginalFileInfo().directory != null)
+		{
+			builder.addParameter("Image 2 Directory", transformMe
+				.getOriginalFileInfo().directory);
 		}
-		//builder.addParameter("keep originals", String.valueOf(keep));
+		// builder.addParameter("keep originals", String.valueOf(keep));
 		builder.addParameter("Affine2D m00", String.valueOf(m00));
 		builder.addParameter("Affine2D m01", String.valueOf(m01));
 		builder.addParameter("Affine2D m02", String.valueOf(m02));
@@ -314,27 +344,27 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
 	}
-	
+
 	public void setAddToMe(ImagePlus addToMe) {
 		this.addToMe = addToMe;
 	}
-	
+
 	public ImagePlus getAddToMe() {
 		return addToMe;
 	}
-	
+
 	public void setTransformMe(ImagePlus transformMe) {
 		this.transformMe = transformMe;
 	}
-	
+
 	public ImagePlus getTransformMe() {
 		return transformMe;
 	}
-	
+
 	public void setKeepOriginals(boolean keep) {
 		this.keep = keep;
 	}
-	
+
 	public boolean getKeepOriginals() {
 		return keep;
 	}
@@ -342,47 +372,47 @@ public class OverlayChannelsCommand< T extends NumericType< T > & NativeType< T 
 	public void setM00(double m00) {
 		this.m00 = m00;
 	}
-	
+
 	public double getM00() {
 		return m00;
 	}
-	
+
 	public void setM01(double m01) {
 		this.m01 = m01;
 	}
-	
+
 	public double getM01() {
 		return m01;
 	}
-	
+
 	public void setM02(double m02) {
 		this.m02 = m02;
 	}
-	
+
 	public double getM02() {
 		return m02;
 	}
-	
+
 	public void setM10(double m10) {
 		this.m10 = m10;
 	}
-	
+
 	public double getM10() {
 		return m10;
 	}
-	
+
 	public void setM11(double m11) {
 		this.m11 = m11;
 	}
-	
+
 	public double getM11() {
 		return m11;
 	}
-	
+
 	public void setM12(double m12) {
 		this.m12 = m12;
 	}
-	
+
 	public double getM12() {
 		return m12;
 	}

@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -34,26 +35,29 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 
 /**
- * Interface for objects that are Json serialized and deserialized. 
+ * Interface for objects that are Json serialized and deserialized.
  *
  * @author Karl Duderstadt
  */
 public interface JsonConvertibleRecord {
-	
-	/** Serializes the implementing class to JSON using the JsonGenerator provided. 
+
+	/**
+	 * Serializes the implementing class to JSON using the JsonGenerator provided.
 	 * 
 	 * @param jGenerator JsonGenerator stream to read Json from.
 	 * @throws IOException Thrown if unable to write to JsonGenerator.
-	 * */
+	 */
 	void toJSON(JsonGenerator jGenerator) throws IOException;
-	
-	/** Deserializes an instance of the implementing class from JSON using the JsonParser provided. 
+
+	/**
+	 * Deserializes an instance of the implementing class from JSON using the
+	 * JsonParser provided.
 	 * 
 	 * @param jParser JsonParser stream to write Json to.
 	 * @throws IOException Thrown if unable to read from JsonParser.
-	 * */
+	 */
 	void fromJSON(JsonParser jParser) throws IOException;
-	
+
 	/**
 	 * Get the record in Json string format.
 	 * 

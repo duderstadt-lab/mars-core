@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -34,18 +35,26 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 
-public class DefaultMoleculeArchiveProperties extends AbstractMoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> {
-	//There is no implementation. 
+public class DefaultMoleculeArchiveProperties extends
+	AbstractMoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata>
+{
+
+	// There is no implementation.
 	public DefaultMoleculeArchiveProperties() {
 		super();
 	}
-	
-	public DefaultMoleculeArchiveProperties(JsonParser jParser) throws IOException {
+
+	public DefaultMoleculeArchiveProperties(JsonParser jParser)
+		throws IOException
+	{
 		super(jParser);
 	}
-	
+
 	@Override
-	public void merge(MoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> properties, String archiveName) {
+	public void merge(
+		MoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> properties,
+		String archiveName)
+	{
 		super.merge(properties, archiveName);
 	}
 }

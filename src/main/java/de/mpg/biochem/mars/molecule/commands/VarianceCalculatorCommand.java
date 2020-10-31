@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule.commands;
 
 import org.decimal4j.util.DoubleRounder;
@@ -58,81 +59,83 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import net.imagej.ops.Initializable;
 import org.scijava.table.DoubleColumn;
 
-@Plugin(type = Command.class, label = "Variance Calculator", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Molecule", weight = 1,
-			mnemonic = 'm'),
-		@Menu(label = "Variance Calculator", weight = 70, mnemonic = 'm')})
-public class VarianceCalculatorCommand extends DynamicCommand implements Command, Initializable {
+@Plugin(type = Command.class, label = "Variance Calculator", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
+				label = "Variance Calculator", weight = 70, mnemonic = 'm') })
+public class VarianceCalculatorCommand extends DynamicCommand implements
+	Command, Initializable
+{
+
 	@Parameter
 	private LogService logService;
-	
-    @Parameter
-    private StatusService statusService;
-	
+
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+	private StatusService statusService;
+
 	@Parameter
-    private UIService uiService;
-	
-    @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
-    
-    @Parameter(label="Column", choices = {"a", "b", "c"})
+	private MoleculeArchiveService moleculeArchiveService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter(label = "MoleculeArchive")
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
+
+	@Parameter(label = "Column", choices = { "a", "b", "c" })
 	private String column;
-    
-    @Parameter(label="Parameter Name")
-    private String ParameterName = "column_Variance";
-    
+
+	@Parameter(label = "Parameter Name")
+	private String ParameterName = "column_Variance";
+
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"column", String.class);
 		columnItems.setChoices(moleculeArchiveService.getColumnNames());
 	}
-    
+
 	@Override
-	public void run() {		
-		//Let's keep track of the time it takes
+	public void run() {
+		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
-		
-		//Build log message
+
+		// Build log message
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Variance Calculator");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
-		//Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless())
-			archive.lock();
-		
+
+		// Lock the window so it can't be changed while processing
+		if (!uiService.isHeadless()) archive.lock();
+
 		archive.logln(log);
-		
-		//Loop through each molecule and add Variance parameter for each
+
+		// Loop through each molecule and add Variance parameter for each
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
-			
-			molecule.setParameter(ParameterName, molecule.getTable().variance(column));
-			
+
+			molecule.setParameter(ParameterName, molecule.getTable().variance(
+				column));
+
 			archive.put(molecule);
 		});
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(LogBuilder.endBlock(true));
-	    archive.logln(LogBuilder.endBlock(true));
-	    archive.logln("   ");
-	    
-		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) 
-			archive.unlock();
+
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+			starttime) / 60000, 2) + " minutes.");
+		logService.info(LogBuilder.endBlock(true));
+		archive.logln(LogBuilder.endBlock(true));
+		archive.logln("   ");
+
+		// Unlock the window so it can be changed
+		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
@@ -140,36 +143,43 @@ public class VarianceCalculatorCommand extends DynamicCommand implements Command
 		builder.addParameter("Column", column);
 		builder.addParameter("Parameter Name", ParameterName);
 	}
-	
-	public static double calcVariance(Molecule molecule, String column, String parameterName) {
+
+	public static double calcVariance(Molecule molecule, String column,
+		String parameterName)
+	{
 		double variance = molecule.getTable().variance(column);
-		
+
 		molecule.setParameter(parameterName, variance);
-		
+
 		return variance;
 	}
-	
-	//Getters and Setters
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
+
+	// Getters and Setters
+	public void setArchive(
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive)
+	{
 		this.archive = archive;
 	}
-	
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
+
+	public
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>>
+		getArchive()
+	{
 		return archive;
 	}
-	
+
 	public void setColumn(String column) {
 		this.column = column;
 	}
-	
+
 	public String getColumn() {
 		return column;
 	}
-	
+
 	public void setParameterName(String ParameterName) {
 		this.ParameterName = ParameterName;
 	}
-	
+
 	public String getParameterName() {
 		return ParameterName;
 	}

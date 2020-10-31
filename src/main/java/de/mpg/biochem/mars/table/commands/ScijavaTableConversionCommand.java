@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table.commands;
 
 import java.io.File;
@@ -54,39 +55,44 @@ import org.scijava.object.ObjectService;
 import org.scijava.options.OptionsService;
 import java.util.stream.Collectors;
 
-@Plugin(type = Command.class, label = "Import TableDisplay", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Import", weight = 10,
-			mnemonic = 't'),
-		@Menu(label = "Import TableDisplay", weight = 1, mnemonic = 'i')})
-public class ScijavaTableConversionCommand extends DynamicCommand implements Initializable {
-	
+@Plugin(type = Command.class, label = "Import TableDisplay", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Import", weight = 10, mnemonic = 't'), @Menu(
+				label = "Import TableDisplay", weight = 1, mnemonic = 'i') })
+public class ScijavaTableConversionCommand extends DynamicCommand implements
+	Initializable
+{
+
 	@Parameter
 	private ObjectService objectService;
-	
-	//For some reason this doesn't provide options when multiple tables are open
-	//so a workaround is implemented below.
-    //@Parameter(label="SciJava Table")
-    //private TableDisplay display;
-	
-	@Parameter(label="SciJava table", choices = {"a", "b", "c"})
+
+	// For some reason this doesn't provide options when multiple tables are open
+	// so a workaround is implemented below.
+	// @Parameter(label="SciJava Table")
+	// private TableDisplay display;
+
+	@Parameter(label = "SciJava table", choices = { "a", "b", "c" })
 	private String tableName;
-    
-    @Parameter(label="MarsTable", type = ItemIO.OUTPUT)
-    private MarsTable table;
-    
-    @Override
-	public void initialize() {
-		final MutableModuleItem<String> tableNames = getInfo().getMutableInput("tableName", String.class);
-		tableNames.setChoices(objectService.getObjects(org.scijava.table.TableDisplay.class).stream().map(display -> display.getName()).collect(Collectors.toList()));
-	}
-    
+
+	@Parameter(label = "MarsTable", type = ItemIO.OUTPUT)
+	private MarsTable table;
+
 	@Override
-	public void run() {			
-		TableDisplay display = objectService.getObjects(org.scijava.table.TableDisplay.class).stream().filter(obj -> obj.getName().equals(tableName)).findFirst().get();
+	public void initialize() {
+		final MutableModuleItem<String> tableNames = getInfo().getMutableInput(
+			"tableName", String.class);
+		tableNames.setChoices(objectService.getObjects(
+			org.scijava.table.TableDisplay.class).stream().map(display -> display
+				.getName()).collect(Collectors.toList()));
+	}
+
+	@Override
+	public void run() {
+		TableDisplay display = objectService.getObjects(
+			org.scijava.table.TableDisplay.class).stream().filter(obj -> obj.getName()
+				.equals(tableName)).findFirst().get();
 		table = new MarsTable((Table) display.get(0));
 		table.setName(tableName);
 		display.close();

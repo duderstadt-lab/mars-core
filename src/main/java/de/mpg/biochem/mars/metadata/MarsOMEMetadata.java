@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
@@ -38,19 +39,19 @@ import de.mpg.biochem.mars.table.MarsTable;
 import ome.xml.meta.OMEXMLMetadata;
 
 public class MarsOMEMetadata extends AbstractMarsMetadata {
-	
-    public MarsOMEMetadata() {
-    	super();
-    }
-    
-    public MarsOMEMetadata(String UID) {
-    	super(UID);
-    }
-    
-    public MarsOMEMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
-    	super(UID, omexmlMetadata);
-    }
-	
+
+	public MarsOMEMetadata() {
+		super();
+	}
+
+	public MarsOMEMetadata(String UID) {
+		super(UID);
+	}
+
+	public MarsOMEMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
+		super(UID, omexmlMetadata);
+	}
+
 	public MarsOMEMetadata(JsonParser jParser) throws IOException {
 		super(jParser);
 	}

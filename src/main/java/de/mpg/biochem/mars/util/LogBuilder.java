@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.util;
 
 import java.io.IOException;
@@ -36,79 +37,82 @@ import java.util.Properties;
 import java.util.Properties;
 
 public class LogBuilder {
+
 	private ArrayList<String[]> parameters;
-	
-    private Properties properties;
-    
-    private String version, artifactId, gitBuild;
-	
+
+	private Properties properties;
+
+	private String version, artifactId, gitBuild;
+
 	public LogBuilder() {
 		properties = new Properties();
 		try {
-			properties.load(this.getClass().getResourceAsStream("/project.properties"));
+			properties.load(this.getClass().getResourceAsStream(
+				"/project.properties"));
 			version = properties.getProperty("version");
 			artifactId = properties.getProperty("artifactId");
 			gitBuild = properties.getProperty("buildNumber");
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		parameters = new ArrayList<String[]>();
 		addRunParameters();
 	}
-	
+
 	public static String buildTitleBlock(String pluginName) {
 		String titleBlock = "";
 		int charLength = 75;
-		int eachHalf = (charLength - pluginName.length() - 2)/2;
-		
+		int eachHalf = (charLength - pluginName.length() - 2) / 2;
+
 		char[] chars = new char[eachHalf];
 		Arrays.fill(chars, '*');
 		String stars = new String(chars);
-		
+
 		titleBlock += stars;
 		titleBlock += " " + pluginName + " ";
 		titleBlock += stars;
 		titleBlock += "\n";
-		
+
 		return titleBlock;
 	}
-	
+
 	public void newParameterList() {
 		parameters.clear();
 		addRunParameters();
 	}
-	
+
 	public void clearParameterList() {
 		parameters.clear();
 	}
-	
+
 	private void addRunParameters() {
 		addParameter("Time", new java.util.Date() + "");
 		addParameter("Version", getVersion());
 		addParameter("Git Build", getBuild());
 	}
-	
+
 	public void addParameter(String parameter, boolean value) {
 		addParameter(parameter, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String parameter, int value) {
 		addParameter(parameter, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String parameter, Integer value) {
 		addParameter(parameter, value.toString());
 	}
-	
+
 	public void addParameter(String parameter, double value) {
 		addParameter(parameter, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String parameter, Double value) {
 		addParameter(parameter, value.toString());
 	}
-	
+
 	public void addParameter(String parameter, String value) {
 		if (parameters == null) {
 			parameters = new ArrayList<String[]>();
@@ -118,45 +122,46 @@ public class LogBuilder {
 		param[1] = value;
 		parameters.add(param);
 	}
-	
+
 	public String buildParameterList() {
-		//First we find the longest parameter string and put the colon at the position + 1
+		// First we find the longest parameter string and put the colon at the
+		// position + 1
 		int paramLength = 0;
-		for (String[] str: parameters) {
-			if (str[0].length() > paramLength)
-				paramLength = str[0].length();
+		for (String[] str : parameters) {
+			if (str[0].length() > paramLength) paramLength = str[0].length();
 		}
 		paramLength += 1;
-		
+
 		char[] chars = new char[paramLength];
 		Arrays.fill(chars, ' ');
 		String spaces = new String(chars);
-		
+
 		String output = "";
-		//Now we build the parameter list text...
-		for (int i=0; i < parameters.size() - 1; i++) {
+		// Now we build the parameter list text...
+		for (int i = 0; i < parameters.size() - 1; i++) {
 			String[] str = parameters.get(i);
-			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1] + "\n";
+			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1] +
+				"\n";
 		}
 		if (parameters.size() > 0) {
 			String[] str = parameters.get(parameters.size() - 1);
 			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1];
 		}
-		
+
 		return output;
 	}
-	
+
 	public static String endBlock(boolean success) {
 		if (success)
 			return "********************************* Success *********************************";
 		else
 			return "********************************* Failure *********************************";
 	}
-	
+
 	public static String endBlock() {
 		return "***************************************************************************";
 	}
-	
+
 	public String getVersion() {
 		return version;
 	}
@@ -164,7 +169,7 @@ public class LogBuilder {
 	public String getArtifactId() {
 		return artifactId;
 	}
-	
+
 	public String getBuild() {
 		return gitBuild;
 	}

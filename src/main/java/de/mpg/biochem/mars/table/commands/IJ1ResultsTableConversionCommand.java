@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table.commands;
 
 import org.scijava.command.Command;
@@ -52,70 +53,70 @@ import ij.text.TextPanel;
 import ij.text.TextWindow;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, label = "Import IJ1 ResultsTable", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Import", weight = 10,
-			mnemonic = 't'),
-		@Menu(label = "Import IJ1 Table", weight = 1, mnemonic = 'i')})
-public class IJ1ResultsTableConversionCommand extends DynamicCommand implements Initializable {
-	
+@Plugin(type = Command.class, label = "Import IJ1 ResultsTable", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Import", weight = 10, mnemonic = 't'), @Menu(
+				label = "Import IJ1 Table", weight = 1, mnemonic = 'i') })
+public class IJ1ResultsTableConversionCommand extends DynamicCommand implements
+	Initializable
+{
+
 	@Parameter
 	private UIService uiService;
-	
+
 	@Parameter
 	private MarsTableService marsTableService;
-	
-	@Parameter(label="IJ1 Table", choices = {"a", "b", "c"})
+
+	@Parameter(label = "IJ1 Table", choices = { "a", "b", "c" })
 	private String tableName;
-    
-    @Parameter(label="MarsTable", type = ItemIO.OUTPUT)
-    private MarsTable table;
-    
-    @Override
+
+	@Parameter(label = "MarsTable", type = ItemIO.OUTPUT)
+	private MarsTable table;
+
+	@Override
 	public void initialize() {
-		final MutableModuleItem<String> tableNames = getInfo().getMutableInput("tableName", String.class);
+		final MutableModuleItem<String> tableNames = getInfo().getMutableInput(
+			"tableName", String.class);
 		tableNames.setChoices(getResultsTableTitles());
 	}
-    
+
 	@Override
-	public void run() {			
+	public void run() {
 		Frame frame = WindowManager.getFrame(tableName);
 		ResultsTable resultsTable = null;
 		if (frame instanceof TextWindow) {
-			TextWindow textWindow = (TextWindow)frame;
+			TextWindow textWindow = (TextWindow) frame;
 			TextPanel textPanel = textWindow.getTextPanel();
-			resultsTable = textPanel.getResultsTable();	
+			resultsTable = textPanel.getResultsTable();
 		}
-		
+
 		if (resultsTable == null) {
 			uiService.showDialog("No IJ1 Tables found!");
 			return;
 		}
-		
+
 		table = marsTableService.createTable(resultsTable);
 	}
-	
+
 	public static ArrayList<String> getResultsTableTitles() {
-		
+
 		Frame[] nonImageWindows = WindowManager.getNonImageWindows();
 		ArrayList<String> openTables = new ArrayList<String>();
-		
-		for (Frame frame: nonImageWindows) {
-			
+
+		for (Frame frame : nonImageWindows) {
+
 			if (frame instanceof TextWindow) {
-				
-				TextWindow textWindow = (TextWindow)frame;
+
+				TextWindow textWindow = (TextWindow) frame;
 				TextPanel textPanel = textWindow.getTextPanel();
 				ResultsTable table = textPanel.getResultsTable();
-				
-				if (table != null)
-					openTables.add(frame.getTitle());
-			} 
+
+				if (table != null) openTables.add(frame.getTitle());
+			}
 		}
-		
+
 		return openTables;
 	}
 }

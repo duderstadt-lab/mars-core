@@ -52,34 +52,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
+
 package de.mpg.biochem.mars.image;
 
 public class PeakLink {
+
 	Peak from;
 	Peak to;
 	double distanceSq;
 	int t;
 	int tDifference;
-	public PeakLink(Peak from, Peak to, double distanceSq, int t, int tDifference) {
+
+	public PeakLink(Peak from, Peak to, double distanceSq, int t,
+		int tDifference)
+	{
 		this.from = from;
 		this.to = to;
 		this.distanceSq = distanceSq;
 		this.t = t;
 		this.tDifference = tDifference;
 	}
-	
-	public void reset(Peak from, Peak to, double distanceSq, int t, int tDifference) {
+
+	public void reset(Peak from, Peak to, double distanceSq, int t,
+		int tDifference)
+	{
 		this.from = from;
 		this.to = to;
 		this.distanceSq = distanceSq;
 		this.t = t;
 		this.tDifference = tDifference;
 	}
-	
+
 	public Peak getFrom() {
 		return from;
 	}
-	
+
 	public Peak getTo() {
 		return to;
 	}

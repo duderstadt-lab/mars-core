@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.handlers.BinningEnumHandler;
 
 public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
+
 	private int channelIndex;
 	private String name;
 	private String id;
@@ -49,19 +51,19 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 	private Double gain;
 	private ElectricPotential voltage;
 	private String detectorSettingsID;
-	
+
 	public MarsOMEChannel(OMEXMLMetadata md, int imageIndex, int channelIndex) {
 		super();
-		
+
 		this.channelIndex = channelIndex;
-		
-		ome.xml.model.Channel ch = ((OMEXMLMetadataRoot) md.getRoot()).getImage(0).getPixels().getChannel(channelIndex);
-		
-		if (ch.getName() != null)
-			name = md.getChannelName(imageIndex, channelIndex);
-		if (ch.getID() != null)
-			id = md.getChannelID(imageIndex, channelIndex);
-		
+
+		ome.xml.model.Channel ch = ((OMEXMLMetadataRoot) md.getRoot()).getImage(0)
+			.getPixels().getChannel(channelIndex);
+
+		if (ch.getName() != null) name = md.getChannelName(imageIndex,
+			channelIndex);
+		if (ch.getID() != null) id = md.getChannelID(imageIndex, channelIndex);
+
 		if (ch.getDetectorSettings() != null) {
 			binning = md.getDetectorSettingsBinning(imageIndex, channelIndex);
 			gain = md.getDetectorSettingsGain(imageIndex, channelIndex);
@@ -69,11 +71,11 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 			detectorSettingsID = md.getDetectorSettingsID(imageIndex, channelIndex);
 		}
 	}
-	
+
 	public MarsOMEChannel() {
 		super();
 	}
-	
+
 	public MarsOMEChannel(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
@@ -82,107 +84,100 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 	public void setChannelIndex(int channelIndex) {
 		this.channelIndex = channelIndex;
 	}
-	
+
 	public int getChannelIndex() {
 		return channelIndex;
 	}
-	
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public void setID(String id) {
 		this.id = id;
 	}
-	
+
 	public String getID() {
 		return id;
 	}
-	
+
 	public void setBinning(Binning binning) {
 		this.binning = binning;
 	}
-	
+
 	public Binning getBinning() {
 		return binning;
 	}
-	
+
 	public void setGain(Double gain) {
 		this.gain = gain;
 	}
-	
+
 	public Double getGain() {
 		return gain;
 	}
-	
+
 	public void setVoltage(ElectricPotential voltage) {
 		this.voltage = voltage;
 	}
-	
+
 	public ElectricPotential getVoltage() {
 		return voltage;
 	}
-	
+
 	public void setDetectorSettingsID(String detectorSettingsID) {
 		this.detectorSettingsID = detectorSettingsID;
 	}
-	
+
 	public String getDetectorSettingID() {
 		return detectorSettingsID;
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
-		
-		setJsonField("channelIndex", 
-				jGenerator -> jGenerator.writeNumberField("channelIndex", channelIndex),
-				jParser -> channelIndex = jParser.getIntValue());
-		
-		setJsonField("name", 
-			jGenerator -> jGenerator.writeStringField("name", name),
-			jParser -> name = jParser.getText());
-		
-		setJsonField("id", 
-			jGenerator -> jGenerator.writeStringField("id", id),
-			jParser -> id = jParser.getText());
-		
-		setJsonField("binning", 
-			jGenerator -> {
-					if (binning != null)
-						jGenerator.writeStringField("binning", binning.getValue());
-				},
-			jParser -> { 
-				BinningEnumHandler handler = new BinningEnumHandler();
-				try {
-					binning = (Binning) handler.getEnumeration(jParser.getText());
-				} catch (EnumerationException e) {
-					e.printStackTrace();
-				}
-			});
 
-		setJsonField("gain",
-			jGenerator -> { 
-				if (gain != null)
-					jGenerator.writeNumberField("gain", gain.doubleValue());
-			},
-			jParser -> gain = jParser.getDoubleValue());
-		
-		//Should we keep track of the units here ???
-		setJsonField("voltage",
-				jGenerator -> {
-					if (voltage != null)
-						jGenerator.writeNumberField("voltage", voltage.value().doubleValue());
-				},
-				jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
-		
-		setJsonField("detectorSettingsID",
-				jGenerator -> jGenerator.writeStringField("detectorSettingsID", detectorSettingsID),
-				jParser -> detectorSettingsID = jParser.getText());
-		
+		setJsonField("channelIndex", jGenerator -> jGenerator.writeNumberField(
+			"channelIndex", channelIndex), jParser -> channelIndex = jParser
+				.getIntValue());
+
+		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
+			name), jParser -> name = jParser.getText());
+
+		setJsonField("id", jGenerator -> jGenerator.writeStringField("id", id),
+			jParser -> id = jParser.getText());
+
+		setJsonField("binning", jGenerator -> {
+			if (binning != null) jGenerator.writeStringField("binning", binning
+				.getValue());
+		}, jParser -> {
+			BinningEnumHandler handler = new BinningEnumHandler();
+			try {
+				binning = (Binning) handler.getEnumeration(jParser.getText());
+			}
+			catch (EnumerationException e) {
+				e.printStackTrace();
+			}
+		});
+
+		setJsonField("gain", jGenerator -> {
+			if (gain != null) jGenerator.writeNumberField("gain", gain.doubleValue());
+		}, jParser -> gain = jParser.getDoubleValue());
+
+		// Should we keep track of the units here ???
+		setJsonField("voltage", jGenerator -> {
+			if (voltage != null) jGenerator.writeNumberField("voltage", voltage
+				.value().doubleValue());
+		}, jParser -> voltage = new ElectricPotential(jParser.getNumberValue(),
+			UNITS.VOLT));
+
+		setJsonField("detectorSettingsID", jGenerator -> jGenerator
+			.writeStringField("detectorSettingsID", detectorSettingsID),
+			jParser -> detectorSettingsID = jParser.getText());
+
 		/*
 		 * 
 		 * The fields below are needed for backwards compatibility.
@@ -190,30 +185,28 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 		 * Please remove for a future release.
 		 * 
 		 */
-			
-		setJsonField("ChannelIndex", null,
-				jParser -> channelIndex = jParser.getIntValue());
-		
-		setJsonField("Name", null,
-			jParser -> name = jParser.getText());
-		
-		setJsonField("Binning", null,
-			jParser -> { 
-				BinningEnumHandler handler = new BinningEnumHandler();
-				try {
-					binning = (Binning) handler.getEnumeration(jParser.getText());
-				} catch (EnumerationException e) {
-					e.printStackTrace();
-				}
-			});
 
-		setJsonField("Gain", null,
-			jParser -> gain = jParser.getDoubleValue());
-		
-		setJsonField("Voltage", null,
-				jParser -> voltage = new ElectricPotential(jParser.getNumberValue(), UNITS.VOLT));
-		
-		setJsonField("DetectorSettingsID", null,
-				jParser -> detectorSettingsID = jParser.getText());
+		setJsonField("ChannelIndex", null, jParser -> channelIndex = jParser
+			.getIntValue());
+
+		setJsonField("Name", null, jParser -> name = jParser.getText());
+
+		setJsonField("Binning", null, jParser -> {
+			BinningEnumHandler handler = new BinningEnumHandler();
+			try {
+				binning = (Binning) handler.getEnumeration(jParser.getText());
+			}
+			catch (EnumerationException e) {
+				e.printStackTrace();
+			}
+		});
+
+		setJsonField("Gain", null, jParser -> gain = jParser.getDoubleValue());
+
+		setJsonField("Voltage", null, jParser -> voltage = new ElectricPotential(
+			jParser.getNumberValue(), UNITS.VOLT));
+
+		setJsonField("DetectorSettingsID", null, jParser -> detectorSettingsID =
+			jParser.getText());
 	}
 }

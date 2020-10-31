@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.util;
 
 import java.io.File;
@@ -53,49 +54,57 @@ import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
 
 /**
- * This class provides a simple region definition. Usually this a region in time or slice that is of interest
- * for further analysis. {@link Molecule}s and {@link MarsMetadata}s can contain a list of these regions, 
- * which are used when running several commands including {@link KCPCommand}, {@link SigmaCalculatorCommand}, 
- * {@link KCPCommand}, {@link RegionDifferenceCalculatorCommand}, {@link VarianceCalculatorCommand}.
+ * This class provides a simple region definition. Usually this a region in time
+ * or slice that is of interest for further analysis. {@link Molecule}s and
+ * {@link MarsMetadata}s can contain a list of these regions, which are used
+ * when running several commands including {@link KCPCommand},
+ * {@link SigmaCalculatorCommand}, {@link KCPCommand},
+ * {@link RegionDifferenceCalculatorCommand}, {@link VarianceCalculatorCommand}.
  * <p>
- * Region definitions include name, start value, end value, column (Time (s) or slice or otherwise), color (in hex), and 
- * opacity (range 0 to 1). These values are used by mars-fx to draw regions on plots based on the start, end
- * color and opacity.
+ * Region definitions include name, start value, end value, column (Time (s) or
+ * slice or otherwise), color (in hex), and opacity (range 0 to 1). These values
+ * are used by mars-fx to draw regions on plots based on the start, end color
+ * and opacity.
  * <p>
- * Opacity specified in the hex code is ignored. The opacity setting overrides the value in the hex string.
+ * Opacity specified in the hex code is ignored. The opacity setting overrides
+ * the value in the hex string.
  * 
  * @author Karl Duderstadt
  */
-public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
+public class MarsRegion extends AbstractJsonConvertibleRecord implements
+	JsonConvertibleRecord
+{
+
 	private String name = "Region";
 	private String column = "T";
 	private String color = "#416ef468";
 	private double start = 0;
 	private double end = 0;
 	private double opacity = 0.2;
-	
+
 	/**
-	 * Constructor for creating a plot region of a given name with default settings. 
-	 * This has a default light blue color and start = end = 0. The bounds can then be 
-	 * changed in the gui. 
+	 * Constructor for creating a plot region of a given name with default
+	 * settings. This has a default light blue color and start = end = 0. The
+	 * bounds can then be changed in the gui.
 	 * 
 	 * @param name Name of the region.
 	 */
 	public MarsRegion(String name) {
 		this.name = name;
 	}
-	
+
 	/**
-	 * Constructor for creating a plot region given a json stream. Used when loading
-	 * objects from file.
+	 * Constructor for creating a plot region given a json stream. Used when
+	 * loading objects from file.
 	 * 
 	 * @param jParser Json stream used to build the object.
-	 * @throws IOException Thrown if unable to parse Json from the JsonParser stream.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser
+	 *           stream.
 	 */
 	public MarsRegion(JsonParser jParser) throws IOException {
 		fromJSON(jParser);
 	}
-	
+
 	/**
 	 * Constructor for creating a plot region using known parameters.
 	 * 
@@ -105,9 +114,10 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	 * @param end Ending value of the region.
 	 * @param color Color string in hex format.
 	 * @param opacity Opacity of the region between 0 and 1.
-	 * 
 	 */
-	public MarsRegion(String name, String column, double start, double end, String color, double opacity) {
+	public MarsRegion(String name, String column, double start, double end,
+		String color, double opacity)
+	{
 		this.name = name;
 		this.column = column;
 		this.color = color;
@@ -115,36 +125,30 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 		this.end = end;
 		this.opacity = opacity;
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
-		
-		setJsonField("name", 
-				jGenerator -> jGenerator.writeStringField("name", name), 
-				jParser -> name = jParser.getText());
-		
-		setJsonField("column", 
-				jGenerator -> jGenerator.writeStringField("column", column), 
-				jParser -> column = jParser.getText());
-		
-		setJsonField("start", 
-				jGenerator -> jGenerator.writeNumberField("start",start), 
-				jParser -> start = jParser.getDoubleValue());
-		
-		setJsonField("end", 
-				jGenerator -> jGenerator.writeNumberField("end",end), 
-				jParser -> end = jParser.getDoubleValue());
-		
-		setJsonField("color", 
-				jGenerator -> jGenerator.writeStringField("color", color), 
-				jParser -> color = jParser.getText());
-		
-		setJsonField("opacity", 
-				jGenerator -> jGenerator.writeNumberField("opacity", opacity), 
-				jParser -> opacity = jParser.getDoubleValue());
-		
+
+		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
+			name), jParser -> name = jParser.getText());
+
+		setJsonField("column", jGenerator -> jGenerator.writeStringField("column",
+			column), jParser -> column = jParser.getText());
+
+		setJsonField("start", jGenerator -> jGenerator.writeNumberField("start",
+			start), jParser -> start = jParser.getDoubleValue());
+
+		setJsonField("end", jGenerator -> jGenerator.writeNumberField("end", end),
+			jParser -> end = jParser.getDoubleValue());
+
+		setJsonField("color", jGenerator -> jGenerator.writeStringField("color",
+			color), jParser -> color = jParser.getText());
+
+		setJsonField("opacity", jGenerator -> jGenerator.writeNumberField("opacity",
+			opacity), jParser -> opacity = jParser.getDoubleValue());
+
 	}
-	
+
 	/**
 	 * Get the name of the region.
 	 * 
@@ -153,7 +157,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Set the region name.
 	 * 
@@ -162,27 +166,25 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	/**
-	 * Get the name of the column the
-	 * start and end values refer to.
+	 * Get the name of the column the start and end values refer to.
 	 * 
 	 * @return The column name.
 	 */
 	public String getColumn() {
 		return column;
 	}
-	
+
 	/**
-	 * Set the name of the column the
-	 * start and end values refer to.
+	 * Set the name of the column the start and end values refer to.
 	 * 
 	 * @param column The column name.
 	 */
 	public void setColumn(String column) {
 		this.column = column;
 	}
-	
+
 	/**
 	 * Get the string color of the region in hex.
 	 * 
@@ -191,7 +193,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public String getColor() {
 		return color;
 	}
-	
+
 	/**
 	 * Set the hex color string.
 	 * 
@@ -200,7 +202,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public void setColor(String color) {
 		this.color = color;
 	}
-	
+
 	/**
 	 * Get lower bound of the region.
 	 * 
@@ -209,7 +211,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public double getStart() {
 		return start;
 	}
-	
+
 	/**
 	 * Set the lower bound of the region.
 	 * 
@@ -218,7 +220,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public void setStart(double start) {
 		this.start = start;
 	}
-	
+
 	/**
 	 * Get the upper bound of the region.
 	 * 
@@ -227,7 +229,7 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public double getEnd() {
 		return end;
 	}
-	
+
 	/**
 	 * Set the upper bound of the region.
 	 * 
@@ -236,22 +238,20 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 	public void setEnd(double end) {
 		this.end = end;
 	}
-	
+
 	/**
-	 * Set the opacity of the region. Range is 
-	 * 0 to 1. Used by the javafx gui when drawing 
-	 * regions on plots.
+	 * Set the opacity of the region. Range is 0 to 1. Used by the javafx gui when
+	 * drawing regions on plots.
 	 * 
 	 * @param opacity The opacity of the region.
 	 */
 	public void setOpacity(double opacity) {
 		this.opacity = opacity;
 	}
-	
+
 	/**
-	 * Get the opacity of the region. Range is 
-	 * 0 to 1. Used by the javafx gui when drawing 
-	 * regions on plots.
+	 * Get the opacity of the region. Range is 0 to 1. Used by the javafx gui when
+	 * drawing regions on plots.
 	 * 
 	 * @return The opacity of the region.
 	 */
@@ -259,4 +259,3 @@ public class MarsRegion extends AbstractJsonConvertibleRecord implements JsonCon
 		return opacity;
 	}
 }
-

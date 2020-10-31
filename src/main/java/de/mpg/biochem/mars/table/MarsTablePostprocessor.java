@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 import org.scijava.module.Module;
@@ -39,13 +40,12 @@ public class MarsTablePostprocessor extends AbstractPostprocessorPlugin {
 
 	@Parameter
 	private MarsTableService marsTableService;
-	
+
 	@Override
 	public void process(final Module module) {
-		for (String key:module.getOutputs().keySet()) {
+		for (String key : module.getOutputs().keySet()) {
 			Object obj = module.getOutputs().get(key);
-			if (obj instanceof MarsTable)
-				marsTableService.addTable((MarsTable) obj); 
+			if (obj instanceof MarsTable) marsTableService.addTable((MarsTable) obj);
 		}
 	}
 }

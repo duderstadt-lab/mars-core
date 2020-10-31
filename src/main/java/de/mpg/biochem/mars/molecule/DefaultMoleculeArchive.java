@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
@@ -44,67 +45,68 @@ import de.mpg.biochem.mars.molecule.commands.*;
  * 
  * @author Karl Duderstadt
  */
-public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties, DefaultMoleculeArchiveIndex> {
-	
+public class DefaultMoleculeArchive extends
+	AbstractMoleculeArchive<DefaultMolecule, MarsOMEMetadata, DefaultMoleculeArchiveProperties, DefaultMoleculeArchiveIndex>
+{
+
 	/**
-	 * Creates an empty DefaultMoleculeArchive with the given name. 
+	 * Creates an empty DefaultMoleculeArchive with the given name.
 	 * 
 	 * @param name Name of the empty DefaultMoleculeArchive to create.
 	 */
 	public DefaultMoleculeArchive(String name) {
 		super(name);
 	}
-	
+
 	/**
-	 * Constructor for loading a MoleculeArchive. A
-	 * yama file can be given or a yama virtual 
-	 * store directory. Virtual mode will automatically
-	 * be activated if a directory is provided.
+	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
+	 * yama virtual store directory. Virtual mode will automatically be activated
+	 * if a directory is provided.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportVirtualStoreCommand}, which automatically
-	 * detect the type and open the archive accordingly.
+	 * {@link ImportVirtualStoreCommand}, which automatically detect the type and
+	 * open the archive accordingly.
 	 * <p>
+	 * 
 	 * @param file The file or directory to load the archive from.
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public DefaultMoleculeArchive(File file) throws IOException, JsonParseException {
+	public DefaultMoleculeArchive(File file) throws IOException,
+		JsonParseException
+	{
 		super(file);
 	}
-	
+
 	/**
-	 * Constructor for loading a MoleculeArchive. A
-	 * yama file can be given or a yama virtual 
-	 * store directory. Virtual mode will automatically
-	 * be activated if a directory is provided.
-	 * 
-	 * If the MoleculeArchiveService is provided the statusService
-	 * will be retrieved and when working in Fiji the progress
-	 * shows up in the bar as molecule records are loaded.
-	 * 
+	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
+	 * yama virtual store directory. Virtual mode will automatically be activated
+	 * if a directory is provided. If the MoleculeArchiveService is provided the
+	 * statusService will be retrieved and when working in Fiji the progress shows
+	 * up in the bar as molecule records are loaded.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportVirtualStoreCommand}, which automatically
-	 * detect the type and open the archive accordingly.
+	 * {@link ImportVirtualStoreCommand}, which automatically detect the type and
+	 * open the archive accordingly.
 	 * <p>
+	 * 
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public DefaultMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+	public DefaultMoleculeArchive(String name, File file)
+		throws JsonParseException, IOException
+	{
 		super(name, file);
 	}
-	
+
 	/**
-	 * Constructor for building a molecule archive from a MarsTable.
-	 * The table provided must contain a molecule column. The integer values
-	 * in the molecule column determine the grouping for creation of 
-	 * molecule records.
-	 * 
-	 * Status will be reported during processing by retrieving the StatusService
-	 * from the MoleculeArchiveService instance.
+	 * Constructor for building a molecule archive from a MarsTable. The table
+	 * provided must contain a molecule column. The integer values in the molecule
+	 * column determine the grouping for creation of molecule records. Status will
+	 * be reported during processing by retrieving the StatusService from the
+	 * MoleculeArchiveService instance.
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
@@ -112,61 +114,63 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	public DefaultMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
 	}
-	
+
 	/**
 	 * Create empty DefaultMoleculeArchiveProperties record.
 	 */
 	public DefaultMoleculeArchiveProperties createProperties() {
 		return new DefaultMoleculeArchiveProperties();
 	}
-	
+
 	/**
 	 * Create DefaultMoleculeArchiveProperties record using JsonParser stream.
 	 */
-	public DefaultMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	public DefaultMoleculeArchiveProperties createProperties(JsonParser jParser)
+		throws IOException
+	{
 		return new DefaultMoleculeArchiveProperties(jParser);
 	}
-	
+
 	/**
 	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		if (properties().getInputSchema() == null)
-			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
-		else
-			return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null) return MarsOMEUtils
+			.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else return new MarsOMEMetadata(jParser);
 	}
-	
+
 	/**
 	 * Create empty DefaultMarsImageMetadata record with the metaUID specified.
 	 */
 	public MarsOMEMetadata createMetadata(String metaUID) {
 		return new MarsOMEMetadata(metaUID);
 	}
-	
+
 	/**
 	 * Create empty DefaultMolecule record.
 	 */
 	public DefaultMolecule createMolecule() {
 		return new DefaultMolecule();
 	}
-	
+
 	/**
 	 * Create DefaultMolecule record using the JsonParser stream given.
 	 */
 	public DefaultMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new DefaultMolecule(jParser);
 	}
-	
+
 	/**
 	 * Create empty DefaultMolecule record with the UID specified.
 	 */
 	public DefaultMolecule createMolecule(String UID) {
 		return new DefaultMolecule(UID);
 	}
-	
+
 	/**
-	 * Create DefaultMolecule record using the UID and {@link MarsTable} specified.
+	 * Create DefaultMolecule record using the UID and {@link MarsTable}
+	 * specified.
 	 */
 	public DefaultMolecule createMolecule(String UID, MarsTable table) {
 		return new DefaultMolecule(UID, table);
@@ -178,7 +182,9 @@ public class DefaultMoleculeArchive extends AbstractMoleculeArchive<DefaultMolec
 	}
 
 	@Override
-	public DefaultMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+	public DefaultMoleculeArchiveIndex createIndex(JsonParser jParser)
+		throws IOException
+	{
 		return new DefaultMoleculeArchiveIndex(jParser);
 	}
 }

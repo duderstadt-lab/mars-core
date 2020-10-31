@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -34,12 +35,14 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 
-public class ArchMoleculeArchiveIndex extends AbstractMoleculeArchiveIndex<ArchMolecule, MarsOMEMetadata> {
+public class ArchMoleculeArchiveIndex extends
+	AbstractMoleculeArchiveIndex<ArchMolecule, MarsOMEMetadata>
+{
 
 	public ArchMoleculeArchiveIndex() {
 		super();
 	}
-	
+
 	public ArchMoleculeArchiveIndex(JsonParser jParser) throws IOException {
 		super(jParser);
 	}

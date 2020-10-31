@@ -1,3 +1,4 @@
+
 package de.mpg.biochem.mars.image;
 
 import org.junit.jupiter.api.AfterAll;
@@ -9,19 +10,18 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 
 public class DNAFinderCommandTest {
-	
+
 	protected static Context context;
-	
+
 	protected static Context createContext() {
-		return new Context(MoleculeArchiveService.class,
-		OptionsService.class);
+		return new Context(MoleculeArchiveService.class, OptionsService.class);
 	}
-	
+
 	@BeforeAll
-    public static void setup() {
+	public static void setup() {
 		context = createContext();
-    }
-	
+	}
+
 	@AfterAll
 	public static synchronized void cleanUp() {
 		if (context != null) {

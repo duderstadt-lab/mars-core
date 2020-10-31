@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule.commands;
 
 import org.decimal4j.util.DoubleRounder;
@@ -64,144 +65,160 @@ import java.util.concurrent.ConcurrentHashMap;
 import de.mpg.biochem.mars.util.*;
 
 @Plugin(type = Command.class, label = "Region Difference Calculator", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Molecule", weight = 1,
-			mnemonic = 'm'),
-		@Menu(label = "Region Difference Calculator", weight = 20, mnemonic = 'o')})
-public class RegionDifferenceCalculatorCommand extends DynamicCommand implements Command, Initializable {
+	@Menu(label = MenuConstants.PLUGINS_LABEL,
+		weight = MenuConstants.PLUGINS_WEIGHT,
+		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+				label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
+					label = "Region Difference Calculator", weight = 20,
+					mnemonic = 'o') })
+public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
+	Command, Initializable
+{
+
 	@Parameter
 	private LogService logService;
-	
-    @Parameter
-    private StatusService statusService;
-	
+
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+	private StatusService statusService;
+
 	@Parameter
-    private UIService uiService;
-	
-    @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
-    
-    @Parameter(label="X Column", choices = {"a", "b", "c"})
+	private MoleculeArchiveService moleculeArchiveService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter(label = "MoleculeArchive")
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
+
+	@Parameter(label = "X Column", choices = { "a", "b", "c" })
 	private String Xcolumn;
-    
-    @Parameter(label="Y Column", choices = {"a", "b", "c"})
+
+	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
 	private String Ycolumn;
-    
-    @Parameter(label = "Region source:",
-			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
-					"Metadata" })
+
+	@Parameter(label = "Region source:",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
+			"Metadata" })
 	private String regionSource;
-	
-    @Parameter(label="Region 1 name")
-   	private String regionOneName;
-    
-    @Parameter(label="Region 2 name")
-   	private String regionTwoName;
-    
-    @Parameter(label="Parameter Name")
-    private String ParameterName;
-    
+
+	@Parameter(label = "Region 1 name")
+	private String regionOneName;
+
+	@Parameter(label = "Region 2 name")
+	private String regionTwoName;
+
+	@Parameter(label = "Parameter Name")
+	private String ParameterName;
+
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
+		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput(
+			"Xcolumn", String.class);
 		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
-		
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput("Ycolumn", String.class);
+
+		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput(
+			"Ycolumn", String.class);
 		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
 	}
-    
+
 	@Override
-	public void run() {		
-		//Let's keep track of the time it takes
+	public void run() {
+		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
-		
-		//Build log message
+
+		// Build log message
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = builder.buildTitleBlock("Region Difference Calculator");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
+
 		archive.getWindow().updateLockMessage("Calculating Region Differences...");
-		
-		//Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless())
-			archive.lock();
-		
+
+		// Lock the window so it can't be changed while processing
+		if (!uiService.isHeadless()) archive.lock();
+
 		archive.logln(log);
-		
+
 		if (regionSource.equals("Molecules")) {
-			//Loop through each molecule and add reversal difference value to parameters for each molecule
+			// Loop through each molecule and add reversal difference value to
+			// parameters for each molecule
 			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 				Molecule molecule = archive.get(UID);
-				
-				if (!molecule.hasRegion(regionOneName) || !molecule.hasRegion(regionTwoName))
-					return;
-				
+
+				if (!molecule.hasRegion(regionOneName) || !molecule.hasRegion(
+					regionTwoName)) return;
+
 				MarsTable datatable = molecule.getTable();
-				
-				double region1_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionOneName).getStart(), molecule.getRegion(regionOneName).getEnd());
-				double region2_mean = datatable.mean(Ycolumn, Xcolumn, molecule.getRegion(regionTwoName).getStart(), molecule.getRegion(regionTwoName).getEnd());
-				
+
+				double region1_mean = datatable.mean(Ycolumn, Xcolumn, molecule
+					.getRegion(regionOneName).getStart(), molecule.getRegion(
+						regionOneName).getEnd());
+				double region2_mean = datatable.mean(Ycolumn, Xcolumn, molecule
+					.getRegion(regionTwoName).getStart(), molecule.getRegion(
+						regionTwoName).getEnd());
+
 				molecule.setParameter(ParameterName, region1_mean - region2_mean);
-				
-				archive.put(molecule);
-			});
-		} else {
-			//Before we start we should build a Map of region information from the image metadata records
-			//then we can use the map as we go through the molecules.
-			//This will be most efficient.
-			ConcurrentMap<String, MarsRegion> metadataRegionOneMap = new ConcurrentHashMap<String, MarsRegion>();
-			ConcurrentMap<String, MarsRegion> metadataRegionTwoMap = new ConcurrentHashMap<String, MarsRegion>();
-			
-			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
-				MarsMetadata metadata = archive.getMetadata(metaUID);
-				if (metadata.hasRegion(regionOneName))
-					metadataRegionOneMap.put(metaUID, metadata.getRegion(regionOneName));
-				
-				if (metadata.hasRegion(regionTwoName))
-					metadataRegionTwoMap.put(metaUID, metadata.getRegion(regionTwoName));
-			});
-			
-			//Loop through each molecule and add reversal difference value to parameters for each molecule
-			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-				String metaUID = archive.getMetadataUIDforMolecule(UID);
-				if (!metadataRegionOneMap.containsKey(metaUID) && !metadataRegionTwoMap.containsKey(metaUID))
-					return;
-				
-				MarsRegion regionOne = metadataRegionOneMap.get(metaUID);
-				MarsRegion regionTwo = metadataRegionTwoMap.get(metaUID);
-				
-				Molecule molecule = archive.get(UID);
-				MarsTable datatable = molecule.getTable();
-				
-				double region1_mean = datatable.mean(Ycolumn, Xcolumn, regionOne.getStart(), regionOne.getEnd());
-				double region2_mean = datatable.mean(Ycolumn, Xcolumn, regionTwo.getStart(), regionTwo.getEnd());
-				
-				molecule.setParameter(ParameterName, region1_mean - region2_mean);
-				
+
 				archive.put(molecule);
 			});
 		}
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(LogBuilder.endBlock(true));
-	    archive.logln("\n" + LogBuilder.endBlock(true));
-	    archive.logln("   ");
-	    
-		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) 
-			archive.unlock();
+		else {
+			// Before we start we should build a Map of region information from the
+			// image metadata records
+			// then we can use the map as we go through the molecules.
+			// This will be most efficient.
+			ConcurrentMap<String, MarsRegion> metadataRegionOneMap =
+				new ConcurrentHashMap<String, MarsRegion>();
+			ConcurrentMap<String, MarsRegion> metadataRegionTwoMap =
+				new ConcurrentHashMap<String, MarsRegion>();
+
+			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
+				MarsMetadata metadata = archive.getMetadata(metaUID);
+				if (metadata.hasRegion(regionOneName)) metadataRegionOneMap.put(metaUID,
+					metadata.getRegion(regionOneName));
+
+				if (metadata.hasRegion(regionTwoName)) metadataRegionTwoMap.put(metaUID,
+					metadata.getRegion(regionTwoName));
+			});
+
+			// Loop through each molecule and add reversal difference value to
+			// parameters for each molecule
+			archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+				String metaUID = archive.getMetadataUIDforMolecule(UID);
+				if (!metadataRegionOneMap.containsKey(metaUID) && !metadataRegionTwoMap
+					.containsKey(metaUID)) return;
+
+				MarsRegion regionOne = metadataRegionOneMap.get(metaUID);
+				MarsRegion regionTwo = metadataRegionTwoMap.get(metaUID);
+
+				Molecule molecule = archive.get(UID);
+				MarsTable datatable = molecule.getTable();
+
+				double region1_mean = datatable.mean(Ycolumn, Xcolumn, regionOne
+					.getStart(), regionOne.getEnd());
+				double region2_mean = datatable.mean(Ycolumn, Xcolumn, regionTwo
+					.getStart(), regionTwo.getEnd());
+
+				molecule.setParameter(ParameterName, region1_mean - region2_mean);
+
+				archive.put(molecule);
+			});
+		}
+
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+			starttime) / 60000, 2) + " minutes.");
+		logService.info(LogBuilder.endBlock(true));
+		archive.logln("\n" + LogBuilder.endBlock(true));
+		archive.logln("   ");
+
+		// Unlock the window so it can be changed
+		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
@@ -213,75 +230,84 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		builder.addParameter("Region 2 name", regionTwoName);
 		builder.addParameter("Parameter Name", ParameterName);
 	}
-	
-	public static double calcRegionDifference(Molecule molecule, String xColumn, String yColumn, MarsRegion regionOne, MarsRegion regionTwo, String parameterName) {
+
+	public static double calcRegionDifference(Molecule molecule, String xColumn,
+		String yColumn, MarsRegion regionOne, MarsRegion regionTwo,
+		String parameterName)
+	{
 		MarsTable datatable = molecule.getTable();
-		
-		double region1_mean = datatable.mean(yColumn, xColumn, regionOne.getStart(), regionOne.getEnd());
-		double region2_mean = datatable.mean(yColumn, xColumn, regionTwo.getStart(), regionTwo.getEnd());
-		
+
+		double region1_mean = datatable.mean(yColumn, xColumn, regionOne.getStart(),
+			regionOne.getEnd());
+		double region2_mean = datatable.mean(yColumn, xColumn, regionTwo.getStart(),
+			regionTwo.getEnd());
+
 		double parameterValue = region1_mean - region2_mean;
-		
+
 		molecule.setParameter(parameterName, parameterValue);
-		
+
 		return parameterValue;
 	}
-	
-	//Getters and Setters
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
+
+	// Getters and Setters
+	public void setArchive(
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive)
+	{
 		this.archive = archive;
 	}
-	
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
+
+	public
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>>
+		getArchive()
+	{
 		return archive;
 	}
-    
-    public void setXcolumn(String Xcolumn) {
-    	this.Xcolumn = Xcolumn;
-    }
-    
-    public String getXcolumn() {
-    	return Xcolumn;
-    }
-    
+
+	public void setXcolumn(String Xcolumn) {
+		this.Xcolumn = Xcolumn;
+	}
+
+	public String getXcolumn() {
+		return Xcolumn;
+	}
+
 	public void setYcolumn(String Ycolumn) {
 		this.Ycolumn = Ycolumn;
 	}
-	
+
 	public String getYcolumn() {
 		return Ycolumn;
 	}
-	
+
 	public void setRegionSource(String regionSource) {
 		this.regionSource = regionSource;
 	}
-	
+
 	public String getRegionSource() {
 		return this.regionSource;
 	}
-	
+
 	public void setRegionOne(String regionOneName) {
 		this.regionOneName = regionOneName;
 	}
-	
+
 	public String getRegionOne() {
 		return this.regionOneName;
 	}
-	
+
 	public void setRegionTwo(String regionTwoName) {
 		this.regionTwoName = regionTwoName;
 	}
-	
+
 	public String getRegionTwo() {
 		return this.regionTwoName;
 	}
-	
-    public void setParameterName(String ParameterName) {
-    	this.ParameterName = ParameterName;
-    }
-    
-    public String getParameterName() {
-    	return ParameterName;
-    }
-}
 
+	public void setParameterName(String ParameterName) {
+		this.ParameterName = ParameterName;
+	}
+
+	public String getParameterName() {
+		return ParameterName;
+	}
+}

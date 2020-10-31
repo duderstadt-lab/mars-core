@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import org.scijava.module.Module;
@@ -40,13 +41,13 @@ public class MoleculeArchivePreprocessor extends AbstractPreprocessorPlugin {
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
-	
+
 	@Override
 	public void process(final Module module) {
-		for (String key:module.getInputs().keySet()) {
+		for (String key : module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
 			if (obj != null && obj instanceof MoleculeArchive) {
-				((MoleculeArchive<?,?,?,?>)obj).lock(); 
+				((MoleculeArchive<?, ?, ?, ?>) obj).lock();
 			}
 		}
 	}

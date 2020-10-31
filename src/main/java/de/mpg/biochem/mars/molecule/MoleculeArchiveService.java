@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.BufferedInputStream;
@@ -72,156 +73,189 @@ import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
-public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveService> implements ImageJService {
-    
-    @Parameter
-    private LogService logService;
-    
-    @Parameter
-    private UIService uiService;
-    
-    @Parameter
-    private ScriptService scriptService;
-    
-    @Parameter
-    private DisplayService displayService;
-    
-    @Parameter
+public class MoleculeArchiveService extends
+	AbstractPTService<MoleculeArchiveService> implements ImageJService
+{
+
+	@Parameter
+	private LogService logService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private ScriptService scriptService;
+
+	@Parameter
+	private DisplayService displayService;
+
+	@Parameter
 	private ObjectService objectService;
-	
+
 	@Override
-	public void initialize() {				
+	public void initialize() {
 		scriptService.addAlias(Molecule.class);
 		scriptService.addAlias(MarsMetadata.class);
 		scriptService.addAlias(MoleculeArchive.class);
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
-	
-	public String getArchiveTypeFromYama(File file) throws JsonParseException, IOException {
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
+
+	public String getArchiveTypeFromYama(File file) throws JsonParseException,
+		IOException
+	{
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(
+			file));
+
+		// Here we automatically detect the format of the JSON file
+		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-	    
-	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
-	    
+		SmileFactory smileF = new SmileFactory();
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
+			smileF });
+		DataFormatMatcher match = det.findFormat(inputStream);
+		JsonParser jParser = match.createParserWithMatch();
+
+		String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+
 		jParser.nextToken();
 		jParser.nextToken();
-		if ("properties".equals(jParser.getCurrentName()) || "MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
+		if ("properties".equals(jParser.getCurrentName()) ||
+			"MoleculeArchiveProperties".equals(jParser.getCurrentName()))
+		{
 			jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    String fieldname = jParser.getCurrentName();
-			    	
-			    if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
-			    	jParser.nextToken();
-			    	archiveType = jParser.getText();
-			    	break;
-			    }
+				String fieldname = jParser.getCurrentName();
+
+				if ("archiveType".equals(fieldname) || "ArchiveType".equals(
+					fieldname))
+				{
+					jParser.nextToken();
+					archiveType = jParser.getText();
+					break;
+				}
 			}
-		} else {
-			logService.warn("The file " + file.getName() + " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
+		}
+		else {
+			logService.warn("The file " + file.getName() +
+				" doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
 			return null;
 		}
-		
+
 		jParser.close();
 		inputStream.close();
-		
+
 		return archiveType;
 	}
-	
-	public static String getArchiveTypeFromStore(File file) throws JsonParseException, IOException {
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		
-		//Here we automatically detect the format of the JSON file
-		//Can be JSON text or Smile encoded binary file...
+
+	public static String getArchiveTypeFromStore(File file)
+		throws JsonParseException, IOException
+	{
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(
+			file));
+
+		// Here we automatically detect the format of the JSON file
+		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
-		SmileFactory smileF = new SmileFactory(); 
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF, smileF });
-	    DataFormatMatcher match = det.findFormat(inputStream);
-	    JsonParser jParser = match.createParserWithMatch();
-	    
-	    String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
-	    
+		SmileFactory smileF = new SmileFactory();
+		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
+			smileF });
+		DataFormatMatcher match = det.findFormat(inputStream);
+		JsonParser jParser = match.createParserWithMatch();
+
+		String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    String fieldname = jParser.getCurrentName();
-		    	
-		    if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
-		    	jParser.nextToken();
-		    	archiveType = jParser.getText();
-		    	break;
-		    }
+			String fieldname = jParser.getCurrentName();
+
+			if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
+				jParser.nextToken();
+				archiveType = jParser.getText();
+				break;
+			}
 		}
-		
+
 		jParser.close();
 		inputStream.close();
-		
+
 		return archiveType;
 	}
-	
-	public MoleculeArchive<?,?,?,?> createArchive(String archiveType) {
+
+	public MoleculeArchive<?, ?, ?, ?> createArchive(String archiveType) {
 		try {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(String.class);
-			return (MoleculeArchive<?,?,?,?>)constructor.newInstance("archive");
-		} catch (ClassNotFoundException e) {
-			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
-		} catch (Exception e) {
+			return (MoleculeArchive<?, ?, ?, ?>) constructor.newInstance("archive");
+		}
+		catch (ClassNotFoundException e) {
+			uiService.showDialog(archiveType +
+				" type not found. Is the class in the classpath?",
+				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
-	public MoleculeArchive<?,?,?,?> createArchive(String archiveType, File file) {
+
+	public MoleculeArchive<?, ?, ?, ?> createArchive(String archiveType,
+		File file)
+	{
 		try {
 			Class<?> clazz = Class.forName(archiveType);
 			Constructor<?> constructor = clazz.getConstructor(File.class);
-			return (MoleculeArchive<?,?,?,?>)constructor.newInstance(file);
-		} catch (ClassNotFoundException e) {
-			uiService.showDialog(archiveType + " type not found. Is the class in the classpath?", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
-		} catch (Exception e) {
+			return (MoleculeArchive<?, ?, ?, ?>) constructor.newInstance(file);
+		}
+		catch (ClassNotFoundException e) {
+			uiService.showDialog(archiveType +
+				" type not found. Is the class in the classpath?",
+				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
+
 	public void addArchive(MoleculeArchive archive) {
 		objectService.addObject(archive);
 	}
-	
+
 	public void removeArchive(String title) {
-		if (getArchive(title) != null)
-			objectService.removeObject(getArchive(title));
-		
-		if (displayService.getDisplay(title) != null)
-			objectService.removeObject(displayService.getDisplay(title));
+		if (getArchive(title) != null) objectService.removeObject(getArchive(
+			title));
+
+		if (displayService.getDisplay(title) != null) objectService.removeObject(
+			displayService.getDisplay(title));
 	}
-	
+
 	public void removeArchive(MoleculeArchive archive) {
-		if (archive != null)
-			objectService.removeObject(archive);
-		
+		if (archive != null) objectService.removeObject(archive);
+
 		if (archive != null && displayService.getDisplay(archive.getName()) != null)
 			objectService.removeObject(displayService.getDisplay(archive.getName()));
 	}
-	
+
 	public boolean rename(String oldName, String newName) {
-		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
-		
-		if (archives.stream().anyMatch(archive -> archive.getName().equals(oldName))) {
-			logService.error("No MoleculeArchive exists with the name " + oldName + ".");
+		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
+
+		if (archives.stream().anyMatch(archive -> archive.getName().equals(
+			oldName)))
+		{
+			logService.error("No MoleculeArchive exists with the name " + oldName +
+				".");
 			return false;
 		}
-		
-		if (archives.stream().anyMatch(archive -> archive.getName().equals(newName))) {
-			logService.error("A MoleculeArchive is already open with the name " + newName + ". Choose another name.");
+
+		if (archives.stream().anyMatch(archive -> archive.getName().equals(
+			newName)))
+		{
+			logService.error("A MoleculeArchive is already open with the name " +
+				newName + ". Choose another name.");
 			return false;
-		} else {
-			MoleculeArchive<?,?,?,?> archive = archives.stream().filter(a -> a.getName().equals(oldName)).findFirst().get();
+		}
+		else {
+			MoleculeArchive<?, ?, ?, ?> archive = archives.stream().filter(a -> a
+				.getName().equals(oldName)).findFirst().get();
 			archive.setName(newName);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
@@ -230,54 +264,58 @@ public class MoleculeArchiveService extends AbstractPTService<MoleculeArchiveSer
 
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
-		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
-		
-		archives.forEach(archive -> columnSet.addAll(archive.properties().getColumnSet()));
-		
+		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
+
+		archives.forEach(archive -> columnSet.addAll(archive.properties()
+			.getColumnSet()));
+
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
-		
+
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		return columns;
 	}
-	
+
 	public Set<ArrayList<String>> getSegmentTableNames() {
-		Set<ArrayList<String>> segTableNames = new LinkedHashSet<ArrayList<String>>();
-		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
-	
-		archives.forEach(archive -> segTableNames.addAll(archive.properties().getSegmentsTableNames()));
-		
+		Set<ArrayList<String>> segTableNames =
+			new LinkedHashSet<ArrayList<String>>();
+		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
+
+		archives.forEach(archive -> segTableNames.addAll(archive.properties()
+			.getSegmentsTableNames()));
+
 		return segTableNames;
 	}
-	
+
 	public ArrayList<String> getArchiveNames() {
-		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
-		
-		return (ArrayList<String>) archives.stream().map(archive -> archive.getName()).collect(Collectors.toList());
+		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
+
+		return (ArrayList<String>) archives.stream().map(archive -> archive
+			.getName()).collect(Collectors.toList());
 	}
-	
+
 	public boolean contains(String name) {
-		return getArchives().stream().anyMatch(archive -> archive.getName().equals(name));
+		return getArchives().stream().anyMatch(archive -> archive.getName().equals(
+			name));
 	}
-	
+
 	public boolean contains(MoleculeArchive archive) {
 		return getArchives().stream().anyMatch(a -> a.equals(archive));
 	}
-	
-	public MoleculeArchive<?,?,?,?> getArchive(String name) {
-		List<MoleculeArchive<?,?,?,?>> archives = getArchives();
-		for (MoleculeArchive<?,?,?,?> archive : archives)
-			if (archive.getName().equals(name))
-				return archive;
-		
+
+	public MoleculeArchive<?, ?, ?, ?> getArchive(String name) {
+		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
+		for (MoleculeArchive<?, ?, ?, ?> archive : archives)
+			if (archive.getName().equals(name)) return archive;
+
 		return null;
 	}
-	
-	public List<MoleculeArchive<?,?,?,?>> getArchives() { 
+
+	public List<MoleculeArchive<?, ?, ?, ?>> getArchives() {
 		return (List) objectService.getObjects(MoleculeArchive.class);
 	}
-	
+
 	@Override
 	public Class<MoleculeArchiveService> getPluginType() {
 		return MoleculeArchiveService.class;

@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule.commands;
 
 import ij.ImagePlus;
@@ -115,135 +116,137 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import net.imglib2.img.ImagePlusAdapter;
 
-@Plugin(type = Command.class, label = "Build DNA Archive", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 'm'),
-		@Menu(label = "Molecule", weight = 20,
-			mnemonic = 'm'),
-		@Menu(label = "Build DNA Archive", weight = 1, mnemonic = 'b')})
+@Plugin(type = Command.class, label = "Build DNA Archive", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Molecule", weight = 20, mnemonic = 'm'), @Menu(
+				label = "Build DNA Archive", weight = 1, mnemonic = 'b') })
 public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
-	
-	//GENERAL SERVICES NEEDED
+
+	// GENERAL SERVICES NEEDED
 	@Parameter
 	private RoiManager roiManager;
-	
+
 	@Parameter
 	private LogService logService;
-	
+
 	@Parameter
 	private OpService ops;
-	
-    @Parameter
-    private StatusService statusService;
-    
-	@Parameter
-    private MarsTableService marsTableService;
 
-	@Parameter(label="Search radius around DNA")
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	private MarsTableService marsTableService;
+
+	@Parameter(label = "Search radius around DNA")
 	private double radius;
-	
-	@Parameter(label="DNA length in bps")
+
+	@Parameter(label = "DNA length in bps")
 	private int DNALength = 21236;
 
-	@Parameter(label="x column")
+	@Parameter(label = "x column")
 	private String xColumn = "x_drift_corr";
-	
-	@Parameter(label="y column")
+
+	@Parameter(label = "y column")
 	private String yColumn = "y_drift_corr";
-	
-	@Parameter(label="SingleMoleculeArchive 1")
+
+	@Parameter(label = "SingleMoleculeArchive 1")
 	private SingleMoleculeArchive archive1;
-	
-	@Parameter(label="SingleMoleculeArchive 1 Name")
+
+	@Parameter(label = "SingleMoleculeArchive 1 Name")
 	private String archive1Name = "mol1";
-	
-	@Parameter(label="Merge")
+
+	@Parameter(label = "Merge")
 	private boolean merge2;
-	
-	@Parameter(label="SingleMoleculeArchive 2")
+
+	@Parameter(label = "SingleMoleculeArchive 2")
 	private SingleMoleculeArchive archive2;
-	
-	@Parameter(label="SingleMoleculeArchive 2 Name")
+
+	@Parameter(label = "SingleMoleculeArchive 2 Name")
 	private String archive2Name = "mol2";
-	
-	@Parameter(label="Merge")
+
+	@Parameter(label = "Merge")
 	private boolean merge3;
-	
-	@Parameter(label="SingleMoleculeArchive 3")
+
+	@Parameter(label = "SingleMoleculeArchive 3")
 	private SingleMoleculeArchive archive3;
-	
-	@Parameter(label="SingleMoleculeArchive 3 Name")
+
+	@Parameter(label = "SingleMoleculeArchive 3 Name")
 	private String archive3Name = "mol3";
-	
-	//OUTPUT PARAMETERS
-	@Parameter(label="DnaArchive.yama", type = ItemIO.OUTPUT)
+
+	// OUTPUT PARAMETERS
+	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)
 	private DnaMoleculeArchive dnaMoleculeArchive;
 
 	@Override
-	public void run() {				
-		
-		//Build log
+	public void run() {
+
+		// Build log
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Build DNA Archive");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
-		//Used to store list of DNAs which are the basis for the DNA records.
+
+		// Used to store list of DNAs which are the basis for the DNA records.
 		ArrayList<DNASegment> DNASegments = new ArrayList<DNASegment>();
-		
-		
+
 		Roi[] rois = roiManager.getRoisAsArray();
 		if (rois.length == 0) {
 			logService.info("Found 0 DNA records in the RoiManager. Aborting.");
 			return;
-		} else {
-			logService.info("Found " + rois.length  + " DNA records in the RoiManager.");
 		}
-		
-		//Let's build the DNASegment records
+		else {
+			logService.info("Found " + rois.length +
+				" DNA records in the RoiManager.");
+		}
+
+		// Let's build the DNASegment records
 		for (Roi roi : rois) {
-			Line line = (Line)roi;
-			DNASegment dnaSegment = new DNASegment(line.x1d - 0.5, line.y1d - 0.5, line.x2d - 0.5, line.y2d - 0.5);
+			Line line = (Line) roi;
+			DNASegment dnaSegment = new DNASegment(line.x1d - 0.5, line.y1d - 0.5,
+				line.x2d - 0.5, line.y2d - 0.5);
 			DNASegments.add(dnaSegment);
 		}
-		
+
 		MarsOMEMetadata metadata1 = archive1.getMetadata(0);
 		if (merge2 && merge3) {
 			metadata1.merge(archive2.getMetadata(0));
 			metadata1.merge(archive3.getMetadata(0));
-		} else if (merge2) {
+		}
+		else if (merge2) {
 			metadata1.merge(archive2.getMetadata(0));
-		} else {
+		}
+		else {
 			return;
 		}
-		
+
 		metadata1.setParameter("DnaMoleculeCount", rois.length);
-		
-		//Build a new DnaMoleculeArchive 
+
+		// Build a new DnaMoleculeArchive
 		dnaMoleculeArchive = new DnaMoleculeArchive("DnaArchive.yama");
 		dnaMoleculeArchive.putMetadata(metadata1);
-		
-		//Build KDTrees for fast searching
-		RadiusNeighborSearchOnKDTree< MoleculePosition > archive1PositionSearcher = null;
-		RadiusNeighborSearchOnKDTree< MoleculePosition > archive2PositionSearcher = null;
-		RadiusNeighborSearchOnKDTree< MoleculePosition > archive3PositionSearcher = null;
-		
+
+		// Build KDTrees for fast searching
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive1PositionSearcher =
+			null;
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive2PositionSearcher =
+			null;
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive3PositionSearcher =
+			null;
 
 		archive1PositionSearcher = getMoleculeSearcher(archive1);
-		
-		if (merge2)
-			archive2PositionSearcher = getMoleculeSearcher(archive2);
-		
-		if (merge3)
-			archive3PositionSearcher = getMoleculeSearcher(archive3);
-		
+
+		if (merge2) archive2PositionSearcher = getMoleculeSearcher(archive2);
+
+		if (merge3) archive3PositionSearcher = getMoleculeSearcher(archive3);
+
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
 			dnaMolecule.setImage(metadata1.getImage(0).getImageID());
@@ -251,139 +254,178 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			dnaMolecule.setParameter("Dna_Top_y1", dnaSegment.getY1());
 			dnaMolecule.setParameter("Dna_Bottom_x2", dnaSegment.getX2());
 			dnaMolecule.setParameter("Dna_Bottom_y2", dnaSegment.getY2());
-			
+
 			MarsTable mergedTable = new MarsTable();
-			
-			ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(archive1PositionSearcher, archive1, dnaSegment); 
+
+			ArrayList<SingleMolecule> moleculesOnDNA = findMoleculesOnDna(
+				archive1PositionSearcher, archive1, dnaSegment);
 			if (moleculesOnDNA.size() != 0) {
-				addToMergedTable(mergedTable, moleculesOnDNA, archive1, archive1Name, dnaSegment);
+				addToMergedTable(mergedTable, moleculesOnDNA, archive1, archive1Name,
+					dnaSegment);
 			}
 			dnaMolecule.setParameter("Number_" + archive1Name, moleculesOnDNA.size());
-			
+
 			if (merge2) {
-				moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2, dnaSegment); 
+				moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2,
+					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
-					addToMergedTable(mergedTable, moleculesOnDNA, archive2, archive2Name, dnaSegment);
+					addToMergedTable(mergedTable, moleculesOnDNA, archive2, archive2Name,
+						dnaSegment);
 				}
-				dnaMolecule.setParameter("Number_" + archive2Name, moleculesOnDNA.size());
+				dnaMolecule.setParameter("Number_" + archive2Name, moleculesOnDNA
+					.size());
 			}
-			
+
 			if (merge3) {
-				moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3, dnaSegment); 
+				moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3,
+					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
-					addToMergedTable(mergedTable, moleculesOnDNA, archive3, archive3Name, dnaSegment);
+					addToMergedTable(mergedTable, moleculesOnDNA, archive3, archive3Name,
+						dnaSegment);
 				}
-				dnaMolecule.setParameter("Number_" + archive3Name, moleculesOnDNA.size());
+				dnaMolecule.setParameter("Number_" + archive3Name, moleculesOnDNA
+					.size());
 			}
-			
-			if (mergedTable.isEmpty())
-				continue;
-			
+
+			if (mergedTable.isEmpty()) continue;
+
 			dnaMolecule.setTable(mergedTable);
 			dnaMoleculeArchive.put(dnaMolecule);
 		}
-		
+
 		logService.info(LogBuilder.endBlock(true));
-		
+
 		log += "\n" + LogBuilder.endBlock(true);
 		dnaMoleculeArchive.logln(log);
-		dnaMoleculeArchive.logln("   ");	
+		dnaMoleculeArchive.logln("   ");
 	}
-	
-	private void addToMergedTable(MarsTable mergedTable, ArrayList<SingleMolecule> moleculesOnDNA, SingleMoleculeArchive archive, String name, DNASegment dnaSegment) {
+
+	private void addToMergedTable(MarsTable mergedTable,
+		ArrayList<SingleMolecule> moleculesOnDNA, SingleMoleculeArchive archive,
+		String name, DNASegment dnaSegment)
+	{
 		int index = 1;
 		for (SingleMolecule molecule : moleculesOnDNA) {
 			MarsTable table = molecule.getTable().clone();
-			
-			//We need to make sure to fill the table with Double.NaN values
-			//this will over write the scijava default value of 0.0.
-			if (!mergedTable.isEmpty() && mergedTable.getRowCount() < table.getRowCount()) {
-				for (int row=mergedTable.getRowCount(); row < table.getRowCount(); row++) {
+
+			// We need to make sure to fill the table with Double.NaN values
+			// this will over write the scijava default value of 0.0.
+			if (!mergedTable.isEmpty() && mergedTable.getRowCount() < table
+				.getRowCount())
+			{
+				for (int row = mergedTable.getRowCount(); row < table
+					.getRowCount(); row++)
+				{
 					mergedTable.appendRow();
-					for (int col=0; col<mergedTable.getColumnCount(); col++) 
+					for (int col = 0; col < mergedTable.getColumnCount(); col++)
 						mergedTable.setValue(col, row, Double.NaN);
 				}
-			} else if (!mergedTable.isEmpty() && mergedTable.getRowCount() > table.getRowCount()) {
-				for (int row=table.getRowCount(); row < mergedTable.getRowCount(); row++) {
+			}
+			else if (!mergedTable.isEmpty() && mergedTable.getRowCount() > table
+				.getRowCount())
+			{
+				for (int row = table.getRowCount(); row < mergedTable
+					.getRowCount(); row++)
+				{
 					table.appendRow();
-					for (int col=0; col<table.getColumnCount(); col++) 
+					for (int col = 0; col < table.getColumnCount(); col++)
 						table.setValue(col, row, Double.NaN);
 				}
 			}
-			
-			//Distance from the DNA top END
-			DoubleColumn dnaPositionColumn = new DoubleColumn(name + "_" + index + "_Position_on_DNA");
-			for (int row=0; row<table.getRowCount(); row++) {
-				dnaPositionColumn.add(dnaSegment.getPositionOnDNA(table.getValue(xColumn, row), table.getValue(yColumn, row)));
+
+			// Distance from the DNA top END
+			DoubleColumn dnaPositionColumn = new DoubleColumn(name + "_" + index +
+				"_Position_on_DNA");
+			for (int row = 0; row < table.getRowCount(); row++) {
+				dnaPositionColumn.add(dnaSegment.getPositionOnDNA(table.getValue(
+					xColumn, row), table.getValue(yColumn, row)));
 			}
-			
-			for (int col=0;col<table.getColumnCount();col++) {
-				table.get(col).setHeader(name + "_" + index + "_" + table.get(col).getHeader());
+
+			for (int col = 0; col < table.getColumnCount(); col++) {
+				table.get(col).setHeader(name + "_" + index + "_" + table.get(col)
+					.getHeader());
 				mergedTable.add(table.get(col));
 			}
-			
+
 			mergedTable.add(dnaPositionColumn);
-			
+
 			index++;
 		}
 	}
-	
-	private RadiusNeighborSearchOnKDTree< MoleculePosition > getMoleculeSearcher(SingleMoleculeArchive archive) {
-		ArrayList<MoleculePosition> moleculePositionList = new ArrayList<MoleculePosition>();
-		
-		archive.molecules().forEach(molecule ->  moleculePositionList.add(new MoleculePosition(molecule.getUID(), molecule.getTable().median("x"), molecule.getTable().median("y"))));
 
-		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(moleculePositionList, moleculePositionList);
-		
-		return new RadiusNeighborSearchOnKDTree< MoleculePosition >( moleculesTree );
+	private RadiusNeighborSearchOnKDTree<MoleculePosition> getMoleculeSearcher(
+		SingleMoleculeArchive archive)
+	{
+		ArrayList<MoleculePosition> moleculePositionList =
+			new ArrayList<MoleculePosition>();
+
+		archive.molecules().forEach(molecule -> moleculePositionList.add(
+			new MoleculePosition(molecule.getUID(), molecule.getTable().median("x"),
+				molecule.getTable().median("y"))));
+
+		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(
+			moleculePositionList, moleculePositionList);
+
+		return new RadiusNeighborSearchOnKDTree<MoleculePosition>(moleculesTree);
 	}
-	
-	private ArrayList<SingleMolecule> findMoleculesOnDna(RadiusNeighborSearchOnKDTree< MoleculePosition > archivePositionSearcher, SingleMoleculeArchive archive, DNASegment dnaSegment) {
-		ArrayList<SingleMolecule> moleculesLocated = new ArrayList<SingleMolecule>();
-		
-		archivePositionSearcher.search(dnaSegment, dnaSegment.getSearchRadius(), false);
-		
-		//build DNA fit
+
+	private ArrayList<SingleMolecule> findMoleculesOnDna(
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archivePositionSearcher,
+		SingleMoleculeArchive archive, DNASegment dnaSegment)
+	{
+		ArrayList<SingleMolecule> moleculesLocated =
+			new ArrayList<SingleMolecule>();
+
+		archivePositionSearcher.search(dnaSegment, dnaSegment.getSearchRadius(),
+			false);
+
+		// build DNA fit
 		double x1 = dnaSegment.getX1();
 		double y1 = dnaSegment.getY1();
-		
+
 		double x2 = dnaSegment.getX2();
 		double y2 = dnaSegment.getY2();
-		
+
 		double A = dnaSegment.getA();
 		double B = dnaSegment.getB();
-		
-		for (int j = 0 ; j < archivePositionSearcher.numNeighbors() ; j++ ) {
-			MoleculePosition moleculePosition = archivePositionSearcher.getSampler(j).get();
-			
+
+		for (int j = 0; j < archivePositionSearcher.numNeighbors(); j++) {
+			MoleculePosition moleculePosition = archivePositionSearcher.getSampler(j)
+				.get();
+
 			double distance;
-			
-			//Before we add the the molecules we need to constrain positions to just within radius of DNA....
+
+			// Before we add the the molecules we need to constrain positions to just
+			// within radius of DNA....
 			if (moleculePosition.getY() < y1) {
-				//the molecules is above the DNA
-				distance = Math.sqrt((moleculePosition.getX()-x1)*(moleculePosition.getX()-x1) + (moleculePosition.getY()-y1)*(moleculePosition.getY()-y1));
-			} else if (moleculePosition.getY() > y2) {
-				distance = Math.sqrt((moleculePosition.getX()-x2)*(moleculePosition.getX()-x2) + (moleculePosition.getY()-y2)*(moleculePosition.getY()-y2));
-			} else {
-				//find the x center position of the DNA for the molecule y position.
-				
-				//If there is no intercept just take top x1.
+				// the molecules is above the DNA
+				distance = Math.sqrt((moleculePosition.getX() - x1) * (moleculePosition
+					.getX() - x1) + (moleculePosition.getY() - y1) * (moleculePosition
+						.getY() - y1));
+			}
+			else if (moleculePosition.getY() > y2) {
+				distance = Math.sqrt((moleculePosition.getX() - x2) * (moleculePosition
+					.getX() - x2) + (moleculePosition.getY() - y2) * (moleculePosition
+						.getY() - y2));
+			}
+			else {
+				// find the x center position of the DNA for the molecule y position.
+
+				// If there is no intercept just take top x1.
 				double DNAx;
-				if (x1 == x2)
-					DNAx = x1;
-				else
-					DNAx = (moleculePosition.getY() - A)/B;
-				
+				if (x1 == x2) DNAx = x1;
+				else DNAx = (moleculePosition.getY() - A) / B;
+
 				distance = Math.abs(moleculePosition.getX() - DNAx);
 			}
-			
-			//other conditions
-			
+
+			// other conditions
+
 			if (distance < radius) {
 				moleculesLocated.add(archive.get(moleculePosition.getUID()));
 			}
 		}
-		
+
 		return moleculesLocated;
 	}
 
@@ -401,280 +443,301 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		builder.addParameter("SingleMoleculeArchive 3", archive3.getName());
 		builder.addParameter("SingleMoleculeArchive 3 Name", archive3Name);
 	}
-	
+
 	public void setDNASearchRadius(double radius) {
 		this.radius = radius;
 	}
-	
+
 	public double getDNASearchRadius() {
 		return radius;
 	}
-	
+
 	public void setDNALength(int DNALength) {
 		this.DNALength = DNALength;
 	}
-	
+
 	public int getDNALength() {
 		return DNALength;
 	}
-	
+
 	public void setXColumn(String xColumn) {
 		this.xColumn = xColumn;
 	}
-	
+
 	public String getXColumn() {
 		return xColumn;
 	}
-	
+
 	public void setYColumn(String yColumn) {
 		this.yColumn = yColumn;
 	}
-	
+
 	public String getYColumn() {
 		return yColumn;
 	}
-	
+
 	public void setArchive1(SingleMoleculeArchive archive1) {
 		this.archive1 = archive1;
 	}
-	
+
 	public SingleMoleculeArchive getArchive1() {
 		return archive1;
 	}
-	
+
 	public void setArchive1Name(String archive1Name) {
 		this.archive1Name = archive1Name;
 	}
-	
+
 	public String getArchive1Name() {
 		return archive1Name;
 	}
-	
+
 	public void setArchive2(SingleMoleculeArchive archive2) {
 		this.archive2 = archive2;
 	}
-	
+
 	public SingleMoleculeArchive getArchive2() {
 		return archive2;
 	}
-	
+
 	public void setArchive2Name(String archive2Name) {
 		this.archive2Name = archive2Name;
 	}
-	
+
 	public String getArchive2Name() {
 		return archive2Name;
 	}
-	
+
 	public void setArchive3(SingleMoleculeArchive archive3) {
 		this.archive3 = archive3;
 	}
-	
+
 	public SingleMoleculeArchive getArchive3() {
 		return archive3;
 	}
-	
+
 	public void setArchive3Name(String archive3Name) {
 		this.archive3Name = archive3Name;
 	}
-	
+
 	public String getArchive3Name() {
 		return archive3Name;
 	}
-	
+
 	class MoleculePosition implements RealLocalizable {
+
 		private String UID;
-		
+
 		private double x, y;
-		
+
 		public MoleculePosition(String UID, double x, double y) {
 			this.UID = UID;
 			this.x = x;
 			this.y = y;
 		}
-		
+
 		public String getUID() {
 			return UID;
 		}
-		
+
 		public double getX() {
 			return x;
 		}
-		
+
 		public double getY() {
 			return y;
 		}
-		
-		//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
+
+		// Override from RealLocalizable interface.. so peaks can be passed to
+		// KDTree and other imglib2 functions.
 		@Override
 		public int numDimensions() {
 			// We make no effort to think beyond 2 dimensions !
 			return 2;
 		}
+
 		@Override
 		public double getDoublePosition(int arg0) {
 			if (arg0 == 0) {
 				return x;
-			} else if (arg0 == 1) {
+			}
+			else if (arg0 == 1) {
 				return y;
-			} else {
+			}
+			else {
 				return -1;
 			}
 		}
+
 		@Override
 		public float getFloatPosition(int arg0) {
 			if (arg0 == 0) {
-				return (float)x;
-			} else if (arg0 == 1) {
-				return (float)y;
-			} else {
+				return (float) x;
+			}
+			else if (arg0 == 1) {
+				return (float) y;
+			}
+			else {
 				return -1;
 			}
 		}
+
 		@Override
 		public void localize(float[] arg0) {
-			arg0[0] = (float)x;
-			arg0[1] = (float)y;
+			arg0[0] = (float) x;
+			arg0[1] = (float) y;
 		}
+
 		@Override
 		public void localize(double[] arg0) {
 			arg0[0] = x;
 			arg0[1] = y;
 		}
 	}
-	
-	//Not sure which ROI library to use at the moment
-	//for now we just use this...
+
+	// Not sure which ROI library to use at the moment
+	// for now we just use this...
 	class DNASegment implements RealLocalizable {
+
 		private double x1, y1, x2, y2, A, B;
-		
+
 		private double centerX, centerY;
-		
+
 		private double bpsPerPixels;
-		
+
 		private int medianIntensity;
-		
+
 		private double msd;
-		
+
 		DNASegment(double x1, double y1, double x2, double y2) {
 			this.x1 = x1;
 			this.y1 = y1;
 			this.x2 = x2;
 			this.y2 = y2;
-			
-			centerX = x1 + (x2 - x1)/2;
-			centerY = y1 + (y2 - y1)/2;
-			
+
+			centerX = x1 + (x2 - x1) / 2;
+			centerY = y1 + (y2 - y1) / 2;
+
 			SimpleRegression linearFit = new SimpleRegression(true);
 			linearFit.addData(x1, y1);
 			linearFit.addData(x2, y2);
-			
-			//y = A + Bx
+
+			// y = A + Bx
 			A = linearFit.getIntercept();
 			B = linearFit.getSlope();
-			
-			bpsPerPixels = DNALength/getLength();
+
+			bpsPerPixels = DNALength / getLength();
 		}
-		
+
 		double getA() {
 			return A;
 		}
-		
+
 		double getB() {
 			return B;
 		}
-		
+
 		double getX1() {
 			return x1;
 		}
-		
+
 		double getY1() {
 			return y1;
 		}
-		
+
 		double getX2() {
 			return x2;
 		}
-		
+
 		double getY2() {
 			return y2;
 		}
-		
+
 		void setX1(double x1) {
 			this.x1 = x1;
 		}
-		
+
 		void setY1(double y1) {
 			this.y1 = y1;
 		}
-		
+
 		void setX2(double x2) {
 			this.x2 = x2;
 		}
-		
+
 		void setY2(double y2) {
 			this.y2 = y2;
 		}
-		
+
 		void setMedianIntensity(int medianIntensity) {
 			this.medianIntensity = medianIntensity;
 		}
-		
+
 		int getMedianIntensity() {
 			return medianIntensity;
 		}
-		
+
 		void setMSD(double msd) {
 			this.msd = msd;
 		}
-		
+
 		double getMSD() {
 			return msd;
 		}
-		
+
 		double getLength() {
-			return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+			return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 		}
-		
+
 		double getPositionOnDNA(double x, double y) {
-			return Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1))*bpsPerPixels;
+			return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) *
+				bpsPerPixels;
 		}
-		
+
 		double getSearchRadius() {
-			return radius + getLength()/2;
+			return radius + getLength() / 2;
 		}
-		
-		//Override from RealLocalizable interface.. so peaks can be passed to KDTree and other imglib2 functions.
+
+		// Override from RealLocalizable interface.. so peaks can be passed to
+		// KDTree and other imglib2 functions.
 		@Override
 		public int numDimensions() {
 			// We make no effort to think beyond 2 dimensions !
 			return 2;
 		}
+
 		@Override
 		public double getDoublePosition(int arg0) {
 			if (arg0 == 0) {
 				return centerX;
-			} else if (arg0 == 1) {
+			}
+			else if (arg0 == 1) {
 				return centerY;
-			} else {
+			}
+			else {
 				return -1;
 			}
 		}
+
 		@Override
 		public float getFloatPosition(int arg0) {
 			if (arg0 == 0) {
-				return (float)centerX;
-			} else if (arg0 == 1) {
-				return (float)centerY;
-			} else {
+				return (float) centerX;
+			}
+			else if (arg0 == 1) {
+				return (float) centerY;
+			}
+			else {
 				return -1;
 			}
 		}
+
 		@Override
 		public void localize(float[] arg0) {
-			arg0[0] = (float)centerX;
-			arg0[1] = (float)centerY;
+			arg0[0] = (float) centerX;
+			arg0[1] = (float) centerY;
 		}
+
 		@Override
 		public void localize(double[] arg0) {
 			arg0[0] = centerX;

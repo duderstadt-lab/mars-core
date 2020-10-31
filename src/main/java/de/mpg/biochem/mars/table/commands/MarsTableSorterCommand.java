@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table.commands;
 
 import java.util.ArrayList;
@@ -45,91 +46,93 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, label = "Sort", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Table", weight = 10,
-			mnemonic = 't'),
-		@Menu(label = "Sort", weight = 20, mnemonic = 's')})
-public class MarsTableSorterCommand extends DynamicCommand implements Initializable {
-	
+@Plugin(type = Command.class, label = "Sort", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Sort",
+				weight = 20, mnemonic = 's') })
+public class MarsTableSorterCommand extends DynamicCommand implements
+	Initializable
+{
+
 	@Parameter
-    private MarsTableService marsTableService;
-	
-    @Parameter
-    private UIService uiService;
-	
-    @Parameter(label="Table")
-    private MarsTable table;
-    
-    @Parameter(label="Column", choices = {"a", "b", "c"})
+	private MarsTableService marsTableService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter(label = "Table")
+	private MarsTable table;
+
+	@Parameter(label = "Column", choices = { "a", "b", "c" })
 	private String column;
-    
-	@Parameter(label="Group Column", choices = {"no group"})
+
+	@Parameter(label = "Group Column", choices = { "no group" })
 	private String group;
 
-	@Parameter(label="ascending")
+	@Parameter(label = "ascending")
 	private boolean ascending;
-	
+
 	// -- Initializable methods --
 
 	@Override
 	public void initialize() {
-		
-		final MutableModuleItem<String> columnItems = getInfo().getMutableInput("column", String.class);
+
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"column", String.class);
 		columnItems.setChoices(marsTableService.getColumnNames());
-		
-		final MutableModuleItem<String> groupItems = getInfo().getMutableInput("group", String.class);
-		
+
+		final MutableModuleItem<String> groupItems = getInfo().getMutableInput(
+			"group", String.class);
+
 		ArrayList<String> colNames = marsTableService.getColumnNames();
 		colNames.add(0, "no group");
 		groupItems.setChoices(colNames);
 	}
-	
+
 	// -- Runnable methods --
-	
+
 	@Override
 	public void run() {
 		if (group.equals("no group")) {
 			table.sort(ascending, column);
-		} else {
+		}
+		else {
 			table.sort(ascending, group, column);
 		}
-		
-		if (table.getWindow() != null)
-			table.getWindow().update();
+
+		if (table.getWindow() != null) table.getWindow().update();
 	}
-	
+
 	public void setTable(MarsTable table) {
 		this.table = table;
 	}
-	
+
 	public MarsTable getTable() {
 		return table;
 	}
-	
+
 	public void setColumn(String column) {
 		this.column = column;
 	}
-	
+
 	public String getColumn() {
 		return column;
 	}
-	
+
 	public void setGroupColumn(String group) {
 		this.group = group;
 	}
-	
+
 	public String getGroupColumn() {
 		return group;
 	}
-	
+
 	public void setAscending(boolean ascending) {
 		this.ascending = ascending;
 	}
-	
+
 	public boolean getAscending() {
 		return ascending;
 	}

@@ -26,8 +26,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 public interface MarsTableWindow {
+
 	public void update();
 }

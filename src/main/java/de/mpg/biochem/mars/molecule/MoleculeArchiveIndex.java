@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
@@ -38,38 +39,42 @@ import com.fasterxml.jackson.core.JsonFactory;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 
-public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata> extends JsonConvertibleRecord {
+public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata>
+	extends JsonConvertibleRecord
+{
+
 	void addMolecule(M molecule);
-	
+
 	void removeMolecule(M molecule);
-	
+
 	void removeMolecule(String UID);
-	
+
 	void addMetadata(I metadata);
-	
+
 	void removeMetadata(I metadata);
-	
+
 	void removeMetadata(String metadataUID);
-	
+
 	boolean containsMoleculeUID(String UID);
-	
+
 	boolean containsMetadataUID(String metadataUID);
-	
+
 	Set<String> getMoleculeUIDSet();
-	
+
 	Set<String> getMetadataUIDSet();
-	
+
 	Map<String, LinkedHashSet<String>> getMetadataUIDtoTagListMap();
-	
+
 	Map<String, LinkedHashSet<String>> getMoleculeUIDtoTagListMap();
-	
+
 	Map<String, Integer> getMoleculeUIDtoImageMap();
-	
+
 	Map<String, Integer> getMoleculeUIDtoChannelMap();
-	
+
 	Map<String, String> getMoleculeUIDtoMetadataUIDMap();
-	
+
 	String getMetadataUIDforMolecule(String UID);
-	
-	void save(File directory, JsonFactory jfactory, String fileExtension) throws IOException;
+
+	void save(File directory, JsonFactory jfactory, String fileExtension)
+		throws IOException;
 }

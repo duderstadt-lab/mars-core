@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 import java.io.File;
@@ -49,16 +50,16 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 
 	@Parameter
 	private EventService eventService;
-	
+
 	@Parameter
 	private UIService uiService;
-	
+
 	@Parameter
 	private ObjectService objectService;
-	
+
 	@Parameter
 	private OptionsService optionsService;
-	
+
 	@Override
 	public Class<MarsTable> getDataType() {
 		return MarsTable.class;
@@ -74,25 +75,26 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
 	}
-	
+
 	@Override
 	public MarsTable open(final String source) throws IOException {
 
 		MarsTable table = new MarsTable(new File(source));
-		
+
 		objectService.addObject(table);
-		
-		final boolean newStyleIO =
-				optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
-		
-		if (newStyleIO)
-			uiService.show(table);
-		
+
+		final boolean newStyleIO = optionsService.getOptions(
+			net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+
+		if (newStyleIO) uiService.show(table);
+
 		return table;
 	}
-	
+
 	@Override
-	public void save(final MarsTable table, final String destination) throws IOException {
+	public void save(final MarsTable table, final String destination)
+		throws IOException
+	{
 		table.saveAsYAMT(destination);
 	}
 }

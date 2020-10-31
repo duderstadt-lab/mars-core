@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
@@ -39,58 +40,63 @@ import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.metadata.*;
 
-public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, ArchMoleculeArchiveProperties, ArchMoleculeArchiveIndex> {
-	
+public class ArchMoleculeArchive extends
+	AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, ArchMoleculeArchiveProperties, ArchMoleculeArchiveIndex>
+{
+
 	public ArchMoleculeArchive(String name) {
 		super(name);
 	}
-	
+
 	public ArchMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
-	
+
 	public ArchMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
 	}
-	
-	public ArchMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+
+	public ArchMoleculeArchive(String name, File file) throws JsonParseException,
+		IOException
+	{
 		super(name, file);
 	}
-	
+
 	public ArchMoleculeArchiveProperties createProperties() {
 		return new ArchMoleculeArchiveProperties();
 	}
-	
-	public ArchMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+
+	public ArchMoleculeArchiveProperties createProperties(JsonParser jParser)
+		throws IOException
+	{
 		return new ArchMoleculeArchiveProperties(jParser);
 	}
-	
+
 	/**
 	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		if (properties().getInputSchema() == null)
-			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
-		else
-			return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null) return MarsOMEUtils
+			.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else return new MarsOMEMetadata(jParser);
 	}
-	
+
 	public MarsOMEMetadata createMetadata(String metaUID) {
 		return new MarsOMEMetadata(metaUID);
 	}
-	
+
 	public ArchMolecule createMolecule() {
 		return new ArchMolecule();
 	}
-	
+
 	public ArchMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new ArchMolecule(jParser);
 	}
-	
+
 	public ArchMolecule createMolecule(String UID) {
 		return new ArchMolecule(UID);
 	}
-	
+
 	public ArchMolecule createMolecule(String UID, MarsTable table) {
 		return new ArchMolecule(UID, table);
 	}
@@ -101,7 +107,9 @@ public class ArchMoleculeArchive extends AbstractMoleculeArchive<ArchMolecule, M
 	}
 
 	@Override
-	public ArchMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+	public ArchMoleculeArchiveIndex createIndex(JsonParser jParser)
+		throws IOException
+	{
 		return new ArchMoleculeArchiveIndex(jParser);
 	}
 }

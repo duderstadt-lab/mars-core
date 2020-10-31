@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 import java.awt.Frame;
@@ -78,152 +79,166 @@ import ij.measure.ResultsTable;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
-public class MarsTableService extends AbstractPTService<MarsTableService> implements ImageJService {
-	
-    @Parameter
-    private UIService uiService;
-    
-    @Parameter
-    private LogService logService;
-    
-    @Parameter
-    private ScriptService scriptService;
-    
-    @Parameter
-    private EventService eventService;
-    
-    @Parameter
-    private DisplayService displayService;
-    
-    @Parameter
-    private ObjectService objectService;
-	
+public class MarsTableService extends AbstractPTService<MarsTableService>
+	implements ImageJService
+{
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private LogService logService;
+
+	@Parameter
+	private ScriptService scriptService;
+
+	@Parameter
+	private EventService eventService;
+
+	@Parameter
+	private DisplayService displayService;
+
+	@Parameter
+	private ObjectService objectService;
+
 	@Override
 	public void initialize() {
 		scriptService.addAlias(MarsTable.class);
 		scriptService.addAlias(MarsTableService.class);
 	}
-	
+
 	public void addTable(MarsTable table) {
 		objectService.addObject(table);
 	}
-	
+
 	public void removeTable(String title) {
-		if (getTable(title) != null)
-			objectService.removeObject(getTable(title));
-		
-		if (displayService.getDisplay(title) != null)
-			objectService.removeObject(displayService.getDisplay(title));
+		if (getTable(title) != null) objectService.removeObject(getTable(title));
+
+		if (displayService.getDisplay(title) != null) objectService.removeObject(
+			displayService.getDisplay(title));
 	}
-	
+
 	public void removeTable(MarsTable table) {
-		if (table != null)
-			objectService.removeObject(table);
-		
+		if (table != null) objectService.removeObject(table);
+
 		if (table != null && displayService.getDisplay(table.getName()) != null)
 			objectService.removeObject(displayService.getDisplay(table.getName()));
 	}
-	
+
 	public boolean rename(String oldName, String newName) {
 		List<MarsTable> tables = getTables();
-		
-		if (tables.stream().anyMatch(archive -> archive.getName().equals(oldName))) {
+
+		if (tables.stream().anyMatch(archive -> archive.getName().equals(
+			oldName)))
+		{
 			logService.error("No MarsTables exists with the name " + oldName + ".");
 			return false;
 		}
-		
-		if (tables.stream().anyMatch(archive -> archive.getName().equals(newName))) {
-			logService.error("A MarsTable is already open with the name " + newName + ". Choose another name.");
+
+		if (tables.stream().anyMatch(archive -> archive.getName().equals(
+			newName)))
+		{
+			logService.error("A MarsTable is already open with the name " + newName +
+				". Choose another name.");
 			return false;
-		} else {
-			MarsTable table = tables.stream().filter(t -> t.getName().equals(oldName)).findFirst().get();
+		}
+		else {
+			MarsTable table = tables.stream().filter(t -> t.getName().equals(oldName))
+				.findFirst().get();
 			table.setName(newName);
 			displayService.getDisplay(oldName).setName(newName);
 			return true;
 		}
 	}
-	
+
 	public ArrayList<String> getTableNames() {
 		List<MarsTable> archives = getTables();
-		
-		return (ArrayList<String>) archives.stream().map(table -> table.getName()).collect(Collectors.toList());
+
+		return (ArrayList<String>) archives.stream().map(table -> table.getName())
+			.collect(Collectors.toList());
 	}
-	
+
 	public ArrayList<String> getColumnNames() {
 		Set<String> columnSet = new LinkedHashSet<String>();
 		List<MarsTable> tables = getTables();
-		
+
 		tables.forEach(table -> columnSet.addAll(table.getColumnHeadingList()));
-		
+
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(columnSet);
-		
+
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		return columns;
 	}
-	
+
 	public MarsTable createTable(ResultsTable resultsTable) {
 		MarsTable table = new MarsTable("Imported IJ1 ResultsTable");
-		
+
 		String[] columnHeadings = resultsTable.getHeadings();
-		
-		//For now we assume it is entirely numbers
+
+		// For now we assume it is entirely numbers
 		for (int i = 0; i < columnHeadings.length; i++) {
 			DoubleColumn col = new DoubleColumn(columnHeadings[i]);
 			for (int row = 0; row < resultsTable.getCounter(); row++)
 				col.add(resultsTable.getValue(columnHeadings[i], row));
 			table.add(col);
 		}
-		
+
 		return table;
 	}
-	
+
 	public UIService getUIService() {
 		return uiService;
 	}
-	
-	//Utility method returning HashMap of molecule numbers and start and stop index positions.
-	//Here we are assuming the table is already sorted on the groupColumn..
-	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(MarsTable table, String groupColumn) {
+
+	// Utility method returning HashMap of molecule numbers and start and stop
+	// index positions.
+	// Here we are assuming the table is already sorted on the groupColumn..
+	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(
+		MarsTable table, String groupColumn)
+	{
 		// make sure we sort on groupColumn
-		//MarsTableSorter.sort(table, true, groupColumn);
-		
-		LinkedHashMap<Integer, GroupIndices> map = new LinkedHashMap<Integer, GroupIndices>();
-		
+		// MarsTableSorter.sort(table, true, groupColumn);
+
+		LinkedHashMap<Integer, GroupIndices> map =
+			new LinkedHashMap<Integer, GroupIndices>();
+
 		List<Integer> indices = new ArrayList<Integer>();
 		indices.add(0);
-		
-		int key = (int)table.getValue(groupColumn, 0);
-		
+
+		int key = (int) table.getValue(groupColumn, 0);
+
 		for (int i = 1; i < table.getRowCount(); i++) {
-			if (key != (int)table.getValue(groupColumn,i)) {
-				//Means we have encountered a new group so we add the key and start and end values
-				indices.add(i-1);
+			if (key != (int) table.getValue(groupColumn, i)) {
+				// Means we have encountered a new group so we add the key and start and
+				// end values
+				indices.add(i - 1);
 				map.put(key, new GroupIndices(indices.get(0), indices.get(1)));
-				
-				//Then we clean the indices and add the start of the next group
+
+				// Then we clean the indices and add the start of the next group
 				indices.clear();
 				indices.add(i);
-				key = (int)table.getValue(groupColumn, i);
+				key = (int) table.getValue(groupColumn, i);
 			}
 		}
 
 		indices.add(table.getRowCount() - 1);
 		map.put(key, new GroupIndices(indices.get(0), indices.get(1)));
-		
+
 		return map;
 	}
-	
+
 	public boolean contains(String key) {
 		return getTables().stream().anyMatch(n -> n.getName().equals(key));
 	}
-	
+
 	public MarsTable getTable(String name) {
-		return getTables().stream().filter(a -> a.getName().equals(name)).findFirst().get();
+		return getTables().stream().filter(a -> a.getName().equals(name))
+			.findFirst().get();
 	}
-	
-	public List<MarsTable> getTables() { 
+
+	public List<MarsTable> getTables() {
 		return (List) objectService.getObjects(MarsTable.class);
 	}
 

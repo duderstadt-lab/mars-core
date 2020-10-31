@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
@@ -41,58 +42,63 @@ import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, DnaMoleculeArchiveProperties, DnaMoleculeArchiveIndex> {
-	
+public class DnaMoleculeArchive extends
+	AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, DnaMoleculeArchiveProperties, DnaMoleculeArchiveIndex>
+{
+
 	public DnaMoleculeArchive(String name) {
 		super(name);
 	}
-	
+
 	public DnaMoleculeArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
-	
+
 	public DnaMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
 	}
-	
-	public DnaMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+
+	public DnaMoleculeArchive(String name, File file) throws JsonParseException,
+		IOException
+	{
 		super(name, file);
 	}
-	
+
 	public DnaMoleculeArchiveProperties createProperties() {
 		return new DnaMoleculeArchiveProperties();
 	}
-	
-	public DnaMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+
+	public DnaMoleculeArchiveProperties createProperties(JsonParser jParser)
+		throws IOException
+	{
 		return new DnaMoleculeArchiveProperties(jParser);
 	}
-	
+
 	/**
 	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		if (properties().getInputSchema() == null)
-			return MarsOMEUtils.translateDNAMetadataToMarsOMEMetadata(new OLDMarsMetadata(jParser));
-		else
-			return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null) return MarsOMEUtils
+			.translateDNAMetadataToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else return new MarsOMEMetadata(jParser);
 	}
-	
+
 	public MarsOMEMetadata createMetadata(String metaUID) {
 		return new MarsOMEMetadata(metaUID);
 	}
-	
+
 	public DnaMolecule createMolecule() {
 		return new DnaMolecule();
 	}
-	
+
 	public DnaMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new DnaMolecule(jParser);
 	}
-	
+
 	public DnaMolecule createMolecule(String UID) {
 		return new DnaMolecule(UID);
 	}
-	
+
 	public DnaMolecule createMolecule(String UID, MarsTable table) {
 		return new DnaMolecule(UID, table);
 	}
@@ -103,7 +109,9 @@ public class DnaMoleculeArchive extends AbstractMoleculeArchive<DnaMolecule, Mar
 	}
 
 	@Override
-	public DnaMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+	public DnaMoleculeArchiveIndex createIndex(JsonParser jParser)
+		throws IOException
+	{
 		return new DnaMoleculeArchiveIndex(jParser);
 	}
 }

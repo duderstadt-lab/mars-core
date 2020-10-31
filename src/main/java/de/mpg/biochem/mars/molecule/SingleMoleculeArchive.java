@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
@@ -42,77 +43,77 @@ import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.commands.*;
 
 /**
- * Implementation of {@link AbstractMoleculeArchive} for default archives used for
- * routine single molecule time-series datasets composed of {@link SingleMolecule} 
- * molecule records, {@link MarsMetadata} metadata records, and 
- * {@link SingleMoleculeArchiveProperties} archive properties.
+ * Implementation of {@link AbstractMoleculeArchive} for default archives used
+ * for routine single molecule time-series datasets composed of
+ * {@link SingleMolecule} molecule records, {@link MarsMetadata} metadata
+ * records, and {@link SingleMoleculeArchiveProperties} archive properties.
  * <p>
- * For a more extensive explanation of uses and features of molecule archives see 
- * {@link AbstractMoleculeArchive}.
+ * For a more extensive explanation of uses and features of molecule archives
+ * see {@link AbstractMoleculeArchive}.
  * <p>
+ * 
  * @author Karl Duderstadt
  */
-public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties, SingleMoleculeArchiveIndex> {
-	
+public class SingleMoleculeArchive extends
+	AbstractMoleculeArchive<SingleMolecule, MarsOMEMetadata, SingleMoleculeArchiveProperties, SingleMoleculeArchiveIndex>
+{
+
 	/**
-	 * Creates an empty SingleMoleculeArchive with the given name. 
+	 * Creates an empty SingleMoleculeArchive with the given name.
 	 * 
 	 * @param name Name of the empty SingleMoleculeArchive to create.
 	 */
 	public SingleMoleculeArchive(String name) {
 		super(name);
 	}
-	
+
 	/**
-	 * Constructor for loading a SingleMoleculeArchive. A
-	 * yama file can be given or a yama virtual 
-	 * store directory. Virtual mode will automatically
-	 * be activated if a directory is provided.
+	 * Constructor for loading a SingleMoleculeArchive. A yama file can be given
+	 * or a yama virtual store directory. Virtual mode will automatically be
+	 * activated if a directory is provided.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportVirtualStoreCommand}, which automatically
-	 * detect the type and open the archive accordingly.
+	 * {@link ImportVirtualStoreCommand}, which automatically detect the type and
+	 * open the archive accordingly.
 	 * <p>
-	 * @param file The file or directory to load the archive from.
 	 * 
+	 * @param file The file or directory to load the archive from.
 	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public SingleMoleculeArchive(File file) throws IOException, JsonParseException {
+	public SingleMoleculeArchive(File file) throws IOException,
+		JsonParseException
+	{
 		super(file);
 	}
-	
+
 	/**
-	 * Constructor for loading a SingleMoleculeArchive. A
-	 * yama file can be given or a yama virtual 
-	 * store directory. Virtual mode will automatically
-	 * be activated if a directory is provided.
-	 * 
-	 * If the MoleculeArchiveService is provided the statusService
-	 * will be retrieved and when working in Fiji the progress
-	 * shows up in the bar as molecule records are loaded.
-	 * 
+	 * Constructor for loading a SingleMoleculeArchive. A yama file can be given
+	 * or a yama virtual store directory. Virtual mode will automatically be
+	 * activated if a directory is provided. If the MoleculeArchiveService is
+	 * provided the statusService will be retrieved and when working in Fiji the
+	 * progress shows up in the bar as molecule records are loaded.
 	 * <p>
 	 * MoleculeArchives should typically be opened using the
-	 * {@link ImportVirtualStoreCommand}, which automatically
-	 * detect the type and open the archive accordingly.
+	 * {@link ImportVirtualStoreCommand}, which automatically detect the type and
+	 * open the archive accordingly.
 	 * <p>
+	 * 
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
-	 * 
 	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
-	public SingleMoleculeArchive(String name, File file) throws JsonParseException, IOException {
+	public SingleMoleculeArchive(String name, File file)
+		throws JsonParseException, IOException
+	{
 		super(name, file);
 	}
-	
+
 	/**
-	 * Constructor for building a SingleMoleculeArchive from a MarsTable.
-	 * The table provided must contain a molecule column. The integer values
-	 * in the molecule column determine the grouping for creation of 
-	 * molecule records.
-	 * 
+	 * Constructor for building a SingleMoleculeArchive from a MarsTable. The
+	 * table provided must contain a molecule column. The integer values in the
+	 * molecule column determine the grouping for creation of molecule records.
 	 * Status will be reported during processing by retrieving the StatusService
 	 * from the MoleculeArchiveService instance.
 	 * 
@@ -122,59 +123,60 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	public SingleMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
 	}
-	
+
 	/**
 	 * Create empty SingleMoleculeArchiveProperties record.
 	 */
 	public SingleMoleculeArchiveProperties createProperties() {
 		return new SingleMoleculeArchiveProperties();
 	}
-	
+
 	/**
 	 * Create SingleMoleculeArchiveProperties record using JsonParser stream.
 	 */
-	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser) throws IOException {
+	public SingleMoleculeArchiveProperties createProperties(JsonParser jParser)
+		throws IOException
+	{
 		return new SingleMoleculeArchiveProperties(jParser);
 	}
-	
+
 	/**
 	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		if (properties().getInputSchema() == null)
-			return MarsOMEUtils.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
-		else
-			return new MarsOMEMetadata(jParser);
+		if (properties().getInputSchema() == null) return MarsOMEUtils
+			.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
+		else return new MarsOMEMetadata(jParser);
 	}
-	
+
 	/**
 	 * Create empty MarsOMEMetadata record with the metaUID specified.
 	 */
 	public MarsOMEMetadata createMetadata(String metaUID) {
 		return new MarsOMEMetadata(metaUID);
 	}
-	
+
 	/**
 	 * Create empty SingleMolecule record.
 	 */
 	public SingleMolecule createMolecule() {
 		return new SingleMolecule();
 	}
-	
+
 	/**
 	 * Create SingleMolecule record using the JsonParser stream given.
 	 */
 	public SingleMolecule createMolecule(JsonParser jParser) throws IOException {
 		return new SingleMolecule(jParser);
 	}
-	
+
 	/**
 	 * Create empty SingleMolecule record with the UID specified.
 	 */
 	public SingleMolecule createMolecule(String UID) {
 		return new SingleMolecule(UID);
 	}
-	
+
 	/**
 	 * Create SingleMolecule record using the UID and {@link MarsTable} specified.
 	 */
@@ -188,7 +190,9 @@ public class SingleMoleculeArchive extends AbstractMoleculeArchive<SingleMolecul
 	}
 
 	@Override
-	public SingleMoleculeArchiveIndex createIndex(JsonParser jParser) throws IOException {
+	public SingleMoleculeArchiveIndex createIndex(JsonParser jParser)
+		throws IOException
+	{
 		return new SingleMoleculeArchiveIndex(jParser);
 	}
 }

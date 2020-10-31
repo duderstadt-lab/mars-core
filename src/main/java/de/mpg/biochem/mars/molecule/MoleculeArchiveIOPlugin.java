@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.BufferedInputStream;
@@ -64,28 +65,28 @@ import de.mpg.biochem.mars.util.MarsUtil;
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
 public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
-	
+
 	@Parameter
-    private LogService logService;
-	
+	private LogService logService;
+
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+	private MoleculeArchiveService moleculeArchiveService;
+
 	@Parameter
-    private EventService eventService;
-	
-    @Parameter
-    private ScriptService scriptService;
-	
+	private EventService eventService;
+
 	@Parameter
-    private ObjectService objectService;
-	
+	private ScriptService scriptService;
+
 	@Parameter
-    private UIService uiService;
-	
-    @Parameter
-    private OptionsService optionsService;
-	
+	private ObjectService objectService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private OptionsService optionsService;
+
 	@Override
 	public Class<MoleculeArchive> getDataType() {
 		return MoleculeArchive.class;
@@ -93,71 +94,77 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 	@Override
 	public boolean supportsOpen(final String source) {
-		return source.endsWith(".yama") || source.endsWith(".yama.json") || source.endsWith(".yama.store");
+		return source.endsWith(".yama") || source.endsWith(".yama.json") || source
+			.endsWith(".yama.store");
 	}
 
 	@Override
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
 	}
-	
+
 	@Override
 	public MoleculeArchive open(final String source) throws IOException {
 		File file = new File(source);
-		if (!file.exists())
-			logService.error("File not found.");
+		if (!file.exists()) logService.error("File not found.");
 		String archiveType;
-		
+
 		if (file.isDirectory()) {
-			File smlPropertiesFile = new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.sml");
-			if (smlPropertiesFile.exists())
-				archiveType = moleculeArchiveService.getArchiveTypeFromStore(smlPropertiesFile);
-			else if (new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json").exists())
-				archiveType = moleculeArchiveService.getArchiveTypeFromStore(new File(file.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
+			File smlPropertiesFile = new File(file.getAbsolutePath() +
+				"/MoleculeArchiveProperties.sml");
+			if (smlPropertiesFile.exists()) archiveType = moleculeArchiveService
+				.getArchiveTypeFromStore(smlPropertiesFile);
+			else if (new File(file.getAbsolutePath() +
+				"/MoleculeArchiveProperties.json").exists()) archiveType =
+					moleculeArchiveService.getArchiveTypeFromStore(new File(file
+						.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
 			else {
-				uiService.showDialog("The virtual store directory given can not be opened because it does not contain a MoleculeArchiveProperties file.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				uiService.showDialog(
+					"The virtual store directory given can not be opened because it does not contain a MoleculeArchiveProperties file.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				return null;
 			}
-		} else 
-			archiveType = moleculeArchiveService.getArchiveTypeFromYama(file);
-		
+		}
+		else archiveType = moleculeArchiveService.getArchiveTypeFromYama(file);
+
 		String name = file.getName();
-		
-		MoleculeArchive archive = moleculeArchiveService.createArchive(archiveType, file);
-		
+
+		MoleculeArchive archive = moleculeArchiveService.createArchive(archiveType,
+			file);
+
 		if (moleculeArchiveService.contains(name)) {
-			uiService.showDialog("The MoleculeArchive " + name + " is already open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog("The MoleculeArchive " + name + " is already open.",
+				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return null;
 		}
-		
+
 		objectService.addObject(archive);
 		scriptService.addAlias(archive.getClass());
 
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Opening MoleculeArchive");
 		builder.addParameter("Loading File", file.getAbsolutePath());
 		builder.addParameter("Archive Name", name);
-		
+
 		log += builder.buildParameterList();
 		logService.info(log);
 		logService.info(LogBuilder.endBlock(true));
-		
-		final boolean newStyleIO =
-				optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
-		
-		if (newStyleIO)
-			uiService.show(archive);
-		
+
+		final boolean newStyleIO = optionsService.getOptions(
+			net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+
+		if (newStyleIO) uiService.show(archive);
+
 		return archive;
 	}
-	
+
 	@Override
-	public void save(final MoleculeArchive archive, final String destination) throws IOException {
+	public void save(final MoleculeArchive archive, final String destination)
+		throws IOException
+	{
 		File file = new File(destination);
-		if (file.isDirectory())
-			archive.saveAsVirtualStore(file);
-		else
-			archive.saveAs(file);
+		if (file.isDirectory()) archive.saveAsVirtualStore(file);
+		else archive.saveAs(file);
 	}
 }

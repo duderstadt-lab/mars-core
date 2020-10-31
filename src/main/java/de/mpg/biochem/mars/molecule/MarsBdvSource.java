@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -36,11 +37,14 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.util.MarsUtil;
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class MarsBdvSource extends AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
+public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
+	JsonConvertibleRecord
+{
+
 	private String name, pathToXml;
 	private boolean driftCorrect;
 	private AffineTransform3D affine3D;
-	
+
 	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
@@ -48,7 +52,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 		pathToXml = "";
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	}
-	
+
 	public MarsBdvSource(JsonParser jParser) throws IOException {
 		super();
 		name = "";
@@ -57,95 +61,96 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements Json
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 		fromJSON(jParser);
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
-		
-		setJsonField("Name", 
-			jGenerator -> jGenerator.writeStringField("Name", name), 
-			jParser -> name = jParser.getText());
-		
-		setJsonField("DriftCorrect", 
-			jGenerator -> jGenerator.writeBooleanField("DriftCorrect", driftCorrect),
-			jParser -> driftCorrect = jParser.getBooleanValue()); 
-		
-		setJsonField("pathToXml", 
-			jGenerator -> jGenerator.writeStringField("pathToXml", pathToXml),
-			jParser -> pathToXml = jParser.getText());
-		
-		setJsonField("AffineTransform3D", 
-			jGenerator -> {
-				//Jackson 2.9.9 compatible stuff
-				//jGenerator.writeFieldName("AffineTransform3D");
-				//jGenerator.writeArray(getTransformAsArray(), 0, 12);
-				
-				//Jackson 2.6.5 version of above
-				jGenerator.writeFieldName("AffineTransform3D");
-				jGenerator.writeStartArray();
-				for (double num : getTransformAsArray())
-					jGenerator.writeNumber(num);
-				jGenerator.writeEndArray();
-		 	}, 
-			jParser -> {
-				double[] trans = new double[12];
-				int index = 0;
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		    		trans[index] = jParser.getDoubleValue();
-		    		index++;
-		    	}
-		    	affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5], trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
-			});
-	
+
+		setJsonField("Name", jGenerator -> jGenerator.writeStringField("Name",
+			name), jParser -> name = jParser.getText());
+
+		setJsonField("DriftCorrect", jGenerator -> jGenerator.writeBooleanField(
+			"DriftCorrect", driftCorrect), jParser -> driftCorrect = jParser
+				.getBooleanValue());
+
+		setJsonField("pathToXml", jGenerator -> jGenerator.writeStringField(
+			"pathToXml", pathToXml), jParser -> pathToXml = jParser.getText());
+
+		setJsonField("AffineTransform3D", jGenerator -> {
+			// Jackson 2.9.9 compatible stuff
+			// jGenerator.writeFieldName("AffineTransform3D");
+			// jGenerator.writeArray(getTransformAsArray(), 0, 12);
+
+			// Jackson 2.6.5 version of above
+			jGenerator.writeFieldName("AffineTransform3D");
+			jGenerator.writeStartArray();
+			for (double num : getTransformAsArray())
+				jGenerator.writeNumber(num);
+			jGenerator.writeEndArray();
+		}, jParser -> {
+			double[] trans = new double[12];
+			int index = 0;
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				trans[index] = jParser.getDoubleValue();
+				index++;
+			}
+			affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
+				trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
+		});
+
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public String getPathToXml() {
 		return pathToXml;
 	}
-	
+
 	public void setPathToXml(String pathToXml) {
 		this.pathToXml = pathToXml;
 	}
-	
+
 	public boolean getCorrectDrift() {
 		return driftCorrect;
 	}
-	
+
 	public void setCorrectDrift(boolean driftCorrect) {
 		this.driftCorrect = driftCorrect;
 	}
-	
-	//See https://forum.image.sc/t/applying-affine-matrix-result-from-2d-3d-registration-to-images/22298/8 for mapping info
-	public void setAffineTransform2D(double m00, double m01, double m02, double m10, double m11, double m12) {
+
+	// See
+	// https://forum.image.sc/t/applying-affine-matrix-result-from-2d-3d-registration-to-images/22298/8
+	// for mapping info
+	public void setAffineTransform2D(double m00, double m01, double m02,
+		double m10, double m11, double m12)
+	{
 		AffineTransform3D affine = new AffineTransform3D();
 		affine.set(m00, m01, 0, m02, m10, m11, 0, m12, 0, 0, 1, 0, 0, 0, 0, 1);
 		affine3D = affine;
 	}
-	
+
 	public AffineTransform3D getAffineTransform3D() {
 		return affine3D;
 	}
-	
+
 	public AffineTransform3D getAffineTransform3D(double dX, double dY) {
 		AffineTransform3D affine = affine3D.copy();
-		affine.set( affine.get( 0, 3 ) - dX, 0, 3 );
-		affine.set( affine.get( 1, 3 ) - dY, 1, 3 );
+		affine.set(affine.get(0, 3) - dX, 0, 3);
+		affine.set(affine.get(1, 3) - dY, 1, 3);
 		return affine;
 	}
-	
+
 	private double[] getTransformAsArray() {
 		double[] trans = new double[12];
 		for (int row = 0; row < 3; row++)
 			for (int column = 0; column < 4; column++)
-				trans[row*4 + column] = affine3D.get(row, column);
-				
+				trans[row * 4 + column] = affine3D.get(row, column);
+
 		return trans;
 	}
 }

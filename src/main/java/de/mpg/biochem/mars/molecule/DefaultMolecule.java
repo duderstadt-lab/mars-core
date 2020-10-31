@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -39,11 +40,11 @@ public class DefaultMolecule extends AbstractMolecule {
 	public DefaultMolecule() {
 		super();
 	}
-	
+
 	public DefaultMolecule(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
-	
+
 	public DefaultMolecule(String UID) {
 		super(UID);
 	}

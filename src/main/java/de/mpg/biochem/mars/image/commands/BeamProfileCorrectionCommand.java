@@ -52,6 +52,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
+
 package de.mpg.biochem.mars.image.commands;
 
 import java.io.File;
@@ -103,229 +104,246 @@ import ij.io.FileSaver;
 
 /**
  * This command corrects images that have a beam profile. The command requires
- * two images: an image with beam profile and the image that needs to be corrected.
- * For each pixel at position x, y the following is calculated:
- * 
- * (Image(x,y) - electronic_offset) / ((Background(x,y)  - electronic_offset) / (maximum_pixel_background - electronic_offset))
+ * two images: an image with beam profile and the image that needs to be
+ * corrected. For each pixel at position x, y the following is calculated:
+ * (Image(x,y) - electronic_offset) / ((Background(x,y) - electronic_offset) /
+ * (maximum_pixel_background - electronic_offset))
  *
  * @author Karl Duderstadt
  * @author C.M. Punter
- *
  */
-@Plugin(type = Command.class, label = "Beam Profile Correction", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Image", weight = 20,
-			mnemonic = 'm'),
-		@Menu(label = "Beam Profile Corrector", weight = 20, mnemonic = 'b')})
-public class BeamProfileCorrectionCommand<T extends RealType< T >> extends DynamicCommand implements Command {
-	
+@Plugin(type = Command.class, label = "Beam Profile Correction", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
+				label = "Beam Profile Corrector", weight = 20, mnemonic = 'b') })
+public class BeamProfileCorrectionCommand<T extends RealType<T>> extends
+	DynamicCommand implements Command
+{
+
 	@Parameter
 	private LogService logService;
-	
-    @Parameter
-    private StatusService statusService;
-    
-    @Parameter
-    private DatasetService datasetService;
-    
-    @Parameter
-    private TranslatorService translatorService;
-    
-    @Parameter
-    private OMEXMLService omexmlService;
-    
-    @Parameter
+
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	private DatasetService datasetService;
+
+	@Parameter
+	private TranslatorService translatorService;
+
+	@Parameter
+	private OMEXMLService omexmlService;
+
+	@Parameter
 	private ConvertService convertService;
-    
-    @Parameter(label = "Image to correct")
+
+	@Parameter(label = "Image to correct")
 	private ImageDisplay imageDisplay;
-    
-    @Parameter(label="Channel", choices = {"a", "b", "c"})
+
+	@Parameter(label = "Channel", choices = { "a", "b", "c" })
 	private String channel = "0";
-    
-    @Parameter(label="Background image", choices = {"a", "b", "c"})
+
+	@Parameter(label = "Background image", choices = { "a", "b", "c" })
 	private String backgroundImageName;
-	
-	@Parameter(label="Electronic offset")
+
+	@Parameter(label = "Electronic offset")
 	private double electronicOffset = 0;
-	
-	//For the progress thread
+
+	// For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	private final AtomicInteger framesDone = new AtomicInteger(0);
-	
+
 	ImageProcessor backgroundIp;
 	double maximumPixelValue;
-	
+
 	private Dataset dataset;
 	private ImagePlus image;
 	private ImagePlus backgroundImage;
-	
+
 	@Override
 	public void initialize() {
-		if (imageDisplay == null)
-			return;
-		
+		if (imageDisplay == null) return;
+
 		dataset = (Dataset) imageDisplay.getActiveView().getData();
 		image = convertService.convert(imageDisplay, ImagePlus.class);
-		
-		final MutableModuleItem<String> channelItems = getInfo().getMutableInput("channel", String.class);
+
+		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
+			"channel", String.class);
 		long channelCount = dataset.getChannels();
 		ArrayList<String> channels = new ArrayList<String>();
-		for (int ch=0; ch<channelCount; ch++)
+		for (int ch = 0; ch < channelCount; ch++)
 			channels.add(String.valueOf(ch));
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
-		
-		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput("backgroundImageName", String.class);
-		
-		//Super Hacky IJ1 workaround for issues in scijava/scifio related to getting images.
+
+		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput(
+			"backgroundImageName", String.class);
+
+		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
+		// getting images.
 		int numberOfImages = WindowManager.getImageCount();
 		List<String> imageNames = new ArrayList<String>();
-		
+
 		for (int i = 0; i < numberOfImages; i++) {
 			ImagePlus img = WindowManager.getImage(i + 1);
-			if (img.getStackSize() == 1)
-				imageNames.add(img.getTitle());
+			if (img.getStackSize() == 1) imageNames.add(img.getTitle());
 		}
 
 		backgroundItems.setChoices(imageNames);
 	}
-	
+
 	@Override
 	public void run() {
 		backgroundImage = WindowManager.getImage(backgroundImageName);
-		
-		//Build log
+
+		// Build log
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Beam Profile Correction");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
-		//We assume there is just a single frame..
+
+		// We assume there is just a single frame..
 		backgroundIp = backgroundImage.getProcessor();
 
 		// determine maximum pixel value
 		maximumPixelValue = backgroundIp.getf(0, 0);
-		
+
 		for (int y = 0; y < backgroundIp.getHeight(); y++) {
 			for (int x = 0; x < backgroundIp.getWidth(); x++) {
-				
+
 				double value = backgroundIp.getf(x, y);
-				
-				if (value > maximumPixelValue)
-					maximumPixelValue = value;
-				
+
+				if (value > maximumPixelValue) maximumPixelValue = value;
+
 			}
 		}
-		
-		//Need to determine the number of threads
-		//final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
-		//ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+
+		// Need to determine the number of threads
+		// final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+
+		// ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 		ForkJoinPool forkJoinPool = new ForkJoinPool(1);
-	    try {
-	    	//Start a thread to keep track of the progress of the number of frames that have been processed.
-	    	//Waiting call back to update the progress bar!!
-	    	Thread progressThread = new Thread() {
-	            public synchronized void run() {
-                    try {
-        		        while(progressUpdating.get()) {
-        		        	Thread.sleep(100);
-        		        	statusService.showStatus(framesDone.intValue(), image.getNFrames(), "Correcting beam profile for " + image.getTitle());
-        		        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-	            }
-	        };
+		try {
+			// Start a thread to keep track of the progress of the number of frames
+			// that have been processed.
+			// Waiting call back to update the progress bar!!
+			Thread progressThread = new Thread() {
 
-	        progressThread.start();
-	        
-	        //This will spawn a bunch of threads that will correct the beam profile in individual frames
-	        //in parallel
-	        forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames()).parallel().forEach(t -> correctFrame(Integer.valueOf(channel), t))).get();
-	        
-	        progressUpdating.set(false);
-	        
-	        statusService.showProgress(100, 100);
-	        statusService.showStatus("Beam profile correction for " + image.getTitle() + " - Done!");
-	        
-	    } catch (InterruptedException | ExecutionException e) {
-	        // handle exceptions
-	    	e.getStackTrace();
-	    	logService.info(LogBuilder.endBlock(false));
-	    	return;
-	    } finally {
-	        forkJoinPool.shutdown();
-	    }
+				public synchronized void run() {
+					try {
+						while (progressUpdating.get()) {
+							Thread.sleep(100);
+							statusService.showStatus(framesDone.intValue(), image
+								.getNFrames(), "Correcting beam profile for " + image
+									.getTitle());
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
 
-	    //Need to add if statement to check if headless or not
-	    //This might crash a headless run...
-	    image.updateAndDraw();
-	    logService.info(LogBuilder.endBlock(true));
+			progressThread.start();
+
+			// This will spawn a bunch of threads that will correct the beam profile
+			// in individual frames
+			// in parallel
+			forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames())
+				.parallel().forEach(t -> correctFrame(Integer.valueOf(channel), t)))
+				.get();
+
+			progressUpdating.set(false);
+
+			statusService.showProgress(100, 100);
+			statusService.showStatus("Beam profile correction for " + image
+				.getTitle() + " - Done!");
+
+		}
+		catch (InterruptedException | ExecutionException e) {
+			// handle exceptions
+			e.getStackTrace();
+			logService.info(LogBuilder.endBlock(false));
+			return;
+		}
+		finally {
+			forkJoinPool.shutdown();
+		}
+
+		// Need to add if statement to check if headless or not
+		// This might crash a headless run...
+		image.updateAndDraw();
+		logService.info(LogBuilder.endBlock(true));
 	}
-	
+
 	public void correctFrame(int channel, int t) {
 		ImageStack stack = image.getImageStack();
 		int index = image.getStackIndex(channel + 1, 1, t + 1);
-		
+
 		ImageProcessor processor = stack.getProcessor(index);
 
 		// subtract electronic offset and
 		// divide by background
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
-				
-				double backgroundValue = (backgroundIp.getf(x, y) - electronicOffset) / (maximumPixelValue - electronicOffset);
+
+				double backgroundValue = (backgroundIp.getf(x, y) - electronicOffset) /
+					(maximumPixelValue - electronicOffset);
 				double value = processor.getf(x, y) - electronicOffset;
-				
-				processor.setf(x, y, (float)Math.abs(value / backgroundValue));
+
+				processor.setf(x, y, (float) Math.abs(value / backgroundValue));
 			}
 		}
 
 		framesDone.incrementAndGet();
 	}
-	
+
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image Title", image.getTitle());
-		if (image.getOriginalFileInfo() != null && image.getOriginalFileInfo().directory != null) {
-			builder.addParameter("Image Directory", image.getOriginalFileInfo().directory);
+		if (image.getOriginalFileInfo() != null && image
+			.getOriginalFileInfo().directory != null)
+		{
+			builder.addParameter("Image Directory", image
+				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Background Image Title", backgroundImage.getTitle());
-		if (backgroundImage.getOriginalFileInfo() != null && backgroundImage.getOriginalFileInfo().directory != null) {
-			builder.addParameter("Background Image Directory", backgroundImage.getOriginalFileInfo().directory);
+		if (backgroundImage.getOriginalFileInfo() != null && backgroundImage
+			.getOriginalFileInfo().directory != null)
+		{
+			builder.addParameter("Background Image Directory", backgroundImage
+				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
 	}
-	
+
 	public void setImage(ImagePlus image) {
 		this.image = image;
 	}
-	
+
 	public ImagePlus getImage() {
 		return image;
 	}
-	
+
 	public void setBackgroundImage(ImagePlus backgroundImage) {
 		this.backgroundImage = backgroundImage;
 	}
-	
+
 	public ImagePlus getBackgroundImage() {
 		return backgroundImage;
 	}
-	
+
 	public void setElectronicOffset(double electronicOffset) {
 		this.electronicOffset = electronicOffset;
 	}
-	
+
 	public double getElectronicOffset() {
 		return electronicOffset;
 	}

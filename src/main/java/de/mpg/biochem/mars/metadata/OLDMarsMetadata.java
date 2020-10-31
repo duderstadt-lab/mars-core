@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
@@ -42,249 +43,240 @@ import ome.xml.meta.OMEXMLMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.MarsBdvSource;
 
-public class OLDMarsMetadata extends AbstractMarsRecord implements MarsMetadata {
-	//Processing log for the record
-		protected String log = "";
+public class OLDMarsMetadata extends AbstractMarsRecord implements
+	MarsMetadata
+{
 
-		protected String Microscope = "unknown";
-		
-		//Directory where the images are stored..
-		protected String SourceDirectory = "unknown";
-		
-		//Date and time when the data was collected...
-		protected String CollectionDate = "unknown";
-		
-		//Table housing main record data.
-		protected MarsTable dataTable = new MarsTable("DataTable");
-		
-		//BDV views
-		protected LinkedHashMap<String, MarsBdvSource> bdvSources = new LinkedHashMap<String, MarsBdvSource>();
-		
-	    /**
-		 * Constructor for loading a MarsMetadata record from a file. Typically,
-		 * used when streaming records into memory when loading a
-		 * or when a record is retrieved from the virtual store. 
-		 * 
-		 * @param jParser A JsonParser at the start of the record.
-		 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
-		 */
-		public OLDMarsMetadata(JsonParser jParser) throws IOException {
-			super();
-			fromJSON(jParser);
-		}
-		
-		@Override
-		protected void createIOMaps() {
-			super.createIOMaps();
+	// Processing log for the record
+	protected String log = "";
 
-			setJsonField("Microscope",
-					jGenerator -> {
-						if(Microscope != null)
-				  			jGenerator.writeStringField("Microscope", Microscope);
-				 	},
-					jParser -> Microscope = jParser.getText());
-				
-				setJsonField("SourceDirectory", 
-					jGenerator -> {
-				  		if (SourceDirectory != null)
-				  			jGenerator.writeStringField("SourceDirectory", SourceDirectory);
-					},
-					jParser -> SourceDirectory = jParser.getText());
-								
-				setJsonField("Log", 
-					jGenerator -> {
-				  		if (!log.equals("")) {
-				  			jGenerator.writeStringField("Log", log);
-				  		}
-				 	}, 
-					jParser -> log = jParser.getText());
-				
-				setJsonField("BdvSources", 
-					jGenerator -> {
-						if (bdvSources.size() > 0) {
-							jGenerator.writeArrayFieldStart("BdvSources");
-							for (MarsBdvSource source : bdvSources.values()) {
-								source.toJSON(jGenerator);
-							}
-							jGenerator.writeEndArray();
-						}
-				 	}, 
-					jParser -> {
-						while (jParser.nextToken() != JsonToken.END_ARRAY) {
-							MarsBdvSource source = new MarsBdvSource(jParser);
-							bdvSources.put(source.getName(), source);
-						}
-					});
-			
-			setJsonField("CollectionDate", 
-					jGenerator -> {
-				  		if (CollectionDate != null)
-				  			jGenerator.writeStringField("CollectionDate", CollectionDate);
-				 	}, 
-					jParser -> CollectionDate = jParser.getText());
-			
-			setJsonField("DataTable", 
-				jGenerator -> {
-					if (dataTable.getColumnCount() > 0) {
-						jGenerator.writeFieldName("DataTable");
-						dataTable.toJSON(jGenerator);
-					}
-				}, 
-				jParser -> dataTable.fromJSON(jParser));
-			
-		}
-		
-		public MarsTable getDataTable() {
-			return dataTable;
-		}
-		
-		public MarsBdvSource getBdvSource(String name) {
-			return bdvSources.get(name);
-		}
-		
-		/**
-		 * Get the Collection of BigDataViewer sources with 
-		 * each in {@link MarsBdvSource} format.
-		 */
-		public Collection<MarsBdvSource> getBdvSources() {
-			return bdvSources.values();
-		}
-		
-		/**
-		 * Get the set of BigDataViewer source names.
-		 */
-		public Set<String> getBdvSourceNames() {
-			return bdvSources.keySet();
-		}
-		
-		/**
-		 * Get the name of the microscope used for data collection.
-		 * This is just for record keeping. There are no predefined
-		 * setting based on microscope names.
-		 */
-		public String getMicroscopeName() {
-			return Microscope;
-		}
-		
-		/**
-		 * Get the Date when these data were collected.
-		 */
-		public String getCollectionDate() {
-			return CollectionDate;
-		}
-		
-		/**
-		 * Get the Source Directory where the images are stored.
-		 */
-		public String getSourceDirectory() {
-			return SourceDirectory;
-		}
-		
-		/**
-		 * Get the log that contains the history of processing steps
-		 * conducted on this dataset and the associated molecule records
-		 * contained in the same.
-		 */
-		public String getLog() {
-			return log;
-		}
-		
-		//Should never be used are required to have the MarsMetadata interface, which is required
-		//for opening in the archive...
+	protected String Microscope = "unknown";
 
-		@Override
-		public void populateMetadata(OMEXMLMetadata md) {
-			// TODO Auto-generated method stub
-			
-		}
+	// Directory where the images are stored..
+	protected String SourceDirectory = "unknown";
 
-		@Override
-		public MarsOMEImage getImage(int imageIndex) {
-			// TODO Auto-generated method stub
-			return null;
-		}
+	// Date and time when the data was collected...
+	protected String CollectionDate = "unknown";
 
-		@Override
-		public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
-			// TODO Auto-generated method stub
-			return null;
-		}
+	// Table housing main record data.
+	protected MarsTable dataTable = new MarsTable("DataTable");
 
-		@Override
-		public boolean hasPlane(int imageIndex, int planeIndex) {
-			// TODO Auto-generated method stub
-			return false;
-		}
+	// BDV views
+	protected LinkedHashMap<String, MarsBdvSource> bdvSources =
+		new LinkedHashMap<String, MarsBdvSource>();
 
-		@Override
-		public MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T) {
-			// TODO Auto-generated method stub
-			return null;
-		}
+	/**
+	 * Constructor for loading a MarsMetadata record from a file. Typically, used
+	 * when streaming records into memory when loading a or when a record is
+	 * retrieved from the virtual store.
+	 * 
+	 * @param jParser A JsonParser at the start of the record.
+	 * @throws IOException Thrown if unable to parse Json from JsonParser stream.
+	 */
+	public OLDMarsMetadata(JsonParser jParser) throws IOException {
+		super();
+		fromJSON(jParser);
+	}
 
-		@Override
-		public int getImageCount() {
-			// TODO Auto-generated method stub
-			return 0;
-		}
+	@Override
+	protected void createIOMaps() {
+		super.createIOMaps();
 
-		@Override
-		public void setMicroscopeName(String Microscope) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("Microscope", jGenerator -> {
+			if (Microscope != null) jGenerator.writeStringField("Microscope",
+				Microscope);
+		}, jParser -> Microscope = jParser.getText());
 
-		@Override
-		public void setSourceDirectory(String path) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("SourceDirectory", jGenerator -> {
+			if (SourceDirectory != null) jGenerator.writeStringField(
+				"SourceDirectory", SourceDirectory);
+		}, jParser -> SourceDirectory = jParser.getText());
 
-		@Override
-		public void log(String str) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("Log", jGenerator -> {
+			if (!log.equals("")) {
+				jGenerator.writeStringField("Log", log);
+			}
+		}, jParser -> log = jParser.getText());
 
-		@Override
-		public void logln(String str) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("BdvSources", jGenerator -> {
+			if (bdvSources.size() > 0) {
+				jGenerator.writeArrayFieldStart("BdvSources");
+				for (MarsBdvSource source : bdvSources.values()) {
+					source.toJSON(jGenerator);
+				}
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsBdvSource source = new MarsBdvSource(jParser);
+				bdvSources.put(source.getName(), source);
+			}
+		});
 
-		@Override
-		public void putBdvSource(MarsBdvSource source) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("CollectionDate", jGenerator -> {
+			if (CollectionDate != null) jGenerator.writeStringField("CollectionDate",
+				CollectionDate);
+		}, jParser -> CollectionDate = jParser.getText());
 
-		@Override
-		public void removeBdvSource(String name) {
-			// TODO Auto-generated method stub
-			
-		}
+		setJsonField("DataTable", jGenerator -> {
+			if (dataTable.getColumnCount() > 0) {
+				jGenerator.writeFieldName("DataTable");
+				dataTable.toJSON(jGenerator);
+			}
+		}, jParser -> dataTable.fromJSON(jParser));
 
-		@Override
-		public boolean hasBdvSource(String name) {
-			// TODO Auto-generated method stub
-			return false;
-		}
+	}
 
-		@Override
-		public void setImage(MarsOMEImage image, int imageIndex) {
-			// TODO Auto-generated method stub
-			
-		}
+	public MarsTable getDataTable() {
+		return dataTable;
+	}
 
-		@Override
-		public Stream<MarsOMEImage> images() {
-			// TODO Auto-generated method stub
-			return null;
-		}
+	public MarsBdvSource getBdvSource(String name) {
+		return bdvSources.get(name);
+	}
 
-		@Override
-		public void merge(MarsMetadata metadata) {
-			// TODO Auto-generated method stub
-			
-		}
+	/**
+	 * Get the Collection of BigDataViewer sources with each in
+	 * {@link MarsBdvSource} format.
+	 */
+	public Collection<MarsBdvSource> getBdvSources() {
+		return bdvSources.values();
+	}
+
+	/**
+	 * Get the set of BigDataViewer source names.
+	 */
+	public Set<String> getBdvSourceNames() {
+		return bdvSources.keySet();
+	}
+
+	/**
+	 * Get the name of the microscope used for data collection. This is just for
+	 * record keeping. There are no predefined setting based on microscope names.
+	 */
+	public String getMicroscopeName() {
+		return Microscope;
+	}
+
+	/**
+	 * Get the Date when these data were collected.
+	 */
+	public String getCollectionDate() {
+		return CollectionDate;
+	}
+
+	/**
+	 * Get the Source Directory where the images are stored.
+	 */
+	public String getSourceDirectory() {
+		return SourceDirectory;
+	}
+
+	/**
+	 * Get the log that contains the history of processing steps conducted on this
+	 * dataset and the associated molecule records contained in the same.
+	 */
+	public String getLog() {
+		return log;
+	}
+
+	// Should never be used are required to have the MarsMetadata interface, which
+	// is required
+	// for opening in the archive...
+
+	@Override
+	public void populateMetadata(OMEXMLMetadata md) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public MarsOMEImage getImage(int imageIndex) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MarsOMEPlane getPlane(int imageIndex, int planeIndex) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean hasPlane(int imageIndex, int planeIndex) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public MarsOMEPlane getPlane(int imageIndex, int Z, int C, int T) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getImageCount() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setMicroscopeName(String Microscope) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setSourceDirectory(String path) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void log(String str) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void logln(String str) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void putBdvSource(MarsBdvSource source) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void removeBdvSource(String name) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public boolean hasBdvSource(String name) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void setImage(MarsOMEImage image, int imageIndex) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Stream<MarsOMEImage> images() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void merge(MarsMetadata metadata) {
+		// TODO Auto-generated method stub
+
+	}
 }

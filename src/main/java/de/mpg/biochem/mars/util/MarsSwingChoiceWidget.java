@@ -1,5 +1,5 @@
-package de.mpg.biochem.mars.util;
 
+package de.mpg.biochem.mars.util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,10 +19,8 @@ import org.scijava.ui.swing.widget.*;
  * Swing implementation of multiple choice selector widget using a
  * {@link JComboBox}.
  * 
- * @author Curtis Rueden
- * 
- * Small edits to ensure list changes are recognized when doRefresh() is called.
- * 
+ * @author Curtis Rueden Small edits to ensure list changes are recognized when
+ *         doRefresh() is called.
  * @author Karl Duderstadt
  */
 @Plugin(type = InputWidget.class, priority = SwingChoiceWidget.PRIORITY + 0.1)
@@ -45,10 +43,9 @@ public class MarsSwingChoiceWidget extends SwingInputWidget<String> implements
 
 	@Override
 	public String getValue() {
-		if (comboBox.getItemCount() > 0)
-			return comboBox.getSelectedItem().toString();
-		else
-			return null;
+		if (comboBox.getItemCount() > 0) return comboBox.getSelectedItem()
+			.toString();
+		else return null;
 	}
 
 	// -- WrapperPlugin methods --
@@ -79,23 +76,24 @@ public class MarsSwingChoiceWidget extends SwingInputWidget<String> implements
 	@Override
 	public void doRefresh() {
 		final String[] choices = get().getChoices();
-		
+
 		if (!Arrays.equals(choices, comboBoxItems())) {
-			comboBox.removeAllItems();	
-			for (int i=0; i<choices.length; i++)
+			comboBox.removeAllItems();
+			for (int i = 0; i < choices.length; i++)
 				comboBox.addItem(choices[i]);
-		} else {
+		}
+		else {
 			final Object value = get().getValue();
 			if (value.equals(comboBox.getSelectedItem())) return;
 			comboBox.setSelectedItem(value);
 		}
 	}
-	
+
 	private String[] comboBoxItems() {
 		String[] comboItems = new String[comboBox.getItemCount()];
-		for (int i=0; i <comboBox.getItemCount(); i++)
+		for (int i = 0; i < comboBox.getItemCount(); i++)
 			comboItems[i] = comboBox.getItemAt(i);
-		
+
 		return comboItems;
 	}
 }

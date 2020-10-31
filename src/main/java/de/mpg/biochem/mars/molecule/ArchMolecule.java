@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -40,20 +41,20 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 public class ArchMolecule extends AbstractMolecule {
-	
+
 	private ConcurrentMap<Integer, MarsTable> archTables;
 
 	public ArchMolecule() {
 		super();
 		archTables = new ConcurrentHashMap<>();
 	}
-	
+
 	public ArchMolecule(JsonParser jParser) throws IOException {
 		super();
 		archTables = new ConcurrentHashMap<>();
 		fromJSON(jParser);
 	}
-	
+
 	public ArchMolecule(String UID) {
 		super(UID);
 		archTables = new ConcurrentHashMap<>();
@@ -63,72 +64,69 @@ public class ArchMolecule extends AbstractMolecule {
 		super(UID, dataTable);
 		archTables = new ConcurrentHashMap<>();
 	}
-	
+
 	public void putArchTable(int key, MarsTable table) {
 		archTables.put(key, table);
 	}
-	
+
 	public boolean hasArchTable(int key) {
 		return archTables.containsKey(key);
 	}
-	
+
 	public MarsTable getArchTable(int key) {
 		return archTables.get(key);
 	}
-	
+
 	public void removeArchTable(int key) {
 		archTables.remove(key);
 	}
-	
+
 	public Set<Integer> getArchTableKeys() {
 		return archTables.keySet();
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
-		
-		setJsonField("archTables", 
-			jGenerator -> {
-				if (archTables.keySet().size() > 0) {
-					jGenerator.writeArrayFieldStart("archTables");
-					for (int slice : archTables.keySet()) {
-							jGenerator.writeStartObject();
-							
-							//FIXME this is pre OME
-							
-							jGenerator.writeNumberField("slice", slice);
-							
-							jGenerator.writeFieldName("table");
-							archTables.get(slice).toJSON(jGenerator);
-							
-							jGenerator.writeEndObject();
-					}
-					jGenerator.writeEndArray();
+
+		setJsonField("archTables", jGenerator -> {
+			if (archTables.keySet().size() > 0) {
+				jGenerator.writeArrayFieldStart("archTables");
+				for (int slice : archTables.keySet()) {
+					jGenerator.writeStartObject();
+
+					// FIXME this is pre OME
+
+					jGenerator.writeNumberField("slice", slice);
+
+					jGenerator.writeFieldName("table");
+					archTables.get(slice).toJSON(jGenerator);
+
+					jGenerator.writeEndObject();
 				}
-		 	}, 
-			jParser -> {
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    		int slice = -1;
-			    	
-			    		//FIXME this is pre OME
-					    if ("slice".equals(jParser.getCurrentName())) {
-					    	jParser.nextToken();
-					    	slice = jParser.getNumberValue().intValue();
-					    }
-					    
-				    	//Move to next field
-				    	jParser.nextToken();
-				    	
-				    	MarsTable archTable = new MarsTable("archTable " + slice);
-				    	
-				    	archTable.fromJSON(jParser);
-				    	
-				    	if (slice != -1)
-				    		archTables.put(slice, archTable);
-			    	}
-		    	}
-			});
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+					int slice = -1;
+
+					// FIXME this is pre OME
+					if ("slice".equals(jParser.getCurrentName())) {
+						jParser.nextToken();
+						slice = jParser.getNumberValue().intValue();
+					}
+
+					// Move to next field
+					jParser.nextToken();
+
+					MarsTable archTable = new MarsTable("archTable " + slice);
+
+					archTable.fromJSON(jParser);
+
+					if (slice != -1) archTables.put(slice, archTable);
+				}
+			}
+		});
 	}
 }

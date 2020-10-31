@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule.commands;
 
 import java.io.File;
@@ -67,81 +68,88 @@ import net.imagej.ops.Initializable;
 import javax.swing.filechooser.FileSystemView;
 
 @Plugin(type = Command.class, label = "Build archive from table", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Molecule", weight = 1,
-			mnemonic = 'm'),
-		@Menu(label = "Build archive from table", weight = 10, mnemonic = 'b')})
+	@Menu(label = MenuConstants.PLUGINS_LABEL,
+		weight = MenuConstants.PLUGINS_WEIGHT,
+		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+				label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
+					label = "Build archive from table", weight = 10, mnemonic = 'b') })
 public class BuildArchiveFromTableCommand extends DynamicCommand {
+
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+	private MoleculeArchiveService moleculeArchiveService;
+
 	@Parameter
 	private MarsTableService resultsTableService;
-	
-    @Parameter
-    private UIService uiService;
-    
-    @Parameter
-    private StatusService statusService;
-    
-    @Parameter
-    private LogService logService;
-    
-    @Parameter(label="Table with molecule column")
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	private LogService logService;
+
+	@Parameter(label = "Table with molecule column")
 	private MarsTable table;
-    
-    //OUTPUT PARAMETERS
-	@Parameter(label="Molecule Archive", type = ItemIO.OUTPUT)
+
+	// OUTPUT PARAMETERS
+	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
-    
-    @Override
-	public void run() {				
-		
+
+	@Override
+	public void run() {
+
 		String name = table.getName() + ".yama";
-		
+
 		if (moleculeArchiveService.contains(name)) {
-			uiService.showDialog("The MoleculeArchive " + name + " has already been created and is open.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog("The MoleculeArchive " + name +
+				" has already been created and is open.", MessageType.ERROR_MESSAGE,
+				OptionType.DEFAULT_OPTION);
 			return;
 		}
-		
+
 		if (table.get("molecule") == null) {
-			uiService.showDialog("The table given doesn't have a molecule column. It must have a molecule column in order to generate the Molecule Archive.", MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog(
+				"The table given doesn't have a molecule column. It must have a molecule column in order to generate the Molecule Archive.",
+				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
 		}
-		
+
 		LogBuilder builder = new LogBuilder();
-		
-		String log = LogBuilder.buildTitleBlock("Building SingleMoleculeArchive from Table");
+
+		String log = LogBuilder.buildTitleBlock(
+			"Building SingleMoleculeArchive from Table");
 
 		builder.addParameter("From Table", table.getName());
 		builder.addParameter("Ouput Archive Name", name);
-		
+
 		archive = new SingleMoleculeArchive(name, table);
 
-		builder.addParameter("Molecules addeded", String.valueOf(archive.getNumberOfMolecules()));
+		builder.addParameter("Molecules addeded", String.valueOf(archive
+			.getNumberOfMolecules()));
 		log += builder.buildParameterList();
-		
-		//Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(archive.getName());
-        logService.info(log);
-        logService.info(LogBuilder.endBlock(true));
-        
-        log += "\n" + LogBuilder.endBlock(true);
-        archive.logln(log);
+
+		// Make sure the output archive has the correct name
+		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
+			archive.getName());
+		logService.info(log);
+		logService.info(LogBuilder.endBlock(true));
+
+		log += "\n" + LogBuilder.endBlock(true);
+		archive.logln(log);
 	}
-    
-    public SingleMoleculeArchive getArchive() {
-    	return archive;
-    }
-    
-    public void setTable(MarsTable table) {
-    	this.table = table;
-    }
-    
-    public MarsTable getTable() {
-    	return table;
-    }
+
+	public SingleMoleculeArchive getArchive() {
+		return archive;
+	}
+
+	public void setTable(MarsTable table) {
+		this.table = table;
+	}
+
+	public MarsTable getTable() {
+		return table;
+	}
 }

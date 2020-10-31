@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.roi.commands;
 
 import java.awt.Point;
@@ -61,209 +62,218 @@ import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
-@Plugin(type = Command.class, label = "Transform ROIs", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "ROI", weight = 30,
-			mnemonic = 'r'),
-		@Menu(label = "Transform ROIs", weight = 30, mnemonic = 't')})
-public class TransformROIsCommand<T extends RealType< T >> extends DynamicCommand implements Command, Previewable {
-	//GENERAL SERVICES NEEDED
+@Plugin(type = Command.class, label = "Transform ROIs", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(label = "ROI",
+			weight = 30, mnemonic = 'r'), @Menu(label = "Transform ROIs", weight = 30,
+				mnemonic = 't') })
+public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
+	implements Command, Previewable
+{
+
+	// GENERAL SERVICES NEEDED
 	@Parameter
 	private RoiManager roiManager;
-	
+
 	@Parameter
 	private UIService uiService;
-	
+
 	@Parameter
 	private LogService logService;
-	
-    @Parameter
-    private OpService opService;
-	
-    @Parameter
-    private StatusService statusService;
-    
+
 	@Parameter
-    private MarsTableService resultsTableService;
-	
-    @Parameter
+	private OpService opService;
+
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	private MarsTableService resultsTableService;
+
+	@Parameter
 	private ConvertService convertService;
 
-	//INPUT IMAGE
-    @Parameter(label = "Image")
+	// INPUT IMAGE
+	@Parameter(label = "Image")
 	private ImagePlus image;
-	
-	//AFFINE2D Matrix
+
+	// AFFINE2D Matrix
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String affineTitle =
-			"Affine2D Transformation Matrix:";
-	
-	@Parameter(label="m00")
+	private final String affineTitle = "Affine2D Transformation Matrix:";
+
+	@Parameter(label = "m00")
 	private double m00;
-	
-	@Parameter(label="m01")
+
+	@Parameter(label = "m01")
 	private double m01;
-	
-	@Parameter(label="m02")
+
+	@Parameter(label = "m02")
 	private double m02;
-	
-	@Parameter(label="m10")
+
+	@Parameter(label = "m10")
 	private double m10;
-	
-	@Parameter(label="m11")
+
+	@Parameter(label = "m11")
 	private double m11;
-	
-	@Parameter(label="m12")
+
+	@Parameter(label = "m12")
 	private double m12;
-	
-	@Parameter(label = "Transformation Direction", choices = {"Long Wavelength to Short Wavelength", "Short Wavelength to Long Wavelength"})
-	private String transformationDirection = "Long Wavelength to Short Wavelength";
-	
+
+	@Parameter(label = "Transformation Direction", choices = {
+		"Long Wavelength to Short Wavelength",
+		"Short Wavelength to Long Wavelength" })
+	private String transformationDirection =
+		"Long Wavelength to Short Wavelength";
+
 	@Parameter(label = "Colocalize")
 	private boolean colocalize = false;
-	
-	@Parameter(label="Use DoG filter")
+
+	@Parameter(label = "Use DoG filter")
 	private boolean useDogFilter = true;
-	
-	@Parameter(label="DoG filter radius")
+
+	@Parameter(label = "DoG filter radius")
 	private double dogFilterRadius = 2;
-	
-	@Parameter(label="Detection threshold")
+
+	@Parameter(label = "Detection threshold")
 	private double threshold = 50;
-	
-	@Parameter(label="Minimum distance between peaks")
+
+	@Parameter(label = "Minimum distance between peaks")
 	private int minimumDistance = 4;
-	
-	@Parameter(label="Filter Original ROIs")
+
+	@Parameter(label = "Filter Original ROIs")
 	private boolean filterOriginalRois = true;
-	
-	@Parameter(label="Colocalize search radius")
+
+	@Parameter(label = "Colocalize search radius")
 	private int colocalizeRadius = 0;
-	
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false, callback = "previewChanged")
+
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+		callback = "previewChanged")
 	private boolean preview = false;
 
 	private ArrayList<Roi> TransformedROIs = new ArrayList<Roi>();
-    private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
-    
-    private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
-    
+	private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
+
+	private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
+
 	@Override
 	public void run() {
-		//Build log
+		// Build log
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Transform ROIs");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
+
 		if (preview) {
 			image.deleteRoi();
 		}
-		
+
 		transformROIs();
-		
+
 		roiManager.reset();
-		
-		//If we are not colocalizing then we add all the peaks...
+
+		// If we are not colocalizing then we add all the peaks...
 		if (colocalize) {
 			if (filterOriginalRois) {
-				for (int i=0;i<colocalizedPeakIndex.size();i++) {
+				for (int i = 0; i < colocalizedPeakIndex.size(); i++) {
 					roiManager.addRoi(OriginalROIs.get(colocalizedPeakIndex.get(i)));
 					roiManager.addRoi(TransformedROIs.get(colocalizedPeakIndex.get(i)));
 				}
-			} else {
-				for (int i=0;i<TransformedROIs.size();i++) {
+			}
+			else {
+				for (int i = 0; i < TransformedROIs.size(); i++) {
 					roiManager.addRoi(OriginalROIs.get(i));
 					if (colocalizedPeakIndex.contains(i)) {
-						roiManager.addRoi(TransformedROIs.get(colocalizedPeakIndex.get(colocalizedPeakIndex.indexOf(i))));
+						roiManager.addRoi(TransformedROIs.get(colocalizedPeakIndex.get(
+							colocalizedPeakIndex.indexOf(i))));
 					}
 				}
 			}
-		} else {
-			for (int i=0;i<TransformedROIs.size();i++) {
+		}
+		else {
+			for (int i = 0; i < TransformedROIs.size(); i++) {
 				roiManager.addRoi(OriginalROIs.get(i));
 				roiManager.addRoi(TransformedROIs.get(i));
 			}
 		}
-		
+
 		logService.info(LogBuilder.endBlock(true));
 	}
-	
+
 	public ArrayList<Point> findPeaks(ImagePlus imp) {
 		ArrayList<Point> peaks = new ArrayList<Point>();
 		Img<FloatType> dog;
-		
+
 		int width = imp.getWidth();
 		int height = imp.getHeight();
-		
+
 		if (useDogFilter) {
 			// Convert image to FloatType for better numeric precision
-	        Img<FloatType> converted = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
+			Img<FloatType> converted = opService.convert().float32(
+				(Img<T>) ImagePlusAdapter.wrap(imp));
 
-	        // Create the filtering result
-	        dog = opService.create().img(converted);
+			// Create the filtering result
+			dog = opService.create().img(converted);
 
-	        final double sigma1 = dogFilterRadius / Math.sqrt( 2 ) * 0.9;
-			final double sigma2 = dogFilterRadius / Math.sqrt( 2 ) * 1.1;
+			final double sigma1 = dogFilterRadius / Math.sqrt(2) * 0.9;
+			final double sigma2 = dogFilterRadius / Math.sqrt(2) * 1.1;
 
-	        // Do the DoG filtering using ImageJ Ops
-	        opService.filter().dog(dog, converted, sigma2, sigma1);
-		} else {
-			dog = opService.convert().float32((Img< T >)ImagePlusAdapter.wrap( imp ));
+			// Do the DoG filtering using ImageJ Ops
+			opService.filter().dog(dog, converted, sigma2, sigma1);
 		}
-		
-		//Rectangle roi = imp.getRoi().getBounds();
+		else {
+			dog = opService.convert().float32((Img<T>) ImagePlusAdapter.wrap(imp));
+		}
+
+		// Rectangle roi = imp.getRoi().getBounds();
 		colocalizedPeakIndex.clear();
-		
+
 		RandomAccess<FloatType> ra = dog.randomAccess();
-		
+
 		for (int i = 0; i < TransformedROIs.size(); i++) {
-			
-				int x = (int)TransformedROIs.get(i).getFloatBounds().x;
-		        int y = (int)TransformedROIs.get(i).getFloatBounds().y;
-				
-				//Let's check a radius of pixels around the transformed peaks if anyone is above the threshold we keep the colocalizedPeak
-				ArrayList<Point> col_search_pixels = new ArrayList<Point>();
-				
-				for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++) {
-					for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++) {
-						if (Sx < 0 || Sx > width || Sy < 0 || Sy > height)
-							continue;
-						
-						col_search_pixels.add(new Point(Sx, Sy));
-					}
+
+			int x = (int) TransformedROIs.get(i).getFloatBounds().x;
+			int y = (int) TransformedROIs.get(i).getFloatBounds().y;
+
+			// Let's check a radius of pixels around the transformed peaks if anyone
+			// is above the threshold we keep the colocalizedPeak
+			ArrayList<Point> col_search_pixels = new ArrayList<Point>();
+
+			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++) {
+				for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++) {
+					if (Sx < 0 || Sx > width || Sy < 0 || Sy > height) continue;
+
+					col_search_pixels.add(new Point(Sx, Sy));
 				}
-				
-				boolean passed = false;
-				for (int w=0;w<col_search_pixels.size();w++) {
-					if (col_search_pixels.get(w).x >= imp.getWidth() || col_search_pixels.get(w).y >= imp.getHeight())
-						continue;
-					
-					ra.setPosition(col_search_pixels.get(w).x, 0);
-					ra.setPosition(col_search_pixels.get(w).y, 1);
-					if (ra.get().get() >= threshold) {
-						passed = true;
-						break;
-					}
+			}
+
+			boolean passed = false;
+			for (int w = 0; w < col_search_pixels.size(); w++) {
+				if (col_search_pixels.get(w).x >= imp.getWidth() || col_search_pixels
+					.get(w).y >= imp.getHeight()) continue;
+
+				ra.setPosition(col_search_pixels.get(w).x, 0);
+				ra.setPosition(col_search_pixels.get(w).y, 1);
+				if (ra.get().get() >= threshold) {
+					passed = true;
+					break;
 				}
-				
-				if (passed) {
-					peaks.add(new Point(x, y));
-					colocalizedPeakIndex.add(i);	
-				}
-				
+			}
+
+			if (passed) {
+				peaks.add(new Point(x, y));
+				colocalizedPeakIndex.add(i);
+			}
+
 		}
 		return peaks;
 	}
-	
+
 	@Override
 	public void preview() {
 		if (preview) {
@@ -271,97 +281,106 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 			transformROIs();
 		}
 	}
-	
+
 	public void transformROIs() {
 		OriginalROIs.clear();
 		TransformedROIs.clear();
-		
+
 		if (roiManager == null) {
 			uiService.showDialog("No ROIs in Manager to transform");
 			return;
 		}
-		
+
 		int roiNum = roiManager.getCount();
-		
+
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
-		
-		for (int i=0; i<roiNum; i++) {
+
+		for (int i = 0; i < roiNum; i++) {
 			Roi roi = roiManager.getRoi(i);
-			//Using getFloatBounds should work well with either points or boxes.
-			//Here I remove the 0.5 offset, then transform and add it back below since the transformation matrix was calculated without the offset.
+			// Using getFloatBounds should work well with either points or boxes.
+			// Here I remove the 0.5 offset, then transform and add it back below
+			// since the transformation matrix was calculated without the offset.
 			double[] source = new double[2];
 			source[0] = roi.getFloatBounds().x;
 			source[1] = roi.getFloatBounds().y;
-			
-			double[] target = new double[2];
-	        
-			//Here we generate a new UID... This is in preparation for the Molecule Integrator
-	        String baseRoiName = MarsMath.getUUID58();
-	        
-	        String currentPosition = "LONG";
-	        String newPosition = "SHORT";
-	        
-	        if (transformationDirection.equals("Long Wavelength to Short Wavelength")) {
-	        	currentPosition = "LONG";
-	        	newPosition = "SHORT";
-	        } else if (transformationDirection.equals("Short Wavelength to Long Wavelength")) {
-	        	currentPosition = "SHORT";
-	        	newPosition = "LONG";
-	        }
-	        
-	        Roi oldRoi = (Roi)roi.clone();
-	        oldRoi.setName(baseRoiName + "_" + currentPosition);
-	        OriginalROIs.add(oldRoi);
-	     
-	        Roi newRoi = (Roi)roi.clone();
-	        
-	        transform.apply(source, target);
 
-	        newRoi.setLocation(target[0], target[1]);
-	        newRoi.setName(baseRoiName + "_" + newPosition);
-	        TransformedROIs.add(newRoi);
+			double[] target = new double[2];
+
+			// Here we generate a new UID... This is in preparation for the Molecule
+			// Integrator
+			String baseRoiName = MarsMath.getUUID58();
+
+			String currentPosition = "LONG";
+			String newPosition = "SHORT";
+
+			if (transformationDirection.equals(
+				"Long Wavelength to Short Wavelength"))
+			{
+				currentPosition = "LONG";
+				newPosition = "SHORT";
+			}
+			else if (transformationDirection.equals(
+				"Short Wavelength to Long Wavelength"))
+			{
+				currentPosition = "SHORT";
+				newPosition = "LONG";
+			}
+
+			Roi oldRoi = (Roi) roi.clone();
+			oldRoi.setName(baseRoiName + "_" + currentPosition);
+			OriginalROIs.add(oldRoi);
+
+			Roi newRoi = (Roi) roi.clone();
+
+			transform.apply(source, target);
+
+			newRoi.setLocation(target[0], target[1]);
+			newRoi.setName(baseRoiName + "_" + newPosition);
+			TransformedROIs.add(newRoi);
 		}
-		
+
 		if (colocalize) {
-			ArrayList<Point> peaks = findPeaks(new ImagePlus("tempImage", image.getProcessor()));
-		
+			ArrayList<Point> peaks = findPeaks(new ImagePlus("tempImage", image
+				.getProcessor()));
+
 			if (preview) {
 				Polygon poly = new Polygon();
-				
-				for (Point p: peaks)
+
+				for (Point p : peaks)
 					poly.addPoint(p.x, p.y);
-				
+
 				PointRoi peakRoi = new PointRoi(poly);
 				image.setRoi(peakRoi);
 			}
-		} else {
+		}
+		else {
 			if (preview) {
 				Polygon poly = new Polygon();
-				
-				for (int i=0;i<TransformedROIs.size();i++) {
-					int x = (int)TransformedROIs.get(i).getFloatBounds().x;
-			        int y = (int)TransformedROIs.get(i).getFloatBounds().y;
+
+				for (int i = 0; i < TransformedROIs.size(); i++) {
+					int x = (int) TransformedROIs.get(i).getFloatBounds().x;
+					int y = (int) TransformedROIs.get(i).getFloatBounds().y;
 					poly.addPoint(x, y);
 				}
-				
+
 				PointRoi peakRoi = new PointRoi(poly);
 				image.setRoi(peakRoi);
 			}
 		}
 	}
-	
+
 	/** Called when the {@link #preview} parameter value changes. */
 	protected void previewChanged() {
 		// When preview box is unchecked, reset the Roi back to how it was before...
 		if (!preview) cancel();
 	}
-	
+
 	@Override
 	public void cancel() {
 		image.deleteRoi();
 	}
-	
+
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Affine2D m00", String.valueOf(m00));
 		builder.addParameter("Affine2D m01", String.valueOf(m01));
@@ -374,70 +393,71 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
-		builder.addParameter("filterOriginalRois", String.valueOf(filterOriginalRois));
+		builder.addParameter("filterOriginalRois", String.valueOf(
+			filterOriginalRois));
 		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
 	}
-	
+
 	public void setM00(double m00) {
 		this.m00 = m00;
 	}
-	
+
 	public void setM01(double m01) {
 		this.m01 = m01;
 	}
-	
+
 	public void setM02(double m02) {
 		this.m02 = m02;
 	}
-	
+
 	public void setM10(double m10) {
 		this.m10 = m10;
 	}
-	
+
 	public void setM11(double m11) {
 		this.m11 = m11;
 	}
-	
+
 	public void setM12(double m12) {
 		this.m12 = m12;
 	}
-	
+
 	public void setROIManager(RoiManager roiManager) {
 		this.roiManager = roiManager;
 	}
-	
+
 	public RoiManager getROIManager() {
 		return roiManager;
 	}
-	
+
 	public void setImage(ImagePlus image) {
 		this.image = image;
 	}
-	
+
 	public ImagePlus getImage() {
 		return image;
 	}
-	
+
 	public void setTransformationDirection(String transformationDirection) {
 		this.transformationDirection = transformationDirection;
 	}
-	
+
 	public String getTransformation() {
 		return transformationDirection;
 	}
-	
+
 	public void setColocalize(boolean colocalize) {
 		this.colocalize = colocalize;
 	}
-	
+
 	public boolean getColocalize() {
 		return colocalize;
 	}
-	
+
 	public void setUseDogFiler(boolean useDogFilter) {
 		this.useDogFilter = useDogFilter;
 	}
-	
+
 	public void setDogFilterRadius(double dogFilterRadius) {
 		this.dogFilterRadius = dogFilterRadius;
 	}
@@ -445,27 +465,27 @@ public class TransformROIsCommand<T extends RealType< T >> extends DynamicComman
 	public void setThreshold(double threshold) {
 		this.threshold = threshold;
 	}
-	
+
 	public double getThreshold() {
 		return threshold;
 	}
-	
+
 	public void setMinimumDistance(int minimumDistance) {
 		this.minimumDistance = minimumDistance;
 	}
-	
+
 	public int getMinimumDistance() {
 		return minimumDistance;
 	}
-	
+
 	public void setFilterOriginalRois(boolean filterOriginalRois) {
 		this.filterOriginalRois = filterOriginalRois;
 	}
-	
+
 	public boolean getFilterOriginalRois() {
 		return filterOriginalRois;
 	}
-	
+
 	public void setColocalizeSearchRadius(int colocalizeRadius) {
 		this.colocalizeRadius = colocalizeRadius;
 	}

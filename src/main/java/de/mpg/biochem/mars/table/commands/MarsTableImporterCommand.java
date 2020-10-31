@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table.commands;
 
 import java.io.File;
@@ -45,39 +46,37 @@ import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
 import org.scijava.options.OptionsService;
 
-@Plugin(type = Command.class, label = "Open table", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Table", weight = 10,
-			mnemonic = 't'),
-		@Menu(label = "Open table", weight = 1, mnemonic = 'o')})
+@Plugin(type = Command.class, label = "Open table", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Open table",
+				weight = 1, mnemonic = 'o') })
 public class MarsTableImporterCommand extends DynamicCommand {
-	
-    @Parameter(label="MarsTable (csv, tab or json) ")
-    private File file;
-    
-    @Parameter
-    private UIService uiService;
-    
-    @Parameter
-    private OptionsService optionsService;
-    
+
+	@Parameter(label = "MarsTable (csv, tab or json) ")
+	private File file;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private OptionsService optionsService;
+
 	@Override
-	public void run() {				
+	public void run() {
 		final MarsTableIOPlugin marsTableIOPlugin = new MarsTableIOPlugin();
 		marsTableIOPlugin.setContext(getContext());
-		
+
 		try {
 			MarsTable table = marsTableIOPlugin.open(file.getAbsolutePath());
-			final boolean newStyleIO =
-					optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
-			
-			if (!newStyleIO)
-				uiService.show(table);
-			
-		} catch (IOException e) {
+			final boolean newStyleIO = optionsService.getOptions(
+				net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+
+			if (!newStyleIO) uiService.show(table);
+
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.kcp.commands;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,122 +53,136 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsRegion;
 import net.imagej.ops.Initializable;
 
-@Plugin(type = Command.class, headless = true, label = "Sigma Calculator", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "KCP", weight = 30,
-			mnemonic = 'k'),
-		@Menu(label = "Sigma Calculator", weight = 20, mnemonic = 's')})
-public class SigmaCalculatorCommand extends DynamicCommand implements Command, Initializable {
+@Plugin(type = Command.class, headless = true, label = "Sigma Calculator",
+	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,
+		weight = MenuConstants.PLUGINS_WEIGHT,
+		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+				label = "KCP", weight = 30, mnemonic = 'k'), @Menu(
+					label = "Sigma Calculator", weight = 20, mnemonic = 's') })
+public class SigmaCalculatorCommand extends DynamicCommand implements Command,
+	Initializable
+{
+
 	@Parameter
 	private LogService logService;
-	
-    @Parameter
-    private StatusService statusService;
-	
+
 	@Parameter
-    private MoleculeArchiveService moleculeArchiveService;
-	
+	private StatusService statusService;
+
 	@Parameter
-    private UIService uiService;
-	
-    @Parameter(label="MoleculeArchive")
-    private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
-    
-    @Parameter(label="X Column", choices = {"a", "b", "c"})
+	private MoleculeArchiveService moleculeArchiveService;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter(label = "MoleculeArchive")
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
+
+	@Parameter(label = "X Column", choices = { "a", "b", "c" })
 	private String Xcolumn;
-    
-    @Parameter(label="Y Column", choices = {"a", "b", "c"})
+
+	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
 	private String Ycolumn;
-    
+
 	@Parameter(label = "Region type:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All",
-					"Defined below", "Defined in Molecules", "Defined in Metadata" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All",
+			"Defined below", "Defined in Molecules", "Defined in Metadata" })
 	private String regionType;
-	
-	@Parameter(label="from")
+
+	@Parameter(label = "from")
 	private double from = 1;
-	
-	@Parameter(label="to")
+
+	@Parameter(label = "to")
 	private double to = 500;
-	
-    @Parameter(label="Region")
+
+	@Parameter(label = "Region")
 	private String regionName;
-    
-    @Override
+
+	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput("Xcolumn", String.class);
+		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput(
+			"Xcolumn", String.class);
 		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
-		
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput("Ycolumn", String.class);
+
+		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput(
+			"Ycolumn", String.class);
 		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
 	}
-    
+
 	@Override
-	public void run() {		
-		//Let's keep track of the time it takes
+	public void run() {
+		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
-		
-		//Build log message
+
+		// Build log message
 		LogBuilder builder = new LogBuilder();
-		
+
 		String log = LogBuilder.buildTitleBlock("Sigma Calculator");
-		
+
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		
-		//Output first part of log message...
+
+		// Output first part of log message...
 		logService.info(log);
-		
-		//Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless())
-			archive.lock();
-		
+
+		// Lock the window so it can't be changed while processing
+		if (!uiService.isHeadless()) archive.lock();
+
 		archive.logln(log);
-		
+
 		final String paramName = Ycolumn + "_sigma";
-		
-		ConcurrentMap<String, MarsRegion> regionMap = new ConcurrentHashMap<String, MarsRegion>();
-		
+
+		ConcurrentMap<String, MarsRegion> regionMap =
+			new ConcurrentHashMap<String, MarsRegion>();
+
 		if (regionType.equals("Defined in Metadata")) {
 			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
 				MarsMetadata metadata = archive.getMetadata(metaUID);
-				if (metadata.hasRegion(regionName))
-					regionMap.put(metaUID, metadata.getRegion(regionName));
+				if (metadata.hasRegion(regionName)) regionMap.put(metaUID, metadata
+					.getRegion(regionName));
 			});
 		}
-		
-		//Loop through each molecule and calculate sigma, add it as a parameter
+
+		// Loop through each molecule and calculate sigma, add it as a parameter
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 			MarsTable datatable = molecule.getTable();
-			
+
 			if (regionType.equals("Defined below")) {
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from, to));
-			} else if (regionType.equals("Defined in Molecules") && molecule.hasRegion(regionName)) {
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from,
+					to));
+			}
+			else if (regionType.equals("Defined in Molecules") && molecule.hasRegion(
+				regionName))
+			{
 				MarsRegion regionOfInterest = molecule.getRegion(regionName);
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));				
-			} else if (regionType.equals("Defined in Metadata") && regionMap.containsKey(molecule.getMetadataUID())) {
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn,
+					regionOfInterest.getStart(), regionOfInterest.getEnd()));
+			}
+			else if (regionType.equals("Defined in Metadata") && regionMap
+				.containsKey(molecule.getMetadataUID()))
+			{
 				MarsRegion regionOfInterest = regionMap.get(molecule.getMetadataUID());
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, regionOfInterest.getStart(), regionOfInterest.getEnd()));
-			} else {
-				//WE assume this mean sigma for whole trace.
+				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn,
+					regionOfInterest.getStart(), regionOfInterest.getEnd()));
+			}
+			else {
+				// WE assume this mean sigma for whole trace.
 				molecule.setParameter(paramName, datatable.std(Ycolumn));
 			}
-			
+
 			archive.put(molecule);
 		});
-		
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() - starttime)/60000, 2) + " minutes.");
-	    logService.info(LogBuilder.endBlock(true));
-	    archive.logln(LogBuilder.endBlock(true));
-	    archive.logln("   ");
-	    
-		//Unlock the window so it can be changed
-	    if (!uiService.isHeadless()) 
-			archive.unlock();
+
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+			starttime) / 60000, 2) + " minutes.");
+		logService.info(LogBuilder.endBlock(true));
+		archive.logln(LogBuilder.endBlock(true));
+		archive.logln("   ");
+
+		// Unlock the window so it can be changed
+		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
@@ -180,62 +195,65 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command, I
 		builder.addParameter("Region", regionName);
 		builder.addParameter("New parameter added", Ycolumn + "_sigma");
 	}
-	
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
+
+	public void setArchive(
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive)
+	{
 		this.archive = archive;
 	}
-	
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
+
+	public
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>>
+		getArchive()
+	{
 		return archive;
 	}
-	
+
 	public void setXcolumn(String Xcolumn) {
 		this.Xcolumn = Xcolumn;
 	}
-	
+
 	public String getXcolumn() {
 		return Xcolumn;
 	}
-    
+
 	public void setYcolumn(String Ycolumn) {
 		this.Ycolumn = Ycolumn;
 	}
-	
+
 	public String getYcolumn() {
 		return Ycolumn;
 	}
-	
+
 	public void setRegionType(String regionType) {
 		this.regionType = regionType;
 	}
-	
+
 	public String getRegionType() {
 		return this.regionType;
 	}
-	
+
 	public void setRegionName(String regionName) {
 		this.regionName = regionName;
 	}
-	
+
 	public String getRegionName() {
 		return regionName;
 	}
-	
+
 	public void setFrom(double from) {
 		this.from = from;
 	}
-	
+
 	public double getFrom() {
 		return from;
 	}
-	
+
 	public void setTo(double to) {
 		this.to = to;
 	}
-	
+
 	public double getTo() {
 		return to;
 	}
 }
-
-

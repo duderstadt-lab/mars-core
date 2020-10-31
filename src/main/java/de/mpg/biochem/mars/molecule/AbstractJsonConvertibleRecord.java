@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -42,122 +43,131 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 /**
- * Abstract superclass for JsonConvertibleRecords. Contains basic conversion 
+ * Abstract superclass for JsonConvertibleRecords. Contains basic conversion
  * methods to and from Json based on the Jackson streaming API. This abstract
- * class can be extended for any classes that needs to be serialized or de-serialized
- * from Json. The subclass must implement the {@link #createIOMaps() createIOMaps} method to define the input 
- * and output Predicate maps that determine how objects, fields, arrays should be stored 
- * using the Jackson streaming API. 
+ * class can be extended for any classes that needs to be serialized or
+ * de-serialized from Json. The subclass must implement the
+ * {@link #createIOMaps() createIOMaps} method to define the input and output
+ * Predicate maps that determine how objects, fields, arrays should be stored
+ * using the Jackson streaming API.
  * <p>
- * For examples, see {@link MarsRecord}, {@link AbstractMolecule}, {@link AbstractMarsMetadata}.
+ * For examples, see {@link MarsRecord}, {@link AbstractMolecule},
+ * {@link AbstractMarsMetadata}.
  * </p>
+ * 
  * @author Karl Duderstadt
  */
-public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRecord {
-	
+public abstract class AbstractJsonConvertibleRecord implements
+	JsonConvertibleRecord
+{
+
 	private LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
 	private HashMap<String, Predicate<JsonParser>> inputMap;
 
 	/**
-	 * IOMaps are created during the first call to toJSON or fromJSON lazily 
-	 * This ensures subclasses overriding createIOMaps have been fully
-	 * initialized before the first call. If false this field triggers initialization.
+	 * IOMaps are created during the first call to toJSON or fromJSON lazily This
+	 * ensures subclasses overriding createIOMaps have been fully initialized
+	 * before the first call. If false this field triggers initialization.
 	 */
 	private boolean IOMapsInitialized;
-	
+
 	/**
-	 * Constructor for creating a JsonConvertiableRecord. 
+	 * Constructor for creating a JsonConvertiableRecord.
 	 */
 	public AbstractJsonConvertibleRecord() {
 		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
 		inputMap = new HashMap<String, Predicate<JsonParser>>();
 		IOMapsInitialized = false;
 	}
-	
+
 	/**
-	 * Stream a record to JSON. Stream a record
-	 * from to a file using the JsonGenerator stream provided.
+	 * Stream a record to JSON. Stream a record from to a file using the
+	 * JsonGenerator stream provided.
 	 * 
-	 * @param jGenerator A JsonGenerator for streaming a
-	 * record to a file.
-	 * 
-     * @throws IOException if there is a problem reading from the file.
+	 * @param jGenerator A JsonGenerator for streaming a record to a file.
+	 * @throws IOException if there is a problem reading from the file.
 	 */
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		if (!IOMapsInitialized) {
 			createIOMaps();
 			IOMapsInitialized = true;
 		}
-		
+
 		jGenerator.writeStartObject();
 		for (String field : outputMap.keySet()) {
-			if (!outputMap.get(field).test(jGenerator))
-				throw new IOException("IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
+			if (!outputMap.get(field).test(jGenerator)) throw new IOException(
+				"IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
 		}
 		jGenerator.writeEndObject();
 	}
-	
+
 	/**
-	 * Read a record from JSON. Load a record
-	 * from a file using the JsonParser stream provided.
+	 * Read a record from JSON. Load a record from a file using the JsonParser
+	 * stream provided.
 	 * 
-	 * @param jParser A JsonParser for loading the 
-	 * record from a file.
-	 * 
-     * @throws IOException if there is a problem reading from the file.
+	 * @param jParser A JsonParser for loading the record from a file.
+	 * @throws IOException if there is a problem reading from the file.
 	 */
 	public void fromJSON(JsonParser jParser) throws IOException {
 		if (!IOMapsInitialized) {
 			createIOMaps();
 			IOMapsInitialized = true;
 		}
-		
+
 		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
 		String fieldBlockName = "";
 		while (nextToken != JsonToken.END_OBJECT) {
-			nextToken = jParser.nextToken(); 
+			nextToken = jParser.nextToken();
 			if (nextToken == null) {
 				System.out.println("JsonParser encountered an incomplete record.");
 				break;
 			}
-			
-		    String fieldname = jParser.getCurrentName();
 
-		    if (fieldname == null)
-		    	continue;
-		    else 
-		    	fieldBlockName = fieldname;
-		    	
-		    if (inputMap.containsKey(fieldname)) {
-		    	jParser.nextToken();
-			    if (!inputMap.get(fieldname).test(jParser))
-			    	throw new IOException("IOExcpetion: JsonParser encountered a problem reading from the input stream");
-			    continue;
-		    }
-		    
-		    //SHOULD BE UNREACHABLE
-		    //This is only reached if there is an unexpected field added to the json record
-		    //In that case we simply pass through it and all substructures that contain arrays or objects
-		    if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-		    	System.out.println("unknown object " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownObjects(jParser);
-		    } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
-		    	System.out.println("unknown array " + fieldBlockName + " encountered in the record ... skipping");
-		    	MarsUtil.passThroughUnknownArrays(jParser);
-		    } else {
-		    	//Must just be a normal field... so it won't escape the loop prematurely.
-		    }
+			String fieldname = jParser.getCurrentName();
+
+			if (fieldname == null) continue;
+			else fieldBlockName = fieldname;
+
+			if (inputMap.containsKey(fieldname)) {
+				jParser.nextToken();
+				if (!inputMap.get(fieldname).test(jParser)) throw new IOException(
+					"IOExcpetion: JsonParser encountered a problem reading from the input stream");
+				continue;
+			}
+
+			// SHOULD BE UNREACHABLE
+			// This is only reached if there is an unexpected field added to the json
+			// record
+			// In that case we simply pass through it and all substructures that
+			// contain arrays or objects
+			if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
+				System.out.println("unknown object " + fieldBlockName +
+					" encountered in the record ... skipping");
+				MarsUtil.passThroughUnknownObjects(jParser);
+			}
+			else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
+				System.out.println("unknown array " + fieldBlockName +
+					" encountered in the record ... skipping");
+				MarsUtil.passThroughUnknownArrays(jParser);
+			}
+			else {
+				// Must just be a normal field... so it won't escape the loop
+				// prematurely.
+			}
 		}
 	}
-	
-	protected void setJsonField(String field, ThrowingConsumer<JsonGenerator, IOException> output, ThrowingConsumer<JsonParser, IOException> input) {
-		if (output != null)
-			outputMap.put(field, MarsUtil.catchConsumerException(output, IOException.class));
-		
-		if (input != null)
-			inputMap.put(field, MarsUtil.catchConsumerException(input, IOException.class));
+
+	protected void setJsonField(String field,
+		ThrowingConsumer<JsonGenerator, IOException> output,
+		ThrowingConsumer<JsonParser, IOException> input)
+	{
+		if (output != null) outputMap.put(field, MarsUtil.catchConsumerException(
+			output, IOException.class));
+
+		if (input != null) inputMap.put(field, MarsUtil.catchConsumerException(
+			input, IOException.class));
 	}
-	
+
 	/**
 	 * Get the JsonGenerator for a field.
 	 * 
@@ -167,7 +177,7 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	protected Predicate<JsonGenerator> getJsonGenerator(String field) {
 		return outputMap.get(field);
 	}
-	
+
 	/**
 	 * Get the JsonParser for a field.
 	 * 
@@ -177,19 +187,19 @@ public abstract class AbstractJsonConvertibleRecord implements JsonConvertibleRe
 	protected Predicate<JsonParser> getJsonParser(String field) {
 		return inputMap.get(field);
 	}
-	
+
 	/**
 	 * Get the record in Json string format.
 	 * 
 	 * @return Json string representation of the record.
 	 */
-  	public String dumpJSON() {
-  		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
-  	}
-	
-  	/**
-	 * Must be implemented in subclasses to define how fields, objects, arrays should be saved 
-	 * based on the Jackson streaming API.
+	public String dumpJSON() {
+		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+	}
+
+	/**
+	 * Must be implemented in subclasses to define how fields, objects, arrays
+	 * should be saved based on the Jackson streaming API.
 	 */
 	protected abstract void createIOMaps();
 }

@@ -26,96 +26,103 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 /**
- * This interface must be implemented by Mars GUIs that provide MoleculeArchive windows with access to archive information. 
- * mars-swing and mars-fx both contain concrete implementations of this interface. 
+ * This interface must be implemented by Mars GUIs that provide MoleculeArchive
+ * windows with access to archive information. mars-swing and mars-fx both
+ * contain concrete implementations of this interface.
  * <p>
- * This provides direct access to the MoleculeArchive window that is currently displaying the archive contents using the 
- * {@link MoleculeArchive#getWindow() getWindow} method. Using this interface the window can be updated, locked, unlocked, 
- * closed, Log Messages can be printed to the lock mode background and the Progress of a running job can be provided.
+ * This provides direct access to the MoleculeArchive window that is currently
+ * displaying the archive contents using the {@link MoleculeArchive#getWindow()
+ * getWindow} method. Using this interface the window can be updated, locked,
+ * unlocked, closed, Log Messages can be printed to the lock mode background and
+ * the Progress of a running job can be provided.
  * </p>
+ * 
  * @author Karl Duderstadt
  */
 public interface MoleculeArchiveWindow {
+
 	/**
-	 * Force the window to refresh its components. Deprecated - lock/unlock could also be used to force a reset or type casting if needed.
+	 * Force the window to refresh its components. Deprecated - lock/unlock could
+	 * also be used to force a reset or type casting if needed.
 	 */
 	@Deprecated
 	public void update();
-	
+
 	/**
-	 * This is used to report the progress for a long
-	 * running task working on the archive when its locked.
-	 * This should be a value between 0 and 1 with 1 representing
-	 * completion.
+	 * This is used to report the progress for a long running task working on the
+	 * archive when its locked. This should be a value between 0 and 1 with 1
+	 * representing completion.
 	 * 
 	 * @param progress Fraction of job that is complete.
 	 */
 	public void setProgress(double progress);
-	
+
 	/**
 	 * Update the message presented on the lock screen.
 	 * 
 	 * @param message Message presented on the lock screen.
 	 */
 	public void updateLockMessage(String message);
-	
+
 	/**
-	 * Add a message to the log that is presented in the background
-	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#logln(String message) logln(String message)} are printed
-	 * to the lock screen background using this method.
+	 * Add a message to the log that is presented in the background of the lock
+	 * screen. All log messages sent to the method
+	 * {@link MoleculeArchive#logln(String message) logln(String message)} are
+	 * printed to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
 	@Deprecated
 	public void addLogMessage(String message);
-	
+
 	/**
-	 * Add a message to the log that is presented in the background
-	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)} are printed
-	 * to the lock screen background using this method.
+	 * Add a message to the log that is presented in the background of the lock
+	 * screen. All log messages sent to the method
+	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)}
+	 * are printed to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
 	public void log(String message);
-	
+
 	/**
-	 * Add a message and start a new line in the log that is presented in the background
-	 * of the lock screen. All log messages sent to the method 
-	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)} are printed
-	 * to the lock screen background using this method.
+	 * Add a message and start a new line in the log that is presented in the
+	 * background of the lock screen. All log messages sent to the method
+	 * {@link MoleculeArchive#logln(String message) addLogMessage(String message)}
+	 * are printed to the lock screen background using this method.
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
 	public void logln(String message);
-	
+
 	/**
-	 * Lock the MoleculeArchive window to prevent changes from being 
-	 * made at the same time as calculations are running on the archive. 
-	 * Allow for setting a specific message in the lock screen such as the
-	 * calculation that is currently running.
+	 * Lock the MoleculeArchive window to prevent changes from being made at the
+	 * same time as calculations are running on the archive. Allow for setting a
+	 * specific message in the lock screen such as the calculation that is
+	 * currently running.
 	 * 
 	 * @param message Message to present in the lock screen.
 	 */
 	public void lock(String message);
-	
+
 	/**
-	 * Lock the MoleculeArchive window to prevent changes from being 
-	 * made at the same time as calculations are running on the archive. 
+	 * Lock the MoleculeArchive window to prevent changes from being made at the
+	 * same time as calculations are running on the archive.
 	 */
 	public void lock();
-	
+
 	/**
-	 * Unlock the MoleculeArchive window once processing is complete. 
+	 * Unlock the MoleculeArchive window once processing is complete.
 	 */
 	public void unlock();
-	
+
 	/**
-	 * Close the archive window. Deprecated - archive windows should be closed directly. If this is required typecasting could be used.
+	 * Close the archive window. Deprecated - archive windows should be closed
+	 * directly. If this is required typecasting could be used.
 	 */
 	@Deprecated
 	public void close();

@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule.commands;
 
 import java.io.File;
@@ -44,39 +45,40 @@ import org.scijava.ui.UIService;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 
-@Plugin(type = Command.class, label = "Open archive", menu = {
-		@Menu(label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-				mnemonic = MenuConstants.PLUGINS_MNEMONIC),
-		@Menu(label = "Mars", weight = MenuConstants.PLUGINS_WEIGHT,
-			mnemonic = 's'),
-		@Menu(label = "Molecule", weight = 1,
-			mnemonic = 'm'),
-		@Menu(label = "Open virtual store", weight = 1, mnemonic = 'v')})
-public class ImportVirtualStoreCommand extends DynamicCommand {    
-    @Parameter(label="MoleculeArchive (.yama.store)", style="directory")
-    private File file;
-    
-    @Parameter
-    private UIService uiService;
-    
-    @Parameter
-    private OptionsService optionsService;
-    
+@Plugin(type = Command.class, label = "Open archive", menu = { @Menu(
+	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
+			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
+				label = "Open virtual store", weight = 1, mnemonic = 'v') })
+public class ImportVirtualStoreCommand extends DynamicCommand {
+
+	@Parameter(label = "MoleculeArchive (.yama.store)", style = "directory")
+	private File file;
+
+	@Parameter
+	private UIService uiService;
+
+	@Parameter
+	private OptionsService optionsService;
+
 	@Override
-	public void run() {				
-		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin = new MoleculeArchiveIOPlugin();
+	public void run() {
+		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
+			new MoleculeArchiveIOPlugin();
 		moleculeArchiveIOPlugin.setContext(getContext());
-		
+
 		try {
-			MoleculeArchive<?,?,?,?> archive = moleculeArchiveIOPlugin.open(file.getAbsolutePath());
-			
-			final boolean newStyleIO =
-					optionsService.getOptions(net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
-			
-			if (!newStyleIO)
-				uiService.show(archive);
-			
-		} catch (IOException e) {
+			MoleculeArchive<?, ?, ?, ?> archive = moleculeArchiveIOPlugin.open(file
+				.getAbsolutePath());
+
+			final boolean newStyleIO = optionsService.getOptions(
+				net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+
+			if (!newStyleIO) uiService.show(archive);
+
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

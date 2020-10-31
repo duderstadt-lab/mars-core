@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
@@ -49,36 +50,41 @@ import de.mpg.biochem.mars.util.MarsRegion;
 import java.lang.NullPointerException;
 
 /**
- * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and {@link MarsMetadata}. 
- * All {@link MarsRecord}s have a basic set of properties including a UID, notes, 
- * tags, parameters, a {@link MarsTable}, {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}s
- * can be serialized to and from Json.
+ * Abstract superclass for all {@link MarsRecord} types: {@link Molecule} and
+ * {@link MarsMetadata}. All {@link MarsRecord}s have a basic set of properties
+ * including a UID, notes, tags, parameters, a {@link MarsTable},
+ * {@link MarsRegion}s, and {@link MarsPosition}s. {@link MarsRecord}s can be
+ * serialized to and from Json.
  * <p>
- * This basic set of properties is extended for storage of molecule information and metadata information in
- * {@link Molecule}, {@link AbstractMolecule}, {@link MarsMetadata}, {@link AbstractMarsMetadata}.
+ * This basic set of properties is extended for storage of molecule information
+ * and metadata information in {@link Molecule}, {@link AbstractMolecule},
+ * {@link MarsMetadata}, {@link AbstractMarsMetadata}.
  * </p>
+ * 
  * @author Karl Duderstadt
  */
-public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord implements MarsRecord {
-	
+public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
+	implements MarsRecord
+{
+
 	/**
-	 * Unique ID for storage in maps and universal identification. 
+	 * Unique ID for storage in maps and universal identification.
 	 */
 	private String uid;
-	
+
 	/**
 	 * Reference to MoleculeArchive containing the record.
 	 */
-	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?,?>, ? extends MoleculeArchiveIndex<?,?>> parent;
-	
+	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>> parent;
+
 	private String notes;
 	private LinkedHashSet<String> tags;
 	private LinkedHashMap<String, Object> parameters;
 	private LinkedHashMap<String, MarsRegion> regionsOfInterest;
 	private LinkedHashMap<String, MarsPosition> positionsOfInterest;
-	
+
 	/**
-	 * Constructor for creating an empty MarsRecord. 
+	 * Constructor for creating an empty MarsRecord.
 	 */
 	public AbstractMarsRecord() {
 		super();
@@ -87,10 +93,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 	}
-	
+
 	/**
-	 * Constructor for creating an empty MarsRecord with the
-	 * specified UID. 
+	 * Constructor for creating an empty MarsRecord with the specified UID.
 	 * 
 	 * @param UID The unique identifier for this MarsRecord.
 	 */
@@ -101,154 +106,157 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 		this.uid = UID;
-		
+
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
 
-		setJsonField("uid",
-			jGenerator -> jGenerator.writeStringField("uid", uid),
+		setJsonField("uid", jGenerator -> jGenerator.writeStringField("uid", uid),
 			jParser -> uid = jParser.getText());
-		
-		setJsonField("type", 
-			jGenerator -> jGenerator.writeStringField("type", this.getClass().getName()),
-			null);
-		
-		setJsonField("notes",
-			jGenerator -> {
-				if (notes != null)
-					jGenerator.writeStringField("notes", notes);
-				}, 
-			jParser -> notes = jParser.getText());
-		
-		setJsonField("tags", 
-			jGenerator -> {
-					if (tags.size() > 0) {
-						jGenerator.writeFieldName("tags");
-						jGenerator.writeStartArray();
-						Iterator<String> iterator = tags.iterator();
-						while(iterator.hasNext())
-							jGenerator.writeString(iterator.next());
-						jGenerator.writeEndArray();
+
+		setJsonField("type", jGenerator -> jGenerator.writeStringField("type", this
+			.getClass().getName()), null);
+
+		setJsonField("notes", jGenerator -> {
+			if (notes != null) jGenerator.writeStringField("notes", notes);
+		}, jParser -> notes = jParser.getText());
+
+		setJsonField("tags", jGenerator -> {
+			if (tags.size() > 0) {
+				jGenerator.writeFieldName("tags");
+				jGenerator.writeStartArray();
+				Iterator<String> iterator = tags.iterator();
+				while (iterator.hasNext())
+					jGenerator.writeString(iterator.next());
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				tags.add(jParser.getText());
+			}
+		});
+
+		setJsonField("parameters", jGenerator -> {
+			if (parameters.size() > 0) {
+				jGenerator.writeArrayFieldStart("parameters");
+				for (String name : parameters.keySet()) {
+					jGenerator.writeStartObject();
+					jGenerator.writeStringField("name", name);
+					if (parameters.get(name) instanceof Double) {
+						jGenerator.writeStringField("type", "number");
+						jGenerator.writeNumberField("value", ((Double) parameters.get(name))
+							.doubleValue());
 					}
-				}, 
-			jParser -> {
-		    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-		            tags.add(jParser.getText());
-		        }
-			});
-				
-		setJsonField("parameters", 
-			jGenerator -> {
-					if (parameters.size() > 0) {
-						jGenerator.writeArrayFieldStart("parameters");
-						for (String name : parameters.keySet()) {
-							jGenerator.writeStartObject();
-							jGenerator.writeStringField("name", name);
-							if (parameters.get(name) instanceof Double) {
-								jGenerator.writeStringField("type", "number");
-								jGenerator.writeNumberField("value", ((Double) parameters.get(name)).doubleValue());
-							} else if (parameters.get(name) instanceof String) {
-								jGenerator.writeStringField("type", "string");
-								jGenerator.writeStringField("value", (String) parameters.get(name)); 
-							} else if (parameters.get(name) instanceof Boolean) {
-								jGenerator.writeStringField("type", "boolean");
-								jGenerator.writeBooleanField("value", (Boolean) parameters.get(name));
-							}
-							jGenerator.writeEndObject();
-						}
-						jGenerator.writeEndArray();
+					else if (parameters.get(name) instanceof String) {
+						jGenerator.writeStringField("type", "string");
+						jGenerator.writeStringField("value", (String) parameters.get(name));
 					}
-				},
-			jParser -> {
-				if (jParser.currentToken().equals(JsonToken.START_ARRAY)) {
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						String name = "";
-						String type = "";
-						while (jParser.nextToken() != JsonToken.END_OBJECT) {
-							String field = jParser.getCurrentName();
-							jParser.nextToken();
-							if (field.equals("name")) {
-								name = jParser.getValueAsString();
-							} else if (field.equals("type")) {
-								type = jParser.getValueAsString();
-							} else if (field.equals("value")) {
-		    					if (type.equals("number")) {
-		    						if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-		    		    				String str = jParser.getValueAsString();
-		    		    				if (Objects.equals(str, new String("Infinity"))) {
-		    		    					parameters.put(name, Double.POSITIVE_INFINITY);
-		    		    				} else if (Objects.equals(str, new String("-Infinity"))) {
-		    		    					parameters.put(name, Double.NEGATIVE_INFINITY);
-		    		    				} else if (Objects.equals(str, new String("NaN"))) {
-		    		    					parameters.put(name, Double.NaN);
-		    		    				}
-		    		    			} else {
-		    		    				parameters.put(name, jParser.getDoubleValue());
-		    		    			}
-		    					} else if (type.equals("string")) {
-		    						parameters.put(name, jParser.getValueAsString());
-		    					} else if (type.equals("boolean")) {
-		    						parameters.put(name, jParser.getBooleanValue());
-		    					}
-		    				}
-						}
+					else if (parameters.get(name) instanceof Boolean) {
+						jGenerator.writeStringField("type", "boolean");
+						jGenerator.writeBooleanField("value", (Boolean) parameters.get(
+							name));
 					}
-				} else {	
-					//Must be old format... so just read in all as numbers
-					while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    		String subfieldname = jParser.getCurrentName();
-			    		jParser.nextToken();
-			    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-		    				String str = jParser.getValueAsString();
-		    				if (Objects.equals(str, new String("Infinity"))) {
-		    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("-Infinity"))) {
-		    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("NaN"))) {
-		    					parameters.put(subfieldname, Double.NaN);
-		    				}
-		    			} else {
-		    				parameters.put(subfieldname, jParser.getDoubleValue());
-		    			}
-			    	}
-		    	}
-		    	
-			});
-				
-		setJsonField("regionsOfInterest", 
-			jGenerator -> {
-					if (regionsOfInterest.size() > 0) {
-						jGenerator.writeArrayFieldStart("regionsOfInterest");
-						for (String region : regionsOfInterest.keySet()) 
-							regionsOfInterest.get(region).toJSON(jGenerator);
-						jGenerator.writeEndArray();
-					}
-			 	}, 
-			jParser -> {
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						MarsRegion regionOfInterest = new MarsRegion(jParser);
-				    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-			    	}
-			 });
-				 	
-		setJsonField("positionsOfInterest", 
-			jGenerator -> {
-					if (positionsOfInterest.size() > 0) {
-						jGenerator.writeArrayFieldStart("positionsOfInterest");
-						for (String position : positionsOfInterest.keySet()) 
-							positionsOfInterest.get(position).toJSON(jGenerator);
-						jGenerator.writeEndArray();
-					}
-			 	}, 
-			jParser -> {
+					jGenerator.writeEndObject();
+				}
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			if (jParser.currentToken().equals(JsonToken.START_ARRAY)) {
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					MarsPosition positionOfInterest = new MarsPosition(jParser);
-			    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-		    	}
-		 	});
-		
+					String name = "";
+					String type = "";
+					while (jParser.nextToken() != JsonToken.END_OBJECT) {
+						String field = jParser.getCurrentName();
+						jParser.nextToken();
+						if (field.equals("name")) {
+							name = jParser.getValueAsString();
+						}
+						else if (field.equals("type")) {
+							type = jParser.getValueAsString();
+						}
+						else if (field.equals("value")) {
+							if (type.equals("number")) {
+								if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+									String str = jParser.getValueAsString();
+									if (Objects.equals(str, new String("Infinity"))) {
+										parameters.put(name, Double.POSITIVE_INFINITY);
+									}
+									else if (Objects.equals(str, new String("-Infinity"))) {
+										parameters.put(name, Double.NEGATIVE_INFINITY);
+									}
+									else if (Objects.equals(str, new String("NaN"))) {
+										parameters.put(name, Double.NaN);
+									}
+								}
+								else {
+									parameters.put(name, jParser.getDoubleValue());
+								}
+							}
+							else if (type.equals("string")) {
+								parameters.put(name, jParser.getValueAsString());
+							}
+							else if (type.equals("boolean")) {
+								parameters.put(name, jParser.getBooleanValue());
+							}
+						}
+					}
+				}
+			}
+			else {
+				// Must be old format... so just read in all as numbers
+				while (jParser.nextToken() != JsonToken.END_OBJECT) {
+					String subfieldname = jParser.getCurrentName();
+					jParser.nextToken();
+					if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+						String str = jParser.getValueAsString();
+						if (Objects.equals(str, new String("Infinity"))) {
+							parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+						}
+						else if (Objects.equals(str, new String("-Infinity"))) {
+							parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+						}
+						else if (Objects.equals(str, new String("NaN"))) {
+							parameters.put(subfieldname, Double.NaN);
+						}
+					}
+					else {
+						parameters.put(subfieldname, jParser.getDoubleValue());
+					}
+				}
+			}
+
+		});
+
+		setJsonField("regionsOfInterest", jGenerator -> {
+			if (regionsOfInterest.size() > 0) {
+				jGenerator.writeArrayFieldStart("regionsOfInterest");
+				for (String region : regionsOfInterest.keySet())
+					regionsOfInterest.get(region).toJSON(jGenerator);
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsRegion regionOfInterest = new MarsRegion(jParser);
+				regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+			}
+		});
+
+		setJsonField("positionsOfInterest", jGenerator -> {
+			if (positionsOfInterest.size() > 0) {
+				jGenerator.writeArrayFieldStart("positionsOfInterest");
+				for (String position : positionsOfInterest.keySet())
+					positionsOfInterest.get(position).toJSON(jGenerator);
+				jGenerator.writeEndArray();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsPosition positionOfInterest = new MarsPosition(jParser);
+				positionsOfInterest.put(positionOfInterest.getName(),
+					positionOfInterest);
+			}
+		});
+
 		/*
 		 * 
 		 * The fields below are needed for backwards compatibility.
@@ -256,66 +264,63 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		 * Please remove for a future release.
 		 * 
 		 */
-		
-		setJsonField("UID", null,
-				jParser -> uid = jParser.getText());
-		
-		setJsonField("Notes", null, 
-				jParser -> notes = jParser.getText());
-		
-		setJsonField("Tags", null, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-			            tags.add(jParser.getText());
-			        }
-				});
-		
-		setJsonField("Parameters", null, 
-				jParser -> {
-			    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			    		String subfieldname = jParser.getCurrentName();
-			    		jParser.nextToken();
-			    		if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-		    				String str = jParser.getValueAsString();
-		    				if (Objects.equals(str, new String("Infinity"))) {
-		    					parameters.put(subfieldname, Double.POSITIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("-Infinity"))) {
-		    					parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
-		    				} else if (Objects.equals(str, new String("NaN"))) {
-		    					parameters.put(subfieldname, Double.NaN);
-		    				}
-		    			} else {
-		    				parameters.put(subfieldname, jParser.getDoubleValue());
-		    			}
-			    	}
-				});
-		
-		setJsonField("stringParameters", null, 
-			jParser -> {
-		    	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-		    		String field = jParser.getCurrentName();
-		    		jParser.nextToken();
-	    			parameters.put(field, jParser.getText());
-		    	}
-			});
-		
-		setJsonField("RegionsOfInterest", null, 
-				jParser -> {
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						MarsRegion regionOfInterest = new MarsRegion(jParser);
-				    	regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-			    	}
-			 });
-		
-		setJsonField("PositionsOfInterest", null,
-				jParser -> {
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						MarsPosition positionOfInterest = new MarsPosition(jParser);
-				    	positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-			    	}
-			 	});
+
+		setJsonField("UID", null, jParser -> uid = jParser.getText());
+
+		setJsonField("Notes", null, jParser -> notes = jParser.getText());
+
+		setJsonField("Tags", null, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				tags.add(jParser.getText());
+			}
+		});
+
+		setJsonField("Parameters", null, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String subfieldname = jParser.getCurrentName();
+				jParser.nextToken();
+				if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+					String str = jParser.getValueAsString();
+					if (Objects.equals(str, new String("Infinity"))) {
+						parameters.put(subfieldname, Double.POSITIVE_INFINITY);
+					}
+					else if (Objects.equals(str, new String("-Infinity"))) {
+						parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
+					}
+					else if (Objects.equals(str, new String("NaN"))) {
+						parameters.put(subfieldname, Double.NaN);
+					}
+				}
+				else {
+					parameters.put(subfieldname, jParser.getDoubleValue());
+				}
+			}
+		});
+
+		setJsonField("stringParameters", null, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String field = jParser.getCurrentName();
+				jParser.nextToken();
+				parameters.put(field, jParser.getText());
+			}
+		});
+
+		setJsonField("RegionsOfInterest", null, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsRegion regionOfInterest = new MarsRegion(jParser);
+				regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
+			}
+		});
+
+		setJsonField("PositionsOfInterest", null, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsPosition positionOfInterest = new MarsPosition(jParser);
+				positionsOfInterest.put(positionOfInterest.getName(),
+					positionOfInterest);
+			}
+		});
 	}
-	
+
 	/**
 	 * Get the UID for this record.
 	 * 
@@ -324,40 +329,40 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public String getUID() {
 		return uid;
 	}
-	
+
 	/**
-	 * Get notes for this record. Notes can be added during manual sorting
-	 * to point out a feature or important detail about the current record.
+	 * Get notes for this record. Notes can be added during manual sorting to
+	 * point out a feature or important detail about the current record.
 	 * 
 	 * @return Returns a string containing any notes associated with this record.
 	 */
 	public String getNotes() {
 		return notes;
 	}
-	
+
 	/**
-	 * Sets the notes for this record. Notes can be added during manual sorting
-	 * to point out a feature or important detail about the current record.
+	 * Sets the notes for this record. Notes can be added during manual sorting to
+	 * point out a feature or important detail about the current record.
 	 * 
 	 * @param notes Any notes about this molecule.
 	 */
 	public void setNotes(String notes) {
 		this.notes = notes;
 	}
-	
+
 	/**
 	 * Add to any notes already in the record.
-	 *  
+	 * 
 	 * @param note String with the note to add to the record.
 	 */
 	public void addNote(String note) {
 		this.notes += note;
 	}
-	
+
 	/**
-	 * Add a string tag to the record. Tags are used for marking individual
-	 * record to sorting and processing with subsets of molecules.
-	 *  
+	 * Add a string tag to the record. Tags are used for marking individual record
+	 * to sorting and processing with subsets of molecules.
+	 * 
 	 * @param tag The string tag to be added.
 	 */
 	public void addTag(String tag) {
@@ -366,69 +371,68 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addTag(tag);
 		}
 	}
-	
+
 	/**
 	 * Check if the record has a tag.
-	 *  
+	 * 
 	 * @param tag The string tag to check for.
-	 * @return Returns true if the record has the tag
-	 * and false if not.
+	 * @return Returns true if the record has the tag and false if not.
 	 */
 	public boolean hasTag(String tag) {
 		return tags.contains(tag);
 	}
-	
+
 	/**
 	 * Check if the record has no tags.
-	 *  
+	 * 
 	 * @return Returns true if the record has no tags.
 	 */
 	public boolean hasNoTags() {
 		return tags.size() == 0;
 	}
-	
+
 	/**
 	 * Get the set of all tags.
-	 *  
+	 * 
 	 * @return Returns the set of tags for this record.
 	 */
 	public LinkedHashSet<String> getTags() {
 		return tags;
 	}
-	
+
 	/**
 	 * Get an array list of all tags.
-	 *  
+	 * 
 	 * @return Returns the set of tags for this record as an array.
 	 */
 	public String[] getTagsArray() {
 		String tagArray[] = new String[tags.size()];
 		return tags.toArray(tagArray);
 	}
-	
+
 	/**
 	 * Remove a string tag from the record.
-	 *  
+	 * 
 	 * @param tag The string tag to remove.
 	 */
 	public void removeTag(String tag) {
 		tags.remove(tag);
 	}
-	
+
 	/**
 	 * Remove all tags from the record.
 	 */
 	public void removeAllTags() {
 		tags.clear();
 	}
-	
+
 	/**
-	 * Add or update a parameter value. Parameters are used to store single 
-	 * values associated with the record. For example, this can be the 
-	 * start and stop times for a region of interest. Or calculated features
-	 * such as a slope. Storing parameters with the record data
-	 * allows for easier and more efficient processing and data extraction.
-	 *  
+	 * Add or update a parameter value. Parameters are used to store single values
+	 * associated with the record. For example, this can be the start and stop
+	 * times for a region of interest. Or calculated features such as a slope.
+	 * Storing parameters with the record data allows for easier and more
+	 * efficient processing and data extraction.
+	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The double value to set for the parameter name.
 	 */
@@ -438,10 +442,10 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addParameter(parameter);
 		}
 	}
-	
+
 	/**
-	 * Add or update a parameter value. 
-	 *  
+	 * Add or update a parameter value.
+	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The string value to set for the parameter name.
 	 */
@@ -451,10 +455,10 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addParameter(parameter);
 		}
 	}
-	
+
 	/**
-	 * Add or update a parameter value. 
-	 *  
+	 * Add or update a parameter value.
+	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The boolean value to set for the parameter name.
 	 */
@@ -464,14 +468,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addParameter(parameter);
 		}
 	}
-	
+
 	/**
 	 * Remove all parameter values from the record.
 	 */
 	public void removeAllParameters() {
 		parameters.clear();
 	}
-	
+
 	/**
 	 * Remove parameter. Removes the name and value pair.
 	 * 
@@ -482,7 +486,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parameters.remove(parameter);
 		}
 	}
-	
+
 	/**
 	 * Get the value of a parameter.
 	 * 
@@ -490,13 +494,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the double value for the parameter name given.
 	 */
 	public double getParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Double) {
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof Double)
+		{
 			return ((Double) parameters.get(parameter)).doubleValue();
-		} else {
+		}
+		else {
 			return Double.NaN;
 		}
 	}
-	
+
 	/**
 	 * Get the value of a string parameter.
 	 * 
@@ -504,13 +511,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the string value for the parameter name given.
 	 */
 	public String getStringParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof String) {
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof String)
+		{
 			return (String) parameters.get(parameter);
-		} else {
+		}
+		else {
 			return "";
 		}
 	}
-	
+
 	/**
 	 * Get the value of a string parameter.
 	 * 
@@ -518,12 +528,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 * @return Returns the boolean value for the parameter name given.
 	 */
 	public boolean getBooleanParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Boolean) {
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof Boolean)
+		{
 			return (boolean) parameters.get(parameter);
 		}
 		throw new NullPointerException();
 	}
-	
+
 	/**
 	 * Returns true if any type of parameter has the name give.
 	 * 
@@ -533,7 +545,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public boolean hasParameter(String parameter) {
 		return parameters.containsKey(parameter);
 	}
-	
+
 	/**
 	 * Returns true if the double parameter exists.
 	 * 
@@ -542,12 +554,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	@Override
 	public boolean hasDoubleParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Double)
-			return true;
-		else
-			return false;
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof Double) return true;
+		else return false;
 	}
-	
+
 	/**
 	 * Returns true if the string parameter exists.
 	 * 
@@ -556,10 +567,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	@Override
 	public boolean hasStringParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof String)
-			return true;
-		else
-			return false;
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof String) return true;
+		else return false;
 	}
 
 	/**
@@ -570,12 +580,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	 */
 	@Override
 	public boolean hasBooleanParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(parameter) instanceof Boolean)
-			return true;
-		else
-			return false;
+		if (parameters.containsKey(parameter) && parameters.get(
+			parameter) instanceof Boolean) return true;
+		else return false;
 	}
-	
+
 	/**
 	 * Get the map for all parameters.
 	 * 
@@ -584,14 +593,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 	public LinkedHashMap<String, Object> getParameters() {
 		return parameters;
 	}
-	
+
 	/**
-	 * Add or update a {@link MarsRegion}. This can be a region of
-	 * interest for further analysis steps: slope calculations or
-	 * KCP calculations {@link KCPCommand}. Region names are unique. If a region that
-	 * has this name already exists in the record it will be
-	 * overwritten by this method.
-	 *  
+	 * Add or update a {@link MarsRegion}. This can be a region of interest for
+	 * further analysis steps: slope calculations or KCP calculations
+	 * {@link KCPCommand}. Region names are unique. If a region that has this name
+	 * already exists in the record it will be overwritten by this method.
+	 * 
 	 * @param regionOfInterest The region to add to the record.
 	 */
 	public void putRegion(MarsRegion regionOfInterest) {
@@ -600,64 +608,62 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addRegion(regionOfInterest.getName());
 		}
 	}
-	
+
 	/**
-	 * Get a {@link MarsRegion}. Region names are
-	 * unique. Only one copy of each region can be 
-	 * stored in the record.
-	 *  
+	 * Get a {@link MarsRegion}. Region names are unique. Only one copy of each
+	 * region can be stored in the record.
+	 * 
 	 * @param name The name of the region to retrieve.
 	 */
 	public MarsRegion getRegion(String name) {
 		return regionsOfInterest.get(name);
 	}
-	
+
 	/**
-	 * Check if the record contains a {@link MarsRegion}
-	 * using the name.
-	 *  
+	 * Check if the record contains a {@link MarsRegion} using the name.
+	 * 
 	 * @param name The name of the region to check for.
 	 */
 	public boolean hasRegion(String name) {
 		return regionsOfInterest.containsKey(name);
 	}
-	
+
 	/**
 	 * Remove a {@link MarsRegion} from the record using the name.
-	 *  
+	 * 
 	 * @param name The name of the region to remove.
 	 */
 	public void removeRegion(String name) {
 		regionsOfInterest.remove(name);
 	}
-	
+
 	/**
 	 * Remove all regions from the record.
 	 */
 	public void removeAllRegions() {
 		regionsOfInterest.clear();
 	}
-	
+
 	/**
 	 * Get the set of region names contained in this record.
 	 */
 	public Set<String> getRegionNames() {
 		return regionsOfInterest.keySet();
 	}
-	
+
 	/**
 	 * Get the map for all regions.
 	 */
 	public LinkedHashMap<String, MarsRegion> getRegions() {
 		return regionsOfInterest;
 	}
-	
+
 	/**
-	 * Add or update a {@link MarsPosition}. This can be a position of
-	 * interest for further analysis steps. Position names are unique. 
-	 * If a position with has this name already exists in the record it 
-	 * will be overwritten by this method.
-	 *  
+	 * Add or update a {@link MarsPosition}. This can be a position of interest
+	 * for further analysis steps. Position names are unique. If a position with
+	 * has this name already exists in the record it will be overwritten by this
+	 * method.
+	 * 
 	 * @param positionOfInterest The position to add to the record.
 	 */
 	public void putPosition(MarsPosition positionOfInterest) {
@@ -666,61 +672,59 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 			parent.properties().addPosition(positionOfInterest.getName());
 		}
 	}
-	
+
 	/**
-	 * Get a {@link MarsPosition}. Position names are
-	 * unique. Only one copy of each region can be 
-	 * stored in the record.
-	 *  
+	 * Get a {@link MarsPosition}. Position names are unique. Only one copy of
+	 * each region can be stored in the record.
+	 * 
 	 * @param name The name of the position to retrieve.
 	 */
 	public MarsPosition getPosition(String name) {
 		return positionsOfInterest.get(name);
 	}
-	
+
 	/**
-	 * Check if the record contains a {@link MarsPosition}
-	 * using the name.
-	 *  
+	 * Check if the record contains a {@link MarsPosition} using the name.
+	 * 
 	 * @param name The name of the position to check for.
 	 */
 	public boolean hasPosition(String name) {
 		return positionsOfInterest.containsKey(name);
 	}
-	
+
 	/**
 	 * Remove a {@link MarsPosition} from the record using the name.
-	 *  
+	 * 
 	 * @param name The name of the position to remove.
 	 */
 	public void removePosition(String name) {
 		positionsOfInterest.remove(name);
 	}
-	
+
 	/**
 	 * Remove all positions from the record.
 	 */
 	public void removeAllPositions() {
 		positionsOfInterest.clear();
 	}
-	
+
 	/**
 	 * Get the set of position names contained in this record.
 	 */
 	public Set<String> getPositionNames() {
 		return positionsOfInterest.keySet();
 	}
-	
+
 	/**
 	 * Get the map for all positions.
 	 */
 	public LinkedHashMap<String, MarsPosition> getPositions() {
 		return positionsOfInterest;
 	}
-	
+
 	/**
 	 * Merge another MarsRecord into this one.
-	 *  
+	 * 
 	 * @param record The record to merge.
 	 */
 	public void merge(MarsRecord record) {
@@ -730,13 +734,15 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord i
 		getRegions().putAll(record.getRegions());
 		getPositions().putAll(record.getPositions());
 	}
-	
+
 	/**
 	 * Set the parent {@link MoleculeArchive} that this record is stored in.
 	 * 
 	 * @param archive The {@link MoleculeArchive} holding this record.
 	 */
-	public void setParent(MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?,?>, ? extends MoleculeArchiveIndex<?,?>> archive) {
+	public void setParent(
+		MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>> archive)
+	{
 		parent = archive;
 	}
 }

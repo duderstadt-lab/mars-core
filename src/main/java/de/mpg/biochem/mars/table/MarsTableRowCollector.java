@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 import java.util.HashSet;
@@ -40,10 +41,12 @@ import org.scijava.table.Column;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 
-public class MarsTableRowCollector implements Collector<MarsTableRow, MarsTable, MarsTable> {
-	
+public class MarsTableRowCollector implements
+	Collector<MarsTableRow, MarsTable, MarsTable>
+{
+
 	private MarsTable templateTable;
-	
+
 	public MarsTableRowCollector(MarsTable table) {
 		this.templateTable = table;
 	}
@@ -54,16 +57,16 @@ public class MarsTableRowCollector implements Collector<MarsTableRow, MarsTable,
 			MarsTable table = new MarsTable("Collected MarsTable");
 			for (String colHeader : templateTable.getColumnHeadingList()) {
 				Column<?> column = templateTable.get(colHeader);
-	        	
-	        	if (column instanceof DoubleColumn) {
-	        		DoubleColumn col = new DoubleColumn(colHeader);
-	        		table.add(col);
-	        	} 
-	        	
-	        	if (column instanceof GenericColumn) {
-	        		GenericColumn col = new GenericColumn(colHeader);
-	        		table.add(col);
-	        	}
+
+				if (column instanceof DoubleColumn) {
+					DoubleColumn col = new DoubleColumn(colHeader);
+					table.add(col);
+				}
+
+				if (column instanceof GenericColumn) {
+					GenericColumn col = new GenericColumn(colHeader);
+					table.add(col);
+				}
 			}
 			return table;
 		};
@@ -77,9 +80,9 @@ public class MarsTableRowCollector implements Collector<MarsTableRow, MarsTable,
 	@Override
 	public BinaryOperator<MarsTable> combiner() {
 		return (table1, table2) -> {
-	        table1.rows().forEach(row -> table2.addRow(row));
-	        return table1;
-	    };
+			table1.rows().forEach(row -> table2.addRow(row));
+			return table1;
+		};
 	}
 
 	@Override

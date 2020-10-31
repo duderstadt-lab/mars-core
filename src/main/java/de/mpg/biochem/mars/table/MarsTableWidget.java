@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.table;
 
 import java.awt.event.ActionEvent;
@@ -47,11 +48,13 @@ import org.scijava.ui.swing.widget.SwingInputWidget;
  * @author Karl Duderstadt
  */
 @Plugin(type = InputWidget.class)
-public class MarsTableWidget extends SwingInputWidget<MarsTable> implements InputWidget<MarsTable, JPanel>, ActionListener {
+public class MarsTableWidget extends SwingInputWidget<MarsTable> implements
+	InputWidget<MarsTable, JPanel>, ActionListener
+{
 
 	@Parameter
-    private MarsTableService resultsTableService;
-		
+	private MarsTableService resultsTableService;
+
 	private JComboBox<Object> comboBox;
 
 	@Override
@@ -63,7 +66,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements Inpu
 
 	@Override
 	public MarsTable getValue() {
-		return resultsTableService.getTable((String)comboBox.getSelectedItem());
+		return resultsTableService.getTable((String) comboBox.getSelectedItem());
 	}
 
 	// -- WrapperPlugin methods --
@@ -71,7 +74,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements Inpu
 	@Override
 	public void set(final WidgetModel model) {
 		super.set(model);
-		
+
 		String[] items = new String[resultsTableService.getTableNames().size()];
 		resultsTableService.getTableNames().toArray(items);
 
@@ -79,7 +82,7 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements Inpu
 		setToolTip(comboBox);
 		getComponent().add(comboBox);
 		comboBox.addActionListener(this);
-		
+
 		updateModel();
 
 		refreshWidget();
@@ -89,13 +92,14 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements Inpu
 
 	@Override
 	public boolean supports(final WidgetModel model) {
-		return super.supports(model) && model.isType(MarsTable.class) && resultsTableService.getTableNames().size() > 0;
+		return super.supports(model) && model.isType(MarsTable.class) &&
+			resultsTableService.getTableNames().size() > 0;
 	}
 
 	@Override
 	public void doRefresh() {
-		//final String value = get().getValue().toString();
-		//if (value.equals(comboBox.getSelectedItem())) return; // no change
-		//comboBox.setSelectedItem(value);
+		// final String value = get().getValue().toString();
+		// if (value.equals(comboBox.getSelectedItem())) return; // no change
+		// comboBox.setSelectedItem(value);
 	}
 }

@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.util;
 
 import java.io.BufferedInputStream;
@@ -97,73 +98,83 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MarsUtil {
-	
-	public static void forkJoinPoolBuilder(StatusService statusService, 
-			LogService logService, Runnable updateStatus, Runnable task, int numThreads) {
-		
+
+	public static void forkJoinPoolBuilder(StatusService statusService,
+		LogService logService, Runnable updateStatus, Runnable task, int numThreads)
+	{
+
 		final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-		
+
 		ForkJoinPool forkJoinPool = new ForkJoinPool(numThreads);
 		try {
 			Thread progressThread = new Thread() {
-		        public synchronized void run() {
-		            try {
-				        while(progressUpdating.get()) {
-				        	Thread.sleep(100);
-				        	updateStatus.run();
-				        }
-		            } catch (Exception e) {
-		                e.printStackTrace();
-		            }
-		        }
-		    };
-		
-		    progressThread.start();
-		    
-		    forkJoinPool.submit(task).get();
-		    
-		    progressUpdating.set(false);
-		        
-		 } catch (InterruptedException | ExecutionException e) {
-		        //handle exceptions
-		    	e.printStackTrace();
-				logService.info(LogBuilder.endBlock(false));
-		 } finally {
-		       forkJoinPool.shutdown();
-		       statusService.showProgress(100, 100);
-			   statusService.showStatus("Done!");
-		 }
+
+				public synchronized void run() {
+					try {
+						while (progressUpdating.get()) {
+							Thread.sleep(100);
+							updateStatus.run();
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
+
+			progressThread.start();
+
+			forkJoinPool.submit(task).get();
+
+			progressUpdating.set(false);
+
+		}
+		catch (InterruptedException | ExecutionException e) {
+			// handle exceptions
+			e.printStackTrace();
+			logService.info(LogBuilder.endBlock(false));
+		}
+		finally {
+			forkJoinPool.shutdown();
+			statusService.showProgress(100, 100);
+			statusService.showStatus("Done!");
+		}
 	}
-	
+
 	/**
 	 * Return Json String in pretty print format.
 	 * 
 	 * @param throwingConsumer Consumer to generate JSON.
 	 * @return Json string.
 	 */
-	public static String dumpJSON(ThrowingConsumer<JsonGenerator, IOException> throwingConsumer) {
-  		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+	public static String dumpJSON(
+		ThrowingConsumer<JsonGenerator, IOException> throwingConsumer)
+	{
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-  		//Create a new jfactory. 
-  		JsonFactory jfactory = new JsonFactory();
-  		
-  		JsonGenerator jGenerator;
-  		try {
-  			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
-  			jGenerator.useDefaultPrettyPrinter();
-  			throwingConsumer.accept(jGenerator);
-  			jGenerator.close();
-  			String output = stream.toString();
-  			stream.close();
-  			
-  			return output;
-  		} catch (IOException e) {
-  			e.printStackTrace();
-  			return null;
-  		}
-  	}
-	
-	public static void writeJsonRecord(JsonConvertibleRecord record, File file, JsonFactory jfactory) throws IOException {
+		// Create a new jfactory.
+		JsonFactory jfactory = new JsonFactory();
+
+		JsonGenerator jGenerator;
+		try {
+			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+			jGenerator.useDefaultPrettyPrinter();
+			throwingConsumer.accept(jGenerator);
+			jGenerator.close();
+			String output = stream.toString();
+			stream.close();
+
+			return output;
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public static void writeJsonRecord(JsonConvertibleRecord record, File file,
+		JsonFactory jfactory) throws IOException
+	{
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 		JsonGenerator jGenerator = jfactory.createGenerator(stream);
 		record.toJSON(jGenerator);
@@ -176,49 +187,59 @@ public class MarsUtil {
 	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
 	 * 
 	 * @param jParser JsonParser stream to processing pass through for.
-	 * @throws IOException Thrown if unable to parse Json from the JsonParser given.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser
+	 *           given.
 	 */
-  	public static void passThroughUnknownObjects(JsonParser jParser) throws IOException {
-      	while (jParser.nextToken() != JsonToken.END_OBJECT) {
-      		if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
-      			passThroughUnknownObjects(jParser);
-      	}
-  	}
-  	
-  	/**
+	public static void passThroughUnknownObjects(JsonParser jParser)
+		throws IOException
+	{
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+				passThroughUnknownObjects(jParser);
+		}
+	}
+
+	/**
 	 * Used to bypass unknown Json Arrays with JacksonJson streaming interface.
 	 * 
 	 * @param jParser JsonParser stream to processing pass through for.
-	 * @throws IOException Thrown if unable to parse Json from the JsonParser given.
+	 * @throws IOException Thrown if unable to parse Json from the JsonParser
+	 *           given.
 	 */
-  	public static void passThroughUnknownArrays(JsonParser jParser) throws IOException {
-      	while (jParser.nextToken() != JsonToken.END_ARRAY) {
-      		if (jParser.getCurrentToken() == JsonToken.START_ARRAY)
-      			passThroughUnknownArrays(jParser);
-      	}
-  	}
-  	
-  	public static <T, E extends Exception> Predicate<T> catchConsumerException(
-  		ThrowingConsumer<T, E> throwingConsumer, Class<E> exceptionType) {
-	  
-	    return i -> {
-	        try {
-	            throwingConsumer.accept(i);
-	            return true;
-	        } catch (Exception e) {
-	            try {
-	                E ex = exceptionType.cast(e);
-	                System.err.println("Exception: " + ex.getMessage());
-	            } catch (ClassCastException cex) {
-	                throw new RuntimeException(e);
-	            }
-	            return false;
-	        }
-	    };
+	public static void passThroughUnknownArrays(JsonParser jParser)
+		throws IOException
+	{
+		while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			if (jParser.getCurrentToken() == JsonToken.START_ARRAY)
+				passThroughUnknownArrays(jParser);
+		}
 	}
-  	
-  	@FunctionalInterface
-  	public interface ThrowingConsumer<T, E extends Exception> {
-  	    void accept(T t) throws E;
-  	}
+
+	public static <T, E extends Exception> Predicate<T> catchConsumerException(
+		ThrowingConsumer<T, E> throwingConsumer, Class<E> exceptionType)
+	{
+
+		return i -> {
+			try {
+				throwingConsumer.accept(i);
+				return true;
+			}
+			catch (Exception e) {
+				try {
+					E ex = exceptionType.cast(e);
+					System.err.println("Exception: " + ex.getMessage());
+				}
+				catch (ClassCastException cex) {
+					throw new RuntimeException(e);
+				}
+				return false;
+			}
+		};
+	}
+
+	@FunctionalInterface
+	public interface ThrowingConsumer<T, E extends Exception> {
+
+		void accept(T t) throws E;
+	}
 }
