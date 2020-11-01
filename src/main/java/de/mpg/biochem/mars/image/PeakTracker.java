@@ -88,7 +88,7 @@ public class PeakTracker {
 	public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
 		"sigma", "R2" };
 	private double searchRadius;
-	private boolean PeakFitter_writeEverything = false;
+	private boolean verbose = false;
 	private boolean writeIntegration = false;
 	private int minimumDistance;
 	private double pixelSize = 1;
@@ -104,13 +104,42 @@ public class PeakTracker {
 	private ConcurrentMap<Integer, List<PeakLink>> possibleLinks;
 
 	private LogService logService;
+	
+	public PeakTracker(double maxDifferenceX, double maxDifferenceY, double maxDifferenceT,
+			int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
+			boolean verbose, LogService logService, double pixelSize)
+		{
+			this.logService = logService;
+			this.verbose = verbose;
+			this.writeIntegration = writeIntegration;
+			
+			maxDifference = new double[6];
+			maxDifference[0] = Double.NaN;
+			maxDifference[1] = Double.NaN;
+			maxDifference[2] = maxDifferenceX;
+			maxDifference[3] = maxDifferenceY;
+			maxDifference[4] = Double.NaN;
+			maxDifference[5] = maxDifferenceT;
+			
+			ckMaxDifference = new boolean[3];
+			ckMaxDifference[0] = false;
+			ckMaxDifference[1] = false;
+			ckMaxDifference[2] = false;
+			
+			this.minimumDistance = minimumDistance;
+			this.minTrajectoryLength = minTrajectoryLength;
+			this.pixelSize = pixelSize;
+
+			if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
+			else searchRadius = maxDifference[3];
+		}
 
 	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference,
 		int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
-		boolean PeakFitter_writeEverything, LogService logService, double pixelSize)
+		boolean verbose, LogService logService, double pixelSize)
 	{
 		this.logService = logService;
-		this.PeakFitter_writeEverything = PeakFitter_writeEverything;
+		this.verbose = verbose;
 		this.writeIntegration = writeIntegration;
 		this.maxDifference = maxDifference;
 		this.ckMaxDifference = ckMaxDifference;
@@ -277,7 +306,7 @@ public class PeakTracker {
 
 		starttime = System.currentTimeMillis();
 
-		// I think I need to reinitialize this pool since I shut it down above.
+		// I think we need to reinitialize this pool since I shut it down above.
 		forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
 
 		// Now we build a MoleculeArchive in a multithreaded manner in which
@@ -389,7 +418,7 @@ public class PeakTracker {
 		if (writeIntegration) columns.put("Intensity", new DoubleColumn(
 			"Intensity"));
 
-		if (PeakFitter_writeEverything) for (int i =
+		if (verbose) for (int i =
 			0; i < TABLE_HEADERS_VERBOSE.length; i++)
 			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(
 				TABLE_HEADERS_VERBOSE[i]));

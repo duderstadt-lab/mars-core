@@ -26,32 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
 
 package de.mpg.biochem.mars.image.commands;
 
@@ -142,10 +116,9 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	DynamicCommand implements Command, Initializable
 {
 
-	// GENERAL SERVICES NEEDED
-	@Parameter(required = false)
-	private RoiManager roiManager;
-
+	/**
+	 * SERVICES
+	 */
 	@Parameter
 	private LogService logService;
 
@@ -173,10 +146,18 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
 
+	/**
+	 * IMAGE
+	 */
 	@Parameter(label = "Image to search for Peaks")
 	private ImageDisplay imageDisplay;
 
-	// ROI SETTINGS
+	/**
+	 * ROI
+	 */
+	@Parameter(required = false)
+	private RoiManager roiManager;
+	
 	@Parameter(label = "Use ROI", persist = false)
 	private boolean useROI = true;
 
@@ -192,10 +173,12 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	@Parameter(label = "ROI height", persist = false)
 	private int height;
 
+	/**
+	 * FINDER SETTINGS
+	 */
 	@Parameter(label = "Channel", choices = { "a", "b", "c" })
 	private String channel = "0";
-
-	// PEAK FINDER SETTINGS
+	
 	@Parameter(label = "Use DoG filter")
 	private boolean useDogFilter = true;
 
@@ -221,7 +204,9 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	@Parameter(label = "Find negative peaks")
 	private boolean findNegativePeaks = false;
 
-	// PEAK FITTER
+	/**
+	 * FITTER SETTINGS
+	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String fitterTitle = "Peak fitter settings:";
 
@@ -232,24 +217,29 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 		min = "0.00", max = "1.00", stepSize = "0.01")
 	private double RsquaredMin = 0;
 
-	@Parameter(label = "Verbose output")
-	private boolean verbose = false;
-
-	// PEAK TRACKER
+	/**
+	 * TRACKER SETTINGS
+	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String trackerTitle = "Peak tracker settings:";
 
 	@Parameter(label = "Max difference x")
-	private double PeakTracker_maxDifferenceX = 1;
+	private double maxDifferenceX = 1;
 
 	@Parameter(label = "Max difference y")
-	private double PeakTracker_maxDifferenceY = 1;
+	private double maxDifferenceY = 1;
 
 	@Parameter(label = "Max difference T")
-	private int PeakTracker_maxDifferenceFrame = 1;
+	private int maxDifferenceT = 1;
 
 	@Parameter(label = "Minimum track length")
-	private int PeakTracker_minTrajectoryLength = 100;
+	private int minTrajectoryLength = 100;
+	
+	/**
+	 * VERBOSE
+	 */
+	@Parameter(label = "Verbose output")
+	private boolean verbose = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String integrationTitle = "Peak integration settings:";
@@ -278,47 +268,44 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	@Parameter
 	private UIService uiService;
 
-	// OUTPUT PARAMETERS
+	/**
+	 * OUTPUTS
+	 */
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
 
-	// instance of a PeakTracker used for linking all the peaks between detected
-	// in each frame.
-	private PeakTracker tracker;
-
-	// A map with peak lists for each frame for an image stack
+	/**
+	 * Map from T to peak list
+	 */
 	private ConcurrentMap<Integer, List<Peak>> PeakStack;
 
-	// A map that will hold all Slice information if the image was opened
-	// as an IJ1 image.
+	/**
+	 * Map from T to IJ1 label metadata string
+	 */
 	private ConcurrentMap<Integer, String> metaDataStack;
+	
+	private PeakTracker tracker;
 
-	// box region for analysis added to the image.
-	private Rectangle rect;
+	//private Rectangle rect;
 	private Interval interval;
 	private Roi startingRoi;
-
-	// array for max error margins.
-	private double[] maxDifference;
-	private boolean[] ckMaxDifference;
-
-	// For peak integration
 	private List<int[]> innerOffsets;
 	private List<int[]> outerOffsets;
 
 	private Dataset dataset;
 	private ImagePlus image;
-
 	private MarsOMEMetadata marsOMEMetadata;
-
 	private boolean swapZandT = false;
-
+	
 	@Override
 	public void initialize() {
-		if (imageDisplay == null) return;
-
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
-		image = convertService.convert(imageDisplay, ImagePlus.class);
+		if (imageDisplay != null) {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+		}
+		else if (dataset != null) image = convertService.convert(dataset,
+			ImagePlus.class);
+		else return;
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -334,7 +321,6 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 			}
 		}
 		else {
-			// Attempt to read metadata
 			Metadata metadata = (Metadata) dataset.getProperties().get(
 				"scifio.metadata.global");
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
@@ -358,7 +344,7 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 			}
 		}
 		catch (NullPointerException e) {
-			// Do nothing. May of the omexmlmetadata methods give NullPointerException
+			// Do nothing. Many of the omexmlmetadata methods give NullPointerExceptions
 			// if fields are not set.
 		}
 
@@ -369,6 +355,7 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 
 		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
 
+		Rectangle rect;
 		if (image.getRoi() == null) {
 			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
@@ -422,100 +409,35 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 
 	@Override
 	public void run() {
-		if (useROI) {
-			rect = new Rectangle(x0, y0, width - 1, height - 1);
-			interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height -
-				1);
-		}
-		else {
-			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
-			interval = Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-				.getHeight() - 1);
-		}
-
-		image.setOverlay(null);
-		image.deleteRoi();
-
-		// Check that imageFormat setting is correct...
-		String metaDataLogMessage = "";
-
-		UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
-
-		if (swapZandT) {
-			// Generate new MarsOMEMetadata based on NorpixFormat.
-			// Flip Z and T and assume a single
-			OMEXMLMetadata omexmlMetadata = null;
-			try {
-				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-					dataset);
-			}
-			catch (ServiceException e) {
-				e.printStackTrace();
-			}
-			String metaUID = MarsMath.getUUID58().substring(0, 10);
-			omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
-			omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
-			omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
-			omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
-			omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()),
-				0);
-			omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
-			marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-		}
-
-		try {
-			Length pixelSize = new Length(pixelLength, UnitsLengthEnumHandler
-				.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
-
-			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
-			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
-
-		}
-		catch (EnumerationException e1) {
-			e1.printStackTrace();
-		}
+		updateInterval();
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Peak Tracker");
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-		if (!metaDataLogMessage.equals("")) {
-			log += metaDataLogMessage + "\n";
-		}
+		logService.info(log);
 
 		PeakStack = new ConcurrentHashMap<>(image.getStackSize());
-
 		metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
-
-		// List<Peak> peaks = new ArrayList<>();
 
 		innerOffsets = MarsImageUtils.innerIntegrationOffsets(
 			integrationInnerRadius);
 		outerOffsets = MarsImageUtils.outerIntegrationOffsets(
 			integrationInnerRadius, integrationOuterRadius);
-
-		// Output first part of log message...
-		logService.info(log);
-
+		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
 
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		int frameCount = (swapZandT) ? image.getStackSize() : image.getNFrames();
 
-		if (swapZandT) MarsUtil.forkJoinPoolBuilder(statusService, logService,
-			() -> statusService.showStatus(PeakStack.size(), image.getStackSize(),
-				"Finding Peaks for " + image.getTitle()), () -> IntStream.range(0, image
-					.getStackSize()).parallel().forEach(t -> {
-						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
-
-						if (tpeaks.size() > 0) PeakStack.put(t, tpeaks);
-					}), PARALLELISM_LEVEL);
-		else MarsUtil.forkJoinPoolBuilder(statusService, logService,
-			() -> statusService.showStatus(PeakStack.size(), image.getNFrames(),
-				"Finding Peaks for " + image.getTitle()), () -> IntStream.range(0, image
-					.getNFrames()).parallel().forEach(t -> {
-						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t);
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+			() -> statusService.showStatus(PeakStack.size(), frameCount,
+				"Finding Peaks for " + image.getTitle()), () -> IntStream.range(0, 
+						frameCount).parallel().forEach(t -> {
+						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, integrate);
 
 						if (tpeaks.size() > 0) PeakStack.put(t, tpeaks);
 					}), PARALLELISM_LEVEL);
@@ -523,44 +445,33 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		// Now we have filled the PeakStack with all the peaks found and fit them in
-		// each frame and we need to connect them using the peak tracker
-		maxDifference = new double[6];
-		maxDifference[0] = Double.NaN;
-		maxDifference[1] = Double.NaN;
-		maxDifference[2] = PeakTracker_maxDifferenceX;
-		maxDifference[3] = PeakTracker_maxDifferenceY;
-		maxDifference[4] = Double.NaN;
-		maxDifference[5] = PeakTracker_maxDifferenceFrame;
-
-		ckMaxDifference = new boolean[3];
-		ckMaxDifference[0] = false;
-		ckMaxDifference[1] = false;
-		ckMaxDifference[2] = false;
-
-		tracker = new PeakTracker(maxDifference, ckMaxDifference, minimumDistance,
-			PeakTracker_minTrajectoryLength, integrate, verbose, logService,
+		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT, 
+			minimumDistance, minTrajectoryLength, integrate, verbose, logService,
 			pixelLength);
 
-		// Let's make sure we create a unique archive name...
-		// I guess this is already taken care of in the service now...
-		// but it doesn't hurt to leave it for the moment.
-		String newName = "archive";
-		int num = 1;
-		while (moleculeArchiveService.getArchive(newName + ".yama") != null) {
-			newName = "archive" + num;
-			num++;
-		}
+		archive = new SingleMoleculeArchive("archive.yama");
+		
+		if (norpixFormat)
+			marsOMEMetadata = generateNorpixMetadata();
 
-		archive = new SingleMoleculeArchive(newName + ".yama");
+		try {
+			UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+			Length pixelSize = new Length(pixelLength, UnitsLengthEnumHandler
+				.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
+
+			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
+			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
+		}
+		catch (EnumerationException e1) {
+			e1.printStackTrace();
+		}
+		
 		if (norpixFormat) getTimeFromNoprixSliceLabels(marsOMEMetadata,
 			metaDataStack);
 		archive.putMetadata(marsOMEMetadata);
 
 		tracker.track(PeakStack, archive, Integer.valueOf(channel));
 
-		// Reorder Molecules to Natural Order, so there is a common order
-		// if we have to recover..
 		archive.naturalOrderSortMoleculeIndex();
 
 		// Make sure the output archive has the correct name
@@ -594,34 +505,68 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 			archive.logln("   ");
 		}
 	}
+	
+	private void updateInterval() {
+		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
+			height - 1) : Intervals.createMinMax(0, 0, image.getWidth() - 1, image
+				.getHeight() - 1);
 
-	private List<Peak> findPeaksInT(int channel, int t) {
-		ImageStack stack = image.getImageStack();
-		int index = t + 1;
-		if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
+		image.deleteRoi();
+		image.setOverlay(null);
+	}
+	
+	private MarsOMEMetadata generateNorpixMetadata() {
+		// Generate new MarsOMEMetadata based on NorpixFormat.
+		// Flip Z and T
+		OMEXMLMetadata omexmlMetadata = null;
+		try {
+			omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+				dataset);
+		}
+		catch (ServiceException e) {
+			e.printStackTrace();
+		}
+		String metaUID = generateUID(metaDataStack);//MarsMath.getUUID58().substring(0, 10);
+		omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
+		omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
+		omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
+		omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
+		omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()),
+			0);
+		omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
+		return new MarsOMEMetadata(metaUID, omexmlMetadata);
+	}
 
-		ImageProcessor processor = stack.getProcessor(index);
-
+	@SuppressWarnings("unchecked")
+	private List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
+		boolean integrate)
+	{
+		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
+			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
+			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
+				channel, t);
+			
 		// Workaround for IJ1 metadata in slices - Norpix format.
 		if (norpixFormat) {
+			ImageStack stack = image.getImageStack();
+			int index = t + 1;
+			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
+
+			//Have to retrieve the image processor to make sure the label has been loaded.
+			ImageProcessor processor = stack.getProcessor(index);
 			String label = stack.getSliceLabel(index);
 			metaDataStack.put(t, label);
 		}
-
-		// ImagePlus im = new ImagePlus("frame " + t + 1, processor.duplicate());
-
-		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice(
-			(ImgPlus<T>) dataset.getImgPlus(), 0, channel, t);
 
 		List<Peak> peaks = new ArrayList<Peak>();
 
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(img, dogFilterRadius, opService);
-			peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
-				threshold, minimumDistance, findNegativePeaks);
+			peaks = MarsImageUtils.findPeaks(filteredImg, interval, t, threshold,
+				minimumDistance, findNegativePeaks);
 		}
-		else peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold,
+		else peaks = MarsImageUtils.findPeaks(img, interval, t, threshold,
 			minimumDistance, findNegativePeaks);
 
 		peaks = MarsImageUtils.fitPeaks(img, peaks, fitRadius, dogFilterRadius,
@@ -673,9 +618,6 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 		}
 	}
 
-	/*
-	//Utility methods
-	//Generate a unique ID using a hash of all headerlabel information...
 	private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
 		String allLabels = "";
 		for (int i=0;i<headerLabels.size();i++)
@@ -683,68 +625,33 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 		
 		return MarsMath.getFNV1aBase58(allLabels);
 	}
-	*/
-	// Returns the time when the frame was collected in milliseconds since 1970
-	// Makes sure to properly round microsecond information.
+	
 	private long getNorPixMillisecondTime(String strTime) throws ParseException {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
-		// For the moment we throw-out the microsecond information.
-		// String microSecs = strTime.substring(strTime.length() - 3,
-		// strTime.length());
 		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
 			4));
-		return convertedDate.getTime();// + Double.parseDouble(microSecs)/1000;
+		return convertedDate.getTime();
 	}
 
-	// Utility method
-	// Returns the Date as a string
 	private Timestamp getNorPixDate(String strTime) throws ParseException {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
 		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
 			4));
-		// TimeZone tz = TimeZone.getTimeZone("UTC");
-		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm"); // Quoted "Z" to
-																																// indicate UTC,
-																																// no timezone
-																																// offset
-		// df.setTimeZone(tz);
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
 		String nowAsISO = df.format(convertedDate);
 		return new Timestamp(nowAsISO);
 	}
-
+	
 	@Override
 	public void preview() {
 		if (preview) {
-			if (useROI) {
-				interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height -
-					1);
-			}
-			else {
-				interval = Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-					.getHeight() - 1);
-			}
+			updateInterval();
 
-			image.setOverlay(null);
-			image.deleteRoi();
-			if (swapZandT || norpixFormat || image.getNFrames() < 2) {
-				image.setSlice(previewT + 1);
-			}
+			if (swapZandT) image.setSlice(previewT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 
-			RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice(
-				(ImgPlus<T>) dataset.getImgPlus(), 0, Integer.valueOf(channel),
-				previewT);
-
-			List<Peak> peaks = new ArrayList<Peak>();
-
-			if (useDogFilter) {
-				RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
-					.dogFilter(img, dogFilterRadius, opService);
-				peaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
-					threshold, minimumDistance, findNegativePeaks);
-			}
-			else peaks = MarsImageUtils.findPeaks(img, interval, previewT, threshold,
-				minimumDistance, findNegativePeaks);
+			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
+				useDogFilter, false);
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 				"tPeakCount", String.class);
@@ -790,10 +697,12 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("useROI", String.valueOf(useROI));
-		builder.addParameter("ROI x0", String.valueOf(x0));
-		builder.addParameter("ROI y0", String.valueOf(y0));
-		builder.addParameter("ROI w", String.valueOf(width));
-		builder.addParameter("ROI h", String.valueOf(height));
+		if (useROI) {
+			builder.addParameter("ROI x0", String.valueOf(x0));
+			builder.addParameter("ROI y0", String.valueOf(y0));
+			builder.addParameter("ROI width", String.valueOf(width));
+			builder.addParameter("ROI height", String.valueOf(height));
+		}
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -805,13 +714,13 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Max difference x", String.valueOf(
-			PeakTracker_maxDifferenceX));
+			maxDifferenceX));
 		builder.addParameter("Max difference y", String.valueOf(
-			PeakTracker_maxDifferenceY));
+			maxDifferenceY));
 		builder.addParameter("Max difference T", String.valueOf(
-			PeakTracker_maxDifferenceFrame));
+			maxDifferenceT));
 		builder.addParameter("Minimum track length", String.valueOf(
-			PeakTracker_minTrajectoryLength));
+			minTrajectoryLength));
 		builder.addParameter("Integrate", String.valueOf(integrate));
 		builder.addParameter("Integration inner radius", String.valueOf(
 			integrationInnerRadius));
@@ -942,35 +851,35 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	}
 
 	public void setMaxDifferenceX(double PeakTracker_maxDifferenceX) {
-		this.PeakTracker_maxDifferenceX = PeakTracker_maxDifferenceX;
+		this.maxDifferenceX = PeakTracker_maxDifferenceX;
 	}
 
 	public double getMaxDifferenceX() {
-		return PeakTracker_maxDifferenceX;
+		return maxDifferenceX;
 	}
 
-	public void setMaxDifferenceY(double PeakTracker_maxDifferenceY) {
-		this.PeakTracker_maxDifferenceY = PeakTracker_maxDifferenceY;
+	public void setMaxDifferenceY(double maxDifferenceY) {
+		this.maxDifferenceY = maxDifferenceY;
 	}
 
 	public double getMaxDifferenceY() {
-		return PeakTracker_maxDifferenceY;
+		return maxDifferenceY;
 	}
 
-	public void setMaxDifferenceFrame(int PeakTracker_maxDifferenceFrame) {
-		this.PeakTracker_maxDifferenceFrame = PeakTracker_maxDifferenceFrame;
+	public void setMaxDifferenceT(int maxDifferenceT) {
+		this.maxDifferenceT = maxDifferenceT;
 	}
 
-	public int getMaxDifferenceFrame() {
-		return PeakTracker_maxDifferenceFrame;
+	public int getMaxDifferenceT() {
+		return maxDifferenceT;
 	}
 
-	public void setMinimumTrackLength(int PeakTracker_minTrajectoryLength) {
-		this.PeakTracker_minTrajectoryLength = PeakTracker_minTrajectoryLength;
+	public void setMinimumTrackLength(int minTrajectoryLength) {
+		this.minTrajectoryLength = minTrajectoryLength;
 	}
 
 	public int getMinimumTrackLength() {
-		return PeakTracker_minTrajectoryLength;
+		return minTrajectoryLength;
 	}
 
 	public void setIntegrate(boolean integrate) {
