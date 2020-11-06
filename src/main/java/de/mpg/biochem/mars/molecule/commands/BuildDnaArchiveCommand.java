@@ -166,9 +166,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		else if (merge2) {
 			metadata1.merge(archive2.getMetadata(0));
 		}
-		else {
-			return;
-		}
 
 		metadata1.setParameter("DnaMoleculeCount", rois.length);
 
