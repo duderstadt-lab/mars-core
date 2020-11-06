@@ -64,6 +64,7 @@ import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.table.MarsTable;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
@@ -213,20 +214,16 @@ public class MoleculeArchiveService extends
 	public void addArchive(MoleculeArchive archive) {
 		objectService.addObject(archive);
 	}
-
+	
 	public void removeArchive(String title) {
-		if (getArchive(title) != null) objectService.removeObject(getArchive(
-			title));
-
-		if (displayService.getDisplay(title) != null) objectService.removeObject(
-			displayService.getDisplay(title));
+		removeArchive(getArchive(title));
 	}
-
+	
 	public void removeArchive(MoleculeArchive archive) {
 		if (archive != null) objectService.removeObject(archive);
 
-		if (archive != null && displayService.getDisplay(archive.getName()) != null)
-			objectService.removeObject(displayService.getDisplay(archive.getName()));
+		if (archive != null && displayService.getDisplays(archive).size() > 0)
+			objectService.removeObject(displayService.getDisplays(archive).get(0));
 	}
 
 	public boolean rename(String oldName, String newName) {

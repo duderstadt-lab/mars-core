@@ -90,17 +90,14 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 	}
 
 	public void removeTable(String title) {
-		if (getTable(title) != null) objectService.removeObject(getTable(title));
-
-		if (displayService.getDisplay(title) != null) objectService.removeObject(
-			displayService.getDisplay(title));
+		removeTable(getTable(title));
 	}
 
 	public void removeTable(MarsTable table) {
 		if (table != null) objectService.removeObject(table);
 
-		if (table != null && displayService.getDisplay(table.getName()) != null)
-			objectService.removeObject(displayService.getDisplay(table.getName()));
+		if (table != null && displayService.getDisplays(table).size() > 0)
+			objectService.removeObject(displayService.getDisplays(table).get(0));
 	}
 
 	public boolean rename(String oldName, String newName) {
