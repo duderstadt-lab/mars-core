@@ -499,7 +499,7 @@ public class DNAFinderCommand extends DynamicCommand
 				threshold, minimumDistance, true);
 		}
 
-		if (!positivePeaks.isEmpty() || !negativePeaks.isEmpty()) {
+		if (!positivePeaks.isEmpty() && !negativePeaks.isEmpty()) {
 
 			if (fitPeaks) {
 				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1,
