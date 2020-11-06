@@ -87,7 +87,7 @@ import ij.plugin.frame.RoiManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'i'), @Menu(
 				label = "Peak Finder", weight = 1, mnemonic = 'p') })
-public class PeakFinderCommand<T extends RealType<T> & NativeType<T>> extends
+public class PeakFinderCommand extends
 	DynamicCommand implements Command, Initializable, Previewable
 {
 
@@ -384,7 +384,7 @@ public class PeakFinderCommand<T extends RealType<T> & NativeType<T>> extends
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
 		boolean fitPeaks, boolean integrate)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils

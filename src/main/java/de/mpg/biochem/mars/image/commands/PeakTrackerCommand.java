@@ -112,7 +112,7 @@ import ome.xml.model.primitives.Timestamp;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Peak Tracker", weight = 10, mnemonic = 'p') })
-public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
+public class PeakTrackerCommand extends
 	DynamicCommand implements Command, Initializable
 {
 
@@ -538,7 +538,7 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
 		boolean integrate)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
@@ -553,7 +553,7 @@ public class PeakTrackerCommand<T extends RealType<T> & NativeType<T>> extends
 			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
 
 			//Have to retrieve the image processor to make sure the label has been loaded.
-			ImageProcessor processor = stack.getProcessor(index);
+			stack.getProcessor(index);
 			String label = stack.getSliceLabel(index);
 			metaDataStack.put(t, label);
 		}

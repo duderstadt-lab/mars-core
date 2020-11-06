@@ -93,11 +93,13 @@ import ij.process.ImageProcessor;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'i'), @Menu(label = "DNA Finder",
 				weight = 1, mnemonic = 'd') })
-public class DNAFinderCommand<T extends RealType<T>> extends DynamicCommand
+public class DNAFinderCommand extends DynamicCommand
 	implements Command, Initializable, Previewable
 {
 
-	// GENERAL SERVICES NEEDED
+	/**
+	 * SERVICES
+	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
 

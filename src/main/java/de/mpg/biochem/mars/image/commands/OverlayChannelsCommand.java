@@ -74,6 +74,7 @@ import net.imglib2.realtransform.*;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.*;
 
 import org.decimal4j.util.DoubleRounder;
@@ -90,7 +91,9 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
@@ -101,10 +104,12 @@ import ij.WindowManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Overlay Channels", weight = 60, mnemonic = 'o') })
-public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
+public class OverlayChannelsCommand
 	extends DynamicCommand implements Command
 {
-
+	/**
+	 * SERVICES
+	 */
 	@Parameter
 	private LogService logService;
 
@@ -117,12 +122,18 @@ public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
 	@Parameter
 	private DatasetService datasetService;
 
+	/**
+	 * IMAGES
+	 */
 	@Parameter(label = "Add To Me", choices = { "a", "b", "c" })
 	private String addToMeName;
 
 	@Parameter(label = "Transform Me", choices = { "a", "b", "c" })
 	private String transformMeName;
 
+	/**
+	 * AFFINE 2D TRANSFORMATION MATRIX
+	 */
 	@Parameter(label = "Keep originals")
 	private boolean keep = false;
 
@@ -152,9 +163,6 @@ public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
 
 	// A map from slice to new transformed image
 	private ConcurrentMap<Integer, ImagePlus> transformedImageMap;
-
-	// For the progress thread
-	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 
 	private ImagePlus addToMe, transformMe;
 
@@ -211,8 +219,6 @@ public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
 		// Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
 
@@ -220,77 +226,30 @@ public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
-		try {
-			// Start a thread to keep track of the progress of the number of frames
-			// that have been processed.
-			// Waiting call back to update the progress bar!!
-			Thread progressThread = new Thread() {
+		
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(transformedImageMap.size(), transformMe
+						.getStackSize(), "Transforming " + transformMe.getTitle()), () -> IntStream.rangeClosed(1, transformMe
+								.getStackSize()).parallel().forEach(t -> transformT(t, new ImagePlus("T " + t, oldStack
+										.getProcessor(t)), transform)), PARALLELISM_LEVEL);
+		
+		// Now we have a map with all the transformed images. We just need to add
+		// them to a new stack
+		// and then merge with the untransformed image.
+		ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe
+			.getHeight());
 
-				public synchronized void run() {
-					try {
-						while (progressUpdating.get()) {
-							Thread.sleep(100);
-							statusService.showStatus(transformedImageMap.size(), transformMe
-								.getStackSize(), "Transforming " + transformMe.getTitle());
-						}
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			};
+		// I think this just works with references, so it should be super fast...
+		// otherwise the stack could be made in the parallel stream but might need
+		// to be placed in a synchronize block...
+		for (int slice = 1; slice <= transformedImageMap.size(); slice++)
+			newStack.addSlice(transformedImageMap.get(slice).getProcessor());
 
-			progressThread.start();
+		ImagePlus[] images = new ImagePlus[2];
+		images[0] = addToMe;
+		images[1] = new ImagePlus("transformed", newStack);
 
-			forkJoinPool.submit(() -> IntStream.rangeClosed(1, transformMe
-				.getStackSize()).parallel().forEach(slice -> {
-					ImagePlus sliceImage = new ImagePlus("slice " + slice, oldStack
-						.getProcessor(slice));
-
-					Img<T> img = ImagePlusAdapter.wrap(sliceImage);
-
-					RandomAccessibleInterval<T> ra = Views.interval(Views.raster(RealViews
-						.affine(Views.interpolate(Views.extendZero(img),
-							new NLinearInterpolatorFactory()), transform)), img);
-
-					ImagePlus transImg = ImageJFunctions.wrap(ra, "transformed");
-
-					transformedImageMap.put(slice, transImg);
-				})).get();
-
-			// Now we have a map with all the transformed images. We just need to add
-			// them to a new stack
-			// and then merge with the untransformed image.
-			ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe
-				.getHeight());
-
-			// I think this just works with references, so it should be super fast...
-			// otherwise the stack could be made in the parallel stream but might need
-			// to be placed in a synchronize block...
-			for (int slice = 1; slice <= transformedImageMap.size(); slice++)
-				newStack.addSlice(transformedImageMap.get(slice).getProcessor());
-
-			ImagePlus[] images = new ImagePlus[2];
-			images[0] = addToMe;
-			images[1] = new ImagePlus("transformed", newStack);
-
-			imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
-
-			progressUpdating.set(false);
-
-			statusService.showStatus(1, 1, "Transformations of " + transformMe
-				.getTitle() + " - Done!");
-
-		}
-		catch (InterruptedException | ExecutionException e) {
-			// handle exceptions
-			e.printStackTrace();
-			logService.info(LogBuilder.endBlock(false));
-			return;
-		}
-		finally {
-			forkJoinPool.shutdown();
-		}
+		imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -304,6 +263,18 @@ public class OverlayChannelsCommand<T extends NumericType<T> & NativeType<T>>
 			addToMe.changes = false;
 			addToMe.close();
 		}
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> void transformT(int t, ImagePlus tImage, AffineTransform2D transform) {
+		Img<T> img = ImagePlusAdapter.wrap(tImage);
+
+		RandomAccessibleInterval<T> ra = Views.interval(Views.raster(RealViews
+			.affine(Views.interpolate(Views.extendZero(img),
+				new NLinearInterpolatorFactory()), transform)), img);
+
+		ImagePlus transImg = ImageJFunctions.wrap(ra, "transformed");
+
+		transformedImageMap.put(t, transImg);
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
