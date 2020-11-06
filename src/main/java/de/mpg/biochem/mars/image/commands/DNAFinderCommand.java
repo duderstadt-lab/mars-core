@@ -237,9 +237,6 @@ public class DNAFinderCommand extends DynamicCommand
 	private Interval interval;
 	private Roi startingRoi;
 
-	// For the progress thread
-	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-
 	private Dataset dataset;
 	private ImagePlus image;
 
@@ -247,10 +244,13 @@ public class DNAFinderCommand extends DynamicCommand
 
 	@Override
 	public void initialize() {
-		if (imageDisplay == null) return;
-
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
-		image = convertService.convert(imageDisplay, ImagePlus.class);
+		if (imageDisplay != null) {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+		}
+		else if (dataset != null) image = convertService.convert(dataset,
+			ImagePlus.class);
+		else return;
 
 		if (image.getRoi() == null) {
 			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
@@ -304,19 +304,7 @@ public class DNAFinderCommand extends DynamicCommand
 
 	@Override
 	public void run() {
-		if (useROI) {
-			rect = new Rectangle(x0, y0, width - 1, height - 1);
-			interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height -
-				1);
-		}
-		else {
-			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
-			interval = Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-				.getHeight() - 1);
-		}
-
-		image.deleteRoi();
-		image.setOverlay(null);
+		updateInterval();
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
@@ -457,6 +445,15 @@ public class DNAFinderCommand extends DynamicCommand
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 	}
+	
+	private void updateInterval() {
+		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
+			height - 1) : Intervals.createMinMax(0, 0, image.getWidth() - 1, image
+				.getHeight() - 1);
+
+		image.deleteRoi();
+		image.setOverlay(null);
+	}
 
 	private List<DNASegment> findDNAsInT(int channel, int t) {
 		ImageStack stack = image.getImageStack();
@@ -489,13 +486,13 @@ public class DNAFinderCommand extends DynamicCommand
 				.dogFilter(gradImage, dogFilterRadius, opService);
 			positivePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
 				threshold, minimumDistance, false);
-			positivePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
+			negativePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
 				threshold, minimumDistance, true);
 		}
 		else {
 			positivePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
 				threshold, minimumDistance, false);
-			positivePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
+			negativePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
 				threshold, minimumDistance, true);
 		}
 
@@ -630,20 +627,9 @@ public class DNAFinderCommand extends DynamicCommand
 	@Override
 	public void preview() {
 		if (preview) {
-			if (useROI) {
-				interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height -
-					1);
-			}
-			else {
-				interval = Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-					.getHeight() - 1);
-			}
+			updateInterval();
 
-			image.setOverlay(null);
-			image.deleteRoi();
-			if (swapZandT || image.getNFrames() < 2) {
-				image.setSlice(previewT + 1);
-			}
+			if (swapZandT) image.setSlice(previewT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 
 			ImagePlus selectedImage = new ImagePlus("current frame", image
