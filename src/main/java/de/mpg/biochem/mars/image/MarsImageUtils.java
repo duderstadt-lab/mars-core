@@ -303,7 +303,7 @@ public class MarsImageUtils {
 		int innerPixels = 0;
 		ArrayList<Double> outerPixelValues = new ArrayList<Double>();
 
-		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess(interval);
+		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
 
 		for (int[] circleOffset : innerOffsets) {
 			intensity += ra.setPositionAndGet(x + circleOffset[0], y +
