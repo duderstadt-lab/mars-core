@@ -26,32 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
 
 package de.mpg.biochem.mars.image.commands;
 
@@ -71,6 +45,12 @@ import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -88,7 +68,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
 
-import de.mpg.biochem.mars.image.MoleculeIntegrator;
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
@@ -128,6 +108,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	Command, Initializable
 {
 
+	/**
+	 * SERVICES
+	 */
 	@Parameter
 	private RoiManager roiManager;
 
@@ -213,6 +196,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
+	private Interval longInterval;
+	private Interval shortInterval;
 
 	private MarsOMEMetadata marsOMEMetadata;
 
@@ -223,10 +208,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
-		if (imageDisplay == null) return;
-
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
-		image = convertService.convert(imageDisplay, ImagePlus.class);
+		if (imageDisplay != null) {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+		}
+		else if (dataset != null) image = convertService.convert(dataset,
+			ImagePlus.class);
+		else return;
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -292,6 +280,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Override
 	public void run() {
+		longInterval = Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1, LONGy0 + LONGheight - 1);
+		shortInterval = Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1, SHORTy0 + SHORTheight - 1);
+		
+		
 		Rectangle longBoundingRegion = new Rectangle(LONGx0, LONGy0, LONGwidth,
 			LONGheight);
 		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth,
@@ -353,9 +345,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			}
 		}
 
-		MoleculeIntegrator integrator = new MoleculeIntegrator(innerRadius,
-			outerRadius);
-
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
 
@@ -366,29 +355,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		try {
 			forkJoinPool.submit(() -> marsOMEMetadata.getImage(0).planes().forEach(
 				plane -> {
-					ImageProcessor processor = image.getImageStack().getProcessor(plane
-						.getPlaneIndex() + 1);
-
-					int c = plane.getC();
-					int t = plane.getT();
-
-					String colorName = channelColors.get(c).getName();
-
-					if (channelColors.get(c).getValue(this).equals("FRET")) {
-						integrator.integratePeaks(processor, mapToAllPeaks.get(colorName +
-							" " + fretShortName).get(t), shortBoundingRegion);
-
-						integrator.integratePeaks(processor, mapToAllPeaks.get(colorName +
-							" " + fretLongName).get(t), longBoundingRegion);
-					}
-					else if (channelColors.get(c).getValue(this).equals("Short")) {
-						integrator.integratePeaks(processor, mapToAllPeaks.get(colorName)
-							.get(t), shortBoundingRegion);
-					}
-					else if (channelColors.get(c).getValue(this).equals("Long")) {
-						integrator.integratePeaks(processor, mapToAllPeaks.get(colorName)
-							.get(t), longBoundingRegion);
-					}
+					integratePeaksInT(plane.getC(), plane.getT());
 
 					progressInteger.incrementAndGet();
 					statusService.showStatus(progressInteger.get(), marsOMEMetadata
@@ -543,6 +510,42 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			archive.logln("   ");
 		}
 	}
+	
+	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {
+		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0, c, t);
+
+		String colorName = channelColors.get(c).getName();
+
+		if (channelColors.get(c).getValue(this).equals("FRET")) {
+			integratePeaks(img, mapToAllPeaks.get(colorName +
+				" " + fretShortName).get(t), shortInterval);
+
+			integratePeaks(img, mapToAllPeaks.get(colorName +
+				" " + fretLongName).get(t), longInterval);
+		}
+		else if (channelColors.get(c).getValue(this).equals("Short")) {
+			integratePeaks(img, mapToAllPeaks.get(colorName)
+				.get(t), shortInterval);
+		}
+		else if (channelColors.get(c).getValue(this).equals("Long")) {
+			integratePeaks(img, mapToAllPeaks.get(colorName)
+				.get(t), longInterval);
+		}
+	}
+	
+	private <T extends RealType<T> & NativeType<T>> void integratePeaks(RandomAccessibleInterval<T> img,
+		Map<String, Peak> integrationList, Interval interval)
+	{
+		for (String UID : integrationList.keySet()) {
+			Peak peak = integrationList.get(UID);
+			double[] intensity = MarsImageUtils.integratePeak(img, interval, (int) peak.getX(), (int) peak
+					.getY(), innerRadius, outerRadius);
+			peak.setIntensity(intensity[0]);
+			peak.setMedianBackground(intensity[1]);
+		}
+	}
 
 	private Map<Integer, Map<String, Peak>> createColorIntegrationList(
 		String name, Map<String, Peak> peakMap)
@@ -600,12 +603,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		return archive;
 	}
 
-	public void setImage(ImagePlus image) {
-		this.image = image;
+	public void setDataset(Dataset dataset) {
+		this.dataset = dataset;
 	}
 
-	public ImagePlus getImage() {
-		return image;
+	public Dataset getDataset() {
+		return dataset;
 	}
 
 	public void setMicroscope(String microscope) {

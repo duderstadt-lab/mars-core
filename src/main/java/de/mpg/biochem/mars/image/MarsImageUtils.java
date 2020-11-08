@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
@@ -50,12 +53,28 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.util.Gaussian2D;
 
 public class MarsImageUtils {
+	
+	private static ConcurrentMap<Integer, List<int[]>> innerOffsetCache;
+	private static ConcurrentMap<Integer[], List<int[]>> outerOffsetCache;
+	
+	private static List<int[]> getInnerOffets(int integrationInnerRadius) {
+		ConcurrentMap<Integer, List<int[]>> ioc = innerOffsetCache;
+		if (ioc == null) {
+			ioc = new ConcurrentHashMap<Integer, List<int[]>>();
+			innerOffsetCache = ioc;
+		}
+		
+		if (!innerOffsetCache.containsKey(integrationInnerRadius))
+			innerOffsetCache.put(integrationInnerRadius, buildInnerIntegrationOffsets(integrationInnerRadius));
+		
+		return innerOffsetCache.get(integrationInnerRadius);
+	}
 
-	public static List<int[]> innerIntegrationOffsets(
+	private static List<int[]> buildInnerIntegrationOffsets(
 		int integrationInnerRadius)
 	{
 		ArrayList<int[]> innerOffsets = new ArrayList<int[]>();
@@ -75,7 +94,25 @@ public class MarsImageUtils {
 		return innerOffsets;
 	}
 
-	public static List<int[]> outerIntegrationOffsets(int integrationInnerRadius,
+	private static List<int[]> getOuterOffets(int integrationInnerRadius,
+			int integrationOuterRadius) {
+		ConcurrentMap<Integer[], List<int[]>> ooc = outerOffsetCache;
+		if (ooc == null) {
+			ooc = new ConcurrentHashMap<Integer[], List<int[]>>();
+			outerOffsetCache = ooc;
+		}
+		
+		Integer[] radii = new Integer[2];
+		radii[0] = integrationInnerRadius;
+		radii[1] = integrationOuterRadius;
+		
+		if (!outerOffsetCache.containsKey(radii))
+			outerOffsetCache.put(radii, buildOuterIntegrationOffsets(integrationInnerRadius, integrationOuterRadius));
+		
+		return outerOffsetCache.get(radii);
+	}
+	
+	private static List<int[]> buildOuterIntegrationOffsets(int integrationInnerRadius,
 		int integrationOuterRadius)
 	{
 		ArrayList<int[]> outerOffsets = new ArrayList<int[]>();
@@ -216,7 +253,6 @@ public class MarsImageUtils {
 	{
 		if (peakList.size() < 2) return peakList;
 
-		// Sort the list from highest to lowest Rsquared
 		Collections.sort(peakList, new Comparator<Peak>() {
 
 			@Override
@@ -232,7 +268,6 @@ public class MarsImageUtils {
 		// as the first list, but the order can be completely different...
 		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peakList);
 
-		// Allows for fast search of nearest peaks...
 		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks,
 			KDTreePossiblePeaks);
 
@@ -274,20 +309,20 @@ public class MarsImageUtils {
 
 	public static <T extends RealType<T> & NativeType<T>> void integratePeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks,
-		List<int[]> innerOffsets, List<int[]> outerOffsets)
+		int innerRadius, int outerRadius)
 	{
 		for (Peak peak : peaks) {
 			// Type casting from double to int rounds down always, so we have to add
 			// 0.5 offset to be correct.
 			double[] intensity = integratePeak(img, interval, (int) (peak.getX() +
-				0.5), (int) (peak.getY() + 0.5), innerOffsets, outerOffsets);
+				0.5), (int) (peak.getY() + 0.5), innerRadius, outerRadius);
 			peak.setIntensity(intensity[0]);
 		}
 	}
 
 	public static <T extends RealType<T> & NativeType<T>> double[] integratePeak(
 		RandomAccessible<T> img, Interval interval, int x, int y,
-		List<int[]> innerOffsets, List<int[]> outerOffsets)
+		int innerRadius, int outerRadius)
 	{
 
 		RandomAccessibleInterval<T> view = Views.interval(img, interval);
@@ -304,14 +339,20 @@ public class MarsImageUtils {
 		ArrayList<Double> outerPixelValues = new ArrayList<Double>();
 
 		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
-
-		for (int[] circleOffset : innerOffsets) {
+		
+		List<int[]> innerOffsets = getInnerOffets(innerRadius);
+		for (int i=0 ; i < innerOffsets.size(); i++) {
+			int[] circleOffset = innerOffsets.get(i);
+			
 			intensity += ra.setPositionAndGet(x + circleOffset[0], y +
 				circleOffset[1]).getRealDouble();
 			innerPixels++;
 		}
 
-		for (int[] circleOffset : outerOffsets) {
+		List<int[]> outerOffsets = getOuterOffets(innerRadius, outerRadius);
+		for (int i=0 ; i < outerOffsets.size(); i++) {
+			int[] circleOffset = outerOffsets.get(i);
+			
 			outerPixelValues.add(ra.setPositionAndGet(x + circleOffset[0], y +
 				circleOffset[1]).getRealDouble());
 		}

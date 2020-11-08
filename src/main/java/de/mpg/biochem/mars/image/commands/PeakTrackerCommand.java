@@ -289,8 +289,6 @@ public class PeakTrackerCommand extends
 	//private Rectangle rect;
 	private Interval interval;
 	private Roi startingRoi;
-	private List<int[]> innerOffsets;
-	private List<int[]> outerOffsets;
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -420,11 +418,6 @@ public class PeakTrackerCommand extends
 
 		PeakStack = new ConcurrentHashMap<>(image.getStackSize());
 		metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
-
-		innerOffsets = MarsImageUtils.innerIntegrationOffsets(
-			integrationInnerRadius);
-		outerOffsets = MarsImageUtils.outerIntegrationOffsets(
-			integrationInnerRadius, integrationOuterRadius);
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
@@ -574,7 +567,7 @@ public class PeakTrackerCommand extends
 		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 
 		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
-			innerOffsets, outerOffsets);
+				integrationInnerRadius, integrationOuterRadius);
 
 		return peaks;
 	}

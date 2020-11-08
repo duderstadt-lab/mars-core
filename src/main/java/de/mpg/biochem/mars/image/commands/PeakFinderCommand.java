@@ -239,8 +239,6 @@ public class PeakFinderCommand extends
 
 	public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
 		"sigma", "R2" };
-	private List<int[]> innerOffsets;
-	private List<int[]> outerOffsets;
 	private Dataset dataset;
 	private ImagePlus image;
 
@@ -321,11 +319,6 @@ public class PeakFinderCommand extends
 		logService.info(log);
 
 		List<Peak> peaks = new ArrayList<>();
-
-		innerOffsets = MarsImageUtils.innerIntegrationOffsets(
-			integrationInnerRadius);
-		outerOffsets = MarsImageUtils.outerIntegrationOffsets(
-			integrationInnerRadius, integrationOuterRadius);
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
@@ -410,7 +403,7 @@ public class PeakFinderCommand extends
 		}
 
 		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
-			innerOffsets, outerOffsets);
+				integrationInnerRadius, integrationOuterRadius);
 
 		return peaks;
 	}
