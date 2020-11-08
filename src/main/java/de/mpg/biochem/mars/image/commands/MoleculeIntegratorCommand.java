@@ -79,7 +79,6 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
 import io.scif.Metadata;
 import io.scif.img.SCIFIOImgPlus;
 import io.scif.ome.OMEMetadata;
@@ -193,7 +192,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private SingleMoleculeArchive archive;
 
 	/**
-	 * Mapping of peaks: color name --> T --> UID.
+	 * Mapping of peaks: color name -> T -> UID.
 	 */
 	private Map<String, Map<Integer, Map<String, Peak>>> mapToAllPeaks;
 
@@ -202,7 +201,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private String imageID;
 	private Interval longInterval;
 	private Interval shortInterval;
-	private HashMap<String, HashMap<Integer, Double>> channelToTtoDtMap;
 	private Map<String, Peak> shortIntegrationList;
 	private Map<String, Peak> longIntegrationList;
 	
@@ -292,21 +290,80 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		longInterval = Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1, LONGy0 + LONGheight - 1);
 		shortInterval = Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1, SHORTy0 + SHORTheight - 1);
 
-		Rectangle longBoundingRegion = new Rectangle(LONGx0, LONGy0, LONGwidth,
-			LONGheight);
-		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth,
-			SHORTheight);
-
 		mapToAllPeaks = new ConcurrentHashMap<>();
-
-		// Build log
+		
+		// BUILD LOG
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Molecule Integrator");
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-
 		logService.info(log);
+		
+		String fretChannelName = buildIntegrationLists();
 
+		double starttime = System.currentTimeMillis();
+		logService.info("Integrating Peaks...");
+		
+		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		// INTEGRATE PEAKS
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(progressInteger.get(), marsOMEMetadata
+						.getImage(0).getPlaneCount(),
+						"Integrating Molecules in " + image.getTitle()), () -> marsOMEMetadata.getImage(0).planes().forEach(
+							plane -> {
+								integratePeaksInT(plane.getC(), plane.getT());
+								progressInteger.incrementAndGet();
+							}), PARALLELISM_LEVEL);
+		
+		logService.info("Time: " + DoubleRounder.round((System
+			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+		
+		// CREATE MOLECULE ARCHIVE
+		archive = new SingleMoleculeArchive("archive.yama");
+		archive.putMetadata(marsOMEMetadata);
+
+		Map<String, Map<Integer, Double>> channelToTtoDtMap = buildChannelToTtoDtMap(fretChannelName);
+		
+		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
+
+		progressInteger.set(0);
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(progressInteger.get(), shortIntegrationList
+						.keySet().size(), "Adding Molecules to Archive..."), 
+				() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> 
+						buildMolecule(UID, imageIndex, channelToTtoDtMap)), PARALLELISM_LEVEL);
+
+		archive.naturalOrderSortMoleculeIndex();
+
+		//getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
+		//	archive.getName());
+		
+		// FINISH UP
+		statusService.clearStatus();
+		logService.info("Finished in " + DoubleRounder.round((System
+			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+		if (archive.getNumberOfMolecules() == 0) {
+			logService.info(
+				"No molecules integrated. There must be a problem with your settings or RIOs");
+			archive = null;
+			logService.info(LogBuilder.endBlock(false));
+		}
+		else {
+			logService.info(LogBuilder.endBlock(true));
+
+			archive.logln(log);
+			archive.logln(LogBuilder.endBlock(true));
+			archive.logln("   ");
+		}
+	}
+	
+	private String buildIntegrationLists() {
+		Rectangle longBoundingRegion = new Rectangle(LONGx0, LONGy0, LONGwidth,
+				LONGheight);
+		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth,
+				SHORTheight);
+			
 		// These are assumed to be PointRois with names of the format
 		// UID or UID_LONG or UID_SHORT...
 		// We assume the same positions are integrated in all frames...
@@ -315,7 +372,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		shortIntegrationList = new HashMap<String, Peak>();
 		longIntegrationList = new HashMap<String, Peak>();
 
-		// Build integration lists for short and long wavelengths.
+		// Build single T integration lists for short and long wavelengths.
 		for (int i = 0; i < rois.length; i++) {
 			// split UID from LONG or SHORT
 			String[] subStrings = rois[i].getName().split("_");
@@ -331,10 +388,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				peak);
 
 		}
-
+		
 		String fretChannelName = null;
 
-		// Build integration lists for all time points for each color.
+		// Build integration lists for all T for all colors.
 		for (int i = 0; i < channelColors.size(); i++) {
 			MutableModuleItem<String> channel = channelColors.get(i);
 			String colorOption = channel.getValue(this);
@@ -352,29 +409,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					createColorIntegrationList(channel.getName(), longIntegrationList));
 			}
 		}
-
-		double starttime = System.currentTimeMillis();
-		logService.info("Integrating Peaks...");
-
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
-		MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(progressInteger.get(), marsOMEMetadata
-						.getImage(0).getPlaneCount(),
-						"Integrating Molecules in " + image.getTitle()), () -> marsOMEMetadata.getImage(0).planes().forEach(
-							plane -> {
-								integratePeaksInT(plane.getC(), plane.getT());
-								progressInteger.incrementAndGet();
-							}), PARALLELISM_LEVEL);
-		
-		logService.info("Time: " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
-
-		archive = new SingleMoleculeArchive("archive.yama");
-		archive.putMetadata(marsOMEMetadata);
-
-		channelToTtoDtMap =
-			new HashMap<String, HashMap<Integer, Double>>();
+		return fretChannelName;
+	}
+	
+	private Map<String, Map<Integer, Double>> buildChannelToTtoDtMap(String fretChannelName) {
+		Map<String, Map<Integer, Double>> channelToTtoDtMap = new HashMap<String, Map<Integer, Double>>();
 
 		// Let's build some maps from t to dt for each color...
 		for (String colorName : mapToAllPeaks.keySet()) {
@@ -393,37 +433,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			channelToTtoDtMap.put(colorName, tToDtMap);
 		}
 		
-		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
-
-		progressInteger.set(0);
-		MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(progressInteger.get(), shortIntegrationList
-						.keySet().size(), "Adding Molecules to Archive..."), 
-				() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> 
-						buildMolecule(UID, imageIndex)), PARALLELISM_LEVEL);
-
-		archive.naturalOrderSortMoleculeIndex();
-
-		//getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
-		//	archive.getName());
-
-		statusService.clearStatus();
-
-		logService.info("Finished in " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
-		if (archive.getNumberOfMolecules() == 0) {
-			logService.info(
-				"No molecules integrated. There must be a problem with your settings or RIOs");
-			archive = null;
-			logService.info(LogBuilder.endBlock(false));
-		}
-		else {
-			logService.info(LogBuilder.endBlock(true));
-
-			archive.logln(log);
-			archive.logln(LogBuilder.endBlock(true));
-			archive.logln("   ");
-		}
+		return channelToTtoDtMap;
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {
@@ -485,7 +495,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		return newList;
 	}
 	
-	private void buildMolecule(String UID, int imageIndex) {
+	private void buildMolecule(String UID, int imageIndex, Map<String, Map<Integer, Double>> channelToTtoDtMap) {
 		MarsTable table = new MarsTable();
 
 		// Build columns
