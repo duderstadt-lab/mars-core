@@ -36,8 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -77,6 +75,7 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.*;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
@@ -112,9 +111,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * SERVICES
 	 */
 	@Parameter
-	private RoiManager roiManager;
-
-	@Parameter
 	private LogService logService;
 
 	@Parameter
@@ -135,7 +131,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
 
-	// INPUT IMAGE
+	/**
+	 * IMAGE
+	 */
 	@Parameter(label = "Image for Integration")
 	private ImageDisplay imageDisplay;
 
@@ -145,6 +143,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter(label = "Outer Radius")
 	private int outerRadius = 3;
 
+	/**
+	 * ROIs
+	 */
+	@Parameter
+	private RoiManager roiManager;
+	
 	@Parameter(label = "LONG x0")
 	private int LONGx0 = 0;
 
@@ -181,23 +185,28 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String channelsTitle = "Channels:";
 
-	// OUTPUT PARAMETERS
+	/**
+	 * OUTPUTS
+	 */
+	
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
 
-	// Map containing all peaks organized by color name, then indexT, then UID...
+	/**
+	 * Mapping of peaks: color name --> T --> UID.
+	 */
 	private Map<String, Map<Integer, Map<String, Peak>>> mapToAllPeaks;
-
-	// For the progress thread
-	private final AtomicInteger progressInteger = new AtomicInteger(0);
-
-	private static String statusMessage = "Integrating Molecules...";
 
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
 	private Interval longInterval;
 	private Interval shortInterval;
+	private HashMap<String, HashMap<Integer, Double>> channelToTtoDtMap;
+	private Map<String, Peak> shortIntegrationList;
+	private Map<String, Peak> longIntegrationList;
+	
+	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
 
@@ -282,8 +291,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public void run() {
 		longInterval = Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1, LONGy0 + LONGheight - 1);
 		shortInterval = Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1, SHORTy0 + SHORTheight - 1);
-		
-		
+
 		Rectangle longBoundingRegion = new Rectangle(LONGx0, LONGy0, LONGwidth,
 			LONGheight);
 		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth,
@@ -304,8 +312,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		// We assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
 
-		Map<String, Peak> shortIntegrationList = new HashMap<String, Peak>();
-		Map<String, Peak> longIntegrationList = new HashMap<String, Peak>();
+		shortIntegrationList = new HashMap<String, Peak>();
+		longIntegrationList = new HashMap<String, Peak>();
 
 		// Build integration lists for short and long wavelengths.
 		for (int i = 0; i < rois.length; i++) {
@@ -348,149 +356,56 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
 
-		// Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(progressInteger.get(), marsOMEMetadata
+						.getImage(0).getPlaneCount(),
+						"Integrating Molecules in " + image.getTitle()), () -> marsOMEMetadata.getImage(0).planes().forEach(
+							plane -> {
+								integratePeaksInT(plane.getC(), plane.getT());
+								progressInteger.incrementAndGet();
+							}), PARALLELISM_LEVEL);
+		
+		logService.info("Time: " + DoubleRounder.round((System
+			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		try {
-			forkJoinPool.submit(() -> marsOMEMetadata.getImage(0).planes().forEach(
-				plane -> {
-					integratePeaksInT(plane.getC(), plane.getT());
+		archive = new SingleMoleculeArchive("archive.yama");
+		archive.putMetadata(marsOMEMetadata);
 
-					progressInteger.incrementAndGet();
-					statusService.showStatus(progressInteger.get(), marsOMEMetadata
-						.getImage(0).getPlaneCount(), statusMessage);
-				})).get();
+		channelToTtoDtMap =
+			new HashMap<String, HashMap<Integer, Double>>();
 
-			logService.info("Time: " + DoubleRounder.round((System
-				.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+		// Let's build some maps from t to dt for each color...
+		for (String colorName : mapToAllPeaks.keySet()) {
+			HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
+			final String fretCName = fretChannelName;
 
-			// Let's make sure we create a unique archive name...
-			String newName = "archive";
-			int num = 1;
-			while (moleculeArchiveService.getArchive(newName + ".yama") != null) {
-				newName = "archive" + num;
-				num++;
-			}
-			archive = new SingleMoleculeArchive(newName + ".yama");
-			archive.putMetadata(marsOMEMetadata);
+			marsOMEMetadata.getImage(0).planes().filter(plane -> {
+				if (fretCName != null && colorName.startsWith(fretCName))
+					return channelColors.get(plane.getC()).getName().equals(fretCName);
+				else return channelColors.get(plane.getC()).getName().equals(
+					colorName);
+			}).forEach(plane -> {
+				tToDtMap.put(plane.getT(), plane.getDeltaTinSeconds());
+			});
 
-			HashMap<String, HashMap<Integer, Double>> channelToTtoDtMap =
-				new HashMap<String, HashMap<Integer, Double>>();
-
-			// Let's build some maps from t to dt for each color...
-			for (String colorName : mapToAllPeaks.keySet()) {
-				HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
-				final String fretCName = fretChannelName;
-
-				marsOMEMetadata.getImage(0).planes().filter(plane -> {
-					if (fretCName != null && colorName.startsWith(fretCName))
-						return channelColors.get(plane.getC()).getName().equals(fretCName);
-					else return channelColors.get(plane.getC()).getName().equals(
-						colorName);
-				}).forEach(plane -> {
-					tToDtMap.put(plane.getT(), plane.getDeltaTinSeconds());
-				});
-
-				channelToTtoDtMap.put(colorName, tToDtMap);
-			}
-
-			statusMessage = "Adding Molecules to Archive...";
-			progressInteger.set(0);
-			statusService.showStatus(progressInteger.get(), shortIntegrationList
-				.keySet().size(), statusMessage);
-
-			final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
-
-			// Now we need to use the IntensitiesStack to build the molecule
-			// archive...
-			forkJoinPool.submit(() -> shortIntegrationList.keySet().parallelStream()
-				.forEach(UID -> {
-					MarsTable table = new MarsTable();
-
-					// Build columns
-					List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
-					columns.add(new DoubleColumn("T"));
-
-					for (String colorName : mapToAllPeaks.keySet()) {
-						columns.add(new DoubleColumn(colorName + " Time (s)"));
-						columns.add(new DoubleColumn(colorName));
-						columns.add(new DoubleColumn(colorName + " background"));
-					}
-
-					for (DoubleColumn column : columns)
-						table.add(column);
-
-					for (int t = 0; t < marsOMEMetadata.getImage(0).getSizeT(); t++) {
-						table.appendRow();
-						int row = table.getRowCount() - 1;
-						table.set("T", row, (double) t);
-
-						for (String colorName : mapToAllPeaks.keySet()) {
-							if (mapToAllPeaks.get(colorName).containsKey(t)) {
-								Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
-								if (channelToTtoDtMap.get(colorName).containsKey(t)) table
-									.setValue(colorName + " Time (s)", row, channelToTtoDtMap.get(
-										colorName).get(t));
-								else table.setValue(colorName + " Time (s)", row, Double.NaN);
-								table.setValue(colorName, row, peak.getIntensity());
-								table.setValue(colorName + " background", row, peak
-									.getMedianBackground());
-							}
-							else {
-								table.setValue(colorName + " Time (s)", row, Double.NaN);
-								table.setValue(colorName, row, Double.NaN);
-								table.setValue(colorName + " background", row, Double.NaN);
-							}
-						}
-					}
-
-					SingleMolecule molecule = new SingleMolecule(UID, table);
-
-					// This command works on single positions but they might have
-					// different indexes
-					molecule.setImage(imageIndex);
-					molecule.setMetadataUID(marsOMEMetadata.getUID());
-					if (longIntegrationList.containsKey(UID)) {
-						molecule.setParameter("x_LONG", longIntegrationList.get(UID)
-							.getX());
-						molecule.setParameter("y_LONG", longIntegrationList.get(UID)
-							.getY());
-					}
-
-					if (shortIntegrationList.containsKey(UID)) {
-						molecule.setParameter("x_SHORT", shortIntegrationList.get(UID)
-							.getX());
-						molecule.setParameter("y_SHORT", shortIntegrationList.get(UID)
-							.getY());
-					}
-
-					archive.put(molecule);
-
-					progressInteger.incrementAndGet();
-					statusService.showStatus(progressInteger.get(), shortIntegrationList
-						.keySet().size(), statusMessage);
-				})).get();
-
-			statusService.showStatus(1, 1, "Peak integration for " + image
-				.getTitle() + " - Done!");
+			channelToTtoDtMap.put(colorName, tToDtMap);
 		}
-		catch (InterruptedException | ExecutionException e) {
-			// handle exceptions
-			e.printStackTrace();
-			logService.info(LogBuilder.endBlock(false));
-		}
-		finally {
-			forkJoinPool.shutdown();
-		}
+		
+		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
 
-		// Reorder Molecules to Natural Order, so there is a common order
-		// if we have to recover..
+		progressInteger.set(0);
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(progressInteger.get(), shortIntegrationList
+						.keySet().size(), "Adding Molecules to Archive..."), 
+				() -> shortIntegrationList.keySet().parallelStream().forEach(UID -> 
+						buildMolecule(UID, imageIndex)), PARALLELISM_LEVEL);
+
 		archive.naturalOrderSortMoleculeIndex();
 
-		// Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
-			archive.getName());
+		//getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
+		//	archive.getName());
 
 		statusService.clearStatus();
 
@@ -512,9 +427,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 	
 	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
-		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0, c, t);
+		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, c, t);
 
 		String colorName = channelColors.get(c).getName();
 
@@ -571,7 +484,69 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			newList.put(UID, new Peak(peakList.get(UID)));
 		return newList;
 	}
+	
+	private void buildMolecule(String UID, int imageIndex) {
+		MarsTable table = new MarsTable();
 
+		// Build columns
+		List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
+		columns.add(new DoubleColumn("T"));
+
+		for (String colorName : mapToAllPeaks.keySet()) {
+			columns.add(new DoubleColumn(colorName + " Time (s)"));
+			columns.add(new DoubleColumn(colorName));
+			columns.add(new DoubleColumn(colorName + " background"));
+		}
+
+		for (DoubleColumn column : columns)
+			table.add(column);
+
+		for (int t = 0; t < marsOMEMetadata.getImage(0).getSizeT(); t++) {
+			table.appendRow();
+			int row = table.getRowCount() - 1;
+			table.set("T", row, (double) t);
+
+			for (String colorName : mapToAllPeaks.keySet()) {
+				if (mapToAllPeaks.get(colorName).containsKey(t)) {
+					Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
+					if (channelToTtoDtMap.get(colorName).containsKey(t)) table
+						.setValue(colorName + " Time (s)", row, channelToTtoDtMap.get(
+							colorName).get(t));
+					else table.setValue(colorName + " Time (s)", row, Double.NaN);
+					table.setValue(colorName, row, peak.getIntensity());
+					table.setValue(colorName + " background", row, peak
+						.getMedianBackground());
+				}
+				else {
+					table.setValue(colorName + " Time (s)", row, Double.NaN);
+					table.setValue(colorName, row, Double.NaN);
+					table.setValue(colorName + " background", row, Double.NaN);
+				}
+			}
+		}
+
+		SingleMolecule molecule = new SingleMolecule(UID, table);
+
+		molecule.setImage(imageIndex);
+		molecule.setMetadataUID(marsOMEMetadata.getUID());
+		if (longIntegrationList.containsKey(UID)) {
+			molecule.setParameter("x_LONG", longIntegrationList.get(UID)
+				.getX());
+			molecule.setParameter("y_LONG", longIntegrationList.get(UID)
+				.getY());
+		}
+
+		if (shortIntegrationList.containsKey(UID)) {
+			molecule.setParameter("x_SHORT", shortIntegrationList.get(UID)
+				.getX());
+			molecule.setParameter("y_SHORT", shortIntegrationList.get(UID)
+				.getY());
+		}
+
+		archive.put(molecule);
+		progressInteger.incrementAndGet();
+	}
+	
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Image Title", image.getTitle());
 		if (image.getOriginalFileInfo() != null && image
