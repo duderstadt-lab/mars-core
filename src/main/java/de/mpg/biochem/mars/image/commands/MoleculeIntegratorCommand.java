@@ -335,9 +335,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 						buildMolecule(UID, imageIndex, channelToTtoDtMap)), PARALLELISM_LEVEL);
 
 		archive.naturalOrderSortMoleculeIndex();
-
-		//getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
-		//	archive.getName());
 		
 		// FINISH UP
 		statusService.clearStatus();
@@ -442,31 +439,27 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		String colorName = channelColors.get(c).getName();
 
 		if (channelColors.get(c).getValue(this).equals("FRET")) {
-			integratePeaks(img, mapToAllPeaks.get(colorName +
-				" " + fretShortName).get(t), shortInterval);
+			List<Peak> shortPeaks = new ArrayList<Peak>(mapToAllPeaks.get(colorName +
+					" " + fretShortName).get(t).values());
 
-			integratePeaks(img, mapToAllPeaks.get(colorName +
-				" " + fretLongName).get(t), longInterval);
+			MarsImageUtils.integratePeaks(img, shortInterval, shortPeaks, innerRadius, outerRadius);
+			
+			List<Peak> longPeaks = new ArrayList<Peak>(mapToAllPeaks.get(colorName +
+					" " + fretLongName).get(t).values());
+
+			MarsImageUtils.integratePeaks(img, longInterval, longPeaks, innerRadius, outerRadius);
 		}
 		else if (channelColors.get(c).getValue(this).equals("Short")) {
-			integratePeaks(img, mapToAllPeaks.get(colorName)
-				.get(t), shortInterval);
+			List<Peak> shortPeaks = new ArrayList<Peak>(mapToAllPeaks.get(colorName)
+				.get(t).values());
+			
+			MarsImageUtils.integratePeaks(img, shortInterval, shortPeaks, innerRadius, outerRadius);
 		}
 		else if (channelColors.get(c).getValue(this).equals("Long")) {
-			integratePeaks(img, mapToAllPeaks.get(colorName)
-				.get(t), longInterval);
-		}
-	}
-	
-	private <T extends RealType<T> & NativeType<T>> void integratePeaks(RandomAccessibleInterval<T> img,
-		Map<String, Peak> integrationList, Interval interval)
-	{
-		for (String UID : integrationList.keySet()) {
-			Peak peak = integrationList.get(UID);
-			double[] intensity = MarsImageUtils.integratePeak(img, interval, (int) peak.getX(), (int) peak
-					.getY(), innerRadius, outerRadius);
-			peak.setIntensity(intensity[0]);
-			peak.setMedianBackground(intensity[1]);
+			List<Peak> longPeaks = new ArrayList<Peak>(mapToAllPeaks.get(colorName)
+					.get(t).values());
+				
+			MarsImageUtils.integratePeaks(img, longInterval, longPeaks, innerRadius, outerRadius);
 		}
 	}
 

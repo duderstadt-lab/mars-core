@@ -397,8 +397,8 @@ public class PeakFinderCommand extends
 			minimumDistance, findNegativePeaks);
 
 		if (fitPeaks) {
-			peaks = MarsImageUtils.fitPeaks(img, peaks, fitRadius, dogFilterRadius,
-				findNegativePeaks, RsquaredMin, interval);
+			peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius, dogFilterRadius,
+				findNegativePeaks, RsquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 		}
 

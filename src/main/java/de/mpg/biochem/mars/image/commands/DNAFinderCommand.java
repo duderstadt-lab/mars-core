@@ -502,13 +502,13 @@ public class DNAFinderCommand extends DynamicCommand
 				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1,
 					y0 + height - 1);
 
-				positivePeaks = MarsImageUtils.fitPeaks(gradImage, positivePeaks,
-					fitRadius, dogFilterRadius, false, RsquaredMin, interval);
+				positivePeaks = MarsImageUtils.fitPeaks(gradImage, interval, positivePeaks,
+					fitRadius, dogFilterRadius, false, RsquaredMin);
 				positivePeaks = MarsImageUtils.removeNearestNeighbors(positivePeaks,
 					minimumDistance);
 
-				negativePeaks = MarsImageUtils.fitPeaks(gradImage, negativePeaks,
-					fitRadius, dogFilterRadius, true, RsquaredMin, interval);
+				negativePeaks = MarsImageUtils.fitPeaks(gradImage, interval, negativePeaks,
+					fitRadius, dogFilterRadius, true, RsquaredMin);
 				negativePeaks = MarsImageUtils.removeNearestNeighbors(negativePeaks,
 					minimumDistance);
 			}

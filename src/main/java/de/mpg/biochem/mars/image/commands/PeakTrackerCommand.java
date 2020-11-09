@@ -562,8 +562,8 @@ public class PeakTrackerCommand extends
 		else peaks = MarsImageUtils.findPeaks(img, interval, t, threshold,
 			minimumDistance, findNegativePeaks);
 
-		peaks = MarsImageUtils.fitPeaks(img, peaks, fitRadius, dogFilterRadius,
-			findNegativePeaks, RsquaredMin, interval);
+		peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius, dogFilterRadius,
+			findNegativePeaks, RsquaredMin);
 		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 
 		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,

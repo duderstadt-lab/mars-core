@@ -158,66 +158,66 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 	protected MoleculeArchiveWindow win;
 
-	/*
+	/**
 	 * The archive file with .yama extension or virtual store with .yama.store extension 
 	 */
 	protected File file;
 
-	/*
+	/**
 	 * JsonFactory instance used. Can be either smile or json.
 	 */
 	protected JsonFactory jfactory;
 
-	/*
+	/**
 	 * Archive properties.
 	 */
 	protected P archiveProperties;
 
-	/*
+	/**
 	 * Record index used for virtual archives.
 	 */
 	protected MoleculeArchiveIndex<M, I> archiveIndex;
 
-	/*
+	/**
 	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized with metadataList always. 
 	 */
 	protected ConcurrentMap<String, I> metadataMap;
 
-	/*
+	/**
 	 * List of metadata UIDs. Items should match keys in metadataMap always. 
 	 * All write operations must be placed in synchronized blocks. synchronized(metadataList) { ... }
 	 */
 	protected ArrayList<String> metadataList;
 
-	/*
+	/**
 	 * Map from molecule UID to Molecule object. Keys should be synchronized with moleculeList always. Left null in virtual memory mode.
 	 */
 	protected ConcurrentMap<String, M> moleculeMap;
 
-	/*
+	/**
 	 * List of molecule UIDs. Items should match keys in moleculeMap always. 
 	 * All write operations must be placed in synchronized blocks. synchronized(moleculeList) { ... }
 	 */
 	protected ArrayList<String> moleculeList;
 
-	/*
+	/**
 	 * Map from molecule UID to ReentrantLock to ensure thread blocking when accessing molecule files.
 	 */
 	protected ConcurrentMap<String, ReentrantLock> recordLocks;
 
-	/*
+	/**
 	 * Set to true if working from a virtual store.
 	 */
 	protected boolean virtual;
 
-	/*
+	/**
 	 * For virtual archives we must keep track of the encoding when it was loaded 
 	 * so we always parse correctly even if the output format has been changed.
 	 */
 	protected boolean smileEncoding = true;
 	protected String storeFileExtension = ".sml";
 
-	/*
+	/**
 	 * Thread count. Should be derived from scijava or Fiji in the future.
 	 */
 	protected final int PARALLELISM_LEVEL = Runtime.getRuntime()
