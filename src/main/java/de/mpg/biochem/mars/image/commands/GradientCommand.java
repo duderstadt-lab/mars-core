@@ -55,36 +55,43 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.io.File;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import net.imglib2.type.numeric.RealType;
-
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.widget.ChoiceWidget;
 
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.util.LogBuilder;
-import de.mpg.biochem.mars.util.MarsMath;
-import ij.ImagePlus;
-import ij.io.FileSaver;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
+import de.mpg.biochem.mars.util.MarsUtil;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 /**
- * This command calculates the gradient (slope) of consecutive pixels in the y
- * direction from top to bottom. The resulting gradient images can be saved as
- * an image sequence. This tool is used to find the start and end points of
- * stained DNAs.
+ * This is a convenience command that calculates the gradient of an image. Assumes
+ * Z = 0. Processes all TIME and CHANNEL positions.
  *
  * @author Karl Duderstadt
  */
@@ -97,208 +104,131 @@ import ij.process.ImageProcessor;
 public class GradientCommand extends DynamicCommand
 	implements Command
 {
+	
+	/**
+	 * SERVICES
+	 */
 
 	@Parameter
 	private LogService logService;
 
 	@Parameter
 	private StatusService statusService;
-
+	
+	@Parameter
+	private ConvertService convertService;
+	
+	@Parameter
+	private OpService opService;
+	
+	@Parameter
+	private DatasetService datasetService;
+	
+	/**
+	 * IMAGE
+	 */
 	@Parameter(label = "Image")
-	private ImagePlus image;
+	private Dataset dataset;
+	
+	@Parameter(label = "Gaussian smoothing sigma")
+	private double gaussSigma = 2;
 
-	@Parameter(label = "fitLength (in pixels, must be an odd number)")
-	private int fitLength = 7;
-
-	@Parameter(label = "Output Directory", style = "directory")
-	private File directory;
+	@Parameter(label = "Direction:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
+				"Top to bottom", "Left to right"})
+	private String gradientDirection = "Top to bottom";
+	
+	@Parameter(label="Gradient image", type = ItemIO.OUTPUT)
+	private Dataset output;
 
 	// For the progress thread
-	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-	private final AtomicInteger framesDone = new AtomicInteger(0);
-
-	private int width, height;
-
+	private final AtomicInteger slicesDone = new AtomicInteger(0);
+	
 	@Override
 	public void run() {
 		// Build log
 		LogBuilder builder = new LogBuilder();
-
-		String log = builder.buildTitleBlock("Calculate Y Gradient");
-
+		String log = LogBuilder.buildTitleBlock("Calculate Gradient");
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-
-		// Output first part of log message...
 		logService.info(log);
 
-		width = image.getWidth();
-		height = image.getHeight();
-
-		// Need to determine the number of threads
+		Img<DoubleType> gradImage = opService.create().img(dataset, new DoubleType());
+		final int[] derivatives = (gradientDirection.equals("Top to bottom")) ? new int[] { 0, 1 } : new int[] { 1, 0 };
+		final double[] sigma = { gaussSigma, gaussSigma };
+		
+		int cDim = dataset.getImgPlus().dimensionIndex(Axes.CHANNEL);
+		long cSize = dataset.getImgPlus().dimension(cDim); 
+		
+		int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
+		long tSize = dataset.getImgPlus().dimension(tDim); 
+		
+		final List<int[]> CTs = new ArrayList<>();
+		for( int c = 0; c < cSize; c++)
+			for (int t = 0; t < tSize; t++)
+				CTs.add(new int[] { c, t });
+		
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		MarsUtil.forkJoinPoolBuilder(statusService, logService,
+			() -> statusService.showStatus(slicesDone.get(), CTs.size(),
+				"Calculating gradient for " + dataset.getName()), 
+			() -> IntStream.range(0,
+				CTs.size()).parallel().forEach(i -> {
+					int[] ct = CTs.get(i);
+					Img<DoubleType> in = getInput2DSlice(ct);
+					RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(gradImage, ct);
+					opService.filter().derivativeGauss(out, in, derivatives, sigma);
+					slicesDone.incrementAndGet();
+				}), PARALLELISM_LEVEL);
+		
+		output = datasetService.create(gradImage);
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		try {
-			// Start a thread to keep track of the progress of the number of frames
-			// that have been processed.
-			// Waiting call back to update the progress bar!!
-			Thread progressThread = new Thread() {
-
-				public synchronized void run() {
-					try {
-						while (progressUpdating.get()) {
-							Thread.sleep(100);
-							statusService.showStatus(framesDone.intValue(), image
-								.getStackSize(), "Calculating gradient for " + image
-									.getTitle());
-						}
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			};
-
-			progressThread.start();
-
-			// This will spawn a bunch of threads that will correct the beam profile
-			// in individual frames
-			// in parallel
-			forkJoinPool.submit(() -> IntStream.rangeClosed(1, image.getStackSize())
-				.parallel().forEach(i -> frameGradient(i))).get();
-
-			progressUpdating.set(false);
-
-			statusService.showProgress(100, 100);
-			statusService.showStatus("Gradient calculation for " + image.getTitle() +
-				" - Done!");
-
-		}
-		catch (InterruptedException | ExecutionException e) {
-			// handle exceptions
-			e.printStackTrace();
-			logService.info(builder.endBlock(false));
-			return;
-		}
-		finally {
-			forkJoinPool.shutdown();
-		}
-
-		logService.info(builder.endBlock(true));
+		logService.info(LogBuilder.endBlock(true));
 	}
-
-	public void frameGradient(int slice) {
-		ImageProcessor currentImage = image.getStack().getProcessor(slice);
-
-		FloatProcessor gradProcessor = new FloatProcessor(width, height);
-
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				// for linear fitting using - SDMMMath.linearRegression(xData, yData,
-				// offset, length)
-				// offset is starting index and length is number of index positions for
-				// fitting...
-				// This makes it easy to pass a large array and only fit part of it..
-
-				double[] output = MarsMath.linearRegression(getXData(), getYData(x, y,
-					currentImage), 0, fitLength);
-
-				// The linearRegression function returns the following format
-				// Equations and notation taken directly from "An Introduction to Error
-				// Analysis" by Taylor 2nd edition
-				// y = A + Bx
-				// A = output[0] +/- output[1]
-				// B = output[2] +/- output[3]
-				// error is the STD here.
-
-				// We only need to know the slope for the gradProcessor Image
-				// (output[2])
-				// Operation to set a pixel is setf(int x, int y, float value)
-				gradProcessor.setf(x, y, (float) output[2]);
-			}
-		}
-
-		ImagePlus img = new ImagePlus(image.getStack().getShortSliceLabel(slice),
-			gradProcessor);
-		String infoString = (String) image.getStack().getSliceLabel(slice);
-		if (infoString.contains("{")) img.setProperty("Info", infoString.substring(
-			infoString.indexOf("{")));
-		FileSaver saver = new FileSaver(img);
-		saver.saveAsTiff(directory.getAbsolutePath() + "/" + image.getStack()
-			.getShortSliceLabel(slice) + ".tif");
-
-		framesDone.incrementAndGet();
+	
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> Img<DoubleType> getInput2DSlice(int[] ct) {
+		return opService.convert().float64(Views.iterable((RandomAccessibleInterval<T>) MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0, ct[0], ct[1])));
 	}
-	// UTILITY METHODS
-
-	// For the xData we just need an even list of points as long as fitLength
-	private double[] getXData() {
-		double[] xDataOut = new double[fitLength];
-		for (int i = 0; i < fitLength; i++) {
-			xDataOut[i] = i;
-		}
-		return xDataOut;
-	}
-
-	// For the yData we need pixel values from imgIn
-	// but we need to make sure pixels outside the boundaries
-	// are mapped to mirror images..
-	private double[] getYData(int Xin, int Yin, ImageProcessor currentImage) {
-		double[] yDataOut = new double[fitLength];
-		int index = 0;
-
-		int pixelsFromCenter = (fitLength - 1) / 2;
-		for (int y = Yin - pixelsFromCenter; y <= Yin + pixelsFromCenter; y++) {
-			yDataOut[index] = getPixelValue(Xin, y, currentImage);
-			index++;
-		}
-		return yDataOut;
-	}
-
-	// Returns pixel value of input image
-	// if the position is out of bounds
-	// a mirrored value is given
-	private double getPixelValue(int x, int y, ImageProcessor currentImage) {
-		if (y < 0) y *= -1;
-		else if (y > height - 1) y = (height - 1) - (y - height);
-
-		// Next for X
-		if (x < 0) x *= -1;
-		else if (x > width - 1) x = (width - 1) - (x - width);
-
-		return (double) currentImage.getf(x, y);
+	
+	public static RandomAccessibleInterval<DoubleType> getOutput2DSlice(final Img<DoubleType> img, final int[] ct)
+	{
+		RandomAccessible<DoubleType> frameImg;
+		frameImg = Views.hyperSlice(img, 3, ct[0]);
+		frameImg = Views.hyperSlice(frameImg, 3, ct[1]);
+		frameImg = Views.hyperSlice(frameImg, 2, 0);
+	
+		return Views.interval(frameImg, Intervals.createMinSize(0, 0, img.dimension(0), img.dimension(1)));
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image Title", image.getTitle());
-		builder.addParameter("Image Directory", image
-			.getOriginalFileInfo().directory);
-		builder.addParameter("fitLength", String.valueOf(fitLength));
-		builder.addParameter("Directory", directory.getAbsolutePath());
+		builder.addParameter("Dataset", dataset.getName());
+		builder.addParameter("Gaussian smoothing sigma", gaussSigma);
+		builder.addParameter("Direction", gradientDirection);
 	}
 
-	public void setImage(ImagePlus image) {
-		this.image = image;
+	public void setDataset(Dataset dataset) {
+		this.dataset= dataset;
 	}
 
-	public ImagePlus getImage() {
-		return image;
+	public Dataset getDataset() {
+		return dataset;
 	}
-
-	public void setFitLength(int fitLength) {
-		this.fitLength = fitLength;
+	
+	public void setGaussianSigma(double gaussSigma) {
+		this.gaussSigma = gaussSigma;
 	}
-
-	public int getFitLength() {
-		return fitLength;
+	
+	public double getGaussianSigma() {
+		return gaussSigma;
 	}
-
-	public void setDirectory(File directory) {
-		this.directory = directory;
+	
+	public void setDirection(String gradientDirection) {
+		this.gradientDirection = gradientDirection;
 	}
-
-	public File getDirectory() {
-		return directory;
+	
+	public String getDirection() {
+		return gradientDirection;
 	}
 }
