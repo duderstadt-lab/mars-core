@@ -44,12 +44,12 @@ import org.scijava.ui.UIService;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 
-@Plugin(type = Command.class, label = "Open archive", menu = { @Menu(
+@Plugin(type = Command.class, label = "Open Virtual Store", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-				label = "Open virtual store", weight = 1, mnemonic = 'v') })
+				label = "Open Virtual Store", weight = 1, mnemonic = 'v') })
 public class ImportVirtualStoreCommand extends DynamicCommand {
 
 	@Parameter(label = "MoleculeArchive (.yama.store)", style = "directory")

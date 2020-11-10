@@ -66,7 +66,6 @@ import java.util.stream.IntStream;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.display.ImageDisplay;
-import net.imglib2.type.numeric.RealType;
 
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -93,9 +92,10 @@ import io.scif.services.TranslatorService;
  * corrected. For each pixel at position x, y the following is calculated:
  * (Image(x,y) - electronic_offset) / ((Background(x,y) - electronic_offset) /
  * (maximum_pixel_background - electronic_offset))
+ * 
+ * Processes the channel specified by correcting the image provided.  
  *
  * @author Karl Duderstadt
- * @author C.M. Punter
  */
 @Plugin(type = Command.class, label = "Beam Profile Correction", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -107,6 +107,9 @@ public class BeamProfileCorrectionCommand extends
 	DynamicCommand implements Command
 {
 
+	/**
+	 * SERVICES
+	 */
 	@Parameter
 	private LogService logService;
 

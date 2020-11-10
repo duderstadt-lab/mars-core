@@ -48,13 +48,13 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 
-@Plugin(type = Command.class, label = "Build archive from table", menu = {
+@Plugin(type = Command.class, label = "Build Archive from Table", menu = {
 	@Menu(label = MenuConstants.PLUGINS_LABEL,
 		weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 				label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-					label = "Build archive from table", weight = 10, mnemonic = 'b') })
+					label = "Build Archive from Table", weight = 10, mnemonic = 'b') })
 public class BuildArchiveFromTableCommand extends DynamicCommand {
 
 	@Parameter

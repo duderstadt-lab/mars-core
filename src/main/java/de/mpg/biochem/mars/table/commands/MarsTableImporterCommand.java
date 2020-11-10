@@ -44,11 +44,11 @@ import org.scijava.ui.UIService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableIOPlugin;
 
-@Plugin(type = Command.class, label = "Open table", menu = { @Menu(
+@Plugin(type = Command.class, label = "Open Table", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Open table",
+			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Open Table",
 				weight = 1, mnemonic = 'o') })
 public class MarsTableImporterCommand extends DynamicCommand {
 

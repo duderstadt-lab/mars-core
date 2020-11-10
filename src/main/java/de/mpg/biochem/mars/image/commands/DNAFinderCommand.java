@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.Dataset;
@@ -49,7 +48,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
@@ -87,6 +85,19 @@ import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
+/**
+ * Finds the location of vertically aligned DNA molecules within the specified length range.
+ * Calculates the vertical gradient of the image and applies a DoG filter. Then a search for
+ * pairs of positive and negative peaks is conducted. Vertically aligned pairs with the 
+ * range provided considered DNA molecules. The ends can be fit with subpixel accuracy. Output
+ * can be the number of molecules or a list of positions provided as a table. Alternatively,
+ * line Rois can be added to the RoiManager, which can be used to create DnaMoleculeArchives.
+ * 
+ * Thresholds for the intensity and variance in intensity can be applied to further filter 
+ * the DNA molecule located.
+ *
+ * @author Karl Duderstadt
+ */
 @Plugin(type = Command.class, label = "DNA Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",

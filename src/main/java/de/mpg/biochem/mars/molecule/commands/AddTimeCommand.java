@@ -46,11 +46,11 @@ import de.mpg.biochem.mars.molecule.*;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
-@Plugin(type = Command.class, label = "Add time", menu = { @Menu(
+@Plugin(type = Command.class, label = "Add Time", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(label = "Add time",
+			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(label = "Add Time",
 				weight = 40, mnemonic = 'a') })
 public class AddTimeCommand extends DynamicCommand implements Command {
 
