@@ -64,7 +64,23 @@ import net.imglib2.type.numeric.RealType;
 
 import de.mpg.biochem.mars.util.LevenbergMarquardt;
 
-public class PeakFitter {
+/**
+ * The PeakFitter determines the subpixel location of peaks with a symmetric
+ * gaussian function that include a baseline parameter. LevenbergMarquardt is
+ * used for optimization.
+ * 
+ * The final double array resulting from fitting has the following assignments:
+ * p[0] = Baseline
+ * p[1] = Height
+ * p[2] = X
+ * p[3] = Y
+ * p[4] = Sigma
+ * 
+ * with the same order for the associated error double array e.
+ * 
+ * @author Karl Duderstadt
+ */
+public class PeakFitter<T extends RealType<T> & NativeType<T>> {
 
 	private boolean[] vary;
 	private double precision = 1e-6;
@@ -140,14 +156,12 @@ public class PeakFitter {
 		this.precision = allowable_error;
 	}
 
-	public <T extends RealType<T> & NativeType<T>> void fitPeak(
-		RandomAccessible<T> img, double[] p, double[] e, Rectangle roi)
+	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e, Rectangle roi)
 	{
 		fitPeak(img, p, e, roi, false);
 	}
 
-	public <T extends RealType<T> & NativeType<T>> void fitPeak(
-		RandomAccessible<T> img, double[] p, double[] e, Rectangle roi,
+	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e, Rectangle roi,
 		boolean findNegativePeaks)
 	{
 		// Rectangle roi = ip.getRoi();

@@ -54,6 +54,17 @@ import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
 
+/**
+ * PeakTracker tracks the relative position of peaks over time based on peak
+ * feature differences, minimum distance change, and minimum total
+ * track length. Parameters are maintained for multiple rounds of 
+ * tracking. The main processing method (track) accepts a map of 
+ * all peaks for each position T, the final SingleMoleculeArchive 
+ * that will contain the molecule records resulting from tracking
+ * and the channel to set in the molecule records. 
+ * 
+ * @author Karl Duderstadt
+ */
 public class PeakTracker {
 
 	private double[] maxDifference;
@@ -337,16 +348,16 @@ public class PeakTracker {
 					// radius
 					// and perhaps we want to look at dy bigger than dx
 					// this is why we take the larger difference above...
-					if (ckMaxDifference[0] && Math.abs(linkFrom.baseline -
-						linkTo.baseline) > maxDifference[0]) valid = false;
-					else if (ckMaxDifference[1] && Math.abs(linkFrom.height -
-						linkTo.height) > maxDifference[1]) valid = false;
-					else if (Math.abs(linkFrom.x - linkTo.x) > maxDifference[2]) valid =
+					if (ckMaxDifference[0] && Math.abs(linkFrom.getBaseline() -
+						linkTo.getBaseline()) > maxDifference[0]) valid = false;
+					else if (ckMaxDifference[1] && Math.abs(linkFrom.getHeight() -
+						linkTo.getHeight()) > maxDifference[1]) valid = false;
+					else if (Math.abs(linkFrom.getX() - linkTo.getX()) > maxDifference[2]) valid =
 						false;
-					else if (Math.abs(linkFrom.y - linkTo.y) > maxDifference[3]) valid =
+					else if (Math.abs(linkFrom.getY() - linkTo.getY()) > maxDifference[3]) valid =
 						false;
-					else if (ckMaxDifference[2] && Math.abs(linkFrom.sigma -
-						linkTo.sigma) > maxDifference[4]) valid = false;
+					else if (ckMaxDifference[2] && Math.abs(linkFrom.getSigma() -
+						linkTo.getSigma()) > maxDifference[4]) valid = false;
 
 					if (valid) {
 						PeakLink link = new PeakLink(linkFrom, linkTo, radiusSearch
@@ -362,11 +373,11 @@ public class PeakTracker {
 			@Override
 			public int compare(PeakLink o1, PeakLink o2) {
 				// Sort by slice difference
-				if (o1.tDifference != o2.tDifference) return Double.compare(
-					o1.tDifference, o2.tDifference);
+				if (o1.getTDifference() != o2.getTDifference()) return Double.compare(
+					o1.getTDifference(), o2.getTDifference());
 
 				// next sort by distance - the shorter linking distance wins...
-				return Double.compare(o1.distanceSq, o2.distanceSq);
+				return Double.compare(o1.getSquaredDistance(), o2.getSquaredDistance());
 			}
 
 		});

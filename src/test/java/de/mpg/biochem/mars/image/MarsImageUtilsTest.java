@@ -31,16 +31,16 @@ public class MarsImageUtilsTest {
 		List<Peak> peaks = MarsImageUtils.findPeaks(img, Intervals.createMinMax(0, 0, img.dimension(0) - 1, img.dimension(1) - 1), 0, 100, 4, false);
 		
 		//10, 10
-		assertEquals(peaks.get(0).x, 10);
-		assertEquals(peaks.get(0).y, 10);
+		assertEquals(peaks.get(0).getX(), 10);
+		assertEquals(peaks.get(0).getY(), 10);
 		
 		//44, 27
-		assertEquals(peaks.get(1).x, 44);
-		assertEquals(peaks.get(1).y, 27);
+		assertEquals(peaks.get(1).getX(), 44);
+		assertEquals(peaks.get(1).getY(), 27);
 		
 		//33, 40
-		assertEquals(peaks.get(2).x, 33);
-		assertEquals(peaks.get(2).y, 40);
+		assertEquals(peaks.get(2).getX(), 33);
+		assertEquals(peaks.get(2).getY(), 40);
 	}
 	
 	@Test
@@ -50,14 +50,14 @@ public class MarsImageUtilsTest {
 		List<Peak> peaks = MarsImageUtils.findPeaks(img, Intervals.createMinMax(0, 0, img.dimension(0) - 1, img.dimension(1) - 1), 0, 100, 4, false);
 		MarsImageUtils.fitPeaks(img, Intervals.createMinMax(0, 0, img.dimension(0) - 1, img.dimension(1) - 1), peaks, 4, 2, false, 0);
 		
-		assertTrue( Math.abs( 10 - peaks.get(0).x ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 10 was " + peaks.get(0).x);
-		assertTrue( Math.abs( 10 - peaks.get(0).y ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 10 was " + peaks.get(0).y);
+		assertTrue( Math.abs( 10 - peaks.get(0).getX() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 10 was " + peaks.get(0).getX());
+		assertTrue( Math.abs( 10 - peaks.get(0).getY() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 10 was " + peaks.get(0).getY());
 		
-		assertTrue( Math.abs( 43.7 - peaks.get(1).x ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 43.7 was " + peaks.get(1).x);
-		assertTrue( Math.abs( 26.7 - peaks.get(1).y ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 26.7 was " + peaks.get(1).y);
+		assertTrue( Math.abs( 43.7 - peaks.get(1).getX() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 43.7 was " + peaks.get(1).getX());
+		assertTrue( Math.abs( 26.7 - peaks.get(1).getY() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 26.7 was " + peaks.get(1).getY());
 		
-		assertTrue( Math.abs( 32.5 - peaks.get(2).x ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 32.5 was " + peaks.get(2).x);
-		assertTrue( Math.abs( 40 - peaks.get(2).y ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 40 was " + peaks.get(2).y);
+		assertTrue( Math.abs( 32.5 - peaks.get(2).getX() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 32.5 was " + peaks.get(2).getX());
+		assertTrue( Math.abs( 40 - peaks.get(2).getY() ) < TOLERANCE , "Peak position is off by more than the tolerance. Should be 40 was " + peaks.get(2).getY());
 	}
 	
 	@Test
@@ -75,7 +75,7 @@ public class MarsImageUtilsTest {
 		peaks = MarsImageUtils.removeNearestNeighbors(peaks, 4);
 		
 		assertTrue( peaks.size() == 1, "Nearest neighbor peak was not removed by MarsImageUtils.removeNearestNeighbors.");
-		assertTrue( peaks.get(0).x == 10 & peaks.get(0).y == 10, "Peak with higher R-squared was removed by MarsImageUtils.removeNearestNeighbors.");
+		assertTrue( peaks.get(0).getX() == 10 & peaks.get(0).getY() == 10, "Peak with higher R-squared was removed by MarsImageUtils.removeNearestNeighbors.");
 	}
 	
 	@Test

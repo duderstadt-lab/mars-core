@@ -61,17 +61,26 @@ import net.imglib2.RealLocalizable;
 
 import org.scijava.table.DoubleColumn;
 
+/**
+ * Stores information about detected 2D intensity peaks. Implements {@link RealLocalizable} 
+ * to allow for KDTree searches. Depending on the implementation, Peaks can be assigned a UID, 
+ * colorName, Rsquared, as well as t and c position. All parameters from subpixel localization 
+ * are included as well as error margins. Peaks can be linked to other peaks. The valid parameter
+ * is used for convenience in tracking algorithms.
+ * 
+ * @author Karl Duderstadt
+ */
 public class Peak implements RealLocalizable {
 
-	String UID, colorName;
-	double t, c;
-	Peak forwardLink, backwardLink;
-	double x, y, height, baseline, sigma;
-	double xError, yError, heightError, baselineError, sigmaError;
-	double pixelValue, Rsquared;
+	private String UID, colorName;
+	private double t, c;
+	private Peak forwardLink, backwardLink;
+	private double x, y, height, baseline, sigma;
+	private double xError, yError, heightError, baselineError, sigmaError;
+	private double pixelValue, Rsquared;
 
-	double intensity, medianBackground;
-	boolean valid = true;
+	private double intensity, medianBackground;
+	private boolean valid = true;
 
 	public Peak(String UID) {
 		this.UID = UID;
