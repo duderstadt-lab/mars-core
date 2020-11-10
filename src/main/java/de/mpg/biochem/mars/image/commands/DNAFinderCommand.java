@@ -111,9 +111,6 @@ public class DNAFinderCommand extends DynamicCommand
 	/**
 	 * SERVICES
 	 */
-	@Parameter(required = false)
-	private RoiManager roiManager;
-
 	@Parameter
 	private LogService logService;
 
@@ -129,11 +126,18 @@ public class DNAFinderCommand extends DynamicCommand
 	@Parameter
 	private ConvertService convertService;
 
-	// INPUT IMAGE
+	/**
+	 * IMAGE
+	 */
 	@Parameter(label = "Image to search for DNAs")
 	private ImageDisplay imageDisplay;
 
-	// ROI SETTINGS
+	/**
+	 * ROI
+	 */
+	@Parameter(required = false)
+	private RoiManager roiManager;
+	
 	@Parameter(label = "use ROI", persist = false)
 	private boolean useROI = true;
 
@@ -152,8 +156,9 @@ public class DNAFinderCommand extends DynamicCommand
 	@Parameter(label = "Channel", choices = { "a", "b", "c" })
 	private String channel = "0";
 
-	// DNA FINDER SETTINGS
-
+	/**
+	 * FINDER SETTINGS
+	 */
 	@Parameter(label = "Gaussian Smoothing Sigma")
 	private double gaussSigma = 2;
 
@@ -216,7 +221,7 @@ public class DNAFinderCommand extends DynamicCommand
 	private boolean preview = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String OutputMessage = "Output:";
+	private final String outputMessage = "Output:";
 
 	@Parameter(label = "Generate DNA count table")
 	private boolean generateDNACountTable;
@@ -233,7 +238,9 @@ public class DNAFinderCommand extends DynamicCommand
 	@Parameter(label = "Process all Frames")
 	private boolean allFrames;
 
-	// OUTPUT PARAMETERS
+	/**
+	 * OUTPUTS
+	 */
 	@Parameter(label = "DNA Count", type = ItemIO.OUTPUT)
 	private MarsTable DNACount;
 
@@ -486,8 +493,6 @@ public class DNAFinderCommand extends DynamicCommand
 		double[] sigma = { gaussSigma, gaussSigma };
 
 		opService.filter().derivativeGauss(gradImage, input, derivatives, sigma);
-		// ImagePlus derivativeImage = ImageJFunctions.wrap(output, "guass
-		// filtered");
 
 		List<Peak> positivePeaks = new ArrayList<Peak>();
 		List<Peak> negativePeaks = new ArrayList<Peak>();

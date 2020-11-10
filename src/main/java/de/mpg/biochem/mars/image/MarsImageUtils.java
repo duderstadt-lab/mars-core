@@ -228,7 +228,7 @@ public class MarsImageUtils {
 
 		int fitWidth = radius * 2 + 1;
 
-		PeakFitter fitter = new PeakFitter();
+		PeakFitter<T> fitter = new PeakFitter<>();
 
 		RandomAccessible<T> rae = Views.extendMirrorSingle(Views.interval(img,
 			interval));

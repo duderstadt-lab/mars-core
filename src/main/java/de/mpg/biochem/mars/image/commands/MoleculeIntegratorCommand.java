@@ -45,7 +45,6 @@ import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Intervals;
@@ -91,8 +90,9 @@ import ome.xml.meta.OMEXMLMetadata;
  * Command for integrating the fluorescence signal from peaks. Input - A list of
  * peaks for integration can be provided as PointRois in the RoiManger with the
  * format UID_LONG or UID_SHORT for long and short wavelengths. The positions
- * given will be integrated for all slices with different colors divided into
- * different columns based on the Meta data information.
+ * given are integrated for all T for all colors specified to generate a 
+ * SingleMoleculeArchive in which all molecule record tables have columns for
+ * all integrated colors.
  * 
  * @author Karl Duderstadt
  */
@@ -187,7 +187,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	/**
 	 * OUTPUTS
 	 */
-	
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
 
