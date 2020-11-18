@@ -44,6 +44,7 @@ import java.util.stream.IntStream;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
@@ -300,62 +301,12 @@ public class PeakTrackerCommand extends
 		if (imageDisplay != null) {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
-		}
-		else if (dataset != null) image = convertService.convert(dataset,
-			ImagePlus.class);
-		else return;
-
-		ImgPlus<?> imp = dataset.getImgPlus();
-
-		OMEXMLMetadata omexmlMetadata = null;
-		if (!(imp instanceof SCIFIOImgPlus)) {
-			logService.info("This image has not been opened with SCIFIO.");
-			try {
-				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-					dataset);
-			}
-			catch (ServiceException e) {
-				e.printStackTrace();
-			}
-		}
-		else {
-			Metadata metadata = (Metadata) dataset.getProperties().get(
-				"scifio.metadata.global");
-			OMEMetadata omeMeta = new OMEMetadata(getContext());
-			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info(
-					"Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
-			}
-			else {
-				omexmlMetadata = omeMeta.getRoot();
-			}
-		}
-
-		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
-		// the position.
-		try {
-			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata
-				.getDoubleAnnotationID(0).equals("ImageID"))
-			{
-				omexmlMetadata.setImageID("Image:" + omexmlMetadata
-					.getDoubleAnnotationValue(0).intValue(), 0);
-			}
-		}
-		catch (NullPointerException e) {
-			// Do nothing. Many of the omexmlmetadata methods give NullPointerExceptions
-			// if fields are not set.
-		}
-
-		String metaUID;
-		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
-			omexmlMetadata.getUUID()).substring(0, 10);
-		else metaUID = MarsMath.getUUID58().substring(0, 10);
-
-		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+		} else 
+			return;
 
 		Rectangle rect;
 		if (image.getRoi() == null) {
-			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
+			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
@@ -401,12 +352,16 @@ public class PeakTrackerCommand extends
 			preFrame.setValue(this, image.getFrame() - 1);
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
-
-		if (norpixFormat) swapZandT = true;
 	}
 
 	@Override
 	public void run() {
+		if (norpixFormat) swapZandT = true;
+		
+		if (dataset == null && image != null) {
+			dataset = convertService.convert(image, Dataset.class);
+		}
+		
 		updateInterval();
 
 		// Build log
@@ -416,19 +371,25 @@ public class PeakTrackerCommand extends
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		PeakStack = new ConcurrentHashMap<>(image.getStackSize());
-		metaDataStack = new ConcurrentHashMap<>(image.getStackSize());
+		PeakStack = new ConcurrentHashMap<>();
+		metaDataStack = new ConcurrentHashMap<>();
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
 
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
-		int frameCount = (swapZandT) ? image.getStackSize() : image.getNFrames();
+		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
+		int zSize = (int) dataset.getImgPlus().dimension(zDim); 
+		
+		int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
+		int tSize = (int) dataset.getImgPlus().dimension(tDim); 
+		
+		final int frameCount = (swapZandT) ? zSize : tSize;
 
 		MarsUtil.forkJoinPoolBuilder(statusService, logService,
 			() -> statusService.showStatus(PeakStack.size(), frameCount,
-				"Finding Peaks for " + image.getTitle()), () -> IntStream.range(0, 
+				"Finding Peaks for " + dataset.getName()), () -> IntStream.range(0, 
 						frameCount).parallel().forEach(t -> {
 						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, integrate);
 
@@ -445,7 +406,9 @@ public class PeakTrackerCommand extends
 		archive = new SingleMoleculeArchive("archive.yama");
 		
 		if (norpixFormat)
-			marsOMEMetadata = generateNorpixMetadata();
+			marsOMEMetadata = buildNorpixMetadata();
+		else
+			marsOMEMetadata = buildOMEMetadata();
 
 		try {
 			UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
@@ -471,7 +434,8 @@ public class PeakTrackerCommand extends
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
 			archive.getName());
 
-		image.setRoi(startingRoi);
+		if (image != null)
+			image.setRoi(startingRoi);
 
 		try {
 			Thread.sleep(100);
@@ -499,16 +463,68 @@ public class PeakTrackerCommand extends
 		}
 	}
 	
-	private void updateInterval() {
-		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-				.getHeight() - 1);
+	private MarsOMEMetadata buildOMEMetadata() {
+		ImgPlus<?> imp = dataset.getImgPlus();
+		
+		OMEXMLMetadata omexmlMetadata = null;
+		if (!(imp instanceof SCIFIOImgPlus)) {
+			logService.info("This image has not been opened with SCIFIO.");
+			try {
+				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+					dataset);
+			}
+			catch (ServiceException e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			Metadata metadata = (Metadata) dataset.getProperties().get(
+				"scifio.metadata.global");
+			OMEMetadata omeMeta = new OMEMetadata(getContext());
+			if (!translatorService.translate(metadata, omeMeta, true)) {
+				logService.info(
+					"Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
+			}
+			else {
+				omexmlMetadata = omeMeta.getRoot();
+			}
+		}
 
-		image.deleteRoi();
-		image.setOverlay(null);
+		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
+		// the position.
+		try {
+			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata
+				.getDoubleAnnotationID(0).equals("ImageID"))
+			{
+				omexmlMetadata.setImageID("Image:" + omexmlMetadata
+					.getDoubleAnnotationValue(0).intValue(), 0);
+			}
+		}
+		catch (NullPointerException e) {
+			// Do nothing. Many of the omexmlmetadata methods give NullPointerExceptions
+			// if fields are not set.
+		}
+
+		String metaUID;
+		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
+			omexmlMetadata.getUUID()).substring(0, 10);
+		else metaUID = MarsMath.getUUID58().substring(0, 10);
+		
+		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
 	
-	private MarsOMEMetadata generateNorpixMetadata() {
+	private void updateInterval() {
+		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
+			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, 
+				dataset.dimension(1) - 1);
+
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
+	}
+	
+	private MarsOMEMetadata buildNorpixMetadata() {
 		// Generate new MarsOMEMetadata based on NorpixFormat.
 		// Flip Z and T
 		OMEXMLMetadata omexmlMetadata = null;
@@ -682,13 +698,17 @@ public class PeakTrackerCommand extends
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image Title", image.getTitle());
-		if (image.getOriginalFileInfo() != null && image
-			.getOriginalFileInfo().directory != null)
-		{
-			builder.addParameter("Image Directory", image
-				.getOriginalFileInfo().directory);
-		}
+		if (image != null) {
+			builder.addParameter("Image Title", image.getTitle());
+			if (image.getOriginalFileInfo() != null && image
+				.getOriginalFileInfo().directory != null)
+			{
+				builder.addParameter("Image Directory", image
+					.getOriginalFileInfo().directory);
+			}
+		} else
+			builder.addParameter("Dataset Name", dataset.getName());
+
 		builder.addParameter("useROI", String.valueOf(useROI));
 		if (useROI) {
 			builder.addParameter("ROI x0", String.valueOf(x0));
@@ -737,6 +757,14 @@ public class PeakTrackerCommand extends
 
 	public Dataset getDataset() {
 		return dataset;
+	}
+	
+	public void setImagePlus(ImagePlus image) {
+		this.image = image;
+	}
+	
+	public ImagePlus getImagePlus() {
+		return image;
 	}
 
 	public void setUseROI(boolean useROI) {
