@@ -51,6 +51,7 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
+import net.imglib2.Cursor;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.decimal4j.util.DoubleRounder;
@@ -271,7 +272,7 @@ public class DNAFinderCommand extends DynamicCommand
 		else return;
 
 		if (image.getRoi() == null) {
-			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
+			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
@@ -466,11 +467,13 @@ public class DNAFinderCommand extends DynamicCommand
 	
 	private void updateInterval() {
 		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-				.getHeight() - 1);
+				height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, 
+					dataset.dimension(1) - 1);
 
-		image.deleteRoi();
-		image.setOverlay(null);
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
 	}
 
 	private List<DNASegment> findDNAsInT(int channel, int t) {
@@ -494,52 +497,88 @@ public class DNAFinderCommand extends DynamicCommand
 
 		opService.filter().derivativeGauss(gradImage, input, derivatives, sigma);
 
-		List<Peak> positivePeaks = new ArrayList<Peak>();
-		List<Peak> negativePeaks = new ArrayList<Peak>();
+		List<Peak> topPeaks = new ArrayList<Peak>();
+		List<Peak> bottomPeaks = new ArrayList<Peak>();
 
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(gradImage, dogFilterRadius, opService);
-			positivePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
+			topPeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
 				threshold, minimumDistance, false);
-			negativePeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
+			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
 				threshold, minimumDistance, true);
 		}
 		else {
-			positivePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
+			topPeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
 				threshold, minimumDistance, false);
-			negativePeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
+			bottomPeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
 				threshold, minimumDistance, true);
 		}
 
-		if (!positivePeaks.isEmpty() && !negativePeaks.isEmpty()) {
+		if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
 
 			if (fitPeaks) {
 				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1,
 					y0 + height - 1);
 
-				positivePeaks = MarsImageUtils.fitPeaks(gradImage, interval, positivePeaks,
-					fitRadius, dogFilterRadius, false, RsquaredMin);
-				positivePeaks = MarsImageUtils.removeNearestNeighbors(positivePeaks,
-					minimumDistance);
+				//Use second derivative for fitting
+				Img<DoubleType> secondGradImage = opService.create().img(input, new DoubleType());
+				int[] secondDerivatives = { 0, 2 };
 
-				negativePeaks = MarsImageUtils.fitPeaks(gradImage, interval, negativePeaks,
+				opService.filter().derivativeGauss(secondGradImage, input, secondDerivatives, sigma);
+				
+				//Remove positive peaks in preparation for fitting negative peaks.
+				Cursor< DoubleType > cursor = secondGradImage.cursor();
+				while (cursor.hasNext()) {
+					cursor.fwd();
+					if (cursor.get().getRealDouble() > 0)
+						cursor.get().set(0);
+				}
+				
+				System.out.println("before");
+				System.out.println("topPeaks " + topPeaks.size());
+				System.out.println("bottomPeaks" + bottomPeaks.size());
+				
+				topPeaks.forEach(peak -> peak.setY(peak.getY() + 2));
+				bottomPeaks.forEach(peak -> peak.setY(peak.getY() - 2));
+				
+				topPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, topPeaks,
 					fitRadius, dogFilterRadius, true, RsquaredMin);
-				negativePeaks = MarsImageUtils.removeNearestNeighbors(negativePeaks,
+				
+				System.out.println("after fitting");
+				System.out.println("topPeaks " + topPeaks.size());
+				
+				topPeaks = MarsImageUtils.removeNearestNeighbors(topPeaks,
 					minimumDistance);
+				
+				System.out.println("after remove peaks");
+				System.out.println("topPeaks " + topPeaks.size());
+
+				bottomPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, bottomPeaks,
+					fitRadius, dogFilterRadius, true, RsquaredMin);
+				
+				System.out.println("after fitting");
+				System.out.println("bottompPeaks " + bottomPeaks.size());
+				
+				bottomPeaks = MarsImageUtils.removeNearestNeighbors(bottomPeaks,
+					minimumDistance);
+				
+				System.out.println("after");
+				System.out.println("topPeaks " + topPeaks.size());
+				System.out.println("bottomPeaks" + bottomPeaks.size());
 			}
 
 			// make sure they are all valid
 			// then we can remove them as we go.
-			for (int i = 0; i < negativePeaks.size(); i++)
-				negativePeaks.get(i).setValid();
+			for (int i = 0; i < bottomPeaks.size(); i++)
+				bottomPeaks.get(i).setValid();
 
-			KDTree<Peak> negativePeakTree = new KDTree<Peak>(negativePeaks,
-				negativePeaks);
+			KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
+				bottomPeaks);
 			RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-				new RadiusNeighborSearchOnKDTree<Peak>(negativePeakTree);
+				new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
 
-			for (Peak p : positivePeaks) {
+			for (Peak p : topPeaks) {
 				double xTOP = p.getDoublePosition(0);
 				double yTOP = p.getDoublePosition(1);
 
