@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
@@ -165,7 +166,7 @@ public class PeakFinderCommand extends
 	private String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
-	private int previewT;
+	private int theT;
 
 	@Parameter(label = "Find negative peaks")
 	private boolean findNegativePeaks = false;
@@ -248,13 +249,11 @@ public class PeakFinderCommand extends
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
-		else if (dataset != null) image = convertService.convert(dataset,
-			ImagePlus.class);
-		else return;
+		else if (dataset == null) return;
 
 		Rectangle rect;
 		if (image.getRoi() == null) {
-			rect = new Rectangle(0, 0, image.getWidth() - 1, image.getHeight() - 1);
+			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
@@ -290,7 +289,7 @@ public class PeakFinderCommand extends
 		imgHeight.setValue(this, rect.height);
 
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
-			"previewT", Integer.class);
+			"theT", Integer.class);
 		if (image.getNFrames() < 2) {
 			preFrame.setValue(this, image.getSlice() - 1);
 			preFrame.setMaximumValue(image.getStackSize() - 1);
@@ -302,10 +301,12 @@ public class PeakFinderCommand extends
 		}
 
 		// Doesn't update, probably because of a bug in scijava.
+		/*
 		final MutableModuleItem<Integer> preT = getInfo().getMutableInput(
-			"previewT", Integer.class);
+			"theT", Integer.class);
 		preT.setValue(this, image.convertIndexToPosition(image
 			.getCurrentSlice())[2] - 1);
+			*/
 	}
 
 	@Override
@@ -327,27 +328,35 @@ public class PeakFinderCommand extends
 
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-			int frameCount = (swapZandT) ? image.getStackSize() : image.getNFrames();
+			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
+			int zSize = (int) dataset.getImgPlus().dimension(zDim); 
+			
+			int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
+			int tSize = (int) dataset.getImgPlus().dimension(tDim); 
+			
+			final int frameCount = (swapZandT) ? zSize : tSize;
 
 			MarsUtil.forkJoinPoolBuilder(statusService, logService,
 				() -> statusService.showStatus(peakStack.size(), frameCount,
-					"Finding Peaks for " + image.getTitle()), () -> IntStream.range(0,
+					"Finding Peaks for " + dataset.getName()), () -> IntStream.range(0,
 						frameCount).parallel().forEach(t -> {
 							List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t,
 								useDogFilter, fitPeaks, integrate);
 
 							if (tpeaks.size() > 0) peakStack.put(t, tpeaks);
 						}), PARALLELISM_LEVEL);
-
 		}
 		else {
-			int t = image.getFrame() - 1;
-			if (swapZandT) {
-				image.setSlice(previewT + 1);
-				t = image.getCurrentSlice() - 1;
+			int t = theT;
+			if (image != null) {
+				t = image.getFrame() - 1;
+				if (swapZandT) {
+					image.setSlice(theT + 1);
+					t = image.getCurrentSlice() - 1;
+				}
+				else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 			}
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-
+			
 			peaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, fitPeaks,
 				integrate);
 		}
@@ -360,7 +369,8 @@ public class PeakFinderCommand extends
 
 		if (addToRoiManager) addToRoiManager(peaks);
 
-		image.setRoi(startingRoi);
+		if (image != null)
+			image.setRoi(startingRoi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
@@ -369,11 +379,13 @@ public class PeakFinderCommand extends
 
 	private void updateInterval() {
 		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, image.getWidth() - 1, image
-				.getHeight() - 1);
+			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, 
+				dataset.dimension(1) - 1);
 
-		image.deleteRoi();
-		image.setOverlay(null);
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -421,7 +433,7 @@ public class PeakFinderCommand extends
 			}
 		}
 		else {
-			frameColumn.addValue(previewT);
+			frameColumn.addValue(theT);
 			countColumn.addValue(peaks.size());
 		}
 		peakCount.add(frameColumn);
@@ -434,7 +446,7 @@ public class PeakFinderCommand extends
 
 	private void generatePeakTable(List<Peak> peaks) {
 		logService.info("Generating peak table..");
-		peakTable = new MarsTable("Peaks - " + image.getTitle());
+		peakTable = new MarsTable("Peaks - " + dataset.getName());
 
 		Map<String, DoubleColumn> columns =
 			new LinkedHashMap<String, DoubleColumn>();
@@ -505,10 +517,10 @@ public class PeakFinderCommand extends
 		if (preview) {
 			updateInterval();
 
-			if (swapZandT) image.setSlice(previewT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			if (swapZandT) image.setSlice(theT + 1);
+			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 
-			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
+			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), theT,
 				useDogFilter, false, false);
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
@@ -547,12 +559,16 @@ public class PeakFinderCommand extends
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image Title", image.getTitle());
-		if (image.getOriginalFileInfo() != null && image
-			.getOriginalFileInfo().directory != null)
-		{
-			builder.addParameter("Image Directory", image
-				.getOriginalFileInfo().directory);
+		if (image != null) {
+			builder.addParameter("Image Title", image.getTitle());
+			if (image.getOriginalFileInfo() != null && image
+				.getOriginalFileInfo().directory != null)
+			{
+				builder.addParameter("Image Directory", image
+					.getOriginalFileInfo().directory);
+			}
+		} else {
+			builder.addParameter("Dataset Name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
 		if (useROI) {
@@ -647,6 +663,14 @@ public class PeakFinderCommand extends
 
 	public int getChannel() {
 		return Integer.valueOf(channel);
+	}
+	
+	public void setT(int theT) {
+		this.theT = theT;
+	}
+	
+	public int getT() {
+		return theT;
 	}
 
 	public void setUseDogFiler(boolean useDogFilter) {
