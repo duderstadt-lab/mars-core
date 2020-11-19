@@ -198,13 +198,14 @@ public class DNAFinderCommand extends DynamicCommand
 
 	@Parameter(label = "Fit ends (subpixel localization)")
 	private boolean fitPeaks = false;
+	
+	@Parameter(label = "Fit:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = {
+				"1st order", "2nd order" })
+	private String fitOrder;
 
 	@Parameter(label = "Fit Radius")
 	private int fitRadius = 4;
-
-	@Parameter(label = "Minimum R-squared", style = NumberWidget.SLIDER_STYLE,
-		min = "0.00", max = "1.00", stepSize = "0.01")
-	private double RsquaredMin = 0;
 
 	@Parameter(label = "Preview label type:",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
@@ -518,95 +519,84 @@ public class DNAFinderCommand extends DynamicCommand
 		if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
 
 			if (fitPeaks) {
-				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1,
-					y0 + height - 1);
+				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
 
-				//Use second derivative for fitting
-				Img<DoubleType> secondGradImage = opService.create().img(input, new DoubleType());
-				int[] secondDerivatives = { 0, 2 };
+				if (fitOrder.equals("1st order")) {
+					topPeaks = MarsImageUtils.fitPeaks(gradImage, interval, topPeaks,
+						fitRadius, dogFilterRadius, false, 0);
+					
+					bottomPeaks = MarsImageUtils.fitPeaks(gradImage, interval, bottomPeaks,
+						fitRadius, dogFilterRadius, true, 0);
+				} else {
+					//Use second derivative for fitting
+					Img<DoubleType> secondGradImage = opService.create().img(input, new DoubleType());
+					int[] secondDerivatives = { 0, 2 };
+					double[] sigma2 = { 1, 1 };
 
-				opService.filter().derivativeGauss(secondGradImage, input, secondDerivatives, sigma);
-				
-				//Remove positive peaks in preparation for fitting negative peaks.
-				Cursor< DoubleType > cursor = secondGradImage.cursor();
-				while (cursor.hasNext()) {
-					cursor.fwd();
-					if (cursor.get().getRealDouble() > 0)
-						cursor.get().set(0);
+					opService.filter().derivativeGauss(secondGradImage, input, secondDerivatives, sigma2);
+					
+					double median = opService.stats().median(secondGradImage).getRealDouble();
+					
+					//Remove positive peaks in preparation for fitting negative peaks.
+					Cursor< DoubleType > cursor = secondGradImage.cursor();
+					while (cursor.hasNext()) {
+						cursor.fwd();
+						if (cursor.get().getRealDouble() > median)
+							cursor.get().set(median);
+					}
+					
+					topPeaks.forEach(peak -> peak.setY(peak.getY() + 1));
+					bottomPeaks.forEach(peak -> peak.setY(peak.getY() - 1));
+					
+					topPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, topPeaks,
+							fitRadius, dogFilterRadius, median, true);
+					
+					bottomPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, bottomPeaks,
+							fitRadius, dogFilterRadius, median, true);
 				}
-				
-				System.out.println("before");
-				System.out.println("topPeaks " + topPeaks.size());
-				System.out.println("bottomPeaks" + bottomPeaks.size());
-				
-				topPeaks.forEach(peak -> peak.setY(peak.getY() + 2));
-				bottomPeaks.forEach(peak -> peak.setY(peak.getY() - 2));
-				
-				topPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, topPeaks,
-					fitRadius, dogFilterRadius, true, RsquaredMin);
-				
-				System.out.println("after fitting");
-				System.out.println("topPeaks " + topPeaks.size());
-				
-				topPeaks = MarsImageUtils.removeNearestNeighbors(topPeaks,
-					minimumDistance);
-				
-				System.out.println("after remove peaks");
-				System.out.println("topPeaks " + topPeaks.size());
-
-				bottomPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, bottomPeaks,
-					fitRadius, dogFilterRadius, true, RsquaredMin);
-				
-				System.out.println("after fitting");
-				System.out.println("bottompPeaks " + bottomPeaks.size());
-				
-				bottomPeaks = MarsImageUtils.removeNearestNeighbors(bottomPeaks,
-					minimumDistance);
-				
-				System.out.println("after");
-				System.out.println("topPeaks " + topPeaks.size());
-				System.out.println("bottomPeaks" + bottomPeaks.size());
 			}
 
-			// make sure they are all valid
-			// then we can remove them as we go.
-			for (int i = 0; i < bottomPeaks.size(); i++)
-				bottomPeaks.get(i).setValid();
-
-			KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
-				bottomPeaks);
-			RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-				new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
-
-			for (Peak p : topPeaks) {
-				double xTOP = p.getDoublePosition(0);
-				double yTOP = p.getDoublePosition(1);
-
-				radiusSearch.search(new Peak(xTOP, yTOP + optimalDNALength, 0, 0, 0, 0),
-					yDNAEndSearchRadius, true);
-				if (radiusSearch.numNeighbors() > 0) {
-					Peak bottomEdge = radiusSearch.getSampler(0).get();
-
-					double xDiff = Math.abs(bottomEdge.getDoublePosition(0) - p
-						.getDoublePosition(0));
-					if (xDiff < xDNAEndSearchRadius && bottomEdge.isValid()) {
-						DNASegment segment = new DNASegment(xTOP, yTOP, bottomEdge
-							.getDoublePosition(0), bottomEdge.getDoublePosition(1));
-
-						calcSegmentProperties(tImage.getProcessor(), segment);
-
-						boolean pass = true;
-
-						// Check if the segment passes through filters
-						if (varianceFilter && varianceUpperBound < segment.getVariance())
-							pass = false;
-
-						if (medianIntensityFilter && medianIntensityLowerBound > segment
-							.getMedianIntensity()) pass = false;
-
-						if (pass) {
-							DNASegments.add(segment);
-							bottomEdge.setNotValid();
+			if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
+				// make sure they are all valid
+				// then we can remove them as we go.
+				for (int i = 0; i < bottomPeaks.size(); i++)
+					bottomPeaks.get(i).setValid();
+	
+				KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
+					bottomPeaks);
+				RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
+					new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
+	
+				for (Peak p : topPeaks) {
+					double xTOP = p.getDoublePosition(0);
+					double yTOP = p.getDoublePosition(1);
+	
+					radiusSearch.search(new Peak(xTOP, yTOP + optimalDNALength, 0, 0, 0, 0),
+						yDNAEndSearchRadius, true);
+					if (radiusSearch.numNeighbors() > 0) {
+						Peak bottomEdge = radiusSearch.getSampler(0).get();
+	
+						double xDiff = Math.abs(bottomEdge.getDoublePosition(0) - p
+							.getDoublePosition(0));
+						if (xDiff < xDNAEndSearchRadius && bottomEdge.isValid()) {
+							DNASegment segment = new DNASegment(xTOP, yTOP, bottomEdge
+								.getDoublePosition(0), bottomEdge.getDoublePosition(1));
+	
+							calcSegmentProperties(tImage.getProcessor(), segment);
+	
+							boolean pass = true;
+	
+							// Check if the segment passes through filters
+							if (varianceFilter && varianceUpperBound < segment.getVariance())
+								pass = false;
+	
+							if (medianIntensityFilter && medianIntensityLowerBound > segment
+								.getMedianIntensity()) pass = false;
+	
+							if (pass) {
+								DNASegments.add(segment);
+								bottomEdge.setNotValid();
+							}
 						}
 					}
 				}
@@ -664,8 +654,8 @@ public class DNAFinderCommand extends DynamicCommand
 		int dnaCount = startingPeakNum;
 		if (!segments.isEmpty()) {
 			for (DNASegment segment : segments) {
-				Line line = new Line(segment.getX1() + 0.5, segment.getY1() + 0.5,
-					segment.getX2() + 0.5, segment.getY2() + 0.5);
+				Line line = new Line(segment.getX1(), segment.getY1(),
+					segment.getX2(), segment.getY2());
 				if (moleculeNames) line.setName("Molecule" + dnaCount);
 				else line.setName(MarsMath.getUUID58());
 
@@ -696,8 +686,8 @@ public class DNAFinderCommand extends DynamicCommand
 			if (segments.size() > 0) {
 				Overlay overlay = new Overlay();
 				for (DNASegment segment : segments) {
-					Line line = new Line(segment.getX1() + 0.5, segment.getY1() + 0.5,
-						segment.getX2() + 0.5, segment.getY2() + 0.5);
+					Line line = new Line(segment.getX1(), segment.getY1(),
+						segment.getX2(), segment.getY2());
 
 					double value = Double.NaN;
 					if (previewLabelType.equals("Variance intensity")) value = segment
@@ -778,8 +768,8 @@ public class DNAFinderCommand extends DynamicCommand
 		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
 		builder.addParameter("Process all frames", String.valueOf(allFrames));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
-		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
-		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
+		builder.addParameter("Fit radius", String.valueOf(fitRadius));
+		builder.addParameter("Fit order", fitOrder);
 	}
 
 	public MarsTable getDNACountTable() {
@@ -980,14 +970,6 @@ public class DNAFinderCommand extends DynamicCommand
 
 	public int getFitRadius() {
 		return fitRadius;
-	}
-
-	public void setMinimumRsquared(double Rsquared) {
-		this.RsquaredMin = Rsquared;
-	}
-
-	public double getMinimumRsquared() {
-		return RsquaredMin;
 	}
 
 	// Not sure which ROI library to use at the moment

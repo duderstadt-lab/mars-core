@@ -274,6 +274,69 @@ public class MarsImageUtils {
 		}
 		return newList;
 	}
+	
+	/**
+	 * Given a 2D image and a list of peak positions in pixels, this function 
+	 * performs subpixel 2D gaussian fitting and updates the peak positions accordingly. 
+	 * If the R-squared from fitting is below the threshold provided, the whole
+	 * pixel position is left unchanged. The image is mirrored for pixel values
+	 * beyond the interval provided. The starting guess for sigma is half initialSize.
+	 * 
+	 * @param img 2D image containing peaks.
+	 * @param interval The interval to use for peak fitting.
+	 * @param peaks The list of Peaks to fit with subpixel accuracy.
+	 * @param fitRadius The radius of the square region of pixels to use for fitting.
+	 * @param initialSize A starting guess for the peak size.
+	 * @param fitRegionThreshold The threshold pixel value for the region to fit. 
+	 * @param findNegativePeaks Whether negative peaks are being fit. 
+	 */
+	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
+		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
+		double initialSize, double fitRegionThreshold, boolean findNegativePeaks)
+	{
+
+		List<Peak> newList = new ArrayList<Peak>();
+
+		int fitWidth = radius * 2 + 1;
+
+		PeakFitter<T> fitter = new PeakFitter<>();
+
+		RandomAccessible<T> rae = Views.extendMirrorSingle(Views.interval(img,
+			interval));
+		
+		for (Peak peak : peaks) {
+			
+			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
+					(int) (peak.getY() - radius), fitWidth, fitWidth);
+
+			double[] p = new double[5];
+			p[0] = Double.NaN;
+			p[1] = Double.NaN;
+			p[2] = peak.getX();
+			p[3] = peak.getY();
+			p[4] = initialSize / 2;
+			double[] e = new double[5];
+			
+			fitter.fitPeak(rae, p, e, subregion, fitRegionThreshold, findNegativePeaks);
+
+			peak.setValid();
+
+			for (int i = 0; i < p.length && peak.isValid(); i++) {
+				if (Double.isNaN(p[i])) peak.setNotValid();
+			}
+
+			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
+				peak.setNotValid();
+			}
+
+			if (peak.isValid()) {
+				peak.setValues(p);
+				newList.add(peak);
+			}
+		}
+		return newList;
+	}
+
 
 	/**
 	 * This method calculates the R-squared for the 2D gaussian provided 
