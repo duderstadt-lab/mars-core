@@ -148,7 +148,7 @@ public class PeakFinderCommand extends
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(label = "Channel", choices = { "a", "b", "c" })
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 
 	@Parameter(label = "Use DoG filter")
@@ -175,7 +175,7 @@ public class PeakFinderCommand extends
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE, persist = false)
 	private int theT;
 
 	@Parameter(label = "Find negative peaks")
@@ -309,14 +309,6 @@ public class PeakFinderCommand extends
 			preFrame.setValue(this, image.getFrame() - 1);
 			preFrame.setMaximumValue(image.getNFrames() - 1);
 		}
-
-		// Doesn't update, probably because of a bug in scijava.
-		/*
-		final MutableModuleItem<Integer> preT = getInfo().getMutableInput(
-			"theT", Integer.class);
-		preT.setValue(this, image.convertIndexToPosition(image
-			.getCurrentSlice())[2] - 1);
-			*/
 	}
 
 	@Override
@@ -527,7 +519,6 @@ public class PeakFinderCommand extends
 					
 					overlay.add(peakRoi);
 					image.setOverlay(overlay);
-					//image.setRoi(peakRoi);
 				} else {
 					Overlay overlay = new Overlay();
 					for (Peak p : peaks) {

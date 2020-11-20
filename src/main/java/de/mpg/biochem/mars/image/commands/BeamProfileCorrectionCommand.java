@@ -131,7 +131,7 @@ public class BeamProfileCorrectionCommand extends
 	@Parameter(label = "Image to correct")
 	private ImageDisplay imageDisplay;
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" })
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 
 	@Parameter(label = "Background image", choices = { "a", "b", "c" })

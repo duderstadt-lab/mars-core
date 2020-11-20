@@ -149,7 +149,7 @@ public class DNAFinderCommand extends DynamicCommand
 	@Parameter(label = "ROI height", persist = false)
 	private int height;
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" })
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 
 	/**
@@ -208,7 +208,7 @@ public class DNAFinderCommand extends DynamicCommand
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tDNACount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE, persist = false)
 	private int theT;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,

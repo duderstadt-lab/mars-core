@@ -177,7 +177,7 @@ public class PeakTrackerCommand extends
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(label = "Channel", choices = { "a", "b", "c" })
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 	
 	@Parameter(label = "Use DoG filter")
@@ -199,7 +199,7 @@ public class PeakTrackerCommand extends
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE, persist = false)
 	private int previewT;
 
 	@Parameter(label = "Find negative peaks")
