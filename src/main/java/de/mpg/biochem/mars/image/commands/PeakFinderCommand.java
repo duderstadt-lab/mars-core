@@ -70,6 +70,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
 import org.scijava.widget.NumberWidget;
 
+import de.mpg.biochem.mars.image.DNAFinder;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -498,8 +499,7 @@ public class PeakFinderCommand extends
 		int pCount = startingPeakNum;
 		if (!peaks.isEmpty()) {
 			for (Peak peak : peaks) {
-				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0) + 0.5, peak
-					.getDoublePosition(1) + 0.5);
+				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0), peak.getDoublePosition(1));
 				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
 				else peakRoi.setName(MarsMath.getUUID58());
 

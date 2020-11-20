@@ -37,22 +37,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.table.DoubleColumn;
+
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.ops.OpService;
+import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.Gaussian2D;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
 
 /**
  * Common utility functions for DoG filtering, peak finding, peak fitting and related operations. 
@@ -556,4 +566,5 @@ public class MarsImageUtils {
 		return Views.interval(frameImg, Intervals.createMinSize(0, 0, img.dimension(
 			0), img.dimension(1)));
 	}
+	
 }

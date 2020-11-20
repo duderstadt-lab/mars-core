@@ -377,7 +377,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			double x = rois[i].getFloatBounds().x;
 			double y = rois[i].getFloatBounds().y;
 
-			Peak peak = new Peak(UID, x - 0.5, y - 0.5);
+			Peak peak = new Peak(UID, x, y);
 
 			if (longBoundingRegion.contains(x, y)) longIntegrationList.put(UID, peak);
 			else if (shortBoundingRegion.contains(x, y)) shortIntegrationList.put(UID,
