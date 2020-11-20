@@ -320,12 +320,11 @@ public class PeakFinderCommand extends
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		List<Peak> peaks = new ArrayList<>();
+		peakStack = new ConcurrentHashMap<>();
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
 		if (allFrames) {
-			peakStack = new ConcurrentHashMap<>();
 
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
@@ -347,28 +346,16 @@ public class PeakFinderCommand extends
 							if (tpeaks.size() > 0) peakStack.put(t, tpeaks);
 						}), PARALLELISM_LEVEL);
 		}
-		else {
-			int t = theT;
-			if (image != null) {
-				t = image.getFrame() - 1;
-				if (swapZandT) {
-					image.setSlice(theT + 1);
-					t = image.getCurrentSlice() - 1;
-				}
-				else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-			}
-			
-			peaks = findPeaksInT(Integer.valueOf(channel), t, useDogFilter, fitPeaks,
-				integrate);
-		}
+		else peakStack.put(theT, findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, fitPeaks, integrate));
+
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		if (generatePeakCountTable) generatePeakCountTable(peaks);
+		if (generatePeakCountTable) generatePeakCountTable();
 
-		if (generatePeakTable) generatePeakTable(peaks);
+		if (generatePeakTable) generatePeakTable();
 
-		if (addToRoiManager) addToRoiManager(peaks);
+		if (addToRoiManager) addToRoiManager();
 
 		if (image != null)
 			image.setRoi(startingRoi);
@@ -421,21 +408,15 @@ public class PeakFinderCommand extends
 		return peaks;
 	}
 
-	private void generatePeakCountTable(List<Peak> peaks) {
+	private void generatePeakCountTable() {
 		logService.info("Generating peak count table..");
-		peakCount = new MarsTable("Peak Count - " + image.getTitle());
+		peakCount = new MarsTable("Peak Count - " + dataset.getName());
 		DoubleColumn frameColumn = new DoubleColumn("T");
 		DoubleColumn countColumn = new DoubleColumn("peaks");
 
-		if (allFrames) {
-			for (int t : peakStack.keySet()) {
-				frameColumn.addValue(t);
-				countColumn.addValue(peakStack.get(t).size());
-			}
-		}
-		else {
-			frameColumn.addValue(theT);
-			countColumn.addValue(peaks.size());
+		for (int t : peakStack.keySet()) {
+			frameColumn.addValue(t);
+			countColumn.addValue(peakStack.get(t).size());
 		}
 		peakCount.add(frameColumn);
 		peakCount.add(countColumn);
@@ -445,7 +426,7 @@ public class PeakFinderCommand extends
 			.getName());
 	}
 
-	private void generatePeakTable(List<Peak> peaks) {
+	private void generatePeakTable() {
 		logService.info("Generating peak table..");
 		peakTable = new MarsTable("Peaks - " + dataset.getName());
 
@@ -462,13 +443,11 @@ public class PeakFinderCommand extends
 			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(
 				TABLE_HEADERS_VERBOSE[i]));
 
-		if (allFrames) for (int i = 0; i < peakStack.size(); i++) {
-			List<Peak> framePeaks = peakStack.get(i);
+		for (int t : peakStack.keySet()) {
+			List<Peak> framePeaks = peakStack.get(t);
 			for (int j = 0; j < framePeaks.size(); j++)
 				framePeaks.get(j).addToColumns(columns);
 		}
-		else for (int j = 0; j < peaks.size(); j++)
-			peaks.get(j).addToColumns(columns);
 
 		for (String key : columns.keySet())
 			peakTable.add(columns.get(key));
@@ -477,17 +456,14 @@ public class PeakFinderCommand extends
 			.getName());
 	}
 
-	private void addToRoiManager(List<Peak> peaks) {
+	private void addToRoiManager() {
 		logService.info(
 			"Adding Peaks to the RoiManger. This might take a while...");
 
-		if (allFrames) {
-			int peakNumber = 1;
-			for (int i = 0; i < peakStack.size(); i++)
-				peakNumber = addToRoiManager(peakStack.get(i), Integer.valueOf(channel),
-					i, peakNumber);
-		}
-		else addToRoiManager(peaks, Integer.valueOf(channel), 0, 0);
+		int peakNumber = 1;
+		for (int t : peakStack.keySet())
+			peakNumber = addToRoiManager(peakStack.get(t), Integer.valueOf(channel),
+				t, peakNumber);
 
 		statusService.showStatus("Done adding ROIs to Manger");
 	}
@@ -597,7 +573,6 @@ public class PeakFinderCommand extends
 			integrationInnerRadius));
 		builder.addParameter("Integration outer radius", String.valueOf(
 			integrationOuterRadius));
-		builder.addParameter("Swap Z and T", swapZandT);
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 	}
 
