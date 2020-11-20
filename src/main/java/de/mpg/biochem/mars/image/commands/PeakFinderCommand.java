@@ -29,7 +29,8 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.awt.Polygon;
+
+import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -68,9 +69,9 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
-import de.mpg.biochem.mars.image.DNAFinder;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -79,7 +80,10 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
 import ij.gui.PointRoi;
+import ij.process.FloatPolygon;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 
@@ -162,6 +166,11 @@ public class PeakFinderCommand extends
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
+	
+	@Parameter(label = "Preview Roi:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = {
+				"circle", "point" })
+	private String previewRoiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
@@ -475,7 +484,12 @@ public class PeakFinderCommand extends
 		int pCount = startingPeakNum;
 		if (!peaks.isEmpty()) {
 			for (Peak peak : peaks) {
-				PointRoi peakRoi = new PointRoi(peak.getDoublePosition(0), peak.getDoublePosition(1));
+				Roi peakRoi = (previewRoiType.equals("point")) ? 
+					new PointRoi(peak.getDoublePosition(0), peak.getDoublePosition(1)) :
+					new OvalRoi( peak.getDoublePosition(0) - fitRadius, 
+							peak.getDoublePosition(1) - fitRadius, 
+							fitRadius * 2 , fitRadius * 2 );
+				
 				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
 				else peakRoi.setName(MarsMath.getUUID58());
 
@@ -497,21 +511,33 @@ public class PeakFinderCommand extends
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 
 			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), theT,
-				useDogFilter, false, false);
+				useDogFilter, fitPeaks, false);
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 				"tPeakCount", String.class);
 			if (!peaks.isEmpty()) {
-				Polygon poly = new Polygon();
-
-				for (Peak p : peaks) {
-					int x = (int) p.getDoublePosition(0);
-					int y = (int) p.getDoublePosition(1);
-					poly.addPoint(x, y);
+				
+				if (previewRoiType.equals("point")) {
+					Overlay overlay = new Overlay();
+					FloatPolygon poly = new FloatPolygon();
+					for (Peak p : peaks)
+						poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+	
+					PointRoi peakRoi = new PointRoi(poly);
+					
+					overlay.add(peakRoi);
+					image.setOverlay(overlay);
+					//image.setRoi(peakRoi);
+				} else {
+					Overlay overlay = new Overlay();
+					for (Peak p : peaks) {
+						final OvalRoi roi = new OvalRoi( p.getDoublePosition(0) - fitRadius,p.getDoublePosition(1) - fitRadius, fitRadius * 2, fitRadius * 2 );
+						roi.setStrokeColor( Color.CYAN.darker() );
+						
+						overlay.add(roi);
+					}
+					image.setOverlay(overlay);
 				}
-
-				PointRoi peakRoi = new PointRoi(poly);
-				image.setRoi(peakRoi);
 
 				preFrameCount.setValue(this, "count: " + peaks.size());
 			}
