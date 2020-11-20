@@ -53,7 +53,7 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.kcp.KCP;
-import de.mpg.biochem.mars.kcp.Segment;
+import de.mpg.biochem.mars.kcp.KCPSegment;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.Molecule;
@@ -313,8 +313,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			// This means the region probably doesn't exist...
 			// So we just add a single dummy row with All NaN values...
 			// Then we return...
-			ArrayList<Segment> segs = new ArrayList<Segment>();
-			Segment segment = new Segment(Double.NaN, Double.NaN, Double.NaN,
+			ArrayList<KCPSegment> segs = new ArrayList<KCPSegment>();
+			KCPSegment segment = new KCPSegment(Double.NaN, Double.NaN, Double.NaN,
 				Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 			segs.add(segment);
 			molecule.putSegmentsTable(Xcolumn, Ycolumn, buildSegmentTable(segs));
@@ -469,7 +469,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		return length * Math.log(1 / Math.sqrt(2 * Math.PI)) - lineSum / (2.0);
 	}
 
-	private MarsTable buildSegmentTable(ArrayList<Segment> segments) {
+	private MarsTable buildSegmentTable(ArrayList<KCPSegment> segments) {
 		MarsTable output = new MarsTable();
 
 		output.add(new DoubleColumn("x1"));
@@ -482,7 +482,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		output.add(new DoubleColumn("sigma_B"));
 
 		int row = 0;
-		for (Segment seg : segments) {
+		for (KCPSegment seg : segments) {
 			output.appendRow();
 			output.setValue("x1", row, seg.x1);
 			output.setValue("y1", row, seg.y1);

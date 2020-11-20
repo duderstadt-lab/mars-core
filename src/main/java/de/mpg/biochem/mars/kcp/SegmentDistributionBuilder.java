@@ -290,7 +290,7 @@ public class SegmentDistributionBuilder {
 		table.setColumnHeader(1, "Probability");
 		table.setColumnHeader(2, "Probability Density");
 
-		ArrayList<Segment> allSegments = collectSegments(UIDs);
+		ArrayList<KCPSegment> allSegments = collectSegments(UIDs);
 
 		double[] distribution = generate_Histogram_Distribution(allSegments);
 
@@ -359,7 +359,7 @@ public class SegmentDistributionBuilder {
 						}
 						else {
 							// bootstrap_Segments must be true...
-							ArrayList<Segment> resampledSegments = new ArrayList<Segment>();
+							ArrayList<KCPSegment> resampledSegments = new ArrayList<KCPSegment>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));
@@ -433,7 +433,7 @@ public class SegmentDistributionBuilder {
 		table.setColumnHeader(0, "Duration");
 		table.setColumnHeader(1, "Occurences");
 
-		ArrayList<Segment> allSegments = collectSegments(UIDs);
+		ArrayList<KCPSegment> allSegments = collectSegments(UIDs);
 
 		double[] distribution = generate_Duration_Distribution(allSegments,
 			processivityPerRegion, processivityPerMolecule);
@@ -493,7 +493,7 @@ public class SegmentDistributionBuilder {
 						}
 						else {
 							// bootstrap_Segments must be true...
-							ArrayList<Segment> resampledSegments = new ArrayList<Segment>();
+							ArrayList<KCPSegment> resampledSegments = new ArrayList<KCPSegment>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));
@@ -566,7 +566,7 @@ public class SegmentDistributionBuilder {
 	}
 
 	private double[] generate_Histogram_Distribution(
-		ArrayList<Segment> allSegments)
+		ArrayList<KCPSegment> allSegments)
 	{
 		double[] distribution = new double[bins];
 		for (int j = 0; j < distribution.length; j++)
@@ -595,7 +595,7 @@ public class SegmentDistributionBuilder {
 	}
 
 	private double[] generate_Duration_Distribution(
-		ArrayList<Segment> allSegments, boolean processivityPerRegion,
+		ArrayList<KCPSegment> allSegments, boolean processivityPerRegion,
 		boolean processivityPerMolecule)
 	{
 		double[] distribution = new double[bins];
@@ -661,8 +661,8 @@ public class SegmentDistributionBuilder {
 		return distribution;
 	}
 
-	private ArrayList<Segment> collectSegments(Collection<String> UIDset) {
-		ArrayList<Segment> allSegments = new ArrayList<Segment>();
+	private ArrayList<KCPSegment> collectSegments(Collection<String> UIDset) {
+		ArrayList<KCPSegment> allSegments = new ArrayList<KCPSegment>();
 
 		// Can't do this multithreaded at the moment since we are using an arraylist
 		UIDset.stream().forEach(UID -> {
@@ -675,7 +675,7 @@ public class SegmentDistributionBuilder {
 					if (Double.isNaN(segments.getValue("B", row))) continue;
 					if (!filter || segments.getValue("B", row) > filter_region_start &&
 						segments.getValue("B", row) < filter_region_stop) allSegments.add(
-							new Segment(segments, row, UID));
+							new KCPSegment(segments, row, UID));
 				}
 			}
 		});

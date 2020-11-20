@@ -244,14 +244,14 @@ public class KCP {
 		return segmentTable;
 	}
 
-	public ArrayList<Segment> generate_segments() {
+	public ArrayList<KCPSegment> generate_segments() {
 		ArrayList<Integer> cp_positions = binary_search();
-		ArrayList<Segment> segs = new ArrayList<Segment>();
+		ArrayList<KCPSegment> segs = new ArrayList<KCPSegment>();
 		for (int q = 0; q < cp_positions.size() - 1; q++) {
 			double[] linefit = linearRegression(xData, yData, cp_positions.get(q),
 				cp_positions.get(q + 1) - cp_positions.get(q), step_analysis);
 
-			Segment cur_segment = new Segment(xData[cp_positions.get(q)], linefit[0] +
+			KCPSegment cur_segment = new KCPSegment(xData[cp_positions.get(q)], linefit[0] +
 				linefit[2] * xData[cp_positions.get(q)], xData[cp_positions.get(q + 1)],
 				linefit[0] + linefit[2] * xData[cp_positions.get(q + 1)], linefit[0],
 				linefit[1], linefit[2], linefit[3]);

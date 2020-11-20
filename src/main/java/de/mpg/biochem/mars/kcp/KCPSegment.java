@@ -31,12 +31,12 @@ package de.mpg.biochem.mars.kcp;
 
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class Segment {
+public class KCPSegment {
 
 	public double x1, y1, x2, y2, A, A_sigma, B, B_sigma;
 	public String UID;
 
-	public Segment(MarsTable table, int index, String UID) {
+	public KCPSegment(MarsTable table, int index, String UID) {
 		x1 = table.getValue("x1", index);
 		y1 = table.getValue("y1", index);
 		x2 = table.getValue("x2", index);
@@ -48,7 +48,7 @@ public class Segment {
 		this.UID = UID;
 	}
 
-	public Segment(MarsTable table, int index) {
+	public KCPSegment(MarsTable table, int index) {
 		x1 = table.getValue("x1", index);
 		y1 = table.getValue("y1", index);
 		x2 = table.getValue("x2", index);
@@ -59,7 +59,7 @@ public class Segment {
 		B_sigma = table.getValue("sigma_B", index);
 	}
 
-	public Segment(double X1, double Y1, double X2, double Y2, double A,
+	public KCPSegment(double X1, double Y1, double X2, double Y2, double A,
 		double A_sigma, double B, double B_sigma)
 	{
 		x1 = X1;
@@ -72,7 +72,7 @@ public class Segment {
 		this.B_sigma = B_sigma;
 	}
 
-	public Segment(double X1, double Y1, double X2, double Y2, double A,
+	public KCPSegment(double X1, double Y1, double X2, double Y2, double A,
 		double A_sigma, double B, double B_sigma, String UID)
 	{
 		x1 = X1;
