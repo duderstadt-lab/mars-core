@@ -237,13 +237,13 @@ public class DNAFinderCommand extends DynamicCommand
 	 * OUTPUTS
 	 */
 	@Parameter(label = "DNA Count", type = ItemIO.OUTPUT)
-	private MarsTable DNACount;
+	private MarsTable dnaCount;
 
 	@Parameter(label = "DNA Table", type = ItemIO.OUTPUT)
-	private MarsTable DNATable;
+	private MarsTable dnaTable;
 
 	// A map with peak lists for each slice for an image stack
-	private ConcurrentMap<Integer, List<DNASegment>> DNAStack;
+	private ConcurrentMap<Integer, List<DNASegment>> dnaStack;
 
 	private boolean swapZandT = false;
 	private Interval interval;
@@ -322,11 +322,8 @@ public class DNAFinderCommand extends DynamicCommand
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		// Used to store dna list for single frame operations
-		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
-
 		// Used to store dna list for multiframe search
-		DNAStack = new ConcurrentHashMap<>();
+		dnaStack = new ConcurrentHashMap<>();
 		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding DNAs...");
@@ -342,23 +339,23 @@ public class DNAFinderCommand extends DynamicCommand
 			
 			final int frameCount = (swapZandT) ? zSize : tSize;
 
-			if (swapZandT) MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(DNAStack.size(), frameCount,
+			MarsUtil.forkJoinPoolBuilder(statusService, logService,
+				() -> statusService.showStatus(dnaStack.size(), frameCount,
 					"Finding DNAs for " + dataset.getName()), () -> IntStream.range(0,
-						frameCount).parallel().forEach(t -> DNAStack.put(t,
+						frameCount).parallel().forEach(t -> dnaStack.put(t,
 							findDNAsInT(Integer.valueOf(channel), t))), PARALLELISM_LEVEL);
 
 		}
-		else DNASegments = findDNAsInT(Integer.valueOf(channel), theT);
+		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		if (generateDNACountTable) generateDNACountTable(DNASegments);
+		if (generateDNACountTable) generateDNACountTable();
 
-		if (generateDNATable) generateDNATable(DNASegments);
+		if (generateDNATable) generateDNATable();
 
-		if (addToRoiManger) addToRoiManager(DNASegments);
+		if (addToRoiManger) addToRoiManager();
 		
 		if (image != null)
 			image.setRoi(startingRoi);
@@ -407,96 +404,63 @@ public class DNAFinderCommand extends DynamicCommand
 		return dnaFinder.findDNAs(img, interval, t);
 	}
 	
-	private void generateDNACountTable(List<DNASegment> DNASegments) {
+	private void generateDNACountTable() {
 		logService.info("Generating DNA count table..");
-		DNACount = new MarsTable("DNA Count - " + image.getTitle());
+		dnaCount = new MarsTable("DNA Count - " + image.getTitle());
 		DoubleColumn frameColumn = new DoubleColumn("T");
 		DoubleColumn countColumn = new DoubleColumn("DNAs");
 
-		if (allFrames) {
-			for (int i = 0; i < DNAStack.size(); i++) {
-				frameColumn.addValue(i);
-				countColumn.addValue(DNAStack.get(i).size());
-			}
+		for (int t : dnaStack.keySet()) {
+			frameColumn.addValue(t);
+			countColumn.addValue(dnaStack.get(t).size());
 		}
-		else {
-			frameColumn.addValue(theT);
-			countColumn.addValue(DNASegments.size());
-		}
-		DNACount.add(frameColumn);
-		DNACount.add(countColumn);
+		dnaCount.add(frameColumn);
+		dnaCount.add(countColumn);
+		dnaCount.sort("T");
 
 		// Make sure the output table has the correct name
-		getInfo().getMutableOutput("DNACount", MarsTable.class).setLabel(DNACount
+		getInfo().getMutableOutput("dnaCount", MarsTable.class).setLabel(dnaCount
 			.getName());
 	}
 	
-	private void generateDNATable(List<DNASegment> DNASegments) {
+	private void generateDNATable() {
 		logService.info("Generating peak table..");
 		// build a table with all peaks
-		String title = "DNAs Table - " + image.getTitle();
-		DNATable = new MarsTable(title, "T", "x1", "y1", "x2", "y2", "length");
+		String title = "DNAs Table - " + dataset.getName();
+		dnaTable = new MarsTable(title, "T", "x1", "y1", "x2", "y2", "length", "median intensity", "intensity variance");
 
-		if (allFrames) {
-			int row = 0;
-			for (int t = 0; t < DNAStack.size(); t++) {
-				List<DNASegment> tDNAs = DNAStack.get(t);
-				for (int j = 0; j < tDNAs.size(); j++) {
-					DNATable.appendRow();
-					DNATable.setValue("T", row, t);
-					DNATable.setValue("x1", row, tDNAs.get(j).getX1());
-					DNATable.setValue("y1", row, tDNAs.get(j).getY1());
-					DNATable.setValue("x2", row, tDNAs.get(j).getX2());
-					DNATable.setValue("y2", row, tDNAs.get(j).getY2());
-					DNATable.setValue("length", row, tDNAs.get(j).getLength());
-					DNATable.setValue("median intensity", row, tDNAs.get(j)
-						.getMedianIntensity());
-					DNATable.setValue("intensity variance", row, tDNAs.get(j)
-						.getVariance());
-					row++;
-				}
-			}
-		}
-		else {
-			int row = 0;
-			for (int j = 0; j < DNASegments.size(); j++) {
-				DNATable.appendRow();
-				DNATable.setValue("T", row, theT);
-				DNATable.setValue("x1", row, DNASegments.get(j).getX1());
-				DNATable.setValue("y1", row, DNASegments.get(j).getY1());
-				DNATable.setValue("x2", row, DNASegments.get(j).getX2());
-				DNATable.setValue("y2", row, DNASegments.get(j).getY2());
-				DNATable.setValue("length", row, DNASegments.get(j).getLength());
-				DNATable.setValue("median intensity", row, DNASegments.get(j)
+		int row = 0;
+		for (int t : dnaStack.keySet()) {
+			List<DNASegment> tDNAs = dnaStack.get(t);
+			for (int j = 0; j < tDNAs.size(); j++) {
+				dnaTable.appendRow();
+				dnaTable.setValue("T", row, t);
+				dnaTable.setValue("x1", row, tDNAs.get(j).getX1());
+				dnaTable.setValue("y1", row, tDNAs.get(j).getY1());
+				dnaTable.setValue("x2", row, tDNAs.get(j).getX2());
+				dnaTable.setValue("y2", row, tDNAs.get(j).getY2());
+				dnaTable.setValue("length", row, tDNAs.get(j).getLength());
+				dnaTable.setValue("median intensity", row, tDNAs.get(j)
 					.getMedianIntensity());
-				DNATable.setValue("intensity variance", row, DNASegments.get(j)
+				dnaTable.setValue("intensity variance", row, tDNAs.get(j)
 					.getVariance());
 				row++;
 			}
 		}
+		
+		dnaTable.sort("T");
 
 		// Make sure the output table has the correct name
-		getInfo().getMutableOutput("DNATable", MarsTable.class).setLabel(DNATable
+		getInfo().getMutableOutput("dnaTable", MarsTable.class).setLabel(dnaTable
 			.getName());
 	}
 	
-	private void addToRoiManager(List<DNASegment> DNASegments) {
+	private void addToRoiManager() {
 		logService.info(
 				"Adding Peaks to the RoiManger. This might take a while...");
-		if (allFrames) {
-			// loop through map and slices and add to Manager
-			// This is slow probably because of the continuous GUI updating, but I
-			// am not sure a solution
-			// There is only one add method for the RoiManager and you can only add
-			// one Roi at a time.
-			int dnaNumber = 1;
-			for (int i = 0; i < DNAStack.size(); i++) {
-				dnaNumber = AddToManager(DNAStack.get(i), Integer.valueOf(channel), i,
-					dnaNumber);
-			}
-		}
-		else {
-			AddToManager(DNASegments, Integer.valueOf(channel), theT, 0);
+		int dnaNumber = 1;
+		for (int t : dnaStack.keySet()) {
+			dnaNumber = AddToManager(dnaStack.get(t), Integer.valueOf(channel), t, dnaNumber);
 		}
 		statusService.showStatus("Done adding ROIs to Manger");
 	}
@@ -631,11 +595,11 @@ public class DNAFinderCommand extends DynamicCommand
 	}
 
 	public MarsTable getDNACountTable() {
-		return DNACount;
+		return dnaCount;
 	}
 
 	public MarsTable getDNATable() {
-		return DNATable;
+		return dnaTable;
 	}
 
 	public void setDataset(Dataset dataset) {
