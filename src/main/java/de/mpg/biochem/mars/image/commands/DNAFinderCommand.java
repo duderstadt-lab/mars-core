@@ -38,22 +38,17 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.IntStream;
 
 import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
-import net.imglib2.KDTree;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.Img;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Intervals;
-import net.imglib2.Cursor;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -194,15 +189,13 @@ public class DNAFinderCommand extends DynamicCommand
 	private boolean varianceFilter = false;
 
 	@Parameter(label = "DNA intensity variance upper bound")
-	private double varianceUpperBound = 1_000_000;
+	private int varianceUpperBound = 1_000_000;
 
 	@Parameter(label = "Fit ends (subpixel localization)")
-	private boolean fitPeaks = false;
+	private boolean fit = false;
 	
-	@Parameter(label = "Fit:",
-			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = {
-				"1st order", "2nd order" })
-	private String fitOrder;
+	@Parameter(label = "Fit 2nd order")
+	private boolean fitSecondOrder = false;
 
 	@Parameter(label = "Fit Radius")
 	private int fitRadius = 4;
@@ -216,7 +209,7 @@ public class DNAFinderCommand extends DynamicCommand
 	private String tDNACount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE)
-	private int previewT;
+	private int theT;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
@@ -252,15 +245,12 @@ public class DNAFinderCommand extends DynamicCommand
 	// A map with peak lists for each slice for an image stack
 	private ConcurrentMap<Integer, List<DNASegment>> DNAStack;
 
-	// box region for analysis added to the image.
-	private Rectangle rect;
+	private boolean swapZandT = false;
 	private Interval interval;
 	private Roi startingRoi;
 
 	private Dataset dataset;
 	private ImagePlus image;
-
-	private boolean swapZandT = false;
 
 	@Override
 	public void initialize() {
@@ -268,10 +258,9 @@ public class DNAFinderCommand extends DynamicCommand
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
-		else if (dataset != null) image = convertService.convert(dataset,
-			ImagePlus.class);
-		else return;
+		else if (dataset == null) return;
 
+		Rectangle rect;
 		if (image.getRoi() == null) {
 			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
@@ -309,7 +298,7 @@ public class DNAFinderCommand extends DynamicCommand
 		imgHeight.setValue(this, rect.height);
 
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
-			"previewT", Integer.class);
+			"theT", Integer.class);
 
 		if (image.getNFrames() < 2) {
 			preFrame.setValue(this, image.getSlice() - 1);
@@ -328,13 +317,9 @@ public class DNAFinderCommand extends DynamicCommand
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
-
 		String log = LogBuilder.buildTitleBlock("DNA Finder");
-
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-
-		// Output first part of log message...
 		logService.info(log);
 
 		// Used to store dna list for single frame operations
@@ -342,124 +327,41 @@ public class DNAFinderCommand extends DynamicCommand
 
 		// Used to store dna list for multiframe search
 		DNAStack = new ConcurrentHashMap<>();
-
+		
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding DNAs...");
 		if (allFrames) {
 
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+			
+			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
+			int zSize = (int) dataset.getImgPlus().dimension(zDim); 
+			
+			int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
+			int tSize = (int) dataset.getImgPlus().dimension(tDim); 
+			
+			final int frameCount = (swapZandT) ? zSize : tSize;
 
 			if (swapZandT) MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(DNAStack.size(), image.getStackSize(),
-					"Finding DNAs for " + image.getTitle()), () -> IntStream.range(0,
-						image.getStackSize()).parallel().forEach(t -> DNAStack.put(t,
-							findDNAsInT(Integer.valueOf(channel), t))), PARALLELISM_LEVEL);
-			else MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(DNAStack.size(), image.getNFrames(),
-					"Finding DNAs for " + image.getTitle()), () -> IntStream.range(0,
-						image.getNFrames()).parallel().forEach(t -> DNAStack.put(t,
+				() -> statusService.showStatus(DNAStack.size(), frameCount,
+					"Finding DNAs for " + dataset.getName()), () -> IntStream.range(0,
+						frameCount).parallel().forEach(t -> DNAStack.put(t,
 							findDNAsInT(Integer.valueOf(channel), t))), PARALLELISM_LEVEL);
 
 		}
-		else DNASegments = findDNAsInT(Integer.valueOf(channel), previewT);
+		else DNASegments = findDNAsInT(Integer.valueOf(channel), theT);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		if (generateDNACountTable) {
-			logService.info("Generating DNA count table..");
-			DNACount = new MarsTable("DNA Count - " + image.getTitle());
-			DoubleColumn frameColumn = new DoubleColumn("T");
-			DoubleColumn countColumn = new DoubleColumn("DNAs");
+		if (generateDNACountTable) generateDNACountTable(DNASegments);
 
-			if (allFrames) {
-				for (int i = 0; i < DNAStack.size(); i++) {
-					frameColumn.addValue(i);
-					countColumn.addValue(DNAStack.get(i).size());
-				}
-			}
-			else {
-				frameColumn.addValue(previewT);
-				countColumn.addValue(DNASegments.size());
-			}
-			DNACount.add(frameColumn);
-			DNACount.add(countColumn);
+		if (generateDNATable) generateDNATable(DNASegments);
 
-			// Make sure the output table has the correct name
-			getInfo().getMutableOutput("DNACount", MarsTable.class).setLabel(DNACount
-				.getName());
-		}
-
-		if (generateDNATable) {
-			logService.info("Generating peak table..");
-			// build a table with all peaks
-			String title = "DNAs Table - " + image.getTitle();
-			DNATable = new MarsTable(title, "T", "x1", "y1", "x2", "y2", "length");
-
-			if (allFrames) {
-				int row = 0;
-				for (int t = 0; t < DNAStack.size(); t++) {
-					List<DNASegment> tDNAs = DNAStack.get(t);
-					for (int j = 0; j < tDNAs.size(); j++) {
-						DNATable.appendRow();
-						DNATable.setValue("T", row, t);
-						DNATable.setValue("x1", row, tDNAs.get(j).getX1());
-						DNATable.setValue("y1", row, tDNAs.get(j).getY1());
-						DNATable.setValue("x2", row, tDNAs.get(j).getX2());
-						DNATable.setValue("y2", row, tDNAs.get(j).getY2());
-						DNATable.setValue("length", row, tDNAs.get(j).getLength());
-						DNATable.setValue("median intensity", row, tDNAs.get(j)
-							.getMedianIntensity());
-						DNATable.setValue("intensity variance", row, tDNAs.get(j)
-							.getVariance());
-						row++;
-					}
-				}
-			}
-			else {
-				int row = 0;
-				for (int j = 0; j < DNASegments.size(); j++) {
-					DNATable.appendRow();
-					DNATable.setValue("T", row, previewT);
-					DNATable.setValue("x1", row, DNASegments.get(j).getX1());
-					DNATable.setValue("y1", row, DNASegments.get(j).getY1());
-					DNATable.setValue("x2", row, DNASegments.get(j).getX2());
-					DNATable.setValue("y2", row, DNASegments.get(j).getY2());
-					DNATable.setValue("length", row, DNASegments.get(j).getLength());
-					DNATable.setValue("median intensity", row, DNASegments.get(j)
-						.getMedianIntensity());
-					DNATable.setValue("intensity variance", row, DNASegments.get(j)
-						.getVariance());
-					row++;
-				}
-			}
-
-			// Make sure the output table has the correct name
-			getInfo().getMutableOutput("DNATable", MarsTable.class).setLabel(DNATable
-				.getName());
-		}
-
-		if (addToRoiManger) {
-			logService.info(
-				"Adding Peaks to the RoiManger. This might take a while...");
-			if (allFrames) {
-				// loop through map and slices and add to Manager
-				// This is slow probably because of the continuous GUI updating, but I
-				// am not sure a solution
-				// There is only one add method for the RoiManager and you can only add
-				// one Roi at a time.
-				int dnaNumber = 1;
-				for (int i = 0; i < DNAStack.size(); i++) {
-					dnaNumber = AddToManager(DNAStack.get(i), Integer.valueOf(channel), i,
-						dnaNumber);
-				}
-			}
-			else {
-				AddToManager(DNASegments, Integer.valueOf(channel), 0);
-			}
-			statusService.showStatus("Done adding ROIs to Manger");
-		}
-		image.setRoi(startingRoi);
+		if (addToRoiManger) addToRoiManager(DNASegments);
+		
+		if (image != null)
+			image.setRoi(startingRoi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
@@ -476,175 +378,127 @@ public class DNAFinderCommand extends DynamicCommand
 			image.setOverlay(null);
 		}
 	}
-
-	private List<DNASegment> findDNAsInT(int channel, int t) {
-		ImageStack stack = image.getImageStack();
-		int index = t + 1;
-		if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
-
-		ImagePlus tImage = new ImagePlus("T " + t, stack.getProcessor(index));
-		return findDNAs(tImage, t);
+	
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> List<DNASegment> findDNAsInT(int channel, int t) {
+		
+		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
+				.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
+				: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
+					channel, t);
+				
+		DNAFinder<T> dnaFinder = new DNAFinder<>(opService);
+		dnaFinder.setGaussianSigma(gaussSigma);
+		dnaFinder.setOptimalDNALength(optimalDNALength);
+		dnaFinder.setMinimumDistance(minimumDistance);
+		dnaFinder.setXDNAEndSearchRadius(xDNAEndSearchRadius);
+		dnaFinder.setYDNAEndSearchRadius(yDNAEndSearchRadius);
+		dnaFinder.setUseDogFiler(useDogFilter);
+		dnaFinder.setDogFilterRadius(dogFilterRadius);
+		dnaFinder.setThreshold(threshold);
+		dnaFinder.setFilterByMedianIntensity(medianIntensityFilter);
+		dnaFinder.setMedianIntensityLowerBound(medianIntensityLowerBound);
+		dnaFinder.setFilterByVariance(varianceFilter);
+		dnaFinder.setVarianceUpperBound(varianceUpperBound);
+		dnaFinder.setFit(fit);
+		dnaFinder.setFitSecondOrder(fitSecondOrder);
+		dnaFinder.setFitRadius(fitRadius);
+	
+		return dnaFinder.findDNAs(img, interval, t);
 	}
+	
+	private void generateDNACountTable(List<DNASegment> DNASegments) {
+		logService.info("Generating DNA count table..");
+		DNACount = new MarsTable("DNA Count - " + image.getTitle());
+		DoubleColumn frameColumn = new DoubleColumn("T");
+		DoubleColumn countColumn = new DoubleColumn("DNAs");
 
-	private List<DNASegment> findDNAs(ImagePlus tImage, int t) {
-		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
-
-		// Bit of ugliness here going from IJ1 to IJ2 and back...
-		// Should make an IJ2 peak detector.
-		final Img<DoubleType> input = ImagePlusAdapter.wrap(tImage);
-		Img<DoubleType> gradImage = opService.create().img(input, new DoubleType());
-		int[] derivatives = { 0, 1 };
-		double[] sigma = { gaussSigma, gaussSigma };
-
-		opService.filter().derivativeGauss(gradImage, input, derivatives, sigma);
-
-		List<Peak> topPeaks = new ArrayList<Peak>();
-		List<Peak> bottomPeaks = new ArrayList<Peak>();
-
-		if (useDogFilter) {
-			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
-				.dogFilter(gradImage, dogFilterRadius, opService);
-			topPeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
-				threshold, minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, interval, previewT,
-				threshold, minimumDistance, true);
+		if (allFrames) {
+			for (int i = 0; i < DNAStack.size(); i++) {
+				frameColumn.addValue(i);
+				countColumn.addValue(DNAStack.get(i).size());
+			}
 		}
 		else {
-			topPeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
-				threshold, minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(gradImage, interval, previewT,
-				threshold, minimumDistance, true);
+			frameColumn.addValue(theT);
+			countColumn.addValue(DNASegments.size());
 		}
+		DNACount.add(frameColumn);
+		DNACount.add(countColumn);
 
-		if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
+		// Make sure the output table has the correct name
+		getInfo().getMutableOutput("DNACount", MarsTable.class).setLabel(DNACount
+			.getName());
+	}
+	
+	private void generateDNATable(List<DNASegment> DNASegments) {
+		logService.info("Generating peak table..");
+		// build a table with all peaks
+		String title = "DNAs Table - " + image.getTitle();
+		DNATable = new MarsTable(title, "T", "x1", "y1", "x2", "y2", "length");
 
-			if (fitPeaks) {
-				FinalInterval interval = Intervals.createMinMax(x0, y0, x0 + width - 1, y0 + height - 1);
-
-				if (fitOrder.equals("1st order")) {
-					topPeaks = MarsImageUtils.fitPeaks(gradImage, interval, topPeaks,
-						fitRadius, dogFilterRadius, false, 0);
-					
-					bottomPeaks = MarsImageUtils.fitPeaks(gradImage, interval, bottomPeaks,
-						fitRadius, dogFilterRadius, true, 0);
-				} else {
-					//Use second derivative for fitting
-					Img<DoubleType> secondGradImage = opService.create().img(input, new DoubleType());
-					int[] secondDerivatives = { 0, 2 };
-					double[] sigma2 = { 1, 1 };
-
-					opService.filter().derivativeGauss(secondGradImage, input, secondDerivatives, sigma2);
-					
-					double median = opService.stats().median(secondGradImage).getRealDouble();
-					
-					//Remove positive peaks in preparation for fitting negative peaks.
-					Cursor< DoubleType > cursor = secondGradImage.cursor();
-					while (cursor.hasNext()) {
-						cursor.fwd();
-						if (cursor.get().getRealDouble() > median)
-							cursor.get().set(median);
-					}
-					
-					topPeaks.forEach(peak -> peak.setY(peak.getY() + 1));
-					bottomPeaks.forEach(peak -> peak.setY(peak.getY() - 1));
-					
-					topPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, topPeaks,
-							fitRadius, dogFilterRadius, median, true);
-					
-					bottomPeaks = MarsImageUtils.fitPeaks(secondGradImage, interval, bottomPeaks,
-							fitRadius, dogFilterRadius, median, true);
-				}
-			}
-
-			if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
-				// make sure they are all valid
-				// then we can remove them as we go.
-				for (int i = 0; i < bottomPeaks.size(); i++)
-					bottomPeaks.get(i).setValid();
-	
-				KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
-					bottomPeaks);
-				RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-					new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
-	
-				for (Peak p : topPeaks) {
-					double xTOP = p.getDoublePosition(0);
-					double yTOP = p.getDoublePosition(1);
-	
-					radiusSearch.search(new Peak(xTOP, yTOP + optimalDNALength, 0, 0, 0, 0),
-						yDNAEndSearchRadius, true);
-					if (radiusSearch.numNeighbors() > 0) {
-						Peak bottomEdge = radiusSearch.getSampler(0).get();
-	
-						double xDiff = Math.abs(bottomEdge.getDoublePosition(0) - p
-							.getDoublePosition(0));
-						if (xDiff < xDNAEndSearchRadius && bottomEdge.isValid()) {
-							DNASegment segment = new DNASegment(xTOP, yTOP, bottomEdge
-								.getDoublePosition(0), bottomEdge.getDoublePosition(1));
-	
-							calcSegmentProperties(tImage.getProcessor(), segment);
-	
-							boolean pass = true;
-	
-							// Check if the segment passes through filters
-							if (varianceFilter && varianceUpperBound < segment.getVariance())
-								pass = false;
-	
-							if (medianIntensityFilter && medianIntensityLowerBound > segment
-								.getMedianIntensity()) pass = false;
-	
-							if (pass) {
-								DNASegments.add(segment);
-								bottomEdge.setNotValid();
-							}
-						}
-					}
+		if (allFrames) {
+			int row = 0;
+			for (int t = 0; t < DNAStack.size(); t++) {
+				List<DNASegment> tDNAs = DNAStack.get(t);
+				for (int j = 0; j < tDNAs.size(); j++) {
+					DNATable.appendRow();
+					DNATable.setValue("T", row, t);
+					DNATable.setValue("x1", row, tDNAs.get(j).getX1());
+					DNATable.setValue("y1", row, tDNAs.get(j).getY1());
+					DNATable.setValue("x2", row, tDNAs.get(j).getX2());
+					DNATable.setValue("y2", row, tDNAs.get(j).getY2());
+					DNATable.setValue("length", row, tDNAs.get(j).getLength());
+					DNATable.setValue("median intensity", row, tDNAs.get(j)
+						.getMedianIntensity());
+					DNATable.setValue("intensity variance", row, tDNAs.get(j)
+						.getVariance());
+					row++;
 				}
 			}
 		}
-
-		return DNASegments;
-	}
-
-	private void calcSegmentProperties(ImageProcessor currentImage,
-		DNASegment segment)
-	{
-		int x1 = (int) segment.getX1();
-		int y1 = (int) segment.getY1();
-
-		int x2 = (int) segment.getX2();
-		int y2 = (int) segment.getY2();
-
-		SimpleRegression linearFit = new SimpleRegression(true);
-		linearFit.addData(x1, y1);
-		linearFit.addData(x2, y2);
-
-		// y = A + Bx
-		double A = linearFit.getIntercept();
-		double B = linearFit.getSlope();
-
-		DoubleColumn col = new DoubleColumn("col");
-		for (int y = y1; y <= y2; y++) {
-			int x = 0;
-			// intercept doesn't exist.
-			if (x1 == x2) x = x1;
-			else x = (int) ((y - A) / B);
-
-			if (y < 0 || y >= currentImage.getHeight() || x < 0 || x >= currentImage
-				.getWidth()) continue;
-
-			col.add(Double.valueOf(currentImage.getf(x, y)));
+		else {
+			int row = 0;
+			for (int j = 0; j < DNASegments.size(); j++) {
+				DNATable.appendRow();
+				DNATable.setValue("T", row, theT);
+				DNATable.setValue("x1", row, DNASegments.get(j).getX1());
+				DNATable.setValue("y1", row, DNASegments.get(j).getY1());
+				DNATable.setValue("x2", row, DNASegments.get(j).getX2());
+				DNATable.setValue("y2", row, DNASegments.get(j).getY2());
+				DNATable.setValue("length", row, DNASegments.get(j).getLength());
+				DNATable.setValue("median intensity", row, DNASegments.get(j)
+					.getMedianIntensity());
+				DNATable.setValue("intensity variance", row, DNASegments.get(j)
+					.getVariance());
+				row++;
+			}
 		}
 
-		MarsTable table = new MarsTable();
-		table.add(col);
-
-		segment.setVariance(table.variance("col"));
-		segment.setMedianIntensity((int) table.median("col"));
+		// Make sure the output table has the correct name
+		getInfo().getMutableOutput("DNATable", MarsTable.class).setLabel(DNATable
+			.getName());
 	}
-
-	private void AddToManager(List<DNASegment> segments, int channel, int t) {
-		AddToManager(segments, channel, t, 0);
+	
+	private void addToRoiManager(List<DNASegment> DNASegments) {
+		logService.info(
+				"Adding Peaks to the RoiManger. This might take a while...");
+		if (allFrames) {
+			// loop through map and slices and add to Manager
+			// This is slow probably because of the continuous GUI updating, but I
+			// am not sure a solution
+			// There is only one add method for the RoiManager and you can only add
+			// one Roi at a time.
+			int dnaNumber = 1;
+			for (int i = 0; i < DNAStack.size(); i++) {
+				dnaNumber = AddToManager(DNAStack.get(i), Integer.valueOf(channel), i,
+					dnaNumber);
+			}
+		}
+		else {
+			AddToManager(DNASegments, Integer.valueOf(channel), theT, 0);
+		}
+		statusService.showStatus("Done adding ROIs to Manger");
 	}
 
 	private int AddToManager(List<DNASegment> segments, int channel, int t,
@@ -674,12 +528,10 @@ public class DNAFinderCommand extends DynamicCommand
 		if (preview) {
 			updateInterval();
 
-			if (swapZandT) image.setSlice(previewT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			if (swapZandT) image.setSlice(theT + 1);
+			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 
-			ImagePlus selectedImage = new ImagePlus("current frame", image
-				.getImageStack().getProcessor(image.getCurrentSlice()));
-			List<DNASegment> segments = findDNAs(selectedImage, previewT);
+			List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT);
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 				"tDNACount", String.class);
@@ -731,18 +583,24 @@ public class DNAFinderCommand extends DynamicCommand
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image Title", image.getTitle());
-		if (image.getOriginalFileInfo() != null && image
-			.getOriginalFileInfo().directory != null)
-		{
-			builder.addParameter("Image Directory", image
-				.getOriginalFileInfo().directory);
+		if (image != null) {
+			builder.addParameter("Image Title", image.getTitle());
+			if (image.getOriginalFileInfo() != null && image
+				.getOriginalFileInfo().directory != null)
+			{
+				builder.addParameter("Image Directory", image
+					.getOriginalFileInfo().directory);
+			}
+		} else {
+			builder.addParameter("Dataset Name", dataset.getName());
 		}
-		builder.addParameter("useROI", String.valueOf(useROI));
-		builder.addParameter("ROI x0", String.valueOf(x0));
-		builder.addParameter("ROI y0", String.valueOf(y0));
-		builder.addParameter("ROI width", String.valueOf(width));
-		builder.addParameter("ROI height", String.valueOf(height));
+		builder.addParameter("Use ROI", String.valueOf(useROI));
+		if (useROI) {
+			builder.addParameter("ROI x0", String.valueOf(x0));
+			builder.addParameter("ROI y0", String.valueOf(y0));
+			builder.addParameter("ROI width", String.valueOf(width));
+			builder.addParameter("ROI height", String.valueOf(height));
+		}
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(
 			this.gaussSigma));
@@ -767,9 +625,9 @@ public class DNAFinderCommand extends DynamicCommand
 			generateDNATable));
 		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
 		builder.addParameter("Process all frames", String.valueOf(allFrames));
-		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
+		builder.addParameter("Fit peaks", String.valueOf(fit));
 		builder.addParameter("Fit radius", String.valueOf(fitRadius));
-		builder.addParameter("Fit order", fitOrder);
+		builder.addParameter("Fit 2nd order", String.valueOf(fitSecondOrder));
 	}
 
 	public MarsTable getDNACountTable() {
@@ -780,12 +638,12 @@ public class DNAFinderCommand extends DynamicCommand
 		return DNATable;
 	}
 
-	public void setImage(ImagePlus image) {
-		this.image = image;
+	public void setDataset(Dataset dataset) {
+		this.dataset = dataset;
 	}
 
-	public ImagePlus getImage() {
-		return image;
+	public Dataset getDataset() {
+		return dataset;
 	}
 
 	public void setUseROI(boolean useROI) {
@@ -834,6 +692,14 @@ public class DNAFinderCommand extends DynamicCommand
 
 	public int getChannel() {
 		return Integer.valueOf(channel);
+	}
+	
+	public void setT(int theT) {
+		this.theT = theT;
+	}
+	
+	public int getT() {
+		return theT;
 	}
 
 	public void setGaussianSigma(double gaussSigma) {
@@ -908,12 +774,12 @@ public class DNAFinderCommand extends DynamicCommand
 		this.varianceUpperBound = varianceUpperBound;
 	}
 
-	public void setFilterByMedianIntensity(boolean varianceFilter) {
-		this.varianceFilter = varianceFilter;
+	public void setFilterByMedianIntensity(boolean medianIntensityFilter) {
+		this.medianIntensityFilter = medianIntensityFilter;
 	}
 
 	public boolean getFilterByMedianIntensity() {
-		return varianceFilter;
+		return medianIntensityFilter;
 	}
 
 	public void setMedianIntensityLowerBound(int medianIntensityLowerBound) {
@@ -956,12 +822,20 @@ public class DNAFinderCommand extends DynamicCommand
 		return allFrames;
 	}
 
-	public void setFitEnds(boolean fitPeaks) {
-		this.fitPeaks = fitPeaks;
+	public void setFit(boolean fit) {
+		this.fit = fit;
 	}
 
-	public boolean getFitEnds() {
-		return fitPeaks;
+	public boolean getFit() {
+		return fit;
+	}
+	
+	public void setFitSecondOrder(boolean fitSecondOrder) {
+		this.fitSecondOrder = fitSecondOrder;
+	}
+	
+	public boolean getFitSecondOrder() {
+		return fitSecondOrder;
 	}
 
 	public void setFitRadius(int fitRadius) {
@@ -972,73 +846,4 @@ public class DNAFinderCommand extends DynamicCommand
 		return fitRadius;
 	}
 
-	// Not sure which ROI library to use at the moment
-	// for now we just use this...
-	class DNASegment {
-
-		private double x1, y1, x2, y2;
-
-		private int medianIntensity;
-
-		private double variance;
-
-		DNASegment(double x1, double y1, double x2, double y2) {
-			this.x1 = x1;
-			this.y1 = y1;
-			this.x2 = x2;
-			this.y2 = y2;
-		}
-
-		double getX1() {
-			return x1;
-		}
-
-		double getY1() {
-			return y1;
-		}
-
-		double getX2() {
-			return x2;
-		}
-
-		double getY2() {
-			return y2;
-		}
-
-		void setX1(double x1) {
-			this.x1 = x1;
-		}
-
-		void setY1(double y1) {
-			this.y1 = y1;
-		}
-
-		void setX2(double x2) {
-			this.x2 = x2;
-		}
-
-		void setY2(double y2) {
-			this.y2 = y2;
-		}
-
-		void setMedianIntensity(int medianIntensity) {
-			this.medianIntensity = medianIntensity;
-		}
-
-		int getMedianIntensity() {
-			return medianIntensity;
-		}
-
-		void setVariance(double variance) {
-			this.variance = variance;
-		}
-
-		double getVariance() {
-			return variance;
-		}
-
-		double getLength() {
-			return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-		}
-	}
 }
