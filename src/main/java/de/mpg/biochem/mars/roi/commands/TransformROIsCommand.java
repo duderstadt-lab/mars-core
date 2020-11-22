@@ -30,16 +30,27 @@
 package de.mpg.biochem.mars.roi.commands;
 
 import java.awt.Point;
-import java.awt.Polygon;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -49,16 +60,18 @@ import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.NumberWidget;
 
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
-import de.mpg.biochem.mars.util.MarsMath;
 import ij.ImagePlus;
-import ij.gui.PointRoi;
+import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 
@@ -68,11 +81,13 @@ import ij.plugin.frame.RoiManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(label = "ROI",
 			weight = 30, mnemonic = 'r'), @Menu(label = "Transform ROIs", weight = 30,
 				mnemonic = 't') })
-public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
-	implements Command, Previewable
+public class TransformROIsCommand extends DynamicCommand
+	implements Command, Initializable, Previewable
 {
 
-	// GENERAL SERVICES NEEDED
+	/**
+	 * SERVICES
+	 */
 	@Parameter
 	private RoiManager roiManager;
 
@@ -94,11 +109,15 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 	@Parameter
 	private ConvertService convertService;
 
-	// INPUT IMAGE
-	@Parameter(label = "Image")
-	private ImagePlus image;
+	/**
+	 * IMAGE
+	 */
+	@Parameter(label = "Image to search for Peaks")
+	private ImageDisplay imageDisplay;
 
-	// AFFINE2D Matrix
+	/**
+	 * AFFINE2D Matrix
+	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String affineTitle = "Affine2D Transformation Matrix:";
 
@@ -125,9 +144,15 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 		"Short Wavelength to Long Wavelength" })
 	private String transformationDirection =
 		"Long Wavelength to Short Wavelength";
-
+	
 	@Parameter(label = "Colocalize")
 	private boolean colocalize = false;
+	
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
+	private String channel = "0";
+	
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE, persist = false)
+	private int theT;
 
 	@Parameter(label = "Use DoG filter")
 	private boolean useDogFilter = true;
@@ -138,9 +163,6 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 	@Parameter(label = "Detection threshold")
 	private double threshold = 50;
 
-	@Parameter(label = "Minimum distance between peaks")
-	private int minimumDistance = 4;
-
 	@Parameter(label = "Filter Original ROIs")
 	private boolean filterOriginalRois = true;
 
@@ -150,167 +172,105 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
+	
+	private Dataset dataset;
+	private ImagePlus image;
+	private boolean swapZandT = false;
 
-	private ArrayList<Roi> TransformedROIs = new ArrayList<Roi>();
-	private ArrayList<Roi> OriginalROIs = new ArrayList<Roi>();
+	@Override
+	public void initialize() {
+		if (imageDisplay != null) {
+			dataset = (Dataset) imageDisplay.getActiveView().getData();
+			image = convertService.convert(imageDisplay, ImagePlus.class);
+		}
+		else if (dataset == null) return;
 
-	private ArrayList<Integer> colocalizedPeakIndex = new ArrayList<Integer>();
+		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
+			"channel", String.class);
+		long channelCount = dataset.getChannels();
+		ArrayList<String> channels = new ArrayList<String>();
+		for (int ch = 1; ch <= channelCount; ch++)
+			channels.add(String.valueOf(ch - 1));
+		channelItems.setChoices(channels);
+		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
+
+		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
+			"theT", Integer.class);
+		if (image.getNFrames() < 2) {
+			preFrame.setValue(this, image.getSlice() - 1);
+			preFrame.setMaximumValue(image.getStackSize() - 1);
+			swapZandT = true;
+		}
+		else {
+			preFrame.setValue(this, image.getFrame() - 1);
+			preFrame.setMaximumValue(image.getNFrames() - 1);
+		}
+	}
 
 	@Override
 	public void run() {
+		if (roiManager == null) {
+			uiService.showDialog("No ROIs in Manager to transform");
+			return;
+		}
+		
 		// Build log
 		LogBuilder builder = new LogBuilder();
-
 		String log = LogBuilder.buildTitleBlock("Transform ROIs");
-
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
-
-		// Output first part of log message...
 		logService.info(log);
+		
+		List<Roi> originalROIs = Arrays.asList(roiManager.getRoisAsArray());
+		List<Roi> transformedROIs = new ArrayList<Roi>();
 
-		if (preview) {
-			image.deleteRoi();
-		}
-
-		transformROIs();
-
+		transformROIs(transformedROIs, originalROIs);
+		
+		List<Integer> colocalizedIndex = new ArrayList<Integer>();
+		
 		roiManager.reset();
-
-		// If we are not colocalizing then we add all the peaks...
 		if (colocalize) {
+			colocalizedIndex = colocalize(transformedROIs, threshold, Integer.valueOf(channel), theT);	
+			
 			if (filterOriginalRois) {
-				for (int i = 0; i < colocalizedPeakIndex.size(); i++) {
-					roiManager.addRoi(OriginalROIs.get(colocalizedPeakIndex.get(i)));
-					roiManager.addRoi(TransformedROIs.get(colocalizedPeakIndex.get(i)));
+				for (int i = 0; i < colocalizedIndex.size(); i++) {
+					roiManager.addRoi(originalROIs.get(colocalizedIndex.get(i)));
+					roiManager.addRoi(transformedROIs.get(colocalizedIndex.get(i)));
 				}
 			}
 			else {
-				for (int i = 0; i < TransformedROIs.size(); i++) {
-					roiManager.addRoi(OriginalROIs.get(i));
-					if (colocalizedPeakIndex.contains(i)) {
-						roiManager.addRoi(TransformedROIs.get(colocalizedPeakIndex.get(
-							colocalizedPeakIndex.indexOf(i))));
+				for (int i = 0; i < transformedROIs.size(); i++) {
+					roiManager.addRoi(originalROIs.get(i));
+					if (colocalizedIndex.contains(i)) {
+						roiManager.addRoi(transformedROIs.get(colocalizedIndex.get(
+								colocalizedIndex.indexOf(i))));
 					}
 				}
 			}
 		}
 		else {
-			for (int i = 0; i < TransformedROIs.size(); i++) {
-				roiManager.addRoi(OriginalROIs.get(i));
-				roiManager.addRoi(TransformedROIs.get(i));
+			for (int i = 0; i < transformedROIs.size(); i++) {
+				roiManager.addRoi(originalROIs.get(i));
+				roiManager.addRoi(transformedROIs.get(i));
 			}
 		}
 
 		logService.info(LogBuilder.endBlock(true));
 	}
-
-	public ArrayList<Point> findPeaks(ImagePlus imp) {
-		ArrayList<Point> peaks = new ArrayList<Point>();
-		Img<FloatType> dog;
-
-		int width = imp.getWidth();
-		int height = imp.getHeight();
-
-		if (useDogFilter) {
-			// Convert image to FloatType for better numeric precision
-			Img<FloatType> converted = opService.convert().float32(
-				(Img<T>) ImagePlusAdapter.wrap(imp));
-
-			// Create the filtering result
-			dog = opService.create().img(converted);
-
-			final double sigma1 = dogFilterRadius / Math.sqrt(2) * 0.9;
-			final double sigma2 = dogFilterRadius / Math.sqrt(2) * 1.1;
-
-			// Do the DoG filtering using ImageJ Ops
-			opService.filter().dog(dog, converted, sigma2, sigma1);
-		}
-		else {
-			dog = opService.convert().float32((Img<T>) ImagePlusAdapter.wrap(imp));
-		}
-
-		// Rectangle roi = imp.getRoi().getBounds();
-		colocalizedPeakIndex.clear();
-
-		RandomAccess<FloatType> ra = dog.randomAccess();
-
-		for (int i = 0; i < TransformedROIs.size(); i++) {
-
-			int x = (int) TransformedROIs.get(i).getFloatBounds().x;
-			int y = (int) TransformedROIs.get(i).getFloatBounds().y;
-
-			// Let's check a radius of pixels around the transformed peaks if anyone
-			// is above the threshold we keep the colocalizedPeak
-			ArrayList<Point> col_search_pixels = new ArrayList<Point>();
-
-			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++) {
-				for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++) {
-					if (Sx < 0 || Sx > width || Sy < 0 || Sy > height) continue;
-
-					col_search_pixels.add(new Point(Sx, Sy));
-				}
-			}
-
-			boolean passed = false;
-			for (int w = 0; w < col_search_pixels.size(); w++) {
-				if (col_search_pixels.get(w).x >= imp.getWidth() || col_search_pixels
-					.get(w).y >= imp.getHeight()) continue;
-
-				ra.setPosition(col_search_pixels.get(w).x, 0);
-				ra.setPosition(col_search_pixels.get(w).y, 1);
-				if (ra.get().get() >= threshold) {
-					passed = true;
-					break;
-				}
-			}
-
-			if (passed) {
-				peaks.add(new Point(x, y));
-				colocalizedPeakIndex.add(i);
-			}
-
-		}
-		return peaks;
-	}
-
-	@Override
-	public void preview() {
-		if (preview) {
-			image.deleteRoi();
-			transformROIs();
-		}
-	}
-
-	public void transformROIs() {
-		OriginalROIs.clear();
-		TransformedROIs.clear();
-
-		if (roiManager == null) {
-			uiService.showDialog("No ROIs in Manager to transform");
-			return;
-		}
-
-		int roiNum = roiManager.getCount();
+	
+	private void transformROIs(List<Roi> transformedROIs, List<Roi> originalROIs) {
 
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
 
-		for (int i = 0; i < roiNum; i++) {
-			Roi roi = roiManager.getRoi(i);
-			// Using getFloatBounds should work well with either points or boxes.
-			// Here I remove the 0.5 offset, then transform and add it back below
-			// since the transformation matrix was calculated without the offset.
+		for (Roi roi : originalROIs) {
 			double[] source = new double[2];
 			source[0] = roi.getFloatBounds().x;
 			source[1] = roi.getFloatBounds().y;
 
 			double[] target = new double[2];
 
-			// Here we generate a new UID... This is in preparation for the Molecule
-			// Integrator
-			String baseRoiName = MarsMath.getUUID58();
-
+			String baseRoiName = roi.getName();
 			String currentPosition = "LONG";
 			String newPosition = "SHORT";
 
@@ -327,58 +287,103 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 				newPosition = "LONG";
 			}
 
-			Roi oldRoi = (Roi) roi.clone();
-			oldRoi.setName(baseRoiName + "_" + currentPosition);
-			OriginalROIs.add(oldRoi);
+			roi.setName(baseRoiName + "_" + currentPosition);
 
 			Roi newRoi = (Roi) roi.clone();
-
 			transform.apply(source, target);
-
-			newRoi.setLocation(target[0], target[1]);
+			newRoi.getFloatBounds().x = target[0];
+			newRoi.getFloatBounds().y = target[1];
 			newRoi.setName(baseRoiName + "_" + newPosition);
-			TransformedROIs.add(newRoi);
-		}
-
-		if (colocalize) {
-			ArrayList<Point> peaks = findPeaks(new ImagePlus("tempImage", image
-				.getProcessor()));
-
-			if (preview) {
-				Polygon poly = new Polygon();
-
-				for (Point p : peaks)
-					poly.addPoint(p.x, p.y);
-
-				PointRoi peakRoi = new PointRoi(poly);
-				image.setRoi(peakRoi);
-			}
-		}
-		else {
-			if (preview) {
-				Polygon poly = new Polygon();
-
-				for (int i = 0; i < TransformedROIs.size(); i++) {
-					int x = (int) TransformedROIs.get(i).getFloatBounds().x;
-					int y = (int) TransformedROIs.get(i).getFloatBounds().y;
-					poly.addPoint(x, y);
-				}
-
-				PointRoi peakRoi = new PointRoi(poly);
-				image.setRoi(peakRoi);
-			}
+			transformedROIs.add(newRoi);
 		}
 	}
 
-	/** Called when the {@link #preview} parameter value changes. */
-	protected void previewChanged() {
-		// When preview box is unchecked, reset the Roi back to how it was before...
-		if (!preview) cancel();
+	@SuppressWarnings("unchecked")
+	public <T extends RealType<T> & NativeType<T>> List<Integer> colocalize(List<Roi> transformedROIs, double threshold, int channel, int t) {
+		
+		ArrayList<Integer> colocalizedIndex = new ArrayList<Integer>();
+		
+		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
+				.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
+				: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
+					channel, t);
+				
+		Interval interval = Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, dataset.dimension(1) - 1);
+		
+		RandomAccessibleInterval<FloatType> dog = (useDogFilter) ?
+				MarsImageUtils.dogFilter(img, dogFilterRadius, opService) :
+				opService.convert().float32(Views.iterable(img));
+			
+		RandomAccessible<FloatType> rae = Views.extendMirrorSingle(Views.interval(dog,
+				interval));
+		RandomAccess<FloatType> ra = rae.randomAccess();
+
+		for (int i = 0; i < transformedROIs.size(); i++) {
+
+			int x = (int) (transformedROIs.get(i).getFloatBounds().x + transformedROIs.get(i).getFloatBounds().width / 2);
+			int y = (int) (transformedROIs.get(i).getFloatBounds().y + transformedROIs.get(i).getFloatBounds().height / 2);
+			
+			float max = 0;
+			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++)
+				for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++)
+					if (max > ra.setPositionAndGet(Sx, Sy).get())
+						max = ra.get().get();
+			
+			if (max > threshold)
+				colocalizedIndex.add(i);
+		}
+		return colocalizedIndex;
+	}
+	
+	@Override
+	public void preview() {
+		if (preview) {
+			List<Roi> originalROIs = Arrays.asList(roiManager.getRoisAsArray());
+			List<Roi> transformedROIs = new ArrayList<Roi>();
+			
+			transformROIs(transformedROIs, originalROIs);
+			
+			List<Integer> colocalizedIndex = new ArrayList<Integer>();
+			
+			Overlay overlay = new Overlay();
+			if (colocalize) {
+				colocalizedIndex = colocalize(transformedROIs, threshold, Integer.valueOf(channel), theT);	
+				
+				if (filterOriginalRois) {
+					for (int i = 0; i < colocalizedIndex.size(); i++) {
+						overlay.add(originalROIs.get(colocalizedIndex.get(i)));
+						overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
+					}
+				}
+				else {
+					for (int i = 0; i < transformedROIs.size(); i++) {
+						overlay.add(originalROIs.get(i));
+						if (colocalizedIndex.contains(i)) {
+							overlay.add(transformedROIs.get(colocalizedIndex.get(
+									colocalizedIndex.indexOf(i))));
+						}
+					}
+				}
+			}
+			else {
+				for (int i = 0; i < transformedROIs.size(); i++) {
+					overlay.add(originalROIs.get(i));
+					overlay.add(transformedROIs.get(i));
+				}
+			}
+			
+			image.setOverlay(overlay);
+		}
 	}
 
 	@Override
 	public void cancel() {
-		image.deleteRoi();
+		if (image != null) image.setOverlay(null);
+	}
+
+	/** Called when the {@link #preview} parameter value changes. */
+	protected void previewChanged() {
+		if (!preview) cancel();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
@@ -392,7 +397,6 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
-		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("filterOriginalRois", String.valueOf(
 			filterOriginalRois));
 		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
@@ -421,21 +425,29 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 	public void setM12(double m12) {
 		this.m12 = m12;
 	}
-
-	public void setROIManager(RoiManager roiManager) {
-		this.roiManager = roiManager;
+	
+	public void setDataset(Dataset dataset) {
+		this.dataset = dataset;
 	}
 
-	public RoiManager getROIManager() {
-		return roiManager;
+	public Dataset getDataset() {
+		return dataset;
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = String.valueOf(channel);
 	}
 
-	public void setImage(ImagePlus image) {
-		this.image = image;
+	public int getChannel() {
+		return Integer.valueOf(channel);
 	}
-
-	public ImagePlus getImage() {
-		return image;
+	
+	public void setT(int theT) {
+		this.theT = theT;
+	}
+	
+	public int getT() {
+		return theT;
 	}
 
 	public void setTransformationDirection(String transformationDirection) {
@@ -468,14 +480,6 @@ public class TransformROIsCommand<T extends RealType<T>> extends DynamicCommand
 
 	public double getThreshold() {
 		return threshold;
-	}
-
-	public void setMinimumDistance(int minimumDistance) {
-		this.minimumDistance = minimumDistance;
-	}
-
-	public int getMinimumDistance() {
-		return minimumDistance;
 	}
 
 	public void setFilterOriginalRois(boolean filterOriginalRois) {
