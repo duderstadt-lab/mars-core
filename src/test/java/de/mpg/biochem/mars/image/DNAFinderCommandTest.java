@@ -140,9 +140,7 @@ public class DNAFinderCommandTest {
 		assertTrue( Math.abs( 20 - dnaTable.getValue("y1", 5) ) < TOLERANCE , "y1 is off by more than the tolerance. Should be 20 was " + dnaTable.getValue("y1", 5));
 		assertTrue( Math.abs( 43 - dnaTable.getValue("x2", 5) ) < TOLERANCE , "x2 is off by more than the tolerance. Should be 43 was " + dnaTable.getValue("x2", 5));
 		assertTrue( Math.abs( 40 - dnaTable.getValue("y2", 5) ) < TOLERANCE , "y2 is off by more than the tolerance. Should be 40 was " + dnaTable.getValue("y2", 5));
-		assertTrue( Math.abs( 20 - dnaTable.getValue("length", 5) ) < TOLERANCE , "length is off by more than the tolerance. Should be 20 was " + dnaTable.getValue("length", 5));
-		
-		
+		assertTrue( Math.abs( 20 - dnaTable.getValue("length", 5) ) < TOLERANCE , "length is off by more than the tolerance. Should be 20 was " + dnaTable.getValue("length", 5));	
 	}
 	
 	public Dataset simulateDataset() {
