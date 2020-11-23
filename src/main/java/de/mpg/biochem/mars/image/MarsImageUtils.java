@@ -493,7 +493,6 @@ public class MarsImageUtils {
 				peak.setMedianBackground(Double.NaN);
 			} else {
 				double intensity = 0;
-				int innerPixels = 0;
 				ArrayList<Double> outerPixelValues = new ArrayList<Double>();
 				
 				for (int i=0 ; i < innerOffsets.size(); i++) {
@@ -501,7 +500,6 @@ public class MarsImageUtils {
 					
 					intensity += ra.setPositionAndGet(x + circleOffset[0], y +
 						circleOffset[1]).getRealDouble();
-					innerPixels++;
 				}
 				
 				for (int i=0 ; i < outerOffsets.size(); i++) {
@@ -519,7 +517,7 @@ public class MarsImageUtils {
 				else outerMedian = (double) outerPixelValues.get(outerPixelValues.size() /
 					2);
 	
-				intensity -= outerMedian * innerPixels;
+				intensity -= outerMedian * innerOffsets.size();
 				
 				peak.setIntensity(intensity);
 				peak.setMedianBackground(outerMedian);
