@@ -110,6 +110,10 @@ public class MarsOMEUtils {
 
 		meta.setPixelsDimensionOrder(DimensionOrder.valueOf(dimensionOrderString),
 			0);
+		
+		for (int c = 0; c < meta.getPixelsSizeC(0).getNumberValue().intValue(); c++) {
+			meta.setChannelName(String.valueOf(c), 0, c);
+		}
 
 		return meta;
 	}
