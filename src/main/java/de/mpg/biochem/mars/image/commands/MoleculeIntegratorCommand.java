@@ -76,6 +76,7 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
+import ij.gui.OvalRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import io.scif.Metadata;
@@ -88,7 +89,7 @@ import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
- * peaks for integration can be provided as PointRois in the RoiManger with the
+ * peaks for integration can be provided as OvalRois or PointRois in the RoiManger with the
  * format UID_LONG or UID_SHORT for long and short wavelengths. The positions
  * given are integrated for all T for all colors specified to generate a 
  * SingleMoleculeArchive in which all molecule record tables have columns for
@@ -218,9 +219,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
-		else if (dataset != null) image = convertService.convert(dataset,
-			ImagePlus.class);
-		else return;
+		else if (dataset == null) return;
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -241,14 +240,21 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"scifio.metadata.global");
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info("Unable to extract OME Metadata.");
+				logService.info("Unable to extract OME Metadata. Generating OME metadata from dimensions.");
+				try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+						dataset);
+				}
+				catch (ServiceException e) {
+					e.printStackTrace();
+				}
 			}
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
 		}
 
-		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
+		// Ensures that MarsMicromanagerFormat correctly sets the ImageID based on
 		// the position.
 		try {
 			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata
@@ -298,6 +304,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		log += builder.buildParameterList();
 		logService.info(log);
 		
+		//If running in headless mode. Make sure metadata was initialized.
+		if (marsOMEMetadata == null)
+			initialize();
+		
 		String fretChannelName = buildIntegrationLists();
 
 		double starttime = System.currentTimeMillis();
@@ -309,7 +319,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		MarsUtil.forkJoinPoolBuilder(statusService, logService,
 				() -> statusService.showStatus(progressInteger.get(), marsOMEMetadata
 						.getImage(0).getPlaneCount(),
-						"Integrating Molecules in " + image.getTitle()), () -> marsOMEMetadata.getImage(0).planes().forEach(
+						"Integrating Molecules in " + dataset.getName()), () -> marsOMEMetadata.getImage(0).planes().forEach(
 							plane -> {
 								integratePeaksInT(plane.getC(), plane.getT());
 								progressInteger.incrementAndGet();
@@ -360,7 +370,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		Rectangle shortBoundingRegion = new Rectangle(SHORTx0, SHORTy0, SHORTwidth,
 				SHORTheight);
 			
-		// These are assumed to be PointRois with names of the format
+		// These are assumed to be OvalRois or PointRois with names of the format
 		// UID or UID_LONG or UID_SHORT...
 		// We assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
@@ -373,16 +383,24 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			// split UID from LONG or SHORT
 			String[] subStrings = rois[i].getName().split("_");
 			String UID = subStrings[0];
+			
+			//The pixel origin for OvalRois is at the upper left corner !!
+			//The pixel origin for PointRois is at the center !!
+			//We always use pixel center as origin when integrating peaks !!
+			double pixelOrginOffset = (rois[i] instanceof OvalRoi) ? -0.5 : 0;
 
-			double x = rois[i].getFloatBounds().x;
-			double y = rois[i].getFloatBounds().y;
+			double x = rois[i].getFloatBounds().x + pixelOrginOffset + rois[i].getFloatBounds().width/2;
+			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i].getFloatBounds().height/2;
 
 			Peak peak = new Peak(UID, x, y);
 
-			if (longBoundingRegion.contains(x, y)) longIntegrationList.put(UID, peak);
-			else if (shortBoundingRegion.contains(x, y)) shortIntegrationList.put(UID,
-				peak);
-
+			if (subStrings.length > 1)
+				if (subStrings[1].equals("LONG") && longBoundingRegion.contains(x, y)) longIntegrationList.put(UID, peak);
+				else if (subStrings[1].equals("SHORT") && shortBoundingRegion.contains(x, y)) shortIntegrationList.put(UID,
+					peak);
+			else
+				if (longBoundingRegion.contains(x, y)) longIntegrationList.put(UID, peak);
+				else if (shortBoundingRegion.contains(x, y)) shortIntegrationList.put(UID, peak);
 		}
 		
 		String fretChannelName = null;
@@ -432,7 +450,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		return channelToTtoDtMap;
 	}
 	
-	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {	
 		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, c, t);
 
 		String colorName = channelColors.get(c).getName();
@@ -509,7 +528,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			table.set("T", row, (double) t);
 
 			for (String colorName : mapToAllPeaks.keySet()) {
-				if (mapToAllPeaks.get(colorName).containsKey(t)) {
+				if (mapToAllPeaks.get(colorName).containsKey(t) && mapToAllPeaks.get(colorName).get(t).containsKey(UID)) {
 					Peak peak = mapToAllPeaks.get(colorName).get(t).get(UID);
 					if (channelToTtoDtMap.get(colorName).containsKey(t)) table
 						.setValue(colorName + " Time (s)", row, channelToTtoDtMap.get(
@@ -550,13 +569,17 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 	
 	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("Image Title", image.getTitle());
-		if (image.getOriginalFileInfo() != null && image
-			.getOriginalFileInfo().directory != null)
-		{
-			builder.addParameter("Image Directory", image
-				.getOriginalFileInfo().directory);
-		}
+		if (image != null) {
+			builder.addParameter("Image Title", image.getTitle());
+			if (image.getOriginalFileInfo() != null && image
+				.getOriginalFileInfo().directory != null)
+			{
+				builder.addParameter("Image Directory", image
+					.getOriginalFileInfo().directory);
+			}
+		} else
+			builder.addParameter("Dataset Name", dataset.getName());
+		
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner Radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer Radius", String.valueOf(outerRadius));

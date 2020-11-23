@@ -476,10 +476,12 @@ public class PeakFinderCommand extends
 		int pCount = startingPeakNum;
 		if (!peaks.isEmpty()) {
 			for (Peak peak : peaks) {
+				//The pixel origin for OvalRois is at the upper left corner !!!!
+				//The pixel origin for PointRois is at the center !!!
 				Roi peakRoi = (previewRoiType.equals("point")) ? 
 					new PointRoi(peak.getDoublePosition(0), peak.getDoublePosition(1)) :
-					new OvalRoi( peak.getDoublePosition(0) - fitRadius, 
-							peak.getDoublePosition(1) - fitRadius, 
+					new OvalRoi( peak.getDoublePosition(0) + 0.5 - fitRadius, 
+							peak.getDoublePosition(1) + 0.5 - fitRadius, 
 							fitRadius * 2 , fitRadius * 2 );
 				
 				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
@@ -522,7 +524,9 @@ public class PeakFinderCommand extends
 				} else {
 					Overlay overlay = new Overlay();
 					for (Peak p : peaks) {
-						final OvalRoi roi = new OvalRoi( p.getDoublePosition(0) - fitRadius,p.getDoublePosition(1) - fitRadius, fitRadius * 2, fitRadius * 2 );
+						//The pixel origin for OvalRois is at the upper left corner !!!!
+						//The pixel origin for PointRois is at the center !!!
+						final OvalRoi roi = new OvalRoi( p.getDoublePosition(0) + 0.5 - fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
 						roi.setStrokeColor( Color.CYAN.darker() );
 						
 						overlay.add(roi);

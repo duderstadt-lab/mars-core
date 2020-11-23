@@ -329,9 +329,14 @@ public class TransformROIsCommand extends DynamicCommand
 		RandomAccess<FloatType> ra = rae.randomAccess();
 
 		for (int i = 0; i < transformedROIs.size(); i++) {
+			
+			//The pixel origin for OvalRois is at the upper left corner !!
+			//The pixel origin for PointRois is at the center !!
+			//We always use pixel center as origin when integrating peaks !!
+			double pixelOrginOffset = (transformedROIs.get(0) instanceof OvalRoi) ? -0.5 : 0;
 
-			int x = (int) (transformedROIs.get(i).getFloatBounds().x + transformedROIs.get(i).getFloatBounds().width / 2);
-			int y = (int) (transformedROIs.get(i).getFloatBounds().y + transformedROIs.get(i).getFloatBounds().height / 2);
+			int x = (int) (transformedROIs.get(i).getFloatBounds().x + pixelOrginOffset + transformedROIs.get(i).getFloatBounds().width / 2);
+			int y = (int) (transformedROIs.get(i).getFloatBounds().y + pixelOrginOffset + transformedROIs.get(i).getFloatBounds().height / 2);
 			
 			float max = 0;
 			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++)
