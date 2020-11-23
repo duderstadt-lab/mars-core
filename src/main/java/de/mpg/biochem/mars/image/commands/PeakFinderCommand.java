@@ -485,8 +485,8 @@ public class PeakFinderCommand extends
 				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
 				else peakRoi.setName(MarsMath.getUUID58());
 
-				if (swapZandT) peakRoi.setPosition(channel, t + 1, 1);
-				else peakRoi.setPosition(channel, 1, t + 1);
+				if (swapZandT) peakRoi.setPosition(channel + 1, t + 1, 1);
+				else peakRoi.setPosition(channel + 1, 1, t + 1);
 				roiManager.addRoi(peakRoi);
 				pCount++;
 			}
