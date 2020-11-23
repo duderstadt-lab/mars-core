@@ -29,9 +29,8 @@
 
 package de.mpg.biochem.mars.roi.commands;
 
-import java.awt.Point;
+import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import net.imagej.Dataset;
@@ -43,8 +42,6 @@ import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.Img;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -68,10 +65,13 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
+import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
+import ij.gui.OvalRoi;
 import ij.gui.Overlay;
+import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 
@@ -210,8 +210,13 @@ public class TransformROIsCommand extends DynamicCommand
 	@Override
 	public void run() {
 		if (roiManager == null) {
-			uiService.showDialog("No ROIs in Manager to transform");
+			uiService.showDialog("No ROIs in manager to transform.");
 			return;
+		}
+		
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
 		}
 		
 		// Build log
@@ -221,8 +226,13 @@ public class TransformROIsCommand extends DynamicCommand
 		log += builder.buildParameterList();
 		logService.info(log);
 		
-		List<Roi> originalROIs = Arrays.asList(roiManager.getRoisAsArray());
 		List<Roi> transformedROIs = new ArrayList<Roi>();
+		List<Roi> originalROIs = new ArrayList<>();
+		int roiNum = roiManager.getCount();
+		for (int i = 0; i < roiNum; i++) {
+			Roi roi = roiManager.getRoi(i);
+			originalROIs.add((Roi) roi.clone());
+		}
 
 		transformROIs(transformedROIs, originalROIs);
 		
@@ -291,8 +301,8 @@ public class TransformROIsCommand extends DynamicCommand
 
 			Roi newRoi = (Roi) roi.clone();
 			transform.apply(source, target);
-			newRoi.getFloatBounds().x = target[0];
-			newRoi.getFloatBounds().y = target[1];
+			
+			newRoi.setLocation(target[0], target[1]);
 			newRoi.setName(baseRoiName + "_" + newPosition);
 			transformedROIs.add(newRoi);
 		}
@@ -326,7 +336,7 @@ public class TransformROIsCommand extends DynamicCommand
 			float max = 0;
 			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++)
 				for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++)
-					if (max > ra.setPositionAndGet(Sx, Sy).get())
+					if (max < ra.setPositionAndGet(Sx, Sy).get())
 						max = ra.get().get();
 			
 			if (max > threshold)
@@ -338,9 +348,27 @@ public class TransformROIsCommand extends DynamicCommand
 	@Override
 	public void preview() {
 		if (preview) {
-			List<Roi> originalROIs = Arrays.asList(roiManager.getRoisAsArray());
-			List<Roi> transformedROIs = new ArrayList<Roi>();
+			image.deleteRoi();
+			image.setOverlay(null);
 			
+			if (swapZandT) image.setSlice(theT + 1);
+			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+			
+			List<Roi> transformedROIs = new ArrayList<Roi>();
+			List<Roi> originalROIs = new ArrayList<>();
+			int roiNum = roiManager.getCount();
+			for (int i = 0; i < roiNum; i++) {
+				Roi roi = roiManager.getRoi(i);
+				if (roi instanceof OvalRoi) {
+					final OvalRoi ovalRoi = new OvalRoi( roi.getFloatBounds().x ,roi.getFloatBounds().y, roi.getFloatBounds().width, roi.getFloatBounds().height );
+					ovalRoi.setStrokeColor( Color.CYAN.darker() );
+					originalROIs.add(ovalRoi);
+				} else {
+					final PointRoi pointRoi = new PointRoi( roi.getFloatBounds().x ,roi.getFloatBounds().y );
+					originalROIs.add(pointRoi);
+				}
+			}
+
 			transformROIs(transformedROIs, originalROIs);
 			
 			List<Integer> colocalizedIndex = new ArrayList<Integer>();
@@ -378,7 +406,8 @@ public class TransformROIsCommand extends DynamicCommand
 
 	@Override
 	public void cancel() {
-		if (image != null) image.setOverlay(null);
+		if (image != null)
+			image.setOverlay(null);
 	}
 
 	/** Called when the {@link #preview} parameter value changes. */
