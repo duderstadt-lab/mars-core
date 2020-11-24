@@ -600,8 +600,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * 
 	 * @param name Name of the peaks, usually the color.
 	 * @param c The channel index to integrate.
-	 * @param region The region of the ideal to integration. 0 for short and 1 for
-	 *          long.
+	 * @param interval The interval used for integration. Beyond will be mirrored.
 	 * @param integrationMap Map from T to Map from UID to Peak.
 	 */
 	public void addIntegrationMap(final String name, final int c,

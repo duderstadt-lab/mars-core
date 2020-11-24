@@ -82,6 +82,7 @@ public class MarsImageUtils {
 	 * position.
 	 * 
 	 * @param innerRadius Inner integration radius.
+	 * @return The list of x, y offsets for innerRadius.
 	 */
 	public synchronized static List<int[]> innerOffets(int innerRadius) {
 		if (innerOffsetCache == null) innerOffsetCache =
@@ -116,6 +117,7 @@ public class MarsImageUtils {
 	 * 
 	 * @param innerRadius Inner integration radius.
 	 * @param outerRadius Outer integration radius.
+	 * @return The list of x, y offsets for between innerRadius and outerRadius.
 	 */
 	public synchronized static List<int[]> outerOffets(int innerRadius,
 		int outerRadius)
@@ -155,12 +157,14 @@ public class MarsImageUtils {
 	 * provided is set for all peaks returned. Negative peaks can be located if
 	 * desired.
 	 * 
+	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to search for peaks in the image.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
 	 * @param minimumDistance The minimum allowed distance between peaks.
 	 * @param findNegativePeaks Whether to search for negative peaks.
+	 * @return The list of peaks found.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
 		RandomAccessible<T> img, Interval interval, int t, double threshold,
@@ -184,9 +188,11 @@ public class MarsImageUtils {
 	 * the following: sigma1 = dogFilterRadius / sqrt(2) * 1.1 sigma2 =
 	 * dogFilterRadius / sqrt(2) * 0.9
 	 * 
+	 * @param <T> Image type.
 	 * @param img 2D image that will be dog filtered.
 	 * @param dogFilterRadius Radius to use for dog filtering.
 	 * @param opService An instance of the opService to run the dog filter op.
+	 * @return The dog filtered image.
 	 */
 	public static <T extends RealType<T>> RandomAccessibleInterval<FloatType>
 		dogFilter(RandomAccessibleInterval<T> img, double dogFilterRadius,
@@ -211,15 +217,17 @@ public class MarsImageUtils {
 	 * values beyond the interval provided. The starting guess for sigma is half
 	 * initialSize.
 	 * 
+	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param fitRadius The radius of the square region of pixels to use for
+	 * @param radius The radius of the square region of pixels to use for
 	 *          fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
 	 * @param RsquaredMin The mininmum allowed R-squared value below which fits
 	 *          are rejected.
+	 * @return The list of peaks after fitting with those having rejected fits removed.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -285,14 +293,16 @@ public class MarsImageUtils {
 	 * values beyond the interval provided. The starting guess for sigma is half
 	 * initialSize.
 	 * 
+	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param fitRadius The radius of the square region of pixels to use for
+	 * @param radius The radius of the square region of pixels to use for
 	 *          fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param fitRegionThreshold The threshold pixel value for the region to fit.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
+	 * @return The list of peaks after fitting with those having rejected fits removed.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -346,11 +356,13 @@ public class MarsImageUtils {
 	 * This method calculates the R-squared for the 2D gaussian provided within
 	 * the radius specified for the image given as a RandomAccess.
 	 * 
+	 * @param <T> Image type.
 	 * @param ra 2D image containing peak used for the R-squared calculation.
 	 * @param radius The radius of the square region used for the R-squared
 	 *          calculation.
 	 * @param gauss The 2D gaussian from fitting to use for the R-squared
 	 *          calculation.
+	 * @return The R-squared value.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> double calcR2(
 		RandomAccess<T> ra, int radius, Gaussian2D gauss)
@@ -466,6 +478,7 @@ public class MarsImageUtils {
 	 * and outerRadius is subtracted from each pixel in the sum to yield the
 	 * background corrected total intensity.
 	 * 
+	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to mirror at the edges during integration.
 	 * @param peaks The Peaks to integrate.
@@ -533,10 +546,12 @@ public class MarsImageUtils {
 	 * c, t, and z. Therefore, for higher dimensional images, the output may be
 	 * more than 2D.
 	 * 
+	 * @param <T> Image type.
 	 * @param img ImgPlus provide a view from.
 	 * @param z The Z axis position.
 	 * @param c The C axis position.
 	 * @param t The T axis position.
+	 * @return The slice of the image specified.
 	 */
 	public static <T extends RealType<T> & NativeType<T>>
 		RandomAccessibleInterval<T> get2DHyperSlice(final ImgPlus<T> img,

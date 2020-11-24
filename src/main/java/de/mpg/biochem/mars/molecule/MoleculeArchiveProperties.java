@@ -343,6 +343,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * @param directory Folder to save to.
 	 * @param jfactory JsonFactory to use when saving.
 	 * @param fileExtension The file extension (.json or .sml).
+	 * @throws IOException An exception if thrown if there is a problem with the file path.
 	 */
 	void save(File directory, JsonFactory jfactory, String fileExtension)
 		throws IOException;
