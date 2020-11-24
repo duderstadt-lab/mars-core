@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.text.DateFormat;
@@ -69,6 +70,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
@@ -84,9 +86,12 @@ import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
 import io.scif.Metadata;
 import io.scif.img.SCIFIOImgPlus;
@@ -195,6 +200,11 @@ public class PeakTrackerCommand extends
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
+	
+	@Parameter(label = "Preview Roi:",
+			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = {
+				"circle", "point" })
+	private String previewRoiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
@@ -664,17 +674,31 @@ public class PeakTrackerCommand extends
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 				"tPeakCount", String.class);
+			
 			if (!peaks.isEmpty()) {
-				Polygon poly = new Polygon();
-
-				for (Peak p : peaks) {
-					int x = (int) p.getDoublePosition(0);
-					int y = (int) p.getDoublePosition(1);
-					poly.addPoint(x, y);
+				
+				if (previewRoiType.equals("point")) {
+					Overlay overlay = new Overlay();
+					FloatPolygon poly = new FloatPolygon();
+					for (Peak p : peaks)
+						poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+	
+					PointRoi peakRoi = new PointRoi(poly);
+					
+					overlay.add(peakRoi);
+					image.setOverlay(overlay);
+				} else {
+					Overlay overlay = new Overlay();
+					for (Peak p : peaks) {
+						//The pixel origin for OvalRois is at the upper left corner !!!!
+						//The pixel origin for PointRois is at the center !!!
+						final OvalRoi roi = new OvalRoi( p.getDoublePosition(0) + 0.5 - fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
+						roi.setStrokeColor( Color.CYAN.darker() );
+						
+						overlay.add(roi);
+					}
+					image.setOverlay(overlay);
 				}
-
-				PointRoi peakRoi = new PointRoi(poly);
-				image.setRoi(peakRoi);
 
 				preFrameCount.setValue(this, "count: " + peaks.size());
 			}
