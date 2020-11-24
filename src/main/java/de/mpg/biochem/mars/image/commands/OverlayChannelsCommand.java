@@ -33,9 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import net.imagej.DatasetService;
@@ -47,7 +44,6 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.*;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.*;
 
@@ -65,7 +61,6 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
@@ -78,9 +73,8 @@ import ij.WindowManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Overlay Channels", weight = 60, mnemonic = 'o') })
-public class OverlayChannelsCommand
-	extends DynamicCommand implements Command
-{
+public class OverlayChannelsCommand extends DynamicCommand implements Command {
+
 	/**
 	 * SERVICES
 	 */
@@ -200,13 +194,14 @@ public class OverlayChannelsCommand
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
-		
-		MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(transformedImageMap.size(), transformMe
-						.getStackSize(), "Transforming " + transformMe.getTitle()), () -> IntStream.rangeClosed(1, transformMe
-								.getStackSize()).parallel().forEach(t -> transformT(t, new ImagePlus("T " + t, oldStack
-										.getProcessor(t)), transform)), PARALLELISM_LEVEL);
-		
+
+		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+			.showStatus(transformedImageMap.size(), transformMe.getStackSize(),
+				"Transforming " + transformMe.getTitle()), () -> IntStream.rangeClosed(
+					1, transformMe.getStackSize()).parallel().forEach(t -> transformT(t,
+						new ImagePlus("T " + t, oldStack.getProcessor(t)), transform)),
+			PARALLELISM_LEVEL);
+
 		// Now we have a map with all the transformed images. We just need to add
 		// them to a new stack
 		// and then merge with the untransformed image.
@@ -238,8 +233,10 @@ public class OverlayChannelsCommand
 			addToMe.close();
 		}
 	}
-	
-	private <T extends RealType<T> & NativeType<T>> void transformT(int t, ImagePlus tImage, AffineTransform2D transform) {
+
+	private <T extends RealType<T> & NativeType<T>> void transformT(int t,
+		ImagePlus tImage, AffineTransform2D transform)
+	{
 		Img<T> img = ImagePlusAdapter.wrap(tImage);
 
 		RandomAccessibleInterval<T> ra = Views.interval(Views.raster(RealViews

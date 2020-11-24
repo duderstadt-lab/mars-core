@@ -159,7 +159,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected MoleculeArchiveWindow win;
 
 	/**
-	 * The archive file with .yama extension or virtual store with .yama.store extension 
+	 * The archive file with .yama extension or virtual store with .yama.store
+	 * extension
 	 */
 	protected File file;
 
@@ -179,29 +180,34 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected MoleculeArchiveIndex<M, I> archiveIndex;
 
 	/**
-	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized with metadataList always. 
+	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized
+	 * with metadataList always.
 	 */
 	protected ConcurrentMap<String, I> metadataMap;
 
 	/**
-	 * List of metadata UIDs. Items should match keys in metadataMap always. 
-	 * All write operations must be placed in synchronized blocks. synchronized(metadataList) { ... }
+	 * List of metadata UIDs. Items should match keys in metadataMap always. All
+	 * write operations must be placed in synchronized blocks.
+	 * synchronized(metadataList) { ... }
 	 */
 	protected ArrayList<String> metadataList;
 
 	/**
-	 * Map from molecule UID to Molecule object. Keys should be synchronized with moleculeList always. Left null in virtual memory mode.
+	 * Map from molecule UID to Molecule object. Keys should be synchronized with
+	 * moleculeList always. Left null in virtual memory mode.
 	 */
 	protected ConcurrentMap<String, M> moleculeMap;
 
 	/**
-	 * List of molecule UIDs. Items should match keys in moleculeMap always. 
-	 * All write operations must be placed in synchronized blocks. synchronized(moleculeList) { ... }
+	 * List of molecule UIDs. Items should match keys in moleculeMap always. All
+	 * write operations must be placed in synchronized blocks.
+	 * synchronized(moleculeList) { ... }
 	 */
 	protected ArrayList<String> moleculeList;
 
 	/**
-	 * Map from molecule UID to ReentrantLock to ensure thread blocking when accessing molecule files.
+	 * Map from molecule UID to ReentrantLock to ensure thread blocking when
+	 * accessing molecule files.
 	 */
 	protected ConcurrentMap<String, ReentrantLock> recordLocks;
 
@@ -211,7 +217,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected boolean virtual;
 
 	/**
-	 * For virtual archives we must keep track of the encoding when it was loaded 
+	 * For virtual archives we must keep track of the encoding when it was loaded
 	 * so we always parse correctly even if the output format has been changed.
 	 */
 	protected boolean smileEncoding = true;

@@ -91,9 +91,8 @@ import io.scif.services.TranslatorService;
  * two images: an image with beam profile and the image that needs to be
  * corrected. For each pixel at position x, y the following is calculated:
  * (Image(x,y) - electronic_offset) / ((Background(x,y) - electronic_offset) /
- * (maximum_pixel_background - electronic_offset))
- * 
- * Processes the channel specified by correcting the image provided.  
+ * (maximum_pixel_background - electronic_offset)) Processes the channel
+ * specified by correcting the image provided.
  *
  * @author Karl Duderstadt
  */
@@ -103,8 +102,8 @@ import io.scif.services.TranslatorService;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Beam Profile Corrector", weight = 20, mnemonic = 'b') })
-public class BeamProfileCorrectionCommand extends
-	DynamicCommand implements Command
+public class BeamProfileCorrectionCommand extends DynamicCommand implements
+	Command
 {
 
 	/**

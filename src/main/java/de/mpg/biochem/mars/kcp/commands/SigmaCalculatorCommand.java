@@ -105,7 +105,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
 			"xColumn", String.class);
 		xColumnItems.setChoices(columns);
@@ -114,13 +114,14 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 			"yColumn", String.class);
 		yColumnItems.setChoices(columns);
 	}
-	
+
 	@Override
 	public void initialize() {
 		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
+			.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
 			"xColumn", String.class);
 		xColumnItems.setChoices(columns);

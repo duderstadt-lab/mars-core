@@ -26,15 +26,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.image;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.scijava.table.DoubleColumn;
-
-import de.mpg.biochem.mars.table.MarsTable;
 import net.imagej.ops.OpService;
 import net.imglib2.Cursor;
 import net.imglib2.Interval;
@@ -49,8 +46,13 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.table.DoubleColumn;
+
+import de.mpg.biochem.mars.table.MarsTable;
+
 public class DNAFinder<T extends RealType<T> & NativeType<T>> {
-	
+
 	private OpService opService;
 	private boolean useDogFilter = true;
 	private double dogFilterRadius = 1.8;
@@ -67,13 +69,15 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	private int medianIntensityLowerBound = 0;
 	private boolean varianceFilter = false;
 	private int varianceUpperBound = 1_000_000;
-	
+
 	public DNAFinder(OpService opService) {
 		this.opService = opService;
 	}
-	
-	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img, Interval interval, int theT) {
-		
+
+	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
+		Interval interval, int theT)
+	{
+
 		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 
 		Img<DoubleType> input = opService.convert().float64(Views.iterable(img));
@@ -95,8 +99,8 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 				threshold, minimumDistance, true);
 		}
 		else {
-			topPeaks = MarsImageUtils.findPeaks(gradImage, interval, theT,
-				threshold, minimumDistance, false);
+			topPeaks = MarsImageUtils.findPeaks(gradImage, interval, theT, threshold,
+				minimumDistance, false);
 			bottomPeaks = MarsImageUtils.findPeaks(gradImage, interval, theT,
 				threshold, minimumDistance, true);
 		}
@@ -106,7 +110,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 			if (fit) {
 				topPeaks = MarsImageUtils.fitPeaks(gradImage, interval, topPeaks,
 					fitRadius, dogFilterRadius, false, 0);
-				
+
 				bottomPeaks = MarsImageUtils.fitPeaks(gradImage, interval, bottomPeaks,
 					fitRadius, dogFilterRadius, true, 0);
 			}
@@ -116,89 +120,95 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 				// then we can remove them as we go.
 				for (int i = 0; i < bottomPeaks.size(); i++)
 					bottomPeaks.get(i).setValid();
-	
+
 				KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
 					bottomPeaks);
 				RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
 					new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
-				
+
 				Img<DoubleType> secondOrderImage = null;
-				double median = 0; 
+				double median = 0;
 				if (fitSecondOrder) {
 					secondOrderImage = opService.create().img(input, new DoubleType());
-					
+
 					int[] secondDerivatives = { 0, 2 };
 					double[] sigma2 = { 1, 1 };
 
-					opService.filter().derivativeGauss(secondOrderImage, input, secondDerivatives, sigma2);
-					
+					opService.filter().derivativeGauss(secondOrderImage, input,
+						secondDerivatives, sigma2);
+
 					median = opService.stats().median(secondOrderImage).getRealDouble();
-					
-					//Remove positive peaks in preparation for fitting negative peaks.
-					Cursor< DoubleType > cursor = secondOrderImage.cursor();
+
+					// Remove positive peaks in preparation for fitting negative peaks.
+					Cursor<DoubleType> cursor = secondOrderImage.cursor();
 					while (cursor.hasNext()) {
 						cursor.fwd();
-						if (cursor.get().getRealDouble() > median)
-							cursor.get().set(median);
+						if (cursor.get().getRealDouble() > median) cursor.get().set(median);
 					}
 				}
-				
+
 				RandomAccessibleInterval<T> view = Views.interval(img, interval);
 				RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
-	
+
 				for (Peak p : topPeaks) {
 					double xTOP = p.getDoublePosition(0);
 					double yTOP = p.getDoublePosition(1);
-	
-					radiusSearch.search(new Peak(xTOP, yTOP + optimalDNALength, 0, 0, 0, 0),
-						yDNAEndSearchRadius, true);
+
+					radiusSearch.search(new Peak(xTOP, yTOP + optimalDNALength, 0, 0, 0,
+						0), yDNAEndSearchRadius, true);
 					if (radiusSearch.numNeighbors() > 0) {
 						Peak bottomEdge = radiusSearch.getSampler(0).get();
-	
+
 						double xDiff = Math.abs(bottomEdge.getDoublePosition(0) - p
 							.getDoublePosition(0));
 						if (xDiff < xDNAEndSearchRadius && bottomEdge.isValid()) {
 							DNASegment segment = new DNASegment(xTOP, yTOP, bottomEdge
 								.getDoublePosition(0), bottomEdge.getDoublePosition(1));
-	
+
 							calcSegmentProperties(ra, segment);
-							
+
 							boolean pass = true;
-	
+
 							// Check if the segment passes through filters
 							if (varianceFilter && varianceUpperBound < segment.getVariance())
 								pass = false;
 
 							if (medianIntensityFilter && medianIntensityLowerBound > segment
 								.getMedianIntensity()) pass = false;
-							
+
 							if (pass) {
-								
+
 								if (fit && fitSecondOrder) {
-									
+
 									List<Peak> top = new ArrayList<Peak>();
-									top.add(new Peak("top", segment.getX1(), segment.getY1() + 1));
-									top = MarsImageUtils.fitPeaks(secondOrderImage, interval, top, 
-											fitRadius, dogFilterRadius, median, true);
-										
+									top.add(new Peak("top", segment.getX1(), segment.getY1() +
+										1));
+									top = MarsImageUtils.fitPeaks(secondOrderImage, interval, top,
+										fitRadius, dogFilterRadius, median, true);
+
 									List<Peak> bottom = new ArrayList<Peak>();
-									bottom.add(new Peak("bottom", segment.getX2(), segment.getY2() - 1));
-									bottom = MarsImageUtils.fitPeaks(secondOrderImage, interval, bottom, 
-											fitRadius, dogFilterRadius, median, true);
-									
-									
-									
-									if (top.size() > 0 && distance(top.get(0).getX(), top.get(0).getY(), segment.getX1() + 1, segment.getY1() + 1) < fitRadius) {
+									bottom.add(new Peak("bottom", segment.getX2(), segment
+										.getY2() - 1));
+									bottom = MarsImageUtils.fitPeaks(secondOrderImage, interval,
+										bottom, fitRadius, dogFilterRadius, median, true);
+
+									if (top.size() > 0 && distance(top.get(0).getX(), top.get(0)
+										.getY(), segment.getX1() + 1, segment.getY1() +
+											1) < fitRadius)
+									{
 										segment.setX1(top.get(0).getX());
 										segment.setY1(top.get(0).getY());
 									}
-									
-									if (bottom.size() > 0 && distance(bottom.get(0).getX(), bottom.get(0).getY(), segment.getX2() - 1, segment.getY2() - 1) < fitRadius) {
+
+									if (bottom.size() > 0 && distance(bottom.get(0).getX(), bottom
+										.get(0).getY(), segment.getX2() - 1, segment.getY2() -
+											1) < fitRadius)
+									{
 										segment.setX2(bottom.get(0).getX());
 										segment.setY2(bottom.get(0).getY());
 									}
 								}
-								
+
 								DNASegments.add(segment);
 								bottomEdge.setNotValid();
 							}
@@ -210,14 +220,12 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 		return DNASegments;
 	}
-	
+
 	private static double distance(double x1, double y1, double x2, double y2) {
 		return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 	}
 
-	private void calcSegmentProperties(RandomAccess<T> ra,
-		DNASegment segment)
-	{	
+	private void calcSegmentProperties(RandomAccess<T> ra, DNASegment segment) {
 		int x1 = (int) segment.getX1();
 		int y1 = (int) segment.getY1();
 
@@ -248,7 +256,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		segment.setVariance(table.variance("col"));
 		segment.setMedianIntensity((int) table.median("col"));
 	}
-	
+
 	public void setGaussianSigma(double gaussSigma) {
 		this.gaussSigma = gaussSigma;
 	}
@@ -344,11 +352,11 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	public boolean getFit() {
 		return fit;
 	}
-	
+
 	public void setFitSecondOrder(boolean fitSecondOrder) {
 		this.fitSecondOrder = fitSecondOrder;
 	}
-	
+
 	public boolean getFitSecondOrder() {
 		return fitSecondOrder;
 	}

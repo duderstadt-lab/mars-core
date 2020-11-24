@@ -29,9 +29,9 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import net.imagej.ops.Initializable;
-
 import java.util.ArrayList;
+
+import net.imagej.ops.Initializable;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
@@ -89,18 +89,19 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"column", String.class);
 		columnItems.setChoices(columns);
 	}
-	
+
 	@Override
 	public void initialize() {
 		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
+			.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
-		
+
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"column", String.class);
 		columnItems.setChoices(columns);

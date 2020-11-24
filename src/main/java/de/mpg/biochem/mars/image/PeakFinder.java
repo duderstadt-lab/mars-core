@@ -43,8 +43,9 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
 /**
- * For convenience instances of PeakFinder maintain the threshold, minimumDistance, and 
- * findNegativePeaks settings to allow for multiple findPeaks calls with the same settings.
+ * For convenience instances of PeakFinder maintain the threshold,
+ * minimumDistance, and findNegativePeaks settings to allow for multiple
+ * findPeaks calls with the same settings.
  * 
  * @author Karl Duderstadt
  */

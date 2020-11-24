@@ -62,11 +62,12 @@ import net.imglib2.RealLocalizable;
 import org.scijava.table.DoubleColumn;
 
 /**
- * Stores information about detected 2D intensity peaks. Implements {@link RealLocalizable} 
- * to allow for KDTree searches. Depending on the implementation, Peaks can be assigned a UID, 
- * colorName, Rsquared, as well as t and c position. All parameters from subpixel localization 
- * are included as well as error margins. Peaks can be linked to other peaks. The valid parameter
- * is used for convenience in tracking algorithms.
+ * Stores information about detected 2D intensity peaks. Implements
+ * {@link RealLocalizable} to allow for KDTree searches. Depending on the
+ * implementation, Peaks can be assigned a UID, colorName, Rsquared, as well as
+ * t and c position. All parameters from subpixel localization are included as
+ * well as error margins. Peaks can be linked to other peaks. The valid
+ * parameter is used for convenience in tracking algorithms.
  * 
  * @author Karl Duderstadt
  */

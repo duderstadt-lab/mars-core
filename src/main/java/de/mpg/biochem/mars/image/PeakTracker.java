@@ -56,12 +56,11 @@ import de.mpg.biochem.mars.util.MarsMath;
 
 /**
  * PeakTracker tracks the relative position of peaks over time based on peak
- * feature differences, minimum distance change, and minimum total
- * track length. Parameters are maintained for multiple rounds of 
- * tracking. The main processing method (track) accepts a map of 
- * all peaks for each position T, the final SingleMoleculeArchive 
- * that will contain the molecule records resulting from tracking
- * and the channel to set in the molecule records. 
+ * feature differences, minimum distance change, and minimum total track length.
+ * Parameters are maintained for multiple rounds of tracking. The main
+ * processing method (track) accepts a map of all peaks for each position T, the
+ * final SingleMoleculeArchive that will contain the molecule records resulting
+ * from tracking and the channel to set in the molecule records.
  * 
  * @author Karl Duderstadt
  */
@@ -89,35 +88,36 @@ public class PeakTracker {
 	private ConcurrentMap<Integer, List<PeakLink>> possibleLinks;
 
 	private LogService logService;
-	
-	public PeakTracker(double maxDifferenceX, double maxDifferenceY, double maxDifferenceT,
-			int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
-			boolean verbose, LogService logService, double pixelSize)
-		{
-			this.logService = logService;
-			this.verbose = verbose;
-			this.writeIntegration = writeIntegration;
-			
-			maxDifference = new double[6];
-			maxDifference[0] = Double.NaN;
-			maxDifference[1] = Double.NaN;
-			maxDifference[2] = maxDifferenceX;
-			maxDifference[3] = maxDifferenceY;
-			maxDifference[4] = Double.NaN;
-			maxDifference[5] = maxDifferenceT;
-			
-			ckMaxDifference = new boolean[3];
-			ckMaxDifference[0] = false;
-			ckMaxDifference[1] = false;
-			ckMaxDifference[2] = false;
-			
-			this.minimumDistance = minimumDistance;
-			this.minTrajectoryLength = minTrajectoryLength;
-			this.pixelSize = pixelSize;
 
-			if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
-			else searchRadius = maxDifference[3];
-		}
+	public PeakTracker(double maxDifferenceX, double maxDifferenceY,
+		double maxDifferenceT, int minimumDistance, int minTrajectoryLength,
+		boolean writeIntegration, boolean verbose, LogService logService,
+		double pixelSize)
+	{
+		this.logService = logService;
+		this.verbose = verbose;
+		this.writeIntegration = writeIntegration;
+
+		maxDifference = new double[6];
+		maxDifference[0] = Double.NaN;
+		maxDifference[1] = Double.NaN;
+		maxDifference[2] = maxDifferenceX;
+		maxDifference[3] = maxDifferenceY;
+		maxDifference[4] = Double.NaN;
+		maxDifference[5] = maxDifferenceT;
+
+		ckMaxDifference = new boolean[3];
+		ckMaxDifference[0] = false;
+		ckMaxDifference[1] = false;
+		ckMaxDifference[2] = false;
+
+		this.minimumDistance = minimumDistance;
+		this.minTrajectoryLength = minTrajectoryLength;
+		this.pixelSize = pixelSize;
+
+		if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
+		else searchRadius = maxDifference[3];
+	}
 
 	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference,
 		int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
@@ -348,16 +348,16 @@ public class PeakTracker {
 					// radius
 					// and perhaps we want to look at dy bigger than dx
 					// this is why we take the larger difference above...
-					if (ckMaxDifference[0] && Math.abs(linkFrom.getBaseline() -
-						linkTo.getBaseline()) > maxDifference[0]) valid = false;
-					else if (ckMaxDifference[1] && Math.abs(linkFrom.getHeight() -
-						linkTo.getHeight()) > maxDifference[1]) valid = false;
-					else if (Math.abs(linkFrom.getX() - linkTo.getX()) > maxDifference[2]) valid =
-						false;
-					else if (Math.abs(linkFrom.getY() - linkTo.getY()) > maxDifference[3]) valid =
-						false;
-					else if (ckMaxDifference[2] && Math.abs(linkFrom.getSigma() -
-						linkTo.getSigma()) > maxDifference[4]) valid = false;
+					if (ckMaxDifference[0] && Math.abs(linkFrom.getBaseline() - linkTo
+						.getBaseline()) > maxDifference[0]) valid = false;
+					else if (ckMaxDifference[1] && Math.abs(linkFrom.getHeight() - linkTo
+						.getHeight()) > maxDifference[1]) valid = false;
+					else if (Math.abs(linkFrom.getX() - linkTo.getX()) > maxDifference[2])
+						valid = false;
+					else if (Math.abs(linkFrom.getY() - linkTo.getY()) > maxDifference[3])
+						valid = false;
+					else if (ckMaxDifference[2] && Math.abs(linkFrom.getSigma() - linkTo
+						.getSigma()) > maxDifference[4]) valid = false;
 
 					if (valid) {
 						PeakLink link = new PeakLink(linkFrom, linkTo, radiusSearch
@@ -373,8 +373,8 @@ public class PeakTracker {
 			@Override
 			public int compare(PeakLink o1, PeakLink o2) {
 				// Sort by slice difference
-				if (o1.getTDifference() != o2.getTDifference()) return Double.compare(
-					o1.getTDifference(), o2.getTDifference());
+				if (o1.getTDifference() != o2.getTDifference()) return Double.compare(o1
+					.getTDifference(), o2.getTDifference());
 
 				// next sort by distance - the shorter linking distance wins...
 				return Double.compare(o1.getSquaredDistance(), o2.getSquaredDistance());
@@ -403,8 +403,7 @@ public class PeakTracker {
 		if (writeIntegration) columns.put("Intensity", new DoubleColumn(
 			"Intensity"));
 
-		if (verbose) for (int i =
-			0; i < TABLE_HEADERS_VERBOSE.length; i++)
+		if (verbose) for (int i = 0; i < TABLE_HEADERS_VERBOSE.length; i++)
 			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(
 				TABLE_HEADERS_VERBOSE[i]));
 

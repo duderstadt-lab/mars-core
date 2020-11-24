@@ -251,10 +251,10 @@ public class KCP {
 			double[] linefit = linearRegression(xData, yData, cp_positions.get(q),
 				cp_positions.get(q + 1) - cp_positions.get(q), step_analysis);
 
-			KCPSegment cur_segment = new KCPSegment(xData[cp_positions.get(q)], linefit[0] +
-				linefit[2] * xData[cp_positions.get(q)], xData[cp_positions.get(q + 1)],
-				linefit[0] + linefit[2] * xData[cp_positions.get(q + 1)], linefit[0],
-				linefit[1], linefit[2], linefit[3]);
+			KCPSegment cur_segment = new KCPSegment(xData[cp_positions.get(q)],
+				linefit[0] + linefit[2] * xData[cp_positions.get(q)], xData[cp_positions
+					.get(q + 1)], linefit[0] + linefit[2] * xData[cp_positions.get(q +
+						1)], linefit[0], linefit[1], linefit[2], linefit[3]);
 
 			segs.add(cur_segment);
 		}

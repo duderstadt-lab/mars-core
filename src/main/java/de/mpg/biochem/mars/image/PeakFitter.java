@@ -69,16 +69,9 @@ import de.mpg.biochem.mars.util.LevenbergMarquardt;
 /**
  * The PeakFitter determines the subpixel location of peaks with a symmetric
  * gaussian function that include a baseline parameter. LevenbergMarquardt is
- * used for optimization.
- * 
- * The final double array resulting from fitting has the following assignments:
- * p[0] = Baseline
- * p[1] = Height
- * p[2] = X
- * p[3] = Y
- * p[4] = Sigma
- * 
- * with the same order for the associated error double array e.
+ * used for optimization. The final double array resulting from fitting has the
+ * following assignments: p[0] = Baseline p[1] = Height p[2] = X p[3] = Y p[4] =
+ * Sigma with the same order for the associated error double array e.
  * 
  * @author Karl Duderstadt
  */
@@ -158,13 +151,14 @@ public class PeakFitter<T extends RealType<T> & NativeType<T>> {
 		this.precision = allowable_error;
 	}
 
-	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e, Rectangle roi)
+	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e,
+		Rectangle roi)
 	{
 		fitPeak(img, p, e, roi, false);
 	}
 
-	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e, Rectangle roi,
-		boolean findNegativePeaks)
+	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e,
+		Rectangle roi, boolean findNegativePeaks)
 	{
 
 		double[][] xs = new double[roi.width * roi.height][2];
@@ -211,70 +205,68 @@ public class PeakFitter<T extends RealType<T> & NativeType<T>> {
 		lm.precision = precision;
 		lm.solve(xs, ys, null, n, p, vary, e, 0.001);
 	}
-	
-	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e, 
-			Rectangle roi, double fitRegionThreshold, boolean findNegativePeaks)
-		{
-		
-			List<double[]> xyCoordinates = new ArrayList<double[]>();
 
-			RandomAccess<T> ra = img.randomAccess();
+	public void fitPeak(RandomAccessible<T> img, double[] p, double[] e,
+		Rectangle roi, double fitRegionThreshold, boolean findNegativePeaks)
+	{
 
-			for (int y = roi.y; y < roi.y + roi.height; y++) {
-				for (int x = roi.x; x < roi.x + roi.width; x++) {
-					double value = ra.setPositionAndGet(x, y).getRealDouble();
-					if (findNegativePeaks && value >= fitRegionThreshold)
-						continue;
-					else if (!findNegativePeaks && value <= fitRegionThreshold)
-						continue;
-					
-					double[] xy = new double[2];
-					xy[0] = x;
-					xy[1] = y;
-					xyCoordinates.add(xy);
-				}
+		List<double[]> xyCoordinates = new ArrayList<double[]>();
+
+		RandomAccess<T> ra = img.randomAccess();
+
+		for (int y = roi.y; y < roi.y + roi.height; y++) {
+			for (int x = roi.x; x < roi.x + roi.width; x++) {
+				double value = ra.setPositionAndGet(x, y).getRealDouble();
+				if (findNegativePeaks && value >= fitRegionThreshold) continue;
+				else if (!findNegativePeaks && value <= fitRegionThreshold) continue;
+
+				double[] xy = new double[2];
+				xy[0] = x;
+				xy[1] = y;
+				xyCoordinates.add(xy);
 			}
-			
-			if (xyCoordinates.size() == 0)
-				return;
-			
-			double[][] xs = new double[xyCoordinates.size()][2];
-			double[] ys = new double[xs.length];
-
-			int n = 0;
-			int max = 0;
-			int min = 0;
-			
-			for (double[] xy : xyCoordinates) {
-				xs[n][0] = xy[0];
-				xs[n][1] = xy[1];
-				ys[n] = ra.setPositionAndGet((int) xy[0], (int) xy[1]).getRealDouble();
-
-				if (ys[n] > ys[max]) max = n;
-				if (ys[n] < ys[min]) min = n;
-				n++;
-			}
-
-			// For fitting negative peaks we need to flip the min and max
-			if (findNegativePeaks) {
-				int tmpMax = max;
-				int tmpMin = min;
-				max = tmpMin;
-				min = tmpMax;
-			}
-
-			double[] guess = { ys[min], ys[max] - ys[min], xs[max][0], xs[max][1], 1 };
-
-			if (!Double.isNaN(p[2]) && !Double.isNaN(p[3])) {
-				p[0] = ys[min];
-				p[1] = ra.setPositionAndGet((int) p[2], (int) p[3]).getRealDouble() - p[0];
-			}
-
-			for (int i = 0; i < p.length; i++)
-				if (Double.isNaN(p[i])) p[i] = guess[i];
-
-			// fit peak
-			lm.precision = precision;
-			lm.solve(xs, ys, null, n, p, vary, e, 0.001);
 		}
+
+		if (xyCoordinates.size() == 0) return;
+
+		double[][] xs = new double[xyCoordinates.size()][2];
+		double[] ys = new double[xs.length];
+
+		int n = 0;
+		int max = 0;
+		int min = 0;
+
+		for (double[] xy : xyCoordinates) {
+			xs[n][0] = xy[0];
+			xs[n][1] = xy[1];
+			ys[n] = ra.setPositionAndGet((int) xy[0], (int) xy[1]).getRealDouble();
+
+			if (ys[n] > ys[max]) max = n;
+			if (ys[n] < ys[min]) min = n;
+			n++;
+		}
+
+		// For fitting negative peaks we need to flip the min and max
+		if (findNegativePeaks) {
+			int tmpMax = max;
+			int tmpMin = min;
+			max = tmpMin;
+			min = tmpMax;
+		}
+
+		double[] guess = { ys[min], ys[max] - ys[min], xs[max][0], xs[max][1], 1 };
+
+		if (!Double.isNaN(p[2]) && !Double.isNaN(p[3])) {
+			p[0] = ys[min];
+			p[1] = ra.setPositionAndGet((int) p[2], (int) p[3]).getRealDouble() -
+				p[0];
+		}
+
+		for (int i = 0; i < p.length; i++)
+			if (Double.isNaN(p[i])) p[i] = guess[i];
+
+		// fit peak
+		lm.precision = precision;
+		lm.solve(xs, ys, null, n, p, vary, e, 0.001);
+	}
 }

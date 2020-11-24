@@ -90,11 +90,11 @@ import ome.xml.meta.OMEXMLMetadata;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
- * peaks for integration can be provided as OvalRois or PointRois in the RoiManger with the
- * format UID_LONG or UID_SHORT for long and short wavelengths. The positions
- * given are integrated for all T for all colors specified to generate a 
- * SingleMoleculeArchive in which all molecule record tables have columns for
- * all integrated colors.
+ * peaks for integration can be provided as OvalRois or PointRois in the
+ * RoiManger with the format UID_LONG or UID_SHORT for long and short
+ * wavelengths. The positions given are integrated for all T for all colors
+ * specified to generate a SingleMoleculeArchive in which all molecule record
+ * tables have columns for all integrated colors.
  * 
  * @author Karl Duderstadt
  */
@@ -149,7 +149,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-	
+
 	@Parameter(label = "LONG x0")
 	private int LONGx0 = 0;
 
@@ -200,7 +200,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
-	
+
 	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
@@ -237,7 +237,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"scifio.metadata.global");
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info("Unable to extract OME Metadata. Generating OME metadata from dimensions.");
+				logService.info(
+					"Unable to extract OME Metadata. Generating OME metadata from dimensions.");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 						dataset);
@@ -295,63 +296,69 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		logService.info(log);
-		
-		//If running in headless mode. Make sure metadata was initialized.
+
+		// If running in headless mode. Make sure metadata was initialized.
 		if (marsOMEMetadata == null) {
 			logService.info("Initializing MarsOMEMetadata...");
 			initialize();
 		}
-		
+
 		if (peakIntegrationMaps.size() > 0) {
 			logService.info("Using IntegrationMaps...");
-		} else if (peakIntegrationMaps.size() == 0 && roiManager == null) {
-			logService.info("No ROIs found in RoiManager and no IntegrationMaps were provided. Nothing to integrate.");
+		}
+		else if (peakIntegrationMaps.size() == 0 && roiManager == null) {
+			logService.info(
+				"No ROIs found in RoiManager and no IntegrationMaps were provided. Nothing to integrate.");
 			logService.info(LogBuilder.endBlock(false));
-			return;	
-		} else if (peakIntegrationMaps.size() == 0 && roiManager != null && roiManager.getCount() > 0) {
+			return;
+		}
+		else if (peakIntegrationMaps.size() == 0 && roiManager != null && roiManager
+			.getCount() > 0)
+		{
 			logService.info("Building integration lists from ROIs in RoiManager");
 			buildIntegrationLists();
 		}
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
-		
+
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-		
+
 		// INTEGRATE PEAKS
-		MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(progressInteger.get(), marsOMEMetadata
-						.getImage(0).getPlaneCount(),
-						"Integrating Molecules in " + dataset.getName()), () -> marsOMEMetadata.getImage(0).planes().forEach(
-							plane -> {
-								integratePeaksInT(plane.getC(), plane.getT());
-								progressInteger.incrementAndGet();
-							}), PARALLELISM_LEVEL);
-		
-		logService.info("Time: " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
-		
+		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+			.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0)
+				.getPlaneCount(), "Integrating Molecules in " + dataset.getName()),
+			() -> marsOMEMetadata.getImage(0).planes().forEach(plane -> {
+				integratePeaksInT(plane.getC(), plane.getT());
+				progressInteger.incrementAndGet();
+			}), PARALLELISM_LEVEL);
+
+		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+			starttime) / 60000, 2) + " minutes.");
+
 		// CREATE MOLECULE ARCHIVE
 		archive = new SingleMoleculeArchive("archive.yama");
 		archive.putMetadata(marsOMEMetadata);
 
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = buildChannelToTtoDtMap();
-		
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
+			buildChannelToTtoDtMap();
+
 		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
-		
+
 		Set<String> UIDs = new HashSet<String>();
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			for (int t : integrationMap.getMap().keySet())
 				UIDs.addAll(integrationMap.getMap().get(t).keySet());
 
 		progressInteger.set(0);
-		MarsUtil.forkJoinPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(progressInteger.get(), UIDs.size(), "Adding molecules to archive..."), 
-				() -> UIDs.parallelStream().forEach(UID -> 
-						buildMolecule(UID, imageIndex, channelToTtoDtMap)), PARALLELISM_LEVEL);
+		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+			.showStatus(progressInteger.get(), UIDs.size(),
+				"Adding molecules to archive..."), () -> UIDs.parallelStream().forEach(
+					UID -> buildMolecule(UID, imageIndex, channelToTtoDtMap)),
+			PARALLELISM_LEVEL);
 
 		archive.naturalOrderSortMoleculeIndex();
-		
+
 		// FINISH UP
 		statusService.clearStatus();
 		logService.info("Finished in " + DoubleRounder.round((System
@@ -370,11 +377,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			archive.logln("   ");
 		}
 	}
-	
+
 	private void buildIntegrationLists() {
 		final Interval longInterval = getLONGInterval();
 		final Interval shortInterval = getSHORTInterval();
-		
+
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
@@ -387,24 +394,31 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			// split UID from LONG or SHORT
 			String[] subStrings = rois[i].getName().split("_");
 			String UID = subStrings[0];
-			
-			//The pixel origin for OvalRois is at the upper left corner !!
-			//The pixel origin for PointRois is at the center !!
-			//We always use pixel center as origin when integrating peaks !!
+
+			// The pixel origin for OvalRois is at the upper left corner !!
+			// The pixel origin for PointRois is at the center !!
+			// We always use pixel center as origin when integrating peaks !!
 			double pixelOrginOffset = (rois[i] instanceof OvalRoi) ? -0.5 : 0;
 
-			double x = rois[i].getFloatBounds().x + pixelOrginOffset + rois[i].getFloatBounds().width/2;
-			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i].getFloatBounds().height/2;
+			double x = rois[i].getFloatBounds().x + pixelOrginOffset + rois[i]
+				.getFloatBounds().width / 2;
+			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i]
+				.getFloatBounds().height / 2;
 
 			Peak peak = new Peak(UID, x, y);
 
 			if (subStrings.length > 1) {
-				if (subStrings[1].equals("LONG") && MarsImageUtils.intervalContains(longInterval, x, y)) longIntegrationList.put(UID, peak);
-				else if (subStrings[1].equals("SHORT") && MarsImageUtils.intervalContains(shortInterval, x, y)) shortIntegrationList.put(UID,
-					peak);
-			} else {
-				if (MarsImageUtils.intervalContains(longInterval, x, y)) longIntegrationList.put(UID, peak);
-				else if (MarsImageUtils.intervalContains(shortInterval, x, y)) shortIntegrationList.put(UID, peak);
+				if (subStrings[1].equals("LONG") && MarsImageUtils.intervalContains(
+					longInterval, x, y)) longIntegrationList.put(UID, peak);
+				else if (subStrings[1].equals("SHORT") && MarsImageUtils
+					.intervalContains(shortInterval, x, y)) shortIntegrationList.put(UID,
+						peak);
+			}
+			else {
+				if (MarsImageUtils.intervalContains(longInterval, x, y))
+					longIntegrationList.put(UID, peak);
+				else if (MarsImageUtils.intervalContains(shortInterval, x, y))
+					shortIntegrationList.put(UID, peak);
 			}
 		}
 
@@ -413,41 +427,55 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			MutableModuleItem<String> channel = channelColors.get(i);
 			String colorOption = channel.getValue(this);
 
-			if (colorOption.equals("Short")) 
-				addIntegrationMap(channel.getName(), i, shortInterval, createColorIntegrationList(channel.getName(), shortIntegrationList));
-			else if (colorOption.equals("Long"))
-				addIntegrationMap(channel.getName(), i, longInterval, createColorIntegrationList(channel.getName(), longIntegrationList));
+			if (colorOption.equals("Short")) addIntegrationMap(channel.getName(), i,
+				shortInterval, createColorIntegrationList(channel.getName(),
+					shortIntegrationList));
+			else if (colorOption.equals("Long")) addIntegrationMap(channel.getName(),
+				i, longInterval, createColorIntegrationList(channel.getName(),
+					longIntegrationList));
 			else if (colorOption.equals("FRET")) {
-				addIntegrationMap(channel.getName() + " " + fretShortName, i, shortInterval, createColorIntegrationList(channel.getName(), shortIntegrationList));
-				addIntegrationMap(channel.getName() + " " + fretLongName, i, longInterval, createColorIntegrationList(channel.getName(), longIntegrationList));
+				addIntegrationMap(channel.getName() + " " + fretShortName, i,
+					shortInterval, createColorIntegrationList(channel.getName(),
+						shortIntegrationList));
+				addIntegrationMap(channel.getName() + " " + fretLongName, i,
+					longInterval, createColorIntegrationList(channel.getName(),
+						longIntegrationList));
 			}
 		}
 	}
-	
+
 	private Map<Integer, Map<Integer, Double>> buildChannelToTtoDtMap() {
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = new HashMap<Integer, Map<Integer, Double>>();
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
+			new HashMap<Integer, Map<Integer, Double>>();
 
 		// Let's build some maps from t to dt for each color...
-		for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0).getSizeC(); channelIndex++) {
+		for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
+			.getSizeC(); channelIndex++)
+		{
 			HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
 
 			final int finalChannelIndex = channelIndex;
-			marsOMEMetadata.getImage(0).planes().filter(plane -> plane.getC() == finalChannelIndex).forEach(plane -> 
-				tToDtMap.put(plane.getT(), plane.getDeltaTinSeconds()));
+			marsOMEMetadata.getImage(0).planes().filter(plane -> plane
+				.getC() == finalChannelIndex).forEach(plane -> tToDtMap.put(plane
+					.getT(), plane.getDeltaTinSeconds()));
 
 			channelToTtoDtMap.put(channelIndex, tToDtMap);
 		}
-		
+
 		return channelToTtoDtMap;
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c, int t) {	
-		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice((ImgPlus< T >) dataset.getImgPlus(), 0, c, t);
-		
+	private <T extends RealType<T> & NativeType<T>> void integratePeaksInT(int c,
+		int t)
+	{
+		RandomAccessibleInterval<T> img = MarsImageUtils.get2DHyperSlice(
+			(ImgPlus<T>) dataset.getImgPlus(), 0, c, t);
+
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
-			if (integrationMap.getC() == c)
-				MarsImageUtils.integratePeaks(img, integrationMap.getInterval(), new ArrayList<Peak>(integrationMap.getMap().get(t).values()), innerRadius, outerRadius);
+			if (integrationMap.getC() == c) MarsImageUtils.integratePeaks(img,
+				integrationMap.getInterval(), new ArrayList<Peak>(integrationMap
+					.getMap().get(t).values()), innerRadius, outerRadius);
 	}
 
 	private Map<Integer, Map<String, Peak>> createColorIntegrationList(
@@ -474,8 +502,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			newList.put(UID, new Peak(peakList.get(UID)));
 		return newList;
 	}
-	
-	private void buildMolecule(String UID, int imageIndex, Map<Integer, Map<Integer, Double>> channelToTtoDtMap) {
+
+	private void buildMolecule(String UID, int imageIndex,
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
+	{
 		MarsTable table = new MarsTable();
 
 		// Build columns
@@ -501,9 +531,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 			for (IntegrationMap integrationMap : peakIntegrationMaps) {
 				String name = integrationMap.getName();
-				if (integrationMap.getMap().containsKey(t) && integrationMap.getMap().get(t).containsKey(UID)) {
+				if (integrationMap.getMap().containsKey(t) && integrationMap.getMap()
+					.get(t).containsKey(UID))
+				{
 					Peak peak = integrationMap.getMap().get(t).get(UID);
-					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC()).get(t));
+					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC())
+						.get(t));
 					table.setValue(name, row, peak.getIntensity());
 					table.setValue(name + " background", row, peak.getMedianBackground());
 					table.setValue(name + " x", row, peak.getX());
@@ -527,73 +560,79 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		archive.put(molecule);
 		progressInteger.incrementAndGet();
 	}
-	
+
 	private class IntegrationMap {
+
 		private final String name;
 		private final int c;
 		private final Interval interval;
 		private final Map<Integer, Map<String, Peak>> peakMap;
-		
-		IntegrationMap(final String name, final int c, final Interval interval, final Map<Integer, Map<String, Peak>> peakMap) {
+
+		IntegrationMap(final String name, final int c, final Interval interval,
+			final Map<Integer, Map<String, Peak>> peakMap)
+		{
 			this.name = name;
 			this.c = c;
 			this.interval = interval;
 			this.peakMap = peakMap;
 		}
-		
+
 		String getName() {
 			return name;
 		}
-		
+
 		int getC() {
 			return c;
 		}
-		
+
 		Interval getInterval() {
 			return interval;
 		}
-		
+
 		Map<Integer, Map<String, Peak>> getMap() {
 			return peakMap;
 		}
 	}
-	
+
 	/**
-	 * This method accepts maps the specify peak locations
-	 * that should be integrated in the form of a map first
-	 * to T and then a Map From UID to Peak.
+	 * This method accepts maps the specify peak locations that should be
+	 * integrated in the form of a map first to T and then a Map From UID to Peak.
 	 * 
 	 * @param name Name of the peaks, usually the color.
 	 * @param c The channel index to integrate.
-	 * @param region The region of the ideal to integration. 0 for short and 1 for long.
+	 * @param region The region of the ideal to integration. 0 for short and 1 for
+	 *          long.
 	 * @param integrationMap Map from T to Map from UID to Peak.
 	 */
-	public void addIntegrationMap(final String name, final int c, final Interval interval, final Map<Integer, Map<String, Peak>> integrationMap) {
-		//Make sure all entries have a unique name and channel 
-		//by replacing existing entries with new ones.
-		for (int index=0; index < peakIntegrationMaps.size(); index++) {
+	public void addIntegrationMap(final String name, final int c,
+		final Interval interval,
+		final Map<Integer, Map<String, Peak>> integrationMap)
+	{
+		// Make sure all entries have a unique name and channel
+		// by replacing existing entries with new ones.
+		for (int index = 0; index < peakIntegrationMaps.size(); index++) {
 			IntegrationMap m = peakIntegrationMaps.get(index);
 			if (m.getName().equals(name) && m.getC() == c) {
 				peakIntegrationMaps.remove(index);
 				index--;
 			}
 		}
-			
-		peakIntegrationMaps.add(new IntegrationMap(name, c, interval, integrationMap));
+
+		peakIntegrationMaps.add(new IntegrationMap(name, c, interval,
+			integrationMap));
 	}
-	
+
 	public int getNumberOfIntegrationMaps() {
 		return peakIntegrationMaps.size();
 	}
-	
+
 	public Map<Integer, Map<String, Peak>> getIntegrationMap(String name, int c) {
-		Optional<IntegrationMap> peakMap = peakIntegrationMaps.stream().filter(m -> m.getName().equals(name) && m.getC() == c).findFirst();
-		if (peakMap.isPresent())
-			return peakMap.get().getMap();
-		else
-			return null;
+		Optional<IntegrationMap> peakMap = peakIntegrationMaps.stream().filter(
+			m -> m.getName().equals(name) && m.getC() == c).findFirst();
+		if (peakMap.isPresent()) return peakMap.get().getMap();
+		else return null;
 	}
-	
+
 	private void addInputParameterLog(LogBuilder builder) {
 		if (image != null) {
 			builder.addParameter("Image title", image.getTitle());
@@ -603,9 +642,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				builder.addParameter("Image directory", image
 					.getOriginalFileInfo().directory);
 			}
-		} else
-			builder.addParameter("Dataset name", dataset.getName());
-		
+		}
+		else builder.addParameter("Dataset name", dataset.getName());
+
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
@@ -619,9 +658,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		builder.addParameter("SHORT height", String.valueOf(SHORTheight));
 		builder.addParameter("FRET short wavelength name", fretShortName);
 		builder.addParameter("FRET short wavelength name", fretLongName);
-		if (marsOMEMetadata != null)
-			channelColors.forEach(channel -> builder.addParameter(channel.getName(),
-				channel.getValue(this)));
+		if (marsOMEMetadata != null) channelColors.forEach(channel -> builder
+			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
 	}
 
@@ -693,9 +731,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public int getLONGHeight() {
 		return LONGheight;
 	}
-	
+
 	public Interval getLONGInterval() {
-		return Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1, LONGy0 + LONGheight - 1);
+		return Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1,
+			LONGy0 + LONGheight - 1);
 	}
 
 	public void setSHORTx0(int SHORTx0) {
@@ -729,8 +768,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public int getSHORTHeight() {
 		return SHORTheight;
 	}
-	
+
 	public Interval getSHORTInterval() {
-		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1, SHORTy0 + SHORTheight - 1);
+		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1,
+			SHORTy0 + SHORTheight - 1);
 	}
 }

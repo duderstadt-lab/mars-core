@@ -29,7 +29,6 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -83,9 +82,9 @@ import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
-import ij.process.FloatPolygon;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import ij.process.FloatPolygon;
 
 @Plugin(type = Command.class, label = "Peak Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -93,8 +92,8 @@ import ij.plugin.frame.RoiManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'i'), @Menu(
 				label = "Peak Finder", weight = 1, mnemonic = 'p') })
-public class PeakFinderCommand extends
-	DynamicCommand implements Command, Initializable, Previewable
+public class PeakFinderCommand extends DynamicCommand implements Command,
+	Initializable, Previewable
 {
 
 	/**
@@ -166,16 +165,17 @@ public class PeakFinderCommand extends
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
-	
+
 	@Parameter(label = "Preview Roi:",
-			style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = {
-				"circle", "point" })
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
+			"point" })
 	private String previewRoiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE, persist = false)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
+		persist = false)
 	private int theT;
 
 	@Parameter(label = "Find negative peaks")
@@ -330,11 +330,11 @@ public class PeakFinderCommand extends
 			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
-			int zSize = (int) dataset.getImgPlus().dimension(zDim); 
-			
+			int zSize = (int) dataset.getImgPlus().dimension(zDim);
+
 			int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
-			int tSize = (int) dataset.getImgPlus().dimension(tDim); 
-			
+			int tSize = (int) dataset.getImgPlus().dimension(tDim);
+
 			final int frameCount = (swapZandT) ? zSize : tSize;
 
 			MarsUtil.forkJoinPoolBuilder(statusService, logService,
@@ -347,7 +347,8 @@ public class PeakFinderCommand extends
 							if (tpeaks.size() > 0) peakStack.put(t, tpeaks);
 						}), PARALLELISM_LEVEL);
 		}
-		else peakStack.put(theT, findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, fitPeaks, integrate));
+		else peakStack.put(theT, findPeaksInT(Integer.valueOf(channel), theT,
+			useDogFilter, fitPeaks, integrate));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -358,8 +359,7 @@ public class PeakFinderCommand extends
 
 		if (addToRoiManager) addToRoiManager();
 
-		if (image != null)
-			image.setRoi(startingRoi);
+		if (image != null) image.setRoi(startingRoi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
@@ -368,7 +368,7 @@ public class PeakFinderCommand extends
 
 	private void updateInterval() {
 		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, 
+			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1,
 				dataset.dimension(1) - 1);
 
 		if (image != null) {
@@ -378,8 +378,9 @@ public class PeakFinderCommand extends
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(int channel, int t, boolean useDogFilter,
-		boolean fitPeaks, boolean integrate)
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean fitPeaks,
+		boolean integrate)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
@@ -398,13 +399,13 @@ public class PeakFinderCommand extends
 			minimumDistance, findNegativePeaks);
 
 		if (fitPeaks) {
-			peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius, dogFilterRadius,
-				findNegativePeaks, RsquaredMin);
+			peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius,
+				dogFilterRadius, findNegativePeaks, RsquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 		}
 
 		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
-				integrationInnerRadius, integrationOuterRadius);
+			integrationInnerRadius, integrationOuterRadius);
 
 		return peaks;
 	}
@@ -476,14 +477,13 @@ public class PeakFinderCommand extends
 		int pCount = startingPeakNum;
 		if (!peaks.isEmpty()) {
 			for (Peak peak : peaks) {
-				//The pixel origin for OvalRois is at the upper left corner !!!!
-				//The pixel origin for PointRois is at the center !!!
-				Roi peakRoi = (previewRoiType.equals("point")) ? 
-					new PointRoi(peak.getDoublePosition(0), peak.getDoublePosition(1)) :
-					new OvalRoi( peak.getDoublePosition(0) + 0.5 - fitRadius, 
-							peak.getDoublePosition(1) + 0.5 - fitRadius, 
-							fitRadius * 2 , fitRadius * 2 );
-				
+				// The pixel origin for OvalRois is at the upper left corner !!!!
+				// The pixel origin for PointRois is at the center !!!
+				Roi peakRoi = (previewRoiType.equals("point")) ? new PointRoi(peak
+					.getDoublePosition(0), peak.getDoublePosition(1)) : new OvalRoi(peak
+						.getDoublePosition(0) + 0.5 - fitRadius, peak.getDoublePosition(1) +
+							0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
+
 				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
 				else peakRoi.setName(MarsMath.getUUID58());
 
@@ -510,25 +510,28 @@ public class PeakFinderCommand extends
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 				"tPeakCount", String.class);
 			if (!peaks.isEmpty()) {
-				
+
 				if (previewRoiType.equals("point")) {
 					Overlay overlay = new Overlay();
 					FloatPolygon poly = new FloatPolygon();
 					for (Peak p : peaks)
 						poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
-	
+
 					PointRoi peakRoi = new PointRoi(poly);
-					
+
 					overlay.add(peakRoi);
 					image.setOverlay(overlay);
-				} else {
+				}
+				else {
 					Overlay overlay = new Overlay();
 					for (Peak p : peaks) {
-						//The pixel origin for OvalRois is at the upper left corner !!!!
-						//The pixel origin for PointRois is at the center !!!
-						final OvalRoi roi = new OvalRoi( p.getDoublePosition(0) + 0.5 - fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
-						roi.setStrokeColor( Color.CYAN.darker() );
-						
+						// The pixel origin for OvalRois is at the upper left corner !!!!
+						// The pixel origin for PointRois is at the center !!!
+						final OvalRoi roi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+							fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
+								2, fitRadius * 2);
+						roi.setStrokeColor(Color.CYAN.darker());
+
 						overlay.add(roi);
 					}
 					image.setOverlay(overlay);
@@ -564,7 +567,8 @@ public class PeakFinderCommand extends
 				builder.addParameter("Image Directory", image
 					.getOriginalFileInfo().directory);
 			}
-		} else {
+		}
+		else {
 			builder.addParameter("Dataset Name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
@@ -660,11 +664,11 @@ public class PeakFinderCommand extends
 	public int getChannel() {
 		return Integer.valueOf(channel);
 	}
-	
+
 	public void setT(int theT) {
 		this.theT = theT;
 	}
-	
+
 	public int getT() {
 		return theT;
 	}

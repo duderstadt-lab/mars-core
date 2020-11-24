@@ -36,9 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -64,7 +62,6 @@ import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.table.MarsTable;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
@@ -214,11 +211,11 @@ public class MoleculeArchiveService extends
 	public void addArchive(MoleculeArchive archive) {
 		objectService.addObject(archive);
 	}
-	
+
 	public void removeArchive(String title) {
 		removeArchive(getArchive(title));
 	}
-	
+
 	public void removeArchive(MoleculeArchive archive) {
 		if (archive != null) objectService.removeObject(archive);
 

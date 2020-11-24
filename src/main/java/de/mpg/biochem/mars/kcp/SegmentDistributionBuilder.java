@@ -359,7 +359,8 @@ public class SegmentDistributionBuilder {
 						}
 						else {
 							// bootstrap_Segments must be true...
-							ArrayList<KCPSegment> resampledSegments = new ArrayList<KCPSegment>();
+							ArrayList<KCPSegment> resampledSegments =
+								new ArrayList<KCPSegment>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));
@@ -493,7 +494,8 @@ public class SegmentDistributionBuilder {
 						}
 						else {
 							// bootstrap_Segments must be true...
-							ArrayList<KCPSegment> resampledSegments = new ArrayList<KCPSegment>();
+							ArrayList<KCPSegment> resampledSegments =
+								new ArrayList<KCPSegment>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));

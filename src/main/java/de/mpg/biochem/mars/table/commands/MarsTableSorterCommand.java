@@ -72,9 +72,9 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 
 	@Parameter(label = "ascending")
 	private boolean ascending;
-	
+
 	// -- Callback methods --
-	
+
 	private void tableSelectionChanged() {
 		ArrayList<String> columns = new ArrayList<String>();
 		columns.addAll(table.getColumnHeadingList());

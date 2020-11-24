@@ -37,64 +37,56 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.scijava.table.DoubleColumn;
-
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.ops.OpService;
-import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import de.mpg.biochem.mars.table.MarsTable;
+
 import de.mpg.biochem.mars.util.Gaussian2D;
-import ij.ImagePlus;
-import ij.process.ImageProcessor;
 
 /**
- * Common utility functions for DoG filtering, peak finding, peak fitting and related operations. 
+ * Common utility functions for DoG filtering, peak finding, peak fitting and
+ * related operations.
  * 
  * @author Karl Duderstadt
  */
 public class MarsImageUtils {
-	
+
 	/**
-	 * Global innerOffset integration position cache. Maps
-	 * innerRadius to lists of x, y offsets.
+	 * Global innerOffset integration position cache. Maps innerRadius to lists of
+	 * x, y offsets.
 	 */
 	private static Map<Integer, List<int[]>> innerOffsetCache;
-	
+
 	/**
-	 * Global outerOffset integration position cache. Maps
-	 * innerRadius, outerRadius to list of x, y offsets.
+	 * Global outerOffset integration position cache. Maps innerRadius,
+	 * outerRadius to list of x, y offsets.
 	 */
 	private static Map<Integer[], List<int[]>> outerOffsetCache;
-	
+
 	/**
-	 * This method creates a list of integer x, y offsets from 
-	 * a central point based on the provided radius. The offset
-	 * list can be used to efficiently visit the neighborhood of 
-	 * x, y positions around a central integration position.
+	 * This method creates a list of integer x, y offsets from a central point
+	 * based on the provided radius. The offset list can be used to efficiently
+	 * visit the neighborhood of x, y positions around a central integration
+	 * position.
 	 * 
 	 * @param innerRadius Inner integration radius.
 	 */
 	public synchronized static List<int[]> innerOffets(int innerRadius) {
-		if (innerOffsetCache == null)
-			innerOffsetCache = new HashMap<Integer, List<int[]>>();
-		
+		if (innerOffsetCache == null) innerOffsetCache =
+			new HashMap<Integer, List<int[]>>();
+
 		if (!innerOffsetCache.containsKey(innerRadius)) {
 			ArrayList<int[]> innerOffsets = new ArrayList<int[]>();
 
@@ -112,29 +104,29 @@ public class MarsImageUtils {
 			}
 			innerOffsetCache.put(innerRadius, innerOffsets);
 		}
-		
+
 		return innerOffsetCache.get(innerRadius);
 	}
 
 	/**
-	 * This method creates a list of integer x, y offsets between 
-	 * the provided inner radius and outer radius. The offset list 
-	 * can be used to efficiently visit the background neighborhood of 
-	 * x, y positions forming an outside ring around a central 
-	 * integration position.
+	 * This method creates a list of integer x, y offsets between the provided
+	 * inner radius and outer radius. The offset list can be used to efficiently
+	 * visit the background neighborhood of x, y positions forming an outside ring
+	 * around a central integration position.
 	 * 
 	 * @param innerRadius Inner integration radius.
 	 * @param outerRadius Outer integration radius.
 	 */
 	public synchronized static List<int[]> outerOffets(int innerRadius,
-			int outerRadius) {
-		if (outerOffsetCache == null) 
-			outerOffsetCache = new HashMap<Integer[], List<int[]>>();
-		
+		int outerRadius)
+	{
+		if (outerOffsetCache == null) outerOffsetCache =
+			new HashMap<Integer[], List<int[]>>();
+
 		Integer[] radii = new Integer[2];
 		radii[0] = innerRadius;
 		radii[1] = outerRadius;
-		
+
 		if (!outerOffsetCache.containsKey(radii)) {
 			ArrayList<int[]> outerOffsets = new ArrayList<int[]>();
 
@@ -152,24 +144,23 @@ public class MarsImageUtils {
 			}
 			outerOffsetCache.put(radii, outerOffsets);
 		}
-		
+
 		return outerOffsetCache.get(radii);
 	}
 
 	/**
-	 * This method returned a list of peaks in the 2D image 
-	 * within the interval specified that are above the pixel value 
-	 * threshold specified. The local maximum within the minimum distance
-	 * is always chosen. The point in time provided is set 
-	 * for all peaks returned. Negative peaks can be located
-	 * if desired.
+	 * This method returned a list of peaks in the 2D image within the interval
+	 * specified that are above the pixel value threshold specified. The local
+	 * maximum within the minimum distance is always chosen. The point in time
+	 * provided is set for all peaks returned. Negative peaks can be located if
+	 * desired.
 	 * 
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to search for peaks in the image.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
 	 * @param minimumDistance The minimum allowed distance between peaks.
-	 * @param findNegativePeaks Whether to search for negative peaks. 
+	 * @param findNegativePeaks Whether to search for negative peaks.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
 		RandomAccessible<T> img, Interval interval, int t, double threshold,
@@ -186,14 +177,12 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * This method uses the OpService to apply a Difference of Gaussian
-	 * (DoG) filter on a 2D image provided. The dog filter op requires two sigmas
-	 * that are used to generate two images and the difference of these images
-	 * is returned. The relationship between dogFilterRadius and the two
-	 * sigmas is the following:
-	 * 
-	 * sigma1 = dogFilterRadius / sqrt(2) * 1.1
-	 * sigma2 = dogFilterRadius / sqrt(2) * 0.9
+	 * This method uses the OpService to apply a Difference of Gaussian (DoG)
+	 * filter on a 2D image provided. The dog filter op requires two sigmas that
+	 * are used to generate two images and the difference of these images is
+	 * returned. The relationship between dogFilterRadius and the two sigmas is
+	 * the following: sigma1 = dogFilterRadius / sqrt(2) * 1.1 sigma2 =
+	 * dogFilterRadius / sqrt(2) * 0.9
 	 * 
 	 * @param img 2D image that will be dog filtered.
 	 * @param dogFilterRadius Radius to use for dog filtering.
@@ -215,19 +204,22 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * Given a 2D image and a list of peak positions in pixels, this function 
-	 * performs subpixel 2D gaussian fitting and updates the peak positions accordingly. 
-	 * If the R-squared from fitting is below the threshold provided, the whole
-	 * pixel position is left unchanged. The image is mirrored for pixel values
-	 * beyond the interval provided. The starting guess for sigma is half initialSize.
+	 * Given a 2D image and a list of peak positions in pixels, this function
+	 * performs subpixel 2D gaussian fitting and updates the peak positions
+	 * accordingly. If the R-squared from fitting is below the threshold provided,
+	 * the whole pixel position is left unchanged. The image is mirrored for pixel
+	 * values beyond the interval provided. The starting guess for sigma is half
+	 * initialSize.
 	 * 
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param fitRadius The radius of the square region of pixels to use for fitting.
+	 * @param fitRadius The radius of the square region of pixels to use for
+	 *          fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
-	 * @param RsquaredMin The mininmum allowed R-squared value below which fits are rejected.  
+	 * @param RsquaredMin The mininmum allowed R-squared value below which fits
+	 *          are rejected.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -284,21 +276,23 @@ public class MarsImageUtils {
 		}
 		return newList;
 	}
-	
+
 	/**
-	 * Given a 2D image and a list of peak positions in pixels, this function 
-	 * performs subpixel 2D gaussian fitting and updates the peak positions accordingly. 
-	 * If the R-squared from fitting is below the threshold provided, the whole
-	 * pixel position is left unchanged. The image is mirrored for pixel values
-	 * beyond the interval provided. The starting guess for sigma is half initialSize.
+	 * Given a 2D image and a list of peak positions in pixels, this function
+	 * performs subpixel 2D gaussian fitting and updates the peak positions
+	 * accordingly. If the R-squared from fitting is below the threshold provided,
+	 * the whole pixel position is left unchanged. The image is mirrored for pixel
+	 * values beyond the interval provided. The starting guess for sigma is half
+	 * initialSize.
 	 * 
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param fitRadius The radius of the square region of pixels to use for fitting.
+	 * @param fitRadius The radius of the square region of pixels to use for
+	 *          fitting.
 	 * @param initialSize A starting guess for the peak size.
-	 * @param fitRegionThreshold The threshold pixel value for the region to fit. 
-	 * @param findNegativePeaks Whether negative peaks are being fit. 
+	 * @param fitRegionThreshold The threshold pixel value for the region to fit.
+	 * @param findNegativePeaks Whether negative peaks are being fit.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -313,11 +307,11 @@ public class MarsImageUtils {
 
 		RandomAccessible<T> rae = Views.extendMirrorSingle(Views.interval(img,
 			interval));
-		
+
 		for (Peak peak : peaks) {
-			
+
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
-					(int) (peak.getY() - radius), fitWidth, fitWidth);
+				(int) (peak.getY() - radius), fitWidth, fitWidth);
 
 			double[] p = new double[5];
 			p[0] = Double.NaN;
@@ -326,8 +320,9 @@ public class MarsImageUtils {
 			p[3] = peak.getY();
 			p[4] = initialSize / 2;
 			double[] e = new double[5];
-			
-			fitter.fitPeak(rae, p, e, subregion, fitRegionThreshold, findNegativePeaks);
+
+			fitter.fitPeak(rae, p, e, subregion, fitRegionThreshold,
+				findNegativePeaks);
 
 			peak.setValid();
 
@@ -347,14 +342,15 @@ public class MarsImageUtils {
 		return newList;
 	}
 
-
 	/**
-	 * This method calculates the R-squared for the 2D gaussian provided 
-	 * within the radius specified for the image given as a RandomAccess.
+	 * This method calculates the R-squared for the 2D gaussian provided within
+	 * the radius specified for the image given as a RandomAccess.
 	 * 
 	 * @param ra 2D image containing peak used for the R-squared calculation.
-	 * @param radius The radius of the square region used for the R-squared calculation.
-	 * @param gauss The 2D gaussian from fitting to use for the R-squared calculation. 
+	 * @param radius The radius of the square region used for the R-squared
+	 *          calculation.
+	 * @param gauss The 2D gaussian from fitting to use for the R-squared
+	 *          calculation.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> double calcR2(
 		RandomAccess<T> ra, int radius, Gaussian2D gauss)
@@ -363,7 +359,7 @@ public class MarsImageUtils {
 		double SStot = 0;
 		double mean = 0;
 		double count = 0;
-		
+
 		int x1 = (int) (gauss.x - radius);
 		int x2 = (int) (gauss.x + radius);
 		int y1 = (int) (gauss.y - radius);
@@ -392,12 +388,15 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * This method removes peaks from the provided list that are closer than 
-	 * the minimum distance given. If two peaks are closer than the minimum distance,
-	 * the peak with the lower R-squared value, indicating a poorer fit, will be removed.
+	 * This method removes peaks from the provided list that are closer than the
+	 * minimum distance given. If two peaks are closer than the minimum distance,
+	 * the peak with the lower R-squared value, indicating a poorer fit, will be
+	 * removed.
 	 * 
-	 * @param peaks The list of peaks that nearest neighbors should be removed from.
-	 * @param minimumDistance The smallest allowed distance between peaks in pixels.
+	 * @param peaks The list of peaks that nearest neighbors should be removed
+	 *          from.
+	 * @param minimumDistance The smallest allowed distance between peaks in
+	 *          pixels.
 	 * @return A new peak list with nearest neighbors removed.
 	 */
 	public static List<Peak> removeNearestNeighbors(List<Peak> peaks,
@@ -460,17 +459,19 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * This method integrates the intensity of peaks in the 2D image provided. The interval 
-	 * given is mirrored at the edges for pixel values that lie outside the boundaries. The values 
-	 * of all pixels within the region defined by the innerRadius are summed. The median value of 
-	 * the pixels between innerRadius and outerRadius is subtracted from each pixel in the sum to 
-	 * yield the background corrected total intensity.
+	 * This method integrates the intensity of peaks in the 2D image provided. The
+	 * interval given is mirrored at the edges for pixel values that lie outside
+	 * the boundaries. The values of all pixels within the region defined by the
+	 * innerRadius are summed. The median value of the pixels between innerRadius
+	 * and outerRadius is subtracted from each pixel in the sum to yield the
+	 * background corrected total intensity.
 	 * 
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to mirror at the edges during integration.
 	 * @param peaks The Peaks to integrate.
 	 * @param innerRadius The region to integrate.
-	 * @param outerRadius The outer radius of the region used to calculate the background.
+	 * @param outerRadius The outer radius of the region used to calculate the
+	 *          background.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> void integratePeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks,
@@ -478,10 +479,10 @@ public class MarsImageUtils {
 	{
 		RandomAccessibleInterval<T> view = Views.interval(img, interval);
 		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
-		
+
 		List<int[]> innerOffsets = innerOffets(innerRadius);
 		List<int[]> outerOffsets = outerOffets(innerRadius, outerRadius);
-		
+
 		for (Peak peak : peaks) {
 			// Type casting from double to int rounds down always, so we have to add
 			// 0.5 offset to be correct.
@@ -491,34 +492,35 @@ public class MarsImageUtils {
 			if (x == Double.NaN || y == Double.NaN) {
 				peak.setIntensity(Double.NaN);
 				peak.setMedianBackground(Double.NaN);
-			} else {
+			}
+			else {
 				double intensity = 0;
 				ArrayList<Double> outerPixelValues = new ArrayList<Double>();
-				
-				for (int i=0 ; i < innerOffsets.size(); i++) {
+
+				for (int i = 0; i < innerOffsets.size(); i++) {
 					int[] circleOffset = innerOffsets.get(i);
-					
+
 					intensity += ra.setPositionAndGet(x + circleOffset[0], y +
 						circleOffset[1]).getRealDouble();
 				}
-				
-				for (int i=0 ; i < outerOffsets.size(); i++) {
+
+				for (int i = 0; i < outerOffsets.size(); i++) {
 					int[] circleOffset = outerOffsets.get(i);
-					
+
 					outerPixelValues.add(ra.setPositionAndGet(x + circleOffset[0], y +
 						circleOffset[1]).getRealDouble());
 				}
-	
+
 				Collections.sort(outerPixelValues);
 				double outerMedian;
 				if (outerPixelValues.size() % 2 == 0) outerMedian =
 					((double) outerPixelValues.get(outerPixelValues.size() / 2) +
 						(double) outerPixelValues.get(outerPixelValues.size() / 2 - 1)) / 2;
-				else outerMedian = (double) outerPixelValues.get(outerPixelValues.size() /
-					2);
-	
+				else outerMedian = (double) outerPixelValues.get(outerPixelValues
+					.size() / 2);
+
 				intensity -= outerMedian * innerOffsets.size();
-				
+
 				peak.setIntensity(intensity);
 				peak.setMedianBackground(outerMedian);
 			}
@@ -526,9 +528,10 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * Convenience method to retrieve a 2D view from an ImgPlus for a given z, c, and t. 
-	 * Axis positions are based on a zero index. This method reslices along c, t, 
-	 * and z. Therefore, for higher dimensional images, the output may be more than 2D.
+	 * Convenience method to retrieve a 2D view from an ImgPlus for a given z, c,
+	 * and t. Axis positions are based on a zero index. This method reslices along
+	 * c, t, and z. Therefore, for higher dimensional images, the output may be
+	 * more than 2D.
 	 * 
 	 * @param img ImgPlus provide a view from.
 	 * @param z The Z axis position.
@@ -564,13 +567,15 @@ public class MarsImageUtils {
 		return Views.interval(frameImg, Intervals.createMinSize(0, 0, img.dimension(
 			0), img.dimension(1)));
 	}
-	
-	public static boolean intervalContains(final Interval interval, double... location) {
-		for (int d=0; d < location.length; d++)
+
+	public static boolean intervalContains(final Interval interval,
+		double... location)
+	{
+		for (int d = 0; d < location.length; d++)
 			if (location[d] < interval.min(d) && location[d] > interval.max(d))
 				return false;
 
 		return true;
 	}
-	
+
 }
