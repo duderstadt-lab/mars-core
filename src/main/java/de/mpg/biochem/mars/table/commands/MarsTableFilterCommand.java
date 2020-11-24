@@ -59,7 +59,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 {
 
 	@Parameter
-	private MarsTableService resultsTableService;
+	private MarsTableService marsTableService;
 
 	@Parameter
 	private UIService uiService;
@@ -67,7 +67,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 	@Parameter
 	private LogService logService;
 
-	@Parameter(label = "Table", callback = "updateMinMax", choices = { "a", "b",
+	@Parameter(label = "Table", callback = "tableSelectionChanged", choices = { "a", "b",
 		"c" })
 	private MarsTable table;
 
@@ -100,9 +100,21 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 	private boolean includeSelection = true;
 
 	// -- Callback methods --
+	
+	private void tableSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(table.getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
+
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"columnName", String.class);
+		columnItems.setChoices(columns);
+		
+		updateMinMax();
+	}
 
 	private void updateMinMax() {
-		if (table.get(columnName) != null) {
+		if (table != null && table.hasColumn(columnName)) {
 			min = max = table.getValue(columnName, 0);
 
 			for (double value : (DoubleColumn) table.get(columnName)) {
@@ -118,9 +130,15 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
+		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"columnName", String.class);
-		columnItems.setChoices(resultsTableService.getColumnNames());
+		columnItems.setChoices(columns);
+		
+		updateMinMax();
 	}
 
 	// -- Runnable methods --

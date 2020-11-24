@@ -90,14 +90,14 @@ public class KCPCommand extends DynamicCommand implements Command,
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "MoleculeArchive")
+	@Parameter(callback = "archiveSelectionChanged", label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "X Column", choices = { "a", "b", "c" })
-	private String Xcolumn;
+	private String xColumn;
 
 	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
-	private String Ycolumn;
+	private String yColumn;
 
 	@Parameter(label = "Confidence value")
 	private double confidenceLevel = 0.99;
@@ -138,15 +138,34 @@ public class KCPCommand extends DynamicCommand implements Command,
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	private final AtomicInteger numFinished = new AtomicInteger(0);
 
+	// -- Callback methods --
+	private void archiveSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(archive.properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
+
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
+	}
+	
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput(
-			"Xcolumn", String.class);
-		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
 
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput(
-			"Ycolumn", String.class);
-		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
 	}
 
 	@Override
@@ -235,8 +254,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 			forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 				Molecule molecule = archive.get(i);
 
-				if (molecule.getTable().hasColumn(Xcolumn) && molecule.getTable()
-					.hasColumn(Ycolumn))
+				if (molecule.getTable().hasColumn(xColumn) && molecule.getTable()
+					.hasColumn(yColumn))
 				{
 					findChangePoints(molecule);
 					archive.put(molecule);
@@ -287,11 +306,11 @@ public class KCPCommand extends DynamicCommand implements Command,
 		ArrayList<Double> xDataSafe = new ArrayList<Double>();
 		ArrayList<Double> yDataSafe = new ArrayList<Double>();
 		for (int i = 0; i < datatable.getRowCount(); i++) {
-			if (!Double.isNaN(datatable.getValue(Xcolumn, i)) && !Double.isNaN(
-				datatable.getValue(Ycolumn, i)))
+			if (!Double.isNaN(datatable.getValue(xColumn, i)) && !Double.isNaN(
+				datatable.getValue(yColumn, i)))
 			{
-				xDataSafe.add(datatable.getValue(Xcolumn, i));
-				yDataSafe.add(datatable.getValue(Ycolumn, i));
+				xDataSafe.add(datatable.getValue(xColumn, i));
+				yDataSafe.add(datatable.getValue(yColumn, i));
 			}
 		}
 
@@ -351,7 +370,7 @@ public class KCPCommand extends DynamicCommand implements Command,
 			KCPSegment segment = new KCPSegment(Double.NaN, Double.NaN, Double.NaN,
 				Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 			segs.add(segment);
-			molecule.putSegmentsTable(Xcolumn, Ycolumn, buildSegmentTable(segs));
+			molecule.putSegmentsTable(xColumn, yColumn, buildSegmentTable(segs));
 			numFinished.incrementAndGet();
 			return;
 		}
@@ -359,8 +378,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 		// Use global sigma or use local sigma or calculate sigma (in this order of
 		// priority)
 		double sigma = global_sigma;
-		if (molecule.hasParameter(Ycolumn + "_sigma")) {
-			sigma = molecule.getParameter(Ycolumn + "_sigma");
+		if (molecule.hasParameter(yColumn + "_sigma")) {
+			sigma = molecule.getParameter(yColumn + "_sigma");
 		}
 		else if (molecule.hasRegion(backgroundRegion)) {
 			if (calcBackgroundSigma) sigma = KCP.calc_sigma(yData, SigXstart,
@@ -374,9 +393,9 @@ public class KCPCommand extends DynamicCommand implements Command,
 			step_analysis);
 		try {
 			MarsTable segmentsTable = buildSegmentTable(change.generate_segments());
-			if (region) molecule.putSegmentsTable(Xcolumn, Ycolumn, regionName,
+			if (region) molecule.putSegmentsTable(xColumn, yColumn, regionName,
 				segmentsTable);
-			else molecule.putSegmentsTable(Xcolumn, Ycolumn, segmentsTable);
+			else molecule.putSegmentsTable(xColumn, yColumn, segmentsTable);
 		}
 		catch (ArrayIndexOutOfBoundsException e) {
 			logService.error("Out of Bounds Exception");
@@ -421,8 +440,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("X Column", Xcolumn);
-		builder.addParameter("Y Column", Ycolumn);
+		builder.addParameter("X Column", xColumn);
+		builder.addParameter("Y Column", yColumn);
 		builder.addParameter("Confidence value", String.valueOf(confidenceLevel));
 		builder.addParameter("Global sigma", String.valueOf(global_sigma));
 		builder.addParameter("Region Source", regionSource);
@@ -450,20 +469,20 @@ public class KCPCommand extends DynamicCommand implements Command,
 		return archive;
 	}
 
-	public void setXcolumn(String Xcolumn) {
-		this.Xcolumn = Xcolumn;
+	public void setxColumn(String xColumn) {
+		this.xColumn = xColumn;
 	}
 
-	public String getXcolumn() {
-		return Xcolumn;
+	public String getxColumn() {
+		return xColumn;
 	}
 
-	public void setYcolumn(String Ycolumn) {
-		this.Ycolumn = Ycolumn;
+	public void setyColumn(String yColumn) {
+		this.yColumn = yColumn;
 	}
 
-	public String getYcolumn() {
-		return Ycolumn;
+	public String getyColumn() {
+		return yColumn;
 	}
 
 	public void setConfidenceLevel(double confidenceLevel) {

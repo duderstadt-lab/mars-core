@@ -133,20 +133,6 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 			.collect(Collectors.toList());
 	}
 
-	public ArrayList<String> getColumnNames() {
-		Set<String> columnSet = new LinkedHashSet<String>();
-		List<MarsTable> tables = getTables();
-
-		tables.forEach(table -> columnSet.addAll(table.getColumnHeadingList()));
-
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(columnSet);
-
-		columns.sort(String::compareToIgnoreCase);
-
-		return columns;
-	}
-
 	public MarsTable createTable(ResultsTable resultsTable) {
 		MarsTable table = new MarsTable("Imported IJ1 ResultsTable");
 

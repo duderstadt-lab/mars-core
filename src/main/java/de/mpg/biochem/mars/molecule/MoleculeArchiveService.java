@@ -253,32 +253,6 @@ public class MoleculeArchiveService extends
 		}
 	}
 
-	public ArrayList<String> getColumnNames() {
-		Set<String> columnSet = new LinkedHashSet<String>();
-		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
-
-		archives.forEach(archive -> columnSet.addAll(archive.properties()
-			.getColumnSet()));
-
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(columnSet);
-
-		columns.sort(String::compareToIgnoreCase);
-
-		return columns;
-	}
-
-	public Set<ArrayList<String>> getSegmentTableNames() {
-		Set<ArrayList<String>> segTableNames =
-			new LinkedHashSet<ArrayList<String>>();
-		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
-
-		archives.forEach(archive -> segTableNames.addAll(archive.properties()
-			.getSegmentsTableNames()));
-
-		return segTableNames;
-	}
-
 	public ArrayList<String> getArchiveNames() {
 		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
 

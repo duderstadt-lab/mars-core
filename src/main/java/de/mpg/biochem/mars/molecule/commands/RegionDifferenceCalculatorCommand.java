@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -80,14 +81,14 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "MoleculeArchive")
+	@Parameter(callback = "archiveSelectionChanged", label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "X Column", choices = { "a", "b", "c" })
-	private String Xcolumn;
+	private String xColumn;
 
 	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
-	private String Ycolumn;
+	private String yColumn;
 
 	@Parameter(label = "Region source:",
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "Molecules",
@@ -103,15 +104,34 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	@Parameter(label = "Parameter Name")
 	private String ParameterName;
 
+	// -- Callback methods --
+	private void archiveSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(archive.properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
+
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
+	}
+	
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput(
-			"Xcolumn", String.class);
-		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
 
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput(
-			"Ycolumn", String.class);
-		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
 	}
 
 	@Override
@@ -148,10 +168,10 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 
 				MarsTable datatable = molecule.getTable();
 
-				double region1_mean = datatable.mean(Ycolumn, Xcolumn, molecule
+				double region1_mean = datatable.mean(yColumn, xColumn, molecule
 					.getRegion(regionOneName).getStart(), molecule.getRegion(
 						regionOneName).getEnd());
-				double region2_mean = datatable.mean(Ycolumn, Xcolumn, molecule
+				double region2_mean = datatable.mean(yColumn, xColumn, molecule
 					.getRegion(regionTwoName).getStart(), molecule.getRegion(
 						regionTwoName).getEnd());
 
@@ -192,9 +212,9 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 				Molecule molecule = archive.get(UID);
 				MarsTable datatable = molecule.getTable();
 
-				double region1_mean = datatable.mean(Ycolumn, Xcolumn, regionOne
+				double region1_mean = datatable.mean(yColumn, xColumn, regionOne
 					.getStart(), regionOne.getEnd());
-				double region2_mean = datatable.mean(Ycolumn, Xcolumn, regionTwo
+				double region2_mean = datatable.mean(yColumn, xColumn, regionTwo
 					.getStart(), regionTwo.getEnd());
 
 				molecule.setParameter(ParameterName, region1_mean - region2_mean);
@@ -215,8 +235,8 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("X Column", Xcolumn);
-		builder.addParameter("Y Column", Ycolumn);
+		builder.addParameter("X Column", xColumn);
+		builder.addParameter("Y Column", yColumn);
 		builder.addParameter("Region source", regionSource);
 		builder.addParameter("Region 1 name", regionOneName);
 		builder.addParameter("Region 2 name", regionTwoName);
@@ -255,20 +275,20 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		return archive;
 	}
 
-	public void setXcolumn(String Xcolumn) {
-		this.Xcolumn = Xcolumn;
+	public void setxColumn(String xColumn) {
+		this.xColumn = xColumn;
 	}
 
-	public String getXcolumn() {
-		return Xcolumn;
+	public String getxColumn() {
+		return xColumn;
 	}
 
-	public void setYcolumn(String Ycolumn) {
-		this.Ycolumn = Ycolumn;
+	public void setyColumn(String yColumn) {
+		this.yColumn = yColumn;
 	}
 
-	public String getYcolumn() {
-		return Ycolumn;
+	public String getyColumn() {
+		return yColumn;
 	}
 
 	public void setRegionSource(String regionSource) {

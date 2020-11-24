@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.kcp.commands;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -76,14 +77,14 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "MoleculeArchive")
+	@Parameter(callback = "archiveSelectionChanged", label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "X Column", choices = { "a", "b", "c" })
-	private String Xcolumn;
+	private String xColumn;
 
 	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
-	private String Ycolumn;
+	private String yColumn;
 
 	@Parameter(label = "Region type:",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "All",
@@ -99,15 +100,34 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Region")
 	private String regionName;
 
+	// -- Callback methods --
+	private void archiveSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(archive.properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
+
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
+	}
+	
 	@Override
 	public void initialize() {
-		final MutableModuleItem<String> XcolumnItems = getInfo().getMutableInput(
-			"Xcolumn", String.class);
-		XcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
+			"xColumn", String.class);
+		xColumnItems.setChoices(columns);
 
-		final MutableModuleItem<String> YcolumnItems = getInfo().getMutableInput(
-			"Ycolumn", String.class);
-		YcolumnItems.setChoices(moleculeArchiveService.getColumnNames());
+		final MutableModuleItem<String> yColumnItems = getInfo().getMutableInput(
+			"yColumn", String.class);
+		yColumnItems.setChoices(columns);
 	}
 
 	@Override
@@ -131,7 +151,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 
 		archive.logln(log);
 
-		final String paramName = Ycolumn + "_sigma";
+		final String paramName = yColumn + "_sigma";
 
 		ConcurrentMap<String, MarsRegion> regionMap =
 			new ConcurrentHashMap<String, MarsRegion>();
@@ -150,26 +170,26 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 			MarsTable datatable = molecule.getTable();
 
 			if (regionType.equals("Defined below")) {
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn, from,
+				molecule.setParameter(paramName, datatable.std(yColumn, xColumn, from,
 					to));
 			}
 			else if (regionType.equals("Defined in Molecules") && molecule.hasRegion(
 				regionName))
 			{
 				MarsRegion regionOfInterest = molecule.getRegion(regionName);
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn,
+				molecule.setParameter(paramName, datatable.std(yColumn, xColumn,
 					regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			}
 			else if (regionType.equals("Defined in Metadata") && regionMap
 				.containsKey(molecule.getMetadataUID()))
 			{
 				MarsRegion regionOfInterest = regionMap.get(molecule.getMetadataUID());
-				molecule.setParameter(paramName, datatable.std(Ycolumn, Xcolumn,
+				molecule.setParameter(paramName, datatable.std(yColumn, xColumn,
 					regionOfInterest.getStart(), regionOfInterest.getEnd()));
 			}
 			else {
 				// WE assume this mean sigma for whole trace.
-				molecule.setParameter(paramName, datatable.std(Ycolumn));
+				molecule.setParameter(paramName, datatable.std(yColumn));
 			}
 
 			archive.put(molecule);
@@ -187,13 +207,13 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("X Column", Xcolumn);
-		builder.addParameter("Y Column", Ycolumn);
+		builder.addParameter("X Column", xColumn);
+		builder.addParameter("Y Column", yColumn);
 		builder.addParameter("Region type", regionType);
 		builder.addParameter("from", String.valueOf(from));
 		builder.addParameter("to", String.valueOf(to));
 		builder.addParameter("Region", regionName);
-		builder.addParameter("New parameter added", Ycolumn + "_sigma");
+		builder.addParameter("New parameter added", yColumn + "_sigma");
 	}
 
 	public void setArchive(
@@ -209,20 +229,20 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		return archive;
 	}
 
-	public void setXcolumn(String Xcolumn) {
-		this.Xcolumn = Xcolumn;
+	public void setxColumn(String xColumn) {
+		this.xColumn = xColumn;
 	}
 
-	public String getXcolumn() {
-		return Xcolumn;
+	public String getxColumn() {
+		return xColumn;
 	}
 
-	public void setYcolumn(String Ycolumn) {
-		this.Ycolumn = Ycolumn;
+	public void setyColumn(String yColumn) {
+		this.yColumn = yColumn;
 	}
 
-	public String getYcolumn() {
-		return Ycolumn;
+	public String getyColumn() {
+		return yColumn;
 	}
 
 	public void setRegionType(String regionType) {

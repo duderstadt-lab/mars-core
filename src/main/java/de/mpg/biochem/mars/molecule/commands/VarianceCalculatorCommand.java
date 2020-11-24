@@ -31,6 +31,8 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import net.imagej.ops.Initializable;
 
+import java.util.ArrayList;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -73,7 +75,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "MoleculeArchive")
+	@Parameter(callback = "archiveSelectionChanged", label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "Column", choices = { "a", "b", "c" })
@@ -82,11 +84,26 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 	@Parameter(label = "Parameter Name")
 	private String ParameterName = "column_Variance";
 
-	@Override
-	public void initialize() {
+	// -- Callback methods --
+	private void archiveSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(archive.properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"column", String.class);
-		columnItems.setChoices(moleculeArchiveService.getColumnNames());
+		columnItems.setChoices(columns);
+	}
+	
+	@Override
+	public void initialize() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(moleculeArchiveService.getArchives().get(0).properties().getColumnSet());
+		columns.sort(String::compareToIgnoreCase);
+		
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"column", String.class);
+		columnItems.setChoices(columns);
 	}
 
 	@Override

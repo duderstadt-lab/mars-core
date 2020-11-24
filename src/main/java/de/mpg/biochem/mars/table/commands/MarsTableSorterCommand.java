@@ -61,7 +61,7 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "Table")
+	@Parameter(callback = "tableSelectionChanged", label = "Table")
 	private MarsTable table;
 
 	@Parameter(label = "Column", choices = { "a", "b", "c" })
@@ -72,20 +72,42 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 
 	@Parameter(label = "ascending")
 	private boolean ascending;
+	
+	// -- Callback methods --
+	
+	private void tableSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(table.getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
+
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"column", String.class);
+		columnItems.setChoices(columns);
+
+		final MutableModuleItem<String> groupItems = getInfo().getMutableInput(
+			"group", String.class);
+
+		final ArrayList<String> colNames = columns;
+		colNames.add(0, "no group");
+		groupItems.setChoices(colNames);
+	}
 
 	// -- Initializable methods --
 
 	@Override
 	public void initialize() {
+		ArrayList<String> columns = new ArrayList<String>();
+		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"column", String.class);
-		columnItems.setChoices(marsTableService.getColumnNames());
+		columnItems.setChoices(columns);
 
 		final MutableModuleItem<String> groupItems = getInfo().getMutableInput(
 			"group", String.class);
 
-		ArrayList<String> colNames = marsTableService.getColumnNames();
+		final ArrayList<String> colNames = columns;
 		colNames.add(0, "no group");
 		groupItems.setChoices(colNames);
 	}
