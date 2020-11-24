@@ -565,4 +565,12 @@ public class MarsImageUtils {
 			0), img.dimension(1)));
 	}
 	
+	public static boolean intervalContains(final Interval interval, double... location) {
+		for (int d=0; d < location.length; d++)
+			if (location[d] < interval.min(d) && location[d] > interval.max(d))
+				return false;
+
+		return true;
+	}
+	
 }
