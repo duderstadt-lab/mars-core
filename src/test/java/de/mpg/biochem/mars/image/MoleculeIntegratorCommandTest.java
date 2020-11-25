@@ -54,6 +54,7 @@ import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
+import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.DatasetIOService;
 import io.scif.services.FormatService;
