@@ -1740,7 +1740,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		return table;
 	}
 
-	// These classes are used for sorting in place. They may
+	// These classes are used for sorting in place. They
 	// may be replaced with a different sort implementation in future releases.
 	// But the external API will not need to change.
 	private class ResultsTableList extends AbstractList<Row> {
