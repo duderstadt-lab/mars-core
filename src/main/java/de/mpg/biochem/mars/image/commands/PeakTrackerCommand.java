@@ -564,7 +564,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				channel, t);
 
 		// Workaround for IJ1 metadata in slices - Norpix format.
-		if (norpixFormat) {
+		if (!preview && norpixFormat) {
 			ImageStack stack = image.getImageStack();
 			int index = t + 1;
 			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
