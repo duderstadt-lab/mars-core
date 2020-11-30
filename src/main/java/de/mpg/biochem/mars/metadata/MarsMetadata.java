@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MarsRecord;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;

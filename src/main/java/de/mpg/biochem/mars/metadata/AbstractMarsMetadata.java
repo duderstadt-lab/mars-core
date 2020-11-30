@@ -46,7 +46,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractMarsRecord;
-import de.mpg.biochem.mars.molecule.MarsBdvSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;

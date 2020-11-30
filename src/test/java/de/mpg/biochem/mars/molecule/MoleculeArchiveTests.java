@@ -44,6 +44,7 @@ import org.scijava.Context;
 import org.scijava.options.OptionsService;
 import org.scijava.table.DoubleColumn;
 
+import de.mpg.biochem.mars.metadata.MarsBdvSource;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEImage;
