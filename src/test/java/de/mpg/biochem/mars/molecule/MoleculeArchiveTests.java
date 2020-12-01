@@ -331,7 +331,7 @@ public class MoleculeArchiveTests {
 	void isEqual(MarsBdvSource source1, MarsBdvSource source2) {
 
 		assertEquals(source1.getName(), source2.getName());
-		assertEquals(source1.getPathToXml(), source2.getPathToXml());
+		assertEquals(source1.getPath(), source2.getPath());
 		assertEquals(source1.getCorrectDrift(), source2.getCorrectDrift());
 		double[][] data1 = null;
 		double[][] data2 = null;

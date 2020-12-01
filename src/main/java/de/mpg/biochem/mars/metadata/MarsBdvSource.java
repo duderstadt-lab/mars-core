@@ -44,7 +44,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 {
 
 	private String name, path;
-	private boolean driftCorrect, isN5, isHD5;
+	private boolean driftCorrect, isN5;
 	private String n5Dataset;
 	private int channel = 0;
 	private AffineTransform3D affine3D;
@@ -55,8 +55,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		driftCorrect = false;
 		path = "";
 		n5Dataset = "";
-		isN5 = true;
-		isHD5 = false;
+		isN5 = false;
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	}
 
@@ -66,8 +65,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		driftCorrect = false;
 		path = "";
 		n5Dataset = "";
-		isN5 = true;
-		isHD5 = false;
+		isN5 = false;
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 		fromJSON(jParser);
 	}
@@ -80,10 +78,6 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		
 		setJsonField("isN5", jGenerator -> jGenerator.writeBooleanField(
 				"isN5", isN5), jParser -> isN5 = jParser
-					.getBooleanValue());
-		
-		setJsonField("isHD5", jGenerator -> jGenerator.writeBooleanField(
-				"isHD5", isHD5), jParser -> isHD5 = jParser
 					.getBooleanValue());
 
 		setJsonField("driftCorrect", jGenerator -> jGenerator.writeBooleanField(
@@ -177,14 +171,6 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	
 	public void setN5(boolean isN5) {
 		this.isN5 = isN5;
-	}
-	
-	public boolean isHD5() {
-		return this.isHD5;
-	}
-	
-	public void setHD5(boolean isHD5) {
-		this.isHD5 = isHD5;
 	}
 	
 	public int getChannel() {
