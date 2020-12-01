@@ -37,20 +37,26 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import net.imglib2.realtransform.AffineTransform3D;
+import ome.xml.model.primitives.NonNegativeInteger;
 
 public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	JsonConvertibleRecord
 {
 
-	private String name, pathToXml;
-	private boolean driftCorrect;
+	private String name, path;
+	private boolean driftCorrect, isN5, isHD5;
+	private String n5Dataset;
+	private int channel = 0;
 	private AffineTransform3D affine3D;
 
 	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
 		driftCorrect = false;
-		pathToXml = "";
+		path = "";
+		n5Dataset = "";
+		isN5 = true;
+		isHD5 = false;
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	}
 
@@ -58,7 +64,10 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		super();
 		name = "";
 		driftCorrect = false;
-		pathToXml = "";
+		path = "";
+		n5Dataset = "";
+		isN5 = true;
+		isHD5 = false;
 		setAffineTransform2D(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 		fromJSON(jParser);
 	}
@@ -66,23 +75,37 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	@Override
 	protected void createIOMaps() {
 
-		setJsonField("Name", jGenerator -> jGenerator.writeStringField("Name",
+		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
 			name), jParser -> name = jParser.getText());
+		
+		setJsonField("isN5", jGenerator -> jGenerator.writeBooleanField(
+				"isN5", isN5), jParser -> isN5 = jParser
+					.getBooleanValue());
+		
+		setJsonField("isHD5", jGenerator -> jGenerator.writeBooleanField(
+				"isHD5", isHD5), jParser -> isHD5 = jParser
+					.getBooleanValue());
 
-		setJsonField("DriftCorrect", jGenerator -> jGenerator.writeBooleanField(
-			"DriftCorrect", driftCorrect), jParser -> driftCorrect = jParser
+		setJsonField("driftCorrect", jGenerator -> jGenerator.writeBooleanField(
+			"driftCorrect", driftCorrect), jParser -> driftCorrect = jParser
 				.getBooleanValue());
 
-		setJsonField("pathToXml", jGenerator -> jGenerator.writeStringField(
-			"pathToXml", pathToXml), jParser -> pathToXml = jParser.getText());
+		setJsonField("path", jGenerator -> jGenerator.writeStringField(
+			"path", path ), jParser -> path = jParser.getText());
+		
+		setJsonField("dataset", jGenerator -> jGenerator.writeStringField(
+				"dataset", n5Dataset ), jParser -> n5Dataset = jParser.getText());
+		
+		setJsonField("channel", jGenerator -> jGenerator.writeNumberField(
+				"channel", channel), jParser -> channel = jParser.getIntValue());
 
-		setJsonField("AffineTransform3D", jGenerator -> {
+		setJsonField("affineTransform3D", jGenerator -> {
 			// Jackson 2.9.9 compatible stuff
 			// jGenerator.writeFieldName("AffineTransform3D");
 			// jGenerator.writeArray(getTransformAsArray(), 0, 12);
 
 			// Jackson 2.6.5 version of above
-			jGenerator.writeFieldName("AffineTransform3D");
+			jGenerator.writeFieldName("affineTransform3D");
 			jGenerator.writeStartArray();
 			for (double num : getTransformAsArray())
 				jGenerator.writeNumber(num);
@@ -98,6 +121,30 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 				trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
 		});
 
+		/*
+		 * Remove me in a future release.
+		 */
+		
+		setJsonField("Name", null, 
+				jParser -> name = jParser.getText());
+
+		setJsonField("DriftCorrect", null,
+				jParser -> driftCorrect = jParser.getBooleanValue());
+
+		setJsonField("pathToXml", null, 
+				jParser -> path = jParser.getText());
+
+		setJsonField("AffineTransform3D", null, 
+			jParser -> {
+				double[] trans = new double[12];
+				int index = 0;
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					trans[index] = jParser.getDoubleValue();
+					index++;
+				}
+				affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
+					trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
+		});
 	}
 
 	public String getName() {
@@ -108,12 +155,12 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		this.name = name;
 	}
 
-	public String getPathToXml() {
-		return pathToXml;
+	public String getPath() {
+		return path;
 	}
 
-	public void setPathToXml(String pathToXml) {
-		this.pathToXml = pathToXml;
+	public void setPath(String path) {
+		this.path = path;
 	}
 
 	public boolean getCorrectDrift() {
@@ -122,6 +169,38 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 
 	public void setCorrectDrift(boolean driftCorrect) {
 		this.driftCorrect = driftCorrect;
+	}
+	
+	public boolean isN5() {
+		return this.isN5;
+	}
+	
+	public void setN5(boolean isN5) {
+		this.isN5 = isN5;
+	}
+	
+	public boolean isHD5() {
+		return this.isHD5;
+	}
+	
+	public void setHD5(boolean isHD5) {
+		this.isHD5 = isHD5;
+	}
+	
+	public int getChannel() {
+		return channel;
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = channel;
+	}
+	
+	public void setN5Dataset(String n5Dataset) {
+		this.n5Dataset = n5Dataset;
+	}
+	
+	public String getN5Dataset() {
+		return n5Dataset;
 	}
 
 	// See
