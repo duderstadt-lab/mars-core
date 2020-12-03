@@ -479,6 +479,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
+				
+				if (swapZandT) {
+					int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
+					int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
+					
+					omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
+					omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
+				}
 			}
 			catch (ServiceException e) {
 				e.printStackTrace();
