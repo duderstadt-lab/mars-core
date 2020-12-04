@@ -370,6 +370,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (dataset == null && image != null) {
 			dataset = convertService.convert(image, Dataset.class);
 		}
+		
+		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
 
 		updateInterval();
 
