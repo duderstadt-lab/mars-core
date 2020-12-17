@@ -376,6 +376,10 @@ public class MarsImageUtils {
 		int x2 = (int) (gauss.x + radius);
 		int y1 = (int) (gauss.y - radius);
 		int y2 = (int) (gauss.y + radius);
+		
+		//Very very bad fits can go to the max integer value in which case we return 0..
+		if (x1 == Integer.MAX_VALUE || x2 == Integer.MAX_VALUE || y1 == Integer.MAX_VALUE || y2 == Integer.MAX_VALUE)
+			return 0;
 
 		for (int y = y1; y <= y2; y++) {
 			for (int x = x1; x <= x2; x++) {
