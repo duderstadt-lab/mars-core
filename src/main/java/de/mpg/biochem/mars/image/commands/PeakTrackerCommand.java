@@ -271,9 +271,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm" })
 	private String pixelUnits = "pixel";
-
-	@Parameter(label = "Norpix format")
-	private boolean norpixFormat = false;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, etc...)";
+	
+	@Parameter(label = "Exclude", required = false)
+	private String excludeTimePointList;
 
 	@Parameter
 	private UIService uiService;
@@ -302,7 +305,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	private Dataset dataset;
 	private ImagePlus image;
-	private MarsOMEMetadata marsOMEMetadata;
 	private boolean swapZandT = false;
 
 	@Override
@@ -365,11 +367,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		if (norpixFormat) swapZandT = true;
-
-		if (dataset == null && image != null) {
+		if (dataset == null && image != null)
 			dataset = convertService.convert(image, Dataset.class);
-		}
 		
 		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
 
@@ -417,8 +416,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		archive = new SingleMoleculeArchive("archive.yama");
 
-		if (norpixFormat) marsOMEMetadata = buildNorpixMetadata();
-		else marsOMEMetadata = buildOMEMetadata();
+		MarsOMEMetadata marsOMEMetadata = buildOMEMetadata();
 
 		try {
 			UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
@@ -432,8 +430,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			e1.printStackTrace();
 		}
 
-		if (norpixFormat) getTimeFromNoprixSliceLabels(marsOMEMetadata,
-			metaDataStack);
 		archive.putMetadata(marsOMEMetadata);
 
 		tracker.track(PeakStack, archive, Integer.valueOf(channel));
@@ -471,40 +467,130 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			archive.logln("   ");
 		}
 	}
+	
+	private void updateInterval() {
+		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
+			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1,
+				dataset.dimension(1) - 1);
+
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean integrate)
+	{
+		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
+			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
+			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
+				channel, t);
+			
+		// Workaround for IJ1 metadata in slices - Norpix format.
+		if (!preview && image != null) {
+			ImageStack stack = image.getImageStack();
+			int index = t + 1;
+			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
+
+			// Have to retrieve the image processor to make sure the label has been
+			// loaded.
+			stack.getProcessor(index);
+			String label = stack.getSliceLabel(index);
+			metaDataStack.put(t, label);
+		}
+
+		List<Peak> peaks = new ArrayList<Peak>();
+
+		if (useDogFilter) {
+			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
+				.dogFilter(img, dogFilterRadius, opService);
+
+			peaks = MarsImageUtils.findPeaks(filteredImg, interval, t, threshold,
+				minimumDistance, findNegativePeaks);
+		}
+		else peaks = MarsImageUtils.findPeaks(img, interval, t, threshold,
+			minimumDistance, findNegativePeaks);
+
+		peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius,
+			dogFilterRadius, findNegativePeaks, RsquaredMin);
+		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
+
+		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
+			integrationInnerRadius, integrationOuterRadius);
+
+		return peaks;
+	}
 
 	private MarsOMEMetadata buildOMEMetadata() {
 		ImgPlus<?> imp = dataset.getImgPlus();
 
 		OMEXMLMetadata omexmlMetadata = null;
 		if (!(imp instanceof SCIFIOImgPlus)) {
-			logService.info("This image has not been opened with SCIFIO.");
+			logService.info("This image has not been opened with SCIFIO. Creating OME Metadata...");
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
-				
-				if (swapZandT) {
-					int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
-					int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
-					
-					omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
-					omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
-				}
-			}
-			catch (ServiceException e) {
+			} catch (ServiceException e) {
 				e.printStackTrace();
 			}
 		}
 		else {
 			Metadata metadata = (Metadata) dataset.getProperties().get(
 				"scifio.metadata.global");
+			
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
 				logService.info(
-					"Unable to extract OME Metadata. Falling back to IJ1 for metadata.");
+					"Unable to extract OME Metadata. Creating...");
+				try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+							dataset);
+				} catch (ServiceException e) {
+					e.printStackTrace();
+				}
 			}
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
+			
+			//Check for SliceLabels
+			if (metadata.get(0).getTable().containsKey("SliceLabels")) {
+				String[] sliceLabels = (String[]) metadata.get(0).getTable().get("SliceLabels");
+				metaDataStack.clear();
+					
+					for (int i=0; i<sliceLabels.length; i++)
+						metaDataStack.put(i, sliceLabels[i]);
+			}
+		}
+		
+		if (swapZandT) {
+			int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
+			int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
+			
+			omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
+			omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
+		}
+		
+		//Check format
+		if (metaDataStack.containsKey(0) && metaDataStack.get(0).contains("DateTime: ")) {
+			//Must be Norpix format..
+			logService.info("Reading Norpix Format");
+
+			String metaUID = generateUID(metaDataStack);
+			//omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
+			//omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
+			//omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
+			//omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
+			//omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
+			omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
+			
+			MarsOMEMetadata marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+			
+			MarsOMEUtils.getTimeFromNoprixSliceLabels(marsOMEMetadata, metaDataStack);
+
+			return marsOMEMetadata;
 		}
 
 		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
@@ -531,143 +617,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
 
-	private void updateInterval() {
-		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1,
-				dataset.dimension(1) - 1);
-
-		if (image != null) {
-			image.deleteRoi();
-			image.setOverlay(null);
-		}
-	}
-
-	private MarsOMEMetadata buildNorpixMetadata() {
-		// Generate new MarsOMEMetadata based on NorpixFormat.
-		// Flip Z and T
-		OMEXMLMetadata omexmlMetadata = null;
-		try {
-			omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-				dataset);
-		}
-		catch (ServiceException e) {
-			e.printStackTrace();
-		}
-		String metaUID = generateUID(metaDataStack);// MarsMath.getUUID58().substring(0,
-																								// 10);
-		omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
-		omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
-		omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
-		omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
-		omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
-		omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
-		return new MarsOMEMetadata(metaUID, omexmlMetadata);
-	}
-
-	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate)
-	{
-		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
-			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
-			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
-				channel, t);
-
-		// Workaround for IJ1 metadata in slices - Norpix format.
-		if (!preview && norpixFormat) {
-			ImageStack stack = image.getImageStack();
-			int index = t + 1;
-			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
-
-			// Have to retrieve the image processor to make sure the label has been
-			// loaded.
-			stack.getProcessor(index);
-			String label = stack.getSliceLabel(index);
-			metaDataStack.put(t, label);
-		}
-
-		List<Peak> peaks = new ArrayList<Peak>();
-
-		if (useDogFilter) {
-			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
-				.dogFilter(img, dogFilterRadius, opService);
-			peaks = MarsImageUtils.findPeaks(filteredImg, interval, t, threshold,
-				minimumDistance, findNegativePeaks);
-		}
-		else peaks = MarsImageUtils.findPeaks(img, interval, t, threshold,
-			minimumDistance, findNegativePeaks);
-
-		peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius,
-			dogFilterRadius, findNegativePeaks, RsquaredMin);
-		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
-
-		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
-			integrationInnerRadius, integrationOuterRadius);
-
-		return peaks;
-	}
-
-	private void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
-		Map<Integer, String> metaDataStack)
-	{
-		try {
-			// Set Global Collection Date for the dataset
-			int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
-			String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 +
-				10);
-			marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(
-				DateTimeString1));
-
-			final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
-
-			// Extract the exact time of collection of all frames..
-			final long t0 = getNorPixMillisecondTime(DateTimeString1);
-
-			marsMetadata.getImage(0).planes().forEach(plane -> {
-				int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
-					"DateTime: ");
-				String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
-					dateTimeIndex2 + 10);
-				Time dt = null;
-				try {
-					double millisecondsDt = ((double) getNorPixMillisecondTime(
-						DateTimeString2) - t0) / 1000;
-					dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
-						(UnitsTime) timehandler.getEnumeration("s")));
-				}
-				catch (ParseException | EnumerationException e) {
-					e.printStackTrace();
-				}
-				plane.setDeltaT(dt);
-			});
-		}
-		catch (ParseException e1) {
-			// e1.printStackTrace();
-		}
-	}
-
 	private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
 		String allLabels = "";
 		for (int i = 0; i < headerLabels.size(); i++)
 			allLabels += headerLabels.get(i);
 
 		return MarsMath.getFNV1aBase58(allLabels);
-	}
-
-	private long getNorPixMillisecondTime(String strTime) throws ParseException {
-		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
-		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
-			4));
-		return convertedDate.getTime();
-	}
-
-	private Timestamp getNorPixDate(String strTime) throws ParseException {
-		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
-		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
-			4));
-		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-		String nowAsISO = df.format(convertedDate);
-		return new Timestamp(nowAsISO);
 	}
 
 	@Override
@@ -776,7 +731,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
 		builder.addParameter("Pixel Units", this.pixelUnits);
 		builder.addParameter("Swap Z and T", swapZandT);
-		builder.addParameter("Norpix Format", String.valueOf(norpixFormat));
 	}
 
 	// Getters and Setters
@@ -982,13 +936,5 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	public String getPixelUnits() {
 		return this.pixelUnits;
-	}
-
-	public void setNorpixFormat(boolean norpixFormat) {
-		this.norpixFormat = norpixFormat;
-	}
-
-	public boolean getNorpixFormat() {
-		return norpixFormat;
 	}
 }

@@ -29,6 +29,10 @@
 
 package de.mpg.biochem.mars.metadata;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -47,9 +51,12 @@ import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.Binning;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
+import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.enums.handlers.BinningEnumHandler;
+import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveInteger;
+import ome.xml.model.primitives.Timestamp;
 
 public class MarsOMEUtils {
 
@@ -459,5 +466,60 @@ public class MarsOMEUtils {
 		marsOME.logln(log);
 
 		return marsOME;
+	}
+	
+	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
+			Map<Integer, String> metaDataStack)
+		{
+			try {
+				// Set Global Collection Date for the dataset
+				int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
+				String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 +
+					10);
+				marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(
+					DateTimeString1));
+
+				final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+
+				// Extract the exact time of collection of all frames..
+				final long t0 = getNorPixMillisecondTime(DateTimeString1);
+
+				marsMetadata.getImage(0).planes().forEach(plane -> {
+					int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
+						"DateTime: ");
+					String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
+						dateTimeIndex2 + 10);
+					Time dt = null;
+					try {
+						double millisecondsDt = ((double) getNorPixMillisecondTime(
+							DateTimeString2) - t0) / 1000;
+						dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
+							(UnitsTime) timehandler.getEnumeration("s")));
+					}
+					catch (ParseException | EnumerationException e) {
+						e.printStackTrace();
+					}
+					plane.setDeltaT(dt);
+				});
+			}
+			catch (ParseException e1) {
+				// e1.printStackTrace();
+			}
+		}
+	
+	private static long getNorPixMillisecondTime(String strTime) throws ParseException {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
+		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
+			4));
+		return convertedDate.getTime();
+	}
+
+	private static Timestamp getNorPixDate(String strTime) throws ParseException {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
+		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
+			4));
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+		String nowAsISO = df.format(convertedDate);
+		return new Timestamp(nowAsISO);
 	}
 }

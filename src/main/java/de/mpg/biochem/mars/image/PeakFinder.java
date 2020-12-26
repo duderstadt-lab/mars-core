@@ -32,9 +32,11 @@ package de.mpg.biochem.mars.image;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import net.imglib2.Cursor;
 import net.imglib2.Interval;
+import net.imglib2.IterableInterval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccessible;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -63,15 +65,15 @@ public class PeakFinder<T extends RealType<T> & NativeType<T>> {
 		this.findNegativePeaks = findNegativePeaks;
 	}
 
-	public ArrayList<Peak> findPeaks(RandomAccessible<T> img, Interval interval) {
+	public List<Peak> findPeaks(RandomAccessible<T> img, Interval interval) {
 		return findPeaks(img, interval, -1);
 	}
 
-	public ArrayList<Peak> findPeaks(RandomAccessible<T> img, Interval interval,
+	public List<Peak> findPeaks(RandomAccessible<T> img, Interval interval,
 		int t)
 	{
 
-		ArrayList<Peak> possiblePeaks = new ArrayList<Peak>();
+		List<Peak> possiblePeaks = new ArrayList<Peak>();
 
 		Cursor<T> roiCursor = Views.interval(img, interval).cursor();
 
@@ -123,7 +125,7 @@ public class PeakFinder<T extends RealType<T> & NativeType<T>> {
 		// peaks in for loop below.
 		// This is a shallow copy, which means it contains exactly the same elements
 		// as the first list, but the order can be completely different...
-		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
+		List<Peak> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
 
 		// Allows for fast search of nearest peaks...
 		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks,
@@ -137,7 +139,7 @@ public class PeakFinder<T extends RealType<T> & NativeType<T>> {
 		// that will serve as the finalList of actual peaks
 		// This whole process is to remove pixels near the center peak pixel that
 		// are also above the detection threshold but all part of the same peak...
-		ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
+		List<Peak> finalPeaks = new ArrayList<Peak>();
 
 		// It is really important to remember here that possiblePeaks and
 		// KDTreePossiblePeaks are different lists but point to the same elements

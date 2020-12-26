@@ -41,6 +41,7 @@ import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.ops.OpService;
 import net.imglib2.Interval;
+import net.imglib2.IterableInterval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -173,7 +174,7 @@ public class MarsImageUtils {
 
 		PeakFinder<T> finder = new PeakFinder<T>(threshold, minimumDistance,
 			findNegativePeaks);
-		ArrayList<Peak> peaks = finder.findPeaks(img, interval, t);
+		List<Peak> peaks = finder.findPeaks(img, interval, t);
 
 		if (peaks == null) peaks = new ArrayList<Peak>();
 
