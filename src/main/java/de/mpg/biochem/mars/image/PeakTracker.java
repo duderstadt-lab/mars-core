@@ -81,7 +81,6 @@ public class PeakTracker {
 
 	// Stores the KDTree list for Peaks for each T.
 	private ConcurrentMap<Integer, KDTree<Peak>> KDTreeStack;
-	// private Set<PeakLink> possibleLinks;
 
 	// Stores the list of possible links from each T as a list with the key of
 	// that T.
@@ -139,19 +138,10 @@ public class PeakTracker {
 	public void track(ConcurrentMap<Integer, List<Peak>> PeakStack,
 		SingleMoleculeArchive archive, int channel)
 	{
-		// The metadata information should have been added already
-		// this should always be a new archive so there can only be one metadata
-		// item added
-		// at index 0.
 		metaDataUID = archive.getMetadata(0).getUID();
 
-		// Need to determine the number of threads
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-		// First we will build a KDTree for each peak list to allow for fast 2D
-		// searching..
-		// For this purpose we will make a second ConcurrentMap with T as the key
-		// and KDTrees for each T
 		KDTreeStack = new ConcurrentHashMap<>();
 
 		possibleLinks = new ConcurrentHashMap<>();
@@ -180,10 +170,6 @@ public class PeakTracker {
 					}
 				})).get();
 
-			// This will spawn a bunch of threads that will find all possible links
-			// for peaks
-			// within each T individually in parallel and put the results into the
-			// global map possibleLinks
 			forkJoinPool.submit(() -> IntStream.range(0, PeakStack.size()).parallel()
 				.forEach(t -> findPossibleLinks(PeakStack, t))).get();
 
@@ -200,31 +186,9 @@ public class PeakTracker {
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		// Now we have sorted lists of all possible links from most to least likely
-		// for each T
-		// Now we just need to run through the lists making the links until we run
-		// out of peaks to link
-		// This will ensure the most likely links are made first and other possible
-		// links involving the
-		// same peaks will not be possible because we only link each peak once...
+		HashMap<String, Integer> trackLengths = new HashMap<>();
 
-		// This is all single threaded at the moment, I am not sure if it would be
-		// easy to multithread this process since the order really matters
-
-		// This will keep track of the length of the trajectories so we can remove
-		// short ones later
-		HashMap<String, Integer> trajectoryLengths = new HashMap<>();
-
-		// This will keep track of the first peak for each trajectory
-		// I think since the loop below goes from T 1 forward we should always get
-		// the first T with the peak.
-		List<Peak> trajectoryFirstT = new ArrayList<Peak>();
-
-		// We also need to check if a link has already been made within the local
-		// region
-		// So I think the best idea is to add the Peaks we have linked to to a
-		// KDTree
-		// Then always reject further links into the same region....
+		List<Peak> trackFirstT = new ArrayList<Peak>();
 
 		logService.info("Connecting most likely links...");
 
@@ -260,7 +224,7 @@ public class PeakTracker {
 
 					if (from.getUID() != null && !regionAlreadyLinked) {
 						to.setUID(from.getUID());
-						trajectoryLengths.put(from.getUID(), trajectoryLengths.get(from
+						trackLengths.put(from.getUID(), trackLengths.get(from
 							.getUID()) + 1);
 
 						// Add references in each peak for forward and backward links...
@@ -273,8 +237,8 @@ public class PeakTracker {
 						String UID = MarsMath.getUUID58();
 						from.setUID(UID);
 						to.setUID(UID);
-						trajectoryLengths.put(UID, 2);
-						trajectoryFirstT.add(from);
+						trackLengths.put(UID, 2);
+						trackFirstT.add(from);
 
 						// Add references in each peak for forward and backward links...
 						from.setForwardLink(to);
@@ -287,7 +251,7 @@ public class PeakTracker {
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		logService.info("Building molecule archive...");
+		logService.info("Building archive...");
 
 		starttime = System.currentTimeMillis();
 
@@ -297,10 +261,10 @@ public class PeakTracker {
 		// Now we build a MoleculeArchive in a multithreaded manner in which
 		// each molecule is build by a different thread just following the
 		// links until it hits a molecule with no UID, which signifies the end of
-		// the trajectory.
+		// the track.
 		try {
-			forkJoinPool.submit(() -> trajectoryFirstT.parallelStream().forEach(
-				startingPeak -> buildMolecule(startingPeak, trajectoryLengths, archive,
+			forkJoinPool.submit(() -> trackFirstT.parallelStream().forEach(
+				startingPeak -> buildMolecule(startingPeak, trackLengths, archive,
 					channel))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
@@ -367,12 +331,12 @@ public class PeakTracker {
 				}
 			}
 		}
-		// Now we sort all the possible links for this slice...
+		// Now we sort all the possible links for this T...
 		Collections.sort(tPossibleLinks, new Comparator<PeakLink>() {
 
 			@Override
 			public int compare(PeakLink o1, PeakLink o2) {
-				// Sort by slice difference
+				// Sort by T difference
 				if (o1.getTDifference() != o2.getTDifference()) return Double.compare(o1
 					.getTDifference(), o2.getTDifference());
 
@@ -400,8 +364,8 @@ public class PeakTracker {
 		columns.put("x", new DoubleColumn("x"));
 		columns.put("y", new DoubleColumn("y"));
 
-		if (writeIntegration) columns.put("Intensity", new DoubleColumn(
-			"Intensity"));
+		if (writeIntegration) columns.put("intensity", new DoubleColumn(
+			"intensity"));
 
 		if (verbose) for (int i = 0; i < TABLE_HEADERS_VERBOSE.length; i++)
 			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(

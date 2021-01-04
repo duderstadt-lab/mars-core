@@ -438,8 +438,8 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		columns.put("T", new DoubleColumn("T"));
 		columns.put("x", new DoubleColumn("x"));
 		columns.put("y", new DoubleColumn("y"));
-
-		if (integrate) columns.put("Intensity", new DoubleColumn("Intensity"));
+ 
+		if (integrate) columns.put("intensity", new DoubleColumn("intensity"));
 
 		if (verbose) for (int i = 0; i < TABLE_HEADERS_VERBOSE.length; i++)
 			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(

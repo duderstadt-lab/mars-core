@@ -56,6 +56,7 @@
 package de.mpg.biochem.mars.image;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.RealLocalizable;
 
@@ -74,14 +75,23 @@ import org.scijava.table.DoubleColumn;
 public class Peak implements RealLocalizable {
 
 	private String UID, colorName;
-	private double t, c;
 	private Peak forwardLink, backwardLink;
-	private double x, y, height, baseline, sigma;
-	private double xError, yError, heightError, baselineError, sigmaError;
-	private double pixelValue, Rsquared;
-
-	private double intensity, medianBackground;
+	private double x, y, t, c, pixelValue;
 	private boolean valid = true;
+
+	/**
+	 * Polygon2D attached to the peak. left null if unused.
+	 */
+	private PeakShape peakShape;
+
+	public static final String HEIGHT = "height";
+	public static final String BASELINE = "baseline";
+	public static final String SIGMA = "sigma";
+	public static final String R2 = "R2";
+	public static final String MEDIAN_BACKGROUND = "medianBackground";
+	public static final String INTENSITY = "intensity";
+	
+	private final Map< String, Double > properties = new ConcurrentHashMap<>();
 
 	public Peak(String UID) {
 		this.UID = UID;
@@ -93,18 +103,12 @@ public class Peak implements RealLocalizable {
 		this.y = y;
 	}
 
-	public Peak(double[] values, double[] errors) {
-		baseline = values[0];
-		height = values[1];
+	public Peak(double[] values) {
+		setProperty(BASELINE, values[0]);
+		setProperty(HEIGHT, values[1]);
 		x = values[2];
 		y = values[3];
-		sigma = values[4];
-
-		baselineError = errors[0];
-		heightError = errors[1];
-		xError = errors[2];
-		yError = errors[3];
-		sigmaError = errors[4];
+		setProperty(SIGMA, values[4]);
 	}
 
 	public Peak(double x, double y, double height, double baseline, double sigma,
@@ -112,9 +116,9 @@ public class Peak implements RealLocalizable {
 	{
 		this.x = x;
 		this.y = y;
-		this.height = height;
-		this.baseline = baseline;
-		this.sigma = sigma;
+		setProperty(BASELINE, baseline);
+		setProperty(HEIGHT, height);
+		setProperty(SIGMA, sigma);
 		this.t = t;
 	}
 
@@ -124,25 +128,18 @@ public class Peak implements RealLocalizable {
 		this.pixelValue = pixelValue;
 		this.t = t;
 	}
-
+	
 	public Peak(Peak peak) {
-		this.x = peak.x;
-		this.y = peak.y;
-		this.baseline = peak.baseline;
-		this.height = peak.height;
-		this.sigma = peak.sigma;
-		this.xError = peak.xError;
-		this.yError = peak.yError;
-		this.baselineError = peak.baselineError;
-		this.heightError = peak.heightError;
-		this.sigmaError = peak.sigmaError;
+		this.x = peak.getX();
+		this.y = peak.getY();
 		this.pixelValue = peak.pixelValue;
 		this.UID = peak.UID;
 		this.colorName = peak.colorName;
 		this.t = peak.t;
 		this.c = peak.c;
-		this.intensity = peak.intensity;
-		this.medianBackground = peak.medianBackground;
+		
+		for (String key : peak.getProperties().keySet())
+		    this.properties.put(key, peak.getProperties().get(key));
 	}
 
 	// Getters
@@ -154,10 +151,6 @@ public class Peak implements RealLocalizable {
 		this.x = x;
 	}
 
-	public double getXError() {
-		return xError;
-	}
-
 	public double getY() {
 		return y;
 	}
@@ -166,32 +159,24 @@ public class Peak implements RealLocalizable {
 		this.y = y;
 	}
 
-	public double getYError() {
-		return yError;
-	}
-
 	public double getHeight() {
-		return height;
-	}
-
-	public double getHeightError() {
-		return heightError;
+		return this.properties.get(HEIGHT).doubleValue();
 	}
 
 	public double getBaseline() {
-		return baseline;
-	}
-
-	public double getBaselineError() {
-		return baselineError;
+		return this.properties.get(BASELINE).doubleValue();
 	}
 
 	public double getSigma() {
-		return sigma;
+		return this.properties.get(SIGMA).doubleValue();
 	}
-
-	public double getSigmaError() {
-		return sigmaError;
+	
+	public PeakShape getShape() {
+		return peakShape;
+	}
+	
+	public void setShape(PeakShape peakShape) {
+		this.peakShape = peakShape;
 	}
 
 	public double getPixelValue() {
@@ -229,34 +214,33 @@ public class Peak implements RealLocalizable {
 	public String getColorName() {
 		return colorName;
 	}
-
-	// Setters
-	public void setValues(double[] values) {
-		this.baseline = values[0];
-		this.height = values[1];
-		this.x = values[2];
-		this.y = values[3];
-		this.sigma = values[4];
+	
+	public Map< String, Double > getProperties() {
+		return properties;
 	}
 
-	public void setErrorValues(double[] errors) {
-		this.baselineError = errors[0];
-		this.heightError = errors[1];
-		this.xError = errors[2];
-		this.yError = errors[3];
-		this.sigmaError = errors[4];
+	// Setters
+	public void setProperty(String name, Double value) {
+		properties.put(name, value);
+	}
+	
+	public void setValues(double[] values) {
+		this.properties.put(BASELINE, values[0]);
+		this.properties.put(HEIGHT, values[1]);
+		this.x = values[2];
+		this.y = values[3];
+		this.properties.put(SIGMA, values[4]);
 	}
 
 	public void addToColumns(Map<String, DoubleColumn> columns) {
 		if (columns.containsKey("T")) columns.get("T").add(t);
 		if (columns.containsKey("x")) columns.get("x").add(x);
 		if (columns.containsKey("y")) columns.get("y").add(y);
-		if (columns.containsKey("Intensity")) columns.get("Intensity").add(
-			intensity);
-		if (columns.containsKey("baseline")) columns.get("baseline").add(baseline);
-		if (columns.containsKey("height")) columns.get("height").add(height);
-		if (columns.containsKey("sigma")) columns.get("sigma").add(sigma);
-		if (columns.containsKey("R2")) columns.get("R2").add(Rsquared);
+		if (columns.containsKey(INTENSITY)) columns.get(INTENSITY).add(properties.get(INTENSITY).doubleValue());
+		if (columns.containsKey(BASELINE)) columns.get(BASELINE).add(properties.get(BASELINE).doubleValue());
+		if (columns.containsKey(HEIGHT)) columns.get(HEIGHT).add(properties.get(HEIGHT).doubleValue());
+		if (columns.containsKey(SIGMA)) columns.get(SIGMA).add(properties.get(SIGMA).doubleValue());
+		if (columns.containsKey(R2)) columns.get(R2).add(properties.get(R2).doubleValue());
 	}
 
 	// used for pixel sort in the peak finder
@@ -294,39 +278,27 @@ public class Peak implements RealLocalizable {
 	}
 
 	public void setIntensity(double intensity) {
-		this.intensity = intensity;
+		this.properties.put(INTENSITY, intensity);
 	}
 
 	public double getIntensity() {
-		return intensity;
+		return this.properties.get(INTENSITY).doubleValue();
 	}
 
 	public void setMedianBackground(double medianBackground) {
-		this.medianBackground = medianBackground;
+		this.properties.put(MEDIAN_BACKGROUND, medianBackground);
 	}
 
 	public double getMedianBackground() {
-		return medianBackground;
+		return this.properties.get(MEDIAN_BACKGROUND).doubleValue();
 	}
 
-	public void setRsquared(double Rsquared) {
-		this.Rsquared = Rsquared;
+	public void setRsquared(double R2) {
+		this.properties.put("R2", R2);
 	}
 
 	public double getRSquared() {
-		return Rsquared;
-	}
-
-	public void reset(double x, double y, double pixelValue, int t) {
-		this.x = x;
-		this.y = y;
-		this.pixelValue = pixelValue;
-		this.t = t;
-
-		valid = true;
-		UID = null;
-		forwardLink = null;
-		backwardLink = null;
+		return this.properties.get(R2).doubleValue();
 	}
 
 	// Override from RealLocalizable interface. So peaks can be passed to KDTree

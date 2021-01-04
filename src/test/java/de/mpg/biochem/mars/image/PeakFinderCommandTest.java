@@ -129,10 +129,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(10 - peakTable.getValue("y", 0)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 10 was " +
 				peakTable.getValue("y", 0));
-		assertTrue(Math.abs(15789.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(15789.0 - peakTable.getValue("intensity",
 			0)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 15789 was " +
-				peakTable.getValue("Intensity", 0));
+			"Peak intensity is off by more than the tolerance. Should be 15789 was " +
+				peakTable.getValue("intensity", 0));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 0)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 0));
@@ -153,10 +153,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(26.7 - peakTable.getValue("y", 1)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
 				peakTable.getValue("y", 1));
-		assertTrue(Math.abs(14756.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(14756.0 - peakTable.getValue("intensity",
 			1)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("Intensity", 1));
+			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
+				peakTable.getValue("intensity", 1));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 1)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 1));
@@ -177,10 +177,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(40 - peakTable.getValue("y", 2)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
 				peakTable.getValue("y", 2));
-		assertTrue(Math.abs(14416.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(14416.0 - peakTable.getValue("intensity",
 			2)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("Intensity", 2));
+			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
+				peakTable.getValue("intensity", 2));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 2)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 2));
@@ -201,10 +201,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(10 - peakTable.getValue("y", 3)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 10 was " +
 				peakTable.getValue("y", 3));
-		assertTrue(Math.abs(15789.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(15789.0 - peakTable.getValue("intensity",
 			3)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 15789 was " +
-				peakTable.getValue("Intensity", 3));
+			"Peak intensity is off by more than the tolerance. Should be 15789 was " +
+				peakTable.getValue("intensity", 3));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 3)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 3));
@@ -225,10 +225,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(26.7 - peakTable.getValue("y", 4)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
 				peakTable.getValue("y", 4));
-		assertTrue(Math.abs(14756.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(14756.0 - peakTable.getValue("intensity",
 			4)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("Intensity", 4));
+			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
+				peakTable.getValue("intensity", 4));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 4)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 4));
@@ -249,10 +249,10 @@ public class PeakFinderCommandTest {
 		assertTrue(Math.abs(40 - peakTable.getValue("y", 5)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
 				peakTable.getValue("y", 5));
-		assertTrue(Math.abs(14416.0 - peakTable.getValue("Intensity",
+		assertTrue(Math.abs(14416.0 - peakTable.getValue("intensity",
 			5)) < TOLERANCE,
-			"Peak Intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("Intensity", 5));
+			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
+				peakTable.getValue("intensity", 5));
 		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 5)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
 				.getValue("baseline", 5));
