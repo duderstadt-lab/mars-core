@@ -40,6 +40,7 @@ import java.util.Map;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.ops.OpService;
+import net.imglib2.Cursor;
 import net.imglib2.Interval;
 import net.imglib2.IterableInterval;
 import net.imglib2.KDTree;
@@ -171,14 +172,93 @@ public class MarsImageUtils {
 		RandomAccessible<T> img, Interval interval, int t, double threshold,
 		int minimumDistance, boolean findNegativePeaks)
 	{
+		List<Peak> possiblePeaks = new ArrayList<Peak>();
+		Cursor<T> roiCursor = Views.interval(img, interval).cursor();
 
-		PeakFinder<T> finder = new PeakFinder<T>(threshold, minimumDistance,
-			findNegativePeaks);
-		List<Peak> peaks = finder.findPeaks(img, interval, t);
+		if (!findNegativePeaks) {
+			while (roiCursor.hasNext()) {
+				double pixel = roiCursor.next().getRealDouble();
 
-		if (peaks == null) peaks = new ArrayList<Peak>();
+				if (pixel > threshold) {
+					possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor
+						.getIntPosition(1), pixel, t));
+				}
+			}
 
-		return peaks;
+			if (possiblePeaks.isEmpty()) return null;
+
+			// Sort the list from lowest to highest pixel value...
+			Collections.sort(possiblePeaks, new Comparator<Peak>() {
+
+				@Override
+				public int compare(Peak o1, Peak o2) {
+					return Double.compare(o1.getPixelValue(), o2.getPixelValue());
+				}
+			});
+		}
+		else {
+			while (roiCursor.hasNext()) {
+				double pixel = roiCursor.next().getRealDouble();
+
+				if (pixel < threshold * (-1)) {
+					possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor
+						.getIntPosition(1), pixel, t));
+				}
+			}
+
+			if (possiblePeaks.isEmpty()) return null;
+
+			// Sort the list from highest to lowest pixel value...
+			Collections.sort(possiblePeaks, new Comparator<Peak>() {
+
+				@Override
+				public int compare(Peak o1, Peak o2) {
+					return Double.compare(o2.getPixelValue(), o1.getPixelValue());
+				}
+			});
+		}
+
+		// We have to make a copy to pass to the KDTREE because it will change the
+		// order and we have already sorted from lowest to highest to pick center of
+		// peaks in for loop below.
+		// This is a shallow copy, which means it contains exactly the same elements
+		// as the first list, but the order can be completely different...
+		List<Peak> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
+
+		// Allows for fast search of nearest peaks...
+		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks,
+			KDTreePossiblePeaks);
+
+		RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
+			new RadiusNeighborSearchOnKDTree<Peak>(possiblePeakTree);
+
+		// As we loop through all possible peaks and remove those that are too close
+		// we will add all the selected peaks to a new array
+		// that will serve as the finalList of actual peaks
+		// This whole process is to remove pixels near the center peak pixel that
+		// are also above the detection threshold but all part of the same peak...
+		List<Peak> finalPeaks = new ArrayList<Peak>();
+
+		// It is really important to remember here that possiblePeaks and
+		// KDTreePossiblePeaks are different lists but point to the same elements
+		// That means if we setNotValid in one it is changing the same object in
+		// another that is required for the stuff below to work.
+		for (int i = possiblePeaks.size() - 1; i >= 0; i--) {
+			Peak peak = possiblePeaks.get(i);
+			if (peak.isValid()) {
+				finalPeaks.add(peak);
+
+				// Then we remove all possible peaks within the minimumDistance...
+				// This will include the peak we just added to the peaks list...
+				radiusSearch.search(peak, minimumDistance, false);
+
+				for (int j = 0; j < radiusSearch.numNeighbors(); j++) {
+					radiusSearch.getSampler(j).get().setNotValid();
+				}
+			}
+		}
+			
+		return finalPeaks;
 	}
 
 	/**
