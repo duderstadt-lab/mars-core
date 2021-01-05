@@ -768,6 +768,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
 		builder.addParameter("Pixel Units", this.pixelUnits);
+		builder.addParameter("Exclude time points", excludeTimePointList);
 		builder.addParameter("Swap Z and T", swapZandT);
 	}
 
