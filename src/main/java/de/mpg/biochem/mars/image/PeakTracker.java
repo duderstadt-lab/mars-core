@@ -29,6 +29,8 @@
 
 package de.mpg.biochem.mars.image;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.stream.IntStream;
 
 import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -134,16 +135,22 @@ public class PeakTracker {
 		if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
 		else searchRadius = maxDifference[3];
 	}
+	
+	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
+			SingleMoleculeArchive archive, int channel)
+	{
+		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
+		track(peakStack, archive, channel, trackingTimePoints);
+	}
 
-	public void track(ConcurrentMap<Integer, List<Peak>> PeakStack,
-		SingleMoleculeArchive archive, int channel)
+	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
+		SingleMoleculeArchive archive, int channel, List<Integer> trackingTimePoints)
 	{
 		metaDataUID = archive.getMetadata(0).getUID();
 
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 		KDTreeStack = new ConcurrentHashMap<>();
-
 		possibleLinks = new ConcurrentHashMap<>();
 
 		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
@@ -154,25 +161,24 @@ public class PeakTracker {
 
 		try {
 
-			forkJoinPool.submit(() -> IntStream.range(0, PeakStack.size()).parallel()
-				.forEach(i -> {
+			forkJoinPool.submit(() -> trackingTimePoints.parallelStream()
+				.forEach(t -> {
 					// Remember this operation will change the order of the peaks in the
 					// Arraylists but that should not be a problem here...
 
 					// If you have a very small ROI and there are fames with no actual
 					// peaks in them.
 					// you need to skip that T.
-					if (PeakStack.containsKey(i))
+					if (peakStack.containsKey(t))
 					{
-						KDTree<Peak> tree = new KDTree<Peak>(PeakStack.get(i), PeakStack
-							.get(i));
-						KDTreeStack.put(i, tree);
+						KDTree<Peak> tree = new KDTree<Peak>(peakStack.get(t), peakStack
+							.get(t));
+						KDTreeStack.put(trackingTimePoints.indexOf(t), tree);
 					}
 				})).get();
 
-			forkJoinPool.submit(() -> IntStream.range(0, PeakStack.size()).parallel()
-				.forEach(t -> findPossibleLinks(PeakStack, t))).get();
-
+			forkJoinPool.submit(() -> trackingTimePoints.parallelStream()
+				.forEach(t -> findPossibleLinks(peakStack, trackingTimePoints.indexOf(t), trackingTimePoints))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
@@ -194,8 +200,8 @@ public class PeakTracker {
 
 		starttime = System.currentTimeMillis();
 
-		for (int t = 0; t < possibleLinks.size(); t++) {
-			List<PeakLink> tPossibleLinks = possibleLinks.get(t);
+		for (int indexT = 0; indexT < possibleLinks.size(); indexT++) {
+			List<PeakLink> tPossibleLinks = possibleLinks.get(indexT);
 			if (tPossibleLinks != null) {
 				for (int i = 0; i < tPossibleLinks.size(); i++) {
 					Peak from = tPossibleLinks.get(i).getFrom();
@@ -209,7 +215,8 @@ public class PeakTracker {
 					// We need to check if the to peak has any nearest neighbors that have
 					// already been linked...
 					boolean regionAlreadyLinked = false;
-					for (int q = t + 1; q <= t + maxDifference[5]; q++) {
+					
+					for (int q = indexT + 1; q <= indexT + maxDifference[5]; q++) {
 						if (!KDTreeStack.containsKey(q)) continue;
 
 						RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
@@ -280,27 +287,27 @@ public class PeakTracker {
 			starttime) / 60000, 2) + " minutes.");
 	}
 
-	private void findPossibleLinks(ConcurrentMap<Integer, List<Peak>> PeakStack,
-		int t)
+	private void findPossibleLinks(ConcurrentMap<Integer, List<Peak>> peakStack,
+		int indexT, List<Integer> trackingTimePoints)
 	{
-		if (!PeakStack.containsKey(t)) return;
+		if (!peakStack.containsKey(trackingTimePoints.get(indexT))) return;
 
 		List<PeakLink> tPossibleLinks = new ArrayList<PeakLink>();
 
-		int endT = t + (int) maxDifference[5];
+		int endT = indexT + (int) maxDifference[5];
 
 		// Don't search past the last slice...
-		if (endT >= PeakStack.size()) endT = PeakStack.size() - 1;
+		if (endT >= trackingTimePoints.size()) endT = trackingTimePoints.size() - 1;
 
 		// Here we only need to loop until maxDifference[5] slices into the
 		// future...
-		for (int j = t + 1; j <= endT; j++) {
+		for (int j = indexT + 1; j <= endT; j++) {
 			// can't search if there are not peaks in that given slice...
 			if (!KDTreeStack.containsKey(j)) continue;
 
 			RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
 				new RadiusNeighborSearchOnKDTree<Peak>(KDTreeStack.get(j));
-			for (Peak linkFrom : PeakStack.get(t)) {
+			for (Peak linkFrom : peakStack.get(trackingTimePoints.get(indexT))) {
 				radiusSearch.search(linkFrom, searchRadius, false);
 
 				for (int q = 0; q < radiusSearch.numNeighbors(); q++) {
@@ -325,7 +332,7 @@ public class PeakTracker {
 
 					if (valid) {
 						PeakLink link = new PeakLink(linkFrom, linkTo, radiusSearch
-							.getSquareDistance(q), t, j - t);
+							.getSquareDistance(q), indexT, j - indexT);
 						tPossibleLinks.add(link);
 					}
 				}
@@ -345,7 +352,7 @@ public class PeakTracker {
 			}
 
 		});
-		possibleLinks.put(t, tPossibleLinks);
+		possibleLinks.put(indexT, tPossibleLinks);
 	}
 
 	private void buildMolecule(Peak startingPeak,

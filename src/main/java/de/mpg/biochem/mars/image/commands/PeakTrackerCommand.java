@@ -29,6 +29,8 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import static java.util.stream.Collectors.toList;
+
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.text.DateFormat;
@@ -276,7 +278,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, etc...)";
 	
 	@Parameter(label = "Exclude", required = false)
-	private String excludeTimePointList;
+	private String excludeTimePointList = "";
 
 	@Parameter
 	private UIService uiService;
@@ -290,7 +292,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * Map from T to peak list
 	 */
-	private ConcurrentMap<Integer, List<Peak>> PeakStack;
+	private ConcurrentMap<Integer, List<Peak>> peakStack;
 
 	/**
 	 * Map from T to IJ1 label metadata string
@@ -381,7 +383,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		PeakStack = new ConcurrentHashMap<>();
+		peakStack = new ConcurrentHashMap<>();
 		metaDataStack = new ConcurrentHashMap<>();
 
 		double starttime = System.currentTimeMillis();
@@ -396,15 +398,47 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		int tSize = (int) dataset.getImgPlus().dimension(tDim);
 
 		final int frameCount = (swapZandT) ? zSize : tSize;
+		
+		//build list of timepoints to process...
+		
+		List<int[]> excludeTimePoints = new ArrayList<int[]>();
+		if (excludeTimePointList.length() > 0) {
+			try {
+				final String[] excludeArray = excludeTimePointList.split(",");
+				for (int i=0; i<excludeArray.length; i++) {
+					String[] endPoints = excludeArray[i].split("-");
+					int start = Integer.valueOf(endPoints[0].trim());
+					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1].trim()) : start;
+		
+					excludeTimePoints.add(new int[] {start, end});
+				}
+			} catch (NumberFormatException e) {
+				logService.info("NumberFormatException encountered when parsing exclude list. Tracking all time points.");
+				excludeTimePoints = new ArrayList<int[]>();
+			}
+		}
+		
+		List<Integer> processTimePoints = new ArrayList<Integer>();
+		for (int t=0; t<frameCount; t++) {
+			boolean processedTimePoint = true;
+			for (int index=0; index<excludeTimePoints.size(); index++)
+				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(index)[1]) {
+					processedTimePoint = false;
+					break;
+				}
+			
+			if (processedTimePoint)
+				processTimePoints.add(t);
+		}
 
 		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(PeakStack.size(), frameCount, "Finding Peaks for " + dataset
-				.getName()), () -> IntStream.range(0, frameCount).parallel().forEach(
+			.showStatus(peakStack.size(), frameCount, "Finding Peaks for " + dataset
+				.getName()), () -> processTimePoints.parallelStream().forEach(
 					t -> {
 						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t,
 							useDogFilter, integrate);
 
-						if (tpeaks.size() > 0) PeakStack.put(t, tpeaks);
+						if (tpeaks.size() > 0) peakStack.put(t, tpeaks);
 					}), PARALLELISM_LEVEL);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
@@ -431,8 +465,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		archive.putMetadata(marsOMEMetadata);
+		
+		//List<Integer> keySet = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
+		//for (int t=0;t < keySet.size(); t++)
+		//	System.out.println(keySet.get(t));
 
-		tracker.track(PeakStack, archive, Integer.valueOf(channel));
+		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints);
 
 		archive.naturalOrderSortMoleculeIndex();
 
@@ -936,5 +974,13 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	public String getPixelUnits() {
 		return this.pixelUnits;
+	}
+	
+	public void setExcludedTimePointsList(String excludeTimePointList) {
+		this.excludeTimePointList = excludeTimePointList;
+	}
+	
+	public String getExcludedTimePointsList() {
+		return this.excludeTimePointList;
 	}
 }
