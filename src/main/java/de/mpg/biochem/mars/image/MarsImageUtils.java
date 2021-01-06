@@ -54,6 +54,14 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.Masks;
+import net.imglib2.roi.RealMaskRealInterval;
+import net.imglib2.roi.Regions;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.RandomAccessibleOnRealRandomAccessible;
 
 import de.mpg.biochem.mars.util.Gaussian2D;
 
@@ -151,7 +159,48 @@ public class MarsImageUtils {
 
 		return outerOffsetCache.get(radii);
 	}
-
+	
+	/**
+	 * This method returned a list of peaks in the 2D image within the interval
+	 * and iterable interval specified that are above the pixel value threshold 
+	 * specified. The local maximum within the minimum distance is always chosen. 
+	 * The point in time provided is set for all peaks returned. Negative peaks 
+	 * can be located if desired. The peak search will only be performed in the 
+	 * iterable interval provided.
+	 * 
+	 * @param <T> Image type.
+	 * @param img 2D image containing peaks.
+	 * @param interval The interval to search for peaks in the image.
+	 * @param IterableInterval Pixels to search for peaks.
+	 * @param t The T position being searched for peaks.
+	 * @param threshold The pixel value threshold for peak detection.
+	 * @param minimumDistance The minimum allowed distance between peaks.
+	 * @param findNegativePeaks Whether to search for negative peaks.
+	 * @return The list of peaks found.
+	 */
+	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
+		RandomAccessible<T> img, Interval interval, IterableInterval<T> iterableInterval, int t, double threshold,
+		int minimumDistance, boolean findNegativePeaks)
+	{
+		Cursor<T> cursor = Views.interval(img, interval).cursor();
+		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance, findNegativePeaks);
+	}
+	
+	/**
+	 * This method converts from a RealMaskRealInterval to an IterablRegion
+	 * 
+	 * @param roi A RealMaskRealInterval represent the region of interest to convert.
+	 */
+	public static <T extends RealType<T> & NativeType<T>> IterableRegion< BoolType > toIterableRegion(
+ 			RealMaskRealInterval roi)
+ 	{
+ 		RealRandomAccessible< BoolType > rra = Masks.toRealRandomAccessible(roi);
+ 		RandomAccessibleOnRealRandomAccessible< BoolType > ra = Views.raster(rra);
+ 		Interval interval = Intervals.largestContainedInterval(roi);
+ 		IntervalView< BoolType > rai = Views.interval(ra, interval);
+ 		return Regions.iterable(rai);
+ 	}
+	
 	/**
 	 * This method returned a list of peaks in the 2D image within the interval
 	 * specified that are above the pixel value threshold specified. The local
@@ -172,15 +221,38 @@ public class MarsImageUtils {
 		RandomAccessible<T> img, Interval interval, int t, double threshold,
 		int minimumDistance, boolean findNegativePeaks)
 	{
+		Cursor<T> cursor = Views.interval(img, interval).cursor();
+		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance, findNegativePeaks);
+	}
+
+	/**
+	 * This method returned a list of peaks in the 2D image using the cursor
+	 * specified that are above the pixel value threshold specified. The local
+	 * maximum within the minimum distance is always chosen. The point in time
+	 * provided is set for all peaks returned. Negative peaks can be located if
+	 * desired.
+	 * 
+	 * @param <T> Image type.
+	 * @param img 2D image containing peaks.
+	 * @param cursor The cursor used to iterate through the regions of interest.
+	 * @param t The T position being searched for peaks.
+	 * @param threshold The pixel value threshold for peak detection.
+	 * @param minimumDistance The minimum allowed distance between peaks.
+	 * @param findNegativePeaks Whether to search for negative peaks.
+	 * @return The list of peaks found.
+	 */
+	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
+		RandomAccessible<T> img, Cursor<T> cursor, int t, double threshold,
+		int minimumDistance, boolean findNegativePeaks)
+	{
 		List<Peak> possiblePeaks = new ArrayList<Peak>();
-		Cursor<T> roiCursor = Views.interval(img, interval).cursor();
 
 		if (!findNegativePeaks) {
-			while (roiCursor.hasNext()) {
-				double pixel = roiCursor.next().getRealDouble();
+			while (cursor.hasNext()) {
+				double pixel = cursor.next().getRealDouble();
 
 				if (pixel > threshold) {
-					possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor
+					possiblePeaks.add(new Peak(cursor.getIntPosition(0), cursor
 						.getIntPosition(1), pixel, t));
 				}
 			}
@@ -197,11 +269,11 @@ public class MarsImageUtils {
 			});
 		}
 		else {
-			while (roiCursor.hasNext()) {
-				double pixel = roiCursor.next().getRealDouble();
+			while (cursor.hasNext()) {
+				double pixel = cursor.next().getRealDouble();
 
 				if (pixel < threshold * (-1)) {
-					possiblePeaks.add(new Peak(roiCursor.getIntPosition(0), roiCursor
+					possiblePeaks.add(new Peak(cursor.getIntPosition(0), cursor
 						.getIntPosition(1), pixel, t));
 				}
 			}
