@@ -99,10 +99,6 @@ public class PeakTrackerCommandTest {
 		// Run the Command
 		peakTracker.setDataset(simulateDataset());
 		peakTracker.setUseROI(false);
-		peakTracker.setX0(0);
-		peakTracker.setY0(0);
-		peakTracker.setWidth(50);
-		peakTracker.setHeight(50);
 		peakTracker.setChannel(0);
 		peakTracker.setUseDogFiler(true);
 		peakTracker.setDogFilterRadius(1.8d);
