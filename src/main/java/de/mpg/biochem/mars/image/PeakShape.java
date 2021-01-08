@@ -2,6 +2,9 @@ package de.mpg.biochem.mars.image;
 
 import java.util.Arrays;
 
+import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import net.imagej.ImgPlus;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
@@ -18,10 +21,11 @@ import net.imglib2.view.Views;
  * 
  * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
  * 
- * @author Karl Duderstadt; very small changes to work with mars... 2020
+ * @author Karl Duderstadt; Marsified... 2020
  */
 
-public class PeakShape {
+public class PeakShape extends AbstractJsonConvertibleRecord {
+	
 	public final double[] x, y;
 	
 	public PeakShape( final double[] x, final double[] y )
@@ -168,5 +172,33 @@ public class PeakShape {
 			a += x[ i ] * y[ i + 1 ] - x[ i + 1 ] * y[ i ];
 
 		return ( a + x[ n - 1 ] * y[ 0 ] - x[ 0 ] * y[ n - 1 ] ) / 2.0;
+	}
+
+	@Override
+	protected void createIOMaps() {
+		setJsonField("shape", jGenerator -> {
+			if (x.length > 0) {
+				jGenerator.writeFieldName("x");
+				jGenerator.writeArray(x, 0, x.length);
+			}
+			if (y.length > 0) {
+				jGenerator.writeFieldName("y");
+				jGenerator.writeArray(y, 0, y.length);
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				if ("x".equals(jParser.getCurrentName()))
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						
+					}
+					
+				if ("y".equals(jParser.getCurrentName()))
+					while (jParser.nextToken() != JsonToken.END_ARRAY) {
+						
+					}
+				
+				//NEED TO FILL x and y in these array while loops...
+			}
+		});
 	}
 }

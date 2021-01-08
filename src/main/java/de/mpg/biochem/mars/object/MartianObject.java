@@ -37,70 +37,68 @@ import java.util.concurrent.ConcurrentMap;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.image.PeakShape;
 import de.mpg.biochem.mars.molecule.AbstractMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
 
 public class MartianObject extends AbstractMolecule {
 
-	private ConcurrentMap<Integer, MarsTable> archTables;
+	private ConcurrentMap<Integer, PeakShape> shapes;
 
 	public MartianObject() {
 		super();
-		archTables = new ConcurrentHashMap<>();
+		shapes = new ConcurrentHashMap<>();
 	}
 
 	public MartianObject(JsonParser jParser) throws IOException {
 		super();
-		archTables = new ConcurrentHashMap<>();
+		shapes = new ConcurrentHashMap<>();
 		fromJSON(jParser);
 	}
 
 	public MartianObject(String UID) {
 		super(UID);
-		archTables = new ConcurrentHashMap<>();
+		shapes = new ConcurrentHashMap<>();
 	}
 
 	public MartianObject(String UID, MarsTable dataTable) {
 		super(UID, dataTable);
-		archTables = new ConcurrentHashMap<>();
+		shapes = new ConcurrentHashMap<>();
 	}
 
-	public void putArchTable(int key, MarsTable table) {
-		archTables.put(key, table);
+	public void putShape(int t, PeakShape shape) {
+		shapes.put(t, shape);
 	}
 
-	public boolean hasArchTable(int key) {
-		return archTables.containsKey(key);
+	public boolean hasShape(int t) {
+		return shapes.containsKey(t);
 	}
 
-	public MarsTable getArchTable(int key) {
-		return archTables.get(key);
+	public PeakShape getShape(int t) {
+		return shapes.get(t);
 	}
 
-	public void removeArchTable(int key) {
-		archTables.remove(key);
+	public void removeShape(int t) {
+		shapes.remove(t);
 	}
 
-	public Set<Integer> getArchTableKeys() {
-		return archTables.keySet();
+	public Set<Integer> getShapeKeys() {
+		return shapes.keySet();
 	}
 
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
 
-		setJsonField("archTables", jGenerator -> {
-			if (archTables.keySet().size() > 0) {
-				jGenerator.writeArrayFieldStart("archTables");
-				for (int slice : archTables.keySet()) {
+		setJsonField("shapes", jGenerator -> {
+			if (shapes.keySet().size() > 0) {
+				jGenerator.writeArrayFieldStart("shapes");
+				for (int t : shapes.keySet()) {
 					jGenerator.writeStartObject();
+					jGenerator.writeNumberField("t", t);
 
-					// FIXME this is pre OME
-
-					jGenerator.writeNumberField("slice", slice);
-
-					jGenerator.writeFieldName("table");
-					archTables.get(slice).toJSON(jGenerator);
+					jGenerator.writeFieldName("shape");
+					shapes.get(t).toJSON(jGenerator);
 
 					jGenerator.writeEndObject();
 				}
@@ -109,22 +107,21 @@ public class MartianObject extends AbstractMolecule {
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
-					int slice = -1;
+					int t = -1;
 
-					// FIXME this is pre OME
-					if ("slice".equals(jParser.getCurrentName())) {
+					if ("t".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						slice = jParser.getNumberValue().intValue();
+						t = jParser.getNumberValue().intValue();
 					}
 
 					// Move to next field
 					jParser.nextToken();
 
-					MarsTable archTable = new MarsTable("archTable " + slice);
+					PeakShape shape = new PeakShape("shape " + t);
 
-					archTable.fromJSON(jParser);
+					shape.fromJSON(jParser);
 
-					if (slice != -1) archTables.put(slice, archTable);
+					if (t != -1) shapes.put(t, shape);
 				}
 			}
 		});
