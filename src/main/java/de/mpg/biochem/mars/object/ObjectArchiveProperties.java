@@ -27,23 +27,24 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.object;
 
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchiveProperties;
 
-public class ArchMoleculeArchiveIndex extends
-	AbstractMoleculeArchiveIndex<ArchMolecule, MarsOMEMetadata>
+public class ObjectArchiveProperties extends
+	AbstractMoleculeArchiveProperties<MartianObject, MarsOMEMetadata>
 {
 
-	public ArchMoleculeArchiveIndex() {
+	public ObjectArchiveProperties() {
 		super();
 	}
 
-	public ArchMoleculeArchiveIndex(JsonParser jParser) throws IOException {
+	public ObjectArchiveProperties(JsonParser jParser) throws IOException {
 		super(jParser);
 	}
 }

@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.object;
 
 import java.io.IOException;
 import java.util.Set;
@@ -37,29 +37,30 @@ import java.util.concurrent.ConcurrentMap;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import de.mpg.biochem.mars.molecule.AbstractMolecule;
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class ArchMolecule extends AbstractMolecule {
+public class MartianObject extends AbstractMolecule {
 
 	private ConcurrentMap<Integer, MarsTable> archTables;
 
-	public ArchMolecule() {
+	public MartianObject() {
 		super();
 		archTables = new ConcurrentHashMap<>();
 	}
 
-	public ArchMolecule(JsonParser jParser) throws IOException {
+	public MartianObject(JsonParser jParser) throws IOException {
 		super();
 		archTables = new ConcurrentHashMap<>();
 		fromJSON(jParser);
 	}
 
-	public ArchMolecule(String UID) {
+	public MartianObject(String UID) {
 		super(UID);
 		archTables = new ConcurrentHashMap<>();
 	}
 
-	public ArchMolecule(String UID, MarsTable dataTable) {
+	public MartianObject(String UID, MarsTable dataTable) {
 		super(UID, dataTable);
 		archTables = new ConcurrentHashMap<>();
 	}

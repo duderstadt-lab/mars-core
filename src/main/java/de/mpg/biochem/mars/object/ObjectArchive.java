@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.object;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,38 +36,39 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.*;
+import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 
-public class ArchMoleculeArchive extends
-	AbstractMoleculeArchive<ArchMolecule, MarsOMEMetadata, ArchMoleculeArchiveProperties, ArchMoleculeArchiveIndex>
+public class ObjectArchive extends
+	AbstractMoleculeArchive<MartianObject, MarsOMEMetadata, ObjectArchiveProperties, ObjectArchiveIndex>
 {
 
-	public ArchMoleculeArchive(String name) {
+	public ObjectArchive(String name) {
 		super(name);
 	}
 
-	public ArchMoleculeArchive(File file) throws IOException, JsonParseException {
+	public ObjectArchive(File file) throws IOException, JsonParseException {
 		super(file);
 	}
 
-	public ArchMoleculeArchive(String name, MarsTable table) {
+	public ObjectArchive(String name, MarsTable table) {
 		super(name, table);
 	}
 
-	public ArchMoleculeArchive(String name, File file) throws JsonParseException,
+	public ObjectArchive(String name, File file) throws JsonParseException,
 		IOException
 	{
 		super(name, file);
 	}
 
-	public ArchMoleculeArchiveProperties createProperties() {
-		return new ArchMoleculeArchiveProperties();
+	public ObjectArchiveProperties createProperties() {
+		return new ObjectArchiveProperties();
 	}
 
-	public ArchMoleculeArchiveProperties createProperties(JsonParser jParser)
+	public ObjectArchiveProperties createProperties(JsonParser jParser)
 		throws IOException
 	{
-		return new ArchMoleculeArchiveProperties(jParser);
+		return new ObjectArchiveProperties(jParser);
 	}
 
 	/**
@@ -83,31 +84,31 @@ public class ArchMoleculeArchive extends
 		return new MarsOMEMetadata(metaUID);
 	}
 
-	public ArchMolecule createMolecule() {
-		return new ArchMolecule();
+	public MartianObject createMolecule() {
+		return new MartianObject();
 	}
 
-	public ArchMolecule createMolecule(JsonParser jParser) throws IOException {
-		return new ArchMolecule(jParser);
+	public MartianObject createMolecule(JsonParser jParser) throws IOException {
+		return new MartianObject(jParser);
 	}
 
-	public ArchMolecule createMolecule(String UID) {
-		return new ArchMolecule(UID);
+	public MartianObject createMolecule(String UID) {
+		return new MartianObject(UID);
 	}
 
-	public ArchMolecule createMolecule(String UID, MarsTable table) {
-		return new ArchMolecule(UID, table);
-	}
-
-	@Override
-	public ArchMoleculeArchiveIndex createIndex() {
-		return new ArchMoleculeArchiveIndex();
+	public MartianObject createMolecule(String UID, MarsTable table) {
+		return new MartianObject(UID, table);
 	}
 
 	@Override
-	public ArchMoleculeArchiveIndex createIndex(JsonParser jParser)
+	public ObjectArchiveIndex createIndex() {
+		return new ObjectArchiveIndex();
+	}
+
+	@Override
+	public ObjectArchiveIndex createIndex(JsonParser jParser)
 		throws IOException
 	{
-		return new ArchMoleculeArchiveIndex(jParser);
+		return new ObjectArchiveIndex(jParser);
 	}
 }
