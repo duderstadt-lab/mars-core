@@ -29,20 +29,12 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import static java.util.stream.Collectors.toList;
-
 import java.awt.Color;
 import java.awt.Rectangle;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.IntStream;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -50,7 +42,6 @@ import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
-import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.RealMask;
@@ -59,7 +50,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -81,7 +71,6 @@ import org.scijava.widget.NumberWidget;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.image.PeakTracker;
-import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
@@ -105,16 +94,12 @@ import io.scif.services.FormatService;
 import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
 import ome.units.quantity.Length;
-import ome.units.quantity.Time;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.DimensionOrder;
 import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
-import ome.xml.model.enums.UnitsTime;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
-import ome.xml.model.enums.handlers.UnitsTimeEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
-import ome.xml.model.primitives.Timestamp;
 
 @Plugin(type = Command.class, label = "Peak Tracker", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
