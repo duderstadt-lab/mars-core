@@ -57,6 +57,7 @@ import net.imglib2.view.Views;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.Masks;
+import net.imglib2.roi.RealMask;
 import net.imglib2.roi.RealMaskRealInterval;
 import net.imglib2.roi.Regions;
 import net.imglib2.type.logic.BoolType;
@@ -161,6 +162,34 @@ public class MarsImageUtils {
 	}
 	
 	/**
+	 * This method converts from a RealMaskRealInterval to an IterablRegion
+	 * 
+	 * @param roi A RealMaskRealInterval represent the region of interest to convert.
+	 */
+	public static IterableRegion< BoolType > toIterableRegion(
+ 			RealMaskRealInterval roi)
+ 	{
+ 		RealRandomAccessible< BoolType > rra = Masks.toRealRandomAccessible(roi);
+ 		RandomAccessibleOnRealRandomAccessible< BoolType > ra = Views.raster(rra);
+ 		Interval interval = Intervals.largestContainedInterval(roi);
+ 		IntervalView< BoolType > rai = Views.interval(ra, interval);
+ 		return Regions.iterable(rai);
+ 	}
+	
+	/**
+	 * This method converts from a RealMask to an IterablRegion
+	 * 
+	 * @param mask The RealMaks representing the roi.
+	 * @param image The Interval of the image.
+	 */
+	public static IterableRegion< BoolType > toIterableRegion( RealMask mask, Interval image )
+	{
+		final RandomAccessible<BoolType > discreteROI = Views.raster( Masks.toRealRandomAccessible(mask) );
+		final IntervalView<BoolType> boundedDiscreteROI = Views.interval(discreteROI, image);
+		return Regions.iterable(boundedDiscreteROI);
+	}
+	
+	/**
 	 * This method returned a list of peaks in the 2D image within the interval
 	 * and iterable interval specified that are above the pixel value threshold 
 	 * specified. The local maximum within the minimum distance is always chosen. 
@@ -179,27 +208,12 @@ public class MarsImageUtils {
 	 * @return The list of peaks found.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
-		RandomAccessible<T> img, Interval interval, IterableInterval<T> iterableInterval, int t, double threshold,
+		RandomAccessible<T> img, IterableInterval<T> iterableInterval, int t, double threshold,
 		int minimumDistance, boolean findNegativePeaks)
 	{
-		Cursor<T> cursor = Views.interval(img, interval).cursor();
+		Cursor<T> cursor = iterableInterval.cursor();
 		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance, findNegativePeaks);
 	}
-	
-	/**
-	 * This method converts from a RealMaskRealInterval to an IterablRegion
-	 * 
-	 * @param roi A RealMaskRealInterval represent the region of interest to convert.
-	 */
-	public static <T extends RealType<T> & NativeType<T>> IterableRegion< BoolType > toIterableRegion(
- 			RealMaskRealInterval roi)
- 	{
- 		RealRandomAccessible< BoolType > rra = Masks.toRealRandomAccessible(roi);
- 		RandomAccessibleOnRealRandomAccessible< BoolType > ra = Views.raster(rra);
- 		Interval interval = Intervals.largestContainedInterval(roi);
- 		IntervalView< BoolType > rai = Views.interval(ra, interval);
- 		return Regions.iterable(rai);
- 	}
 	
 	/**
 	 * This method returned a list of peaks in the 2D image within the interval

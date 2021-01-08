@@ -48,7 +48,11 @@ import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.roi.Regions;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
@@ -132,18 +136,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Use ROI", persist = false)
 	private boolean useROI = true;
 
-	@Parameter(label = "ROI x0", persist = false)
-	private int x0;
-
-	@Parameter(label = "ROI y0", persist = false)
-	private int y0;
-
-	@Parameter(label = "ROI width", persist = false)
-	private int width;
-
-	@Parameter(label = "ROI height", persist = false)
-	private int height;
-
 	/**
 	 * FINDER SETTINGS
 	 */
@@ -166,7 +158,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		callback = "previewChanged")
 	private boolean preview = false;
 
-	@Parameter(label = "Preview Roi:",
+	@Parameter(label = "Preview:",
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
 			"point" })
 	private String previewRoiType;
@@ -245,8 +237,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	private ConcurrentMap<Integer, List<Peak>> peakStack;
 
 	private boolean swapZandT = false;
-	private Interval interval;
-	private Roi startingRoi;
+	private Roi roi;
 
 	public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
 		"sigma", "R2" };
@@ -261,18 +252,13 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		}
 		else if (dataset == null) return;
 
-		Rectangle rect;
 		if (image.getRoi() == null) {
-			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
 		}
-		else {
-			rect = image.getRoi().getBounds();
-			startingRoi = image.getRoi();
-		}
-
+		else roi = image.getRoi();
+		
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -281,22 +267,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			channels.add(String.valueOf(ch - 1));
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
-
-		final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0",
-			Integer.class);
-		imgX0.setValue(this, rect.x);
-
-		final MutableModuleItem<Integer> imgY0 = getInfo().getMutableInput("y0",
-			Integer.class);
-		imgY0.setValue(this, rect.y);
-
-		final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput(
-			"width", Integer.class);
-		imgWidth.setValue(this, rect.width);
-
-		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput(
-			"height", Integer.class);
-		imgHeight.setValue(this, rect.height);
 
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
 			"theT", Integer.class);
@@ -313,7 +283,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		updateInterval();
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
 
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Peak Finder");
@@ -359,22 +332,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 		if (addToRoiManager) addToRoiManager();
 
-		if (image != null) image.setRoi(startingRoi);
+		if (image != null) image.setRoi(roi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
-	}
-
-	private void updateInterval() {
-		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1,
-				dataset.dimension(1) - 1);
-
-		if (image != null) {
-			image.deleteRoi();
-			image.setOverlay(null);
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -388,23 +350,29 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 				channel, t);
 
 		List<Peak> peaks = new ArrayList<Peak>();
+		
+		//Convert from Roi to IterableInterval
+		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		
+		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
+		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
 
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(img, dogFilterRadius, opService);
-			peaks = MarsImageUtils.findPeaks(filteredImg, interval, t, threshold,
+			peaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableROI, filteredImg ), t, threshold,
 				minimumDistance, findNegativePeaks);
 		}
-		else peaks = MarsImageUtils.findPeaks(img, interval, t, threshold,
+		else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
 			minimumDistance, findNegativePeaks);
 
 		if (fitPeaks) {
-			peaks = MarsImageUtils.fitPeaks(img, interval, peaks, fitRadius,
+			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
 				dogFilterRadius, findNegativePeaks, RsquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 		}
 
-		if (integrate) MarsImageUtils.integratePeaks(img, interval, peaks,
+		if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
 			integrationInnerRadius, integrationOuterRadius);
 
 		return peaks;
@@ -499,7 +467,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			updateInterval();
+			if (image != null) {
+				image.deleteRoi();
+				image.setOverlay(null);
+			}
 
 			if (swapZandT) image.setSlice(theT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
@@ -549,7 +520,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	public void cancel() {
 		if (image != null) {
 			image.setOverlay(null);
-			image.setRoi(startingRoi);
+			image.setRoi(roi);
 		}
 	}
 
@@ -572,12 +543,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			builder.addParameter("Dataset Name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
-		if (useROI) {
-			builder.addParameter("ROI x0", String.valueOf(x0));
-			builder.addParameter("ROI y0", String.valueOf(y0));
-			builder.addParameter("ROI width", String.valueOf(width));
-			builder.addParameter("ROI height", String.valueOf(height));
-		}
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
@@ -617,44 +582,20 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		return dataset;
 	}
 
-	public void setUseROI(boolean useROI) {
+	public void setUseRoi(boolean useROI) {
 		this.useROI = useROI;
 	}
 
-	public boolean getUseROI() {
+	public boolean getUseRoi() {
 		return useROI;
 	}
-
-	public void setX0(int x0) {
-		this.x0 = x0;
+	
+	public void setRoi(Roi roi) {
+		this.roi = roi;
 	}
-
-	public int getX0() {
-		return x0;
-	}
-
-	public void setY0(int y0) {
-		this.y0 = y0;
-	}
-
-	public int getY0() {
-		return y0;
-	}
-
-	public void setWidth(int width) {
-		this.width = width;
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public void setHeight(int height) {
-		this.height = height;
-	}
-
-	public int getHeight() {
-		return height;
+	
+	public Roi getROI() {
+		return this.roi;
 	}
 
 	public void setChannel(int channel) {
