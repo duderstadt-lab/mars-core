@@ -139,19 +139,19 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		}
 	}
 
-	public static Peak createPeak( final String UID, final double[] x, final double[] y )
+	public static Peak createPeak( final double[] xr, final double[] yr )
 	{
 		// Put polygon coordinates with respect to centroid.
-		final double[] centroid = centroid( x, y );
+		final double[] centroid = centroid( xr, yr );
 		final double xc = centroid[ 0 ];
 		final double yc = centroid[ 1 ];
-		final double[] xr = Arrays.stream( x ).map( x0 -> x0 - xc ).toArray();
-		final double[] yr = Arrays.stream( y ).map( y0 -> y0 - yc ).toArray();
+		//final double[] xr = Arrays.stream( x ).map( x0 -> x0 - xc ).toArray();
+		//final double[] yr = Arrays.stream( y ).map( y0 -> y0 - yc ).toArray();
 		
 		// Create roi.
 		final PeakShape peakShape = new PeakShape( xr, yr );
 		final double r = peakShape.radius();
-		final Peak peak = new Peak( UID, xc, yc );
+		final Peak peak = new Peak( xc, yc );
 		peak.setProperty("RADIUS", r);
 		peak.setShape( peakShape );
 		return peak;

@@ -129,6 +129,11 @@ public class Peak implements RealLocalizable {
 		this.t = t;
 	}
 	
+	public Peak(double x, double y) {
+		this.x = x;
+		this.y = y;
+	}
+	
 	public Peak(Peak peak) {
 		this.x = peak.getX();
 		this.y = peak.getY();
@@ -298,7 +303,10 @@ public class Peak implements RealLocalizable {
 	}
 
 	public double getRSquared() {
-		return this.properties.get(R2).doubleValue();
+		if (properties.containsKey("R2"))
+			return this.properties.get(R2).doubleValue();
+		else
+			return 0;
 	}
 
 	// Override from RealLocalizable interface. So peaks can be passed to KDTree

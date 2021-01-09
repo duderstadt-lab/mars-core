@@ -45,6 +45,8 @@ import java.util.concurrent.ForkJoinPool;
 
 import net.imglib2.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
@@ -142,14 +144,14 @@ public class PeakTracker {
 	}
 	
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, int channel)
+			MoleculeArchive<?, ?, ?, ?> archive, int channel)
 	{
 		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
 		track(peakStack, archive, channel, trackingTimePoints);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, int channel, List<Integer> trackingTimePoints)
+			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints)
 	{
 		metaDataUID = archive.getMetadata(0).getUID();
 
@@ -360,8 +362,9 @@ public class PeakTracker {
 		possibleLinks.put(indexT, tPossibleLinks);
 	}
 
-	private void buildMolecule(Peak startingPeak,
-		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
+	@SuppressWarnings("unchecked")
+	private <M extends Molecule> void buildMolecule(Peak startingPeak,
+		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<M, ?, ?, ?> archive,
 		int channel)
 	{
 		// don't add the molecule if the trajectory length is below
@@ -416,6 +419,6 @@ public class PeakTracker {
 		mol.setChannel(channel);
 		mol.setImage(archive.getMetadata(0).images().findFirst().get()
 			.getImageID());
-		archive.put(mol);
+		archive.put((M) mol);
 	}
 }

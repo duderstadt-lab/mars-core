@@ -645,12 +645,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					for (Peak p : peaks) {
 						// The pixel origin for OvalRois is at the upper left corner !!!!
 						// The pixel origin for PointRois is at the center !!!
-						final OvalRoi roi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+						final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
 							fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
 								2, fitRadius * 2);
-						roi.setStrokeColor(Color.CYAN.darker());
+						ovalRoi.setStrokeColor(Color.CYAN.darker());
 
-						overlay.add(roi);
+						overlay.add(ovalRoi);
 					}
 					image.setOverlay(overlay);
 				}

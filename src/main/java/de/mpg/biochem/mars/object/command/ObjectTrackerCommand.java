@@ -42,13 +42,17 @@ import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealLocalizable;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.RealMask;
 import net.imglib2.roi.Regions;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
 import org.decimal4j.util.DoubleRounder;
@@ -70,10 +74,12 @@ import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.image.PeakShape;
 import de.mpg.biochem.mars.image.PeakTracker;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.object.ObjectArchive;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
@@ -100,6 +106,24 @@ import ome.xml.model.enums.EnumerationException;
 import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.enums.handlers.UnitsLengthEnumHandler;
 import ome.xml.model.primitives.PositiveInteger;
+
+import net.imglib2.algorithm.labeling.ConnectedComponents;
+import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.roi.labeling.ImgLabeling;
+import net.imglib2.roi.labeling.LabelRegions;
+import net.imglib2.type.numeric.IntegerType;
+
+import java.util.Iterator;
+import net.imglib2.roi.labeling.LabelRegion;
+import net.imglib2.roi.geom.real.Polygon2D;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.process.FloatPolygon;
+
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
+import net.imglib2.type.logic.BitType;
 
 @Plugin(type = Command.class, label = "Object Tracker", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -144,7 +168,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * IMAGE
 	 */
-	@Parameter(label = "Image to search for Peaks")
+	@Parameter(label = "Image to search for Objects")
 	private ImageDisplay imageDisplay;
 
 	/**
@@ -162,55 +186,42 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 
-	@Parameter(label = "Use DoG filter")
-	private boolean useDogFilter = true;
+	@Parameter(label = "Local ostu radius")
+	private long ostuRadius = 50;
 
-	@Parameter(label = "DoG filter radius")
-	private double dogFilterRadius = 2;
-
-	@Parameter(label = "Detection threshold")
-	private double threshold = 50;
-
-	@Parameter(label = "Minimum distance between peaks")
+	@Parameter(label = "Minimum distance between object centers")
 	private int minimumDistance = 4;
-
+	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
 
-	@Parameter(label = "Preview Roi:",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
-			"point" })
+	@Parameter(label = "Segmentation preview:",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "contour",
+			"area" })
 	private String previewRoiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String tPeakCount = "count: 0";
+	private String tObjectCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
 		persist = false)
 	private int previewT;
 
-	@Parameter(label = "Find negative peaks")
-	private boolean findNegativePeaks = false;
-
 	/**
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String fitterTitle = "Peak fitter settings:";
+	private final String fitterTitle = "Contour Settings:";
 
-	@Parameter(label = "Fit radius")
-	private int fitRadius = 4;
-
-	@Parameter(label = "Minimum R-squared", style = NumberWidget.SLIDER_STYLE,
-		min = "0.00", max = "1.00", stepSize = "0.01")
-	private double RsquaredMin = 0;
+	@Parameter(label = "linear interpolation factor")
+	private int interpolationFactor = 4;
 
 	/**
 	 * TRACKER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String trackerTitle = "Peak tracker settings:";
+	private final String trackerTitle = "Object tracker settings:";
 
 	@Parameter(label = "Max difference x")
 	private double maxDifferenceX = 1;
@@ -229,18 +240,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(label = "Verbose output")
 	private boolean verbose = false;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String integrationTitle = "Peak integration settings:";
-
-	@Parameter(label = "Integrate")
-	private boolean integrate = false;
-
-	@Parameter(label = "Inner radius")
-	private int integrationInnerRadius = 1;
-
-	@Parameter(label = "Outer radius")
-	private int integrationOuterRadius = 3;
 
 	@Parameter(label = "Microscope")
 	private String microscope;
@@ -264,17 +263,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * OUTPUTS
 	 */
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
-	private SingleMoleculeArchive archive;
+	private ObjectArchive archive;
 
 	/**
 	 * Map from T to peak list
 	 */
-	private ConcurrentMap<Integer, List<Peak>> peakStack;
-
-	/**
-	 * Map from T to IJ1 label metadata string
-	 */
-	private ConcurrentMap<Integer, String> metaDataStack;
+	private ConcurrentMap<Integer, List<Peak>> objectStack;
 
 	private PeakTracker tracker;
 
@@ -335,13 +329,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
-		String log = LogBuilder.buildTitleBlock("Peak Tracker");
+		String log = LogBuilder.buildTitleBlock("Object Tracker");
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		peakStack = new ConcurrentHashMap<>();
-		metaDataStack = new ConcurrentHashMap<>();
+		objectStack = new ConcurrentHashMap<>();
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
@@ -389,23 +382,22 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(peakStack.size(), frameCount, "Finding Peaks for " + dataset
+			.showStatus(objectStack.size(), frameCount, "Finding objects for " + dataset
 				.getName()), () -> processTimePoints.parallelStream().forEach(
 					t -> {
-						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), t,
-							useDogFilter, integrate);
+						List<Peak> tobjects = findObjectsInT(Integer.valueOf(channel), t);
 
-						if (tpeaks.size() > 0) peakStack.put(t, tpeaks);
+						if (tobjects.size() > 0) objectStack.put(t, tobjects);
 					}), PARALLELISM_LEVEL);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
 		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, integrate, verbose, logService,
+			minimumDistance, minTrajectoryLength, false, verbose, logService,
 			pixelLength);
 
-		archive = new SingleMoleculeArchive("archive.yama");
+		archive = new ObjectArchive("archive.yama");
 
 		MarsOMEMetadata marsOMEMetadata = buildOMEMetadata();
 
@@ -423,7 +415,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints);
+		tracker.track(objectStack, archive, Integer.valueOf(channel), processTimePoints);
 
 		archive.naturalOrderSortMoleculeIndex();
 
@@ -460,52 +452,81 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate)
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findObjectsInT(
+		int channel, int t)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
 			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
 				channel, t);
-			
-		// Workaround for IJ1 metadata in slices - Norpix format.
-		if (!preview && image != null) {
-			ImageStack stack = image.getImageStack();
-			int index = t + 1;
-			if (!swapZandT) index = image.getStackIndex(channel + 1, 1, t + 1);
 
-			// Have to retrieve the image processor to make sure the label has been
-			// loaded.
-			stack.getProcessor(index);
-			String label = stack.getSliceLabel(index);
-			metaDataStack.put(t, label);
-		}
-
-		List<Peak> peaks = new ArrayList<Peak>();
+		List<Peak> objects = new ArrayList<Peak>();
 		
 		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+
+		final long[] dims = new long[img.numDimensions()];
+        img.dimensions(dims);
+        
+        /*
+         * scaleFactors = [0.5, 0.5, 1] // Reduce X and Y to 50%; leave C dimension alone.
+interpolationStrategy = new NLinearInterpolatorFactory()
+
+// crop to only one channel left
+image = ij.op().run("scaleView", clown, scaleFactors, interpolationStrategy)
+         */
 		
-		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
-		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+		final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", img, new BitType());
+		
+		opService.run("threshold.otsu", binaryImg, img, new HyperSphereShape(this.ostuRadius));
+		
+		final RandomAccessibleInterval<UnsignedShortType> indexImg = ArrayImgs.unsignedShorts(dims);
+        final ImgLabeling<Integer, UnsignedShortType> labeling = new ImgLabeling<>(indexImg);
 
-		if (useDogFilter) {
-			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
-				.dogFilter(img, dogFilterRadius, opService);
+        opService.run("labeling.cca", labeling, binaryImg, StructuringElement.FOUR_CONNECTED);
+		
+        LabelRegions< Integer > regions = new LabelRegions< Integer >(labeling);
+        Iterator< LabelRegion< Integer > > iterator = regions.iterator();
+        while ( iterator.hasNext() ) {
+        	LabelRegion< Integer > region = iterator.next();
+        	Polygon2D poly = opService.geom().contour( region, true );
+        	float[] xPoints = new float[poly.numVertices()];
+        	float[] yPoints = new float[poly.numVertices()];
+        	for (int i=0; i<poly.numVertices(); i++) {
+        		RealLocalizable p = poly.vertex(i);
+        		xPoints[i] = p.getFloatPosition(0);
+        		yPoints[i] = p.getFloatPosition(1);
+        	}
+        	PolygonRoi r = new PolygonRoi( xPoints, yPoints, Roi.POLYGON);
+        	r = new PolygonRoi(r.getInterpolatedPolygon(1, false), Roi.POLYGON);
+        	r = smoothPolygonRoi(r);
+        	r = new PolygonRoi(r.getInterpolatedPolygon(Math.min(2, r.getNCoordinates() * 0.1), false), Roi.POLYGON);
+        	
+        	double[] xs = new double[r.getFloatPolygon().xpoints.length];
+        	double[] ys = new double[r.getFloatPolygon().ypoints.length];
+        	for (int i=0; i< xs.length; i++) {
+        		xs[i] = r.getFloatPolygon().xpoints[i];
+        		ys[i] = r.getFloatPolygon().ypoints[i];
+        	}
+        	objects.add(PeakShape.createPeak(xs, ys));
+        }
 
-			peaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableROI, filteredImg ), t, threshold,
-				minimumDistance, findNegativePeaks);
-		}
-		else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
-			minimumDistance, findNegativePeaks);
+		objects = MarsImageUtils.removeNearestNeighbors(objects, minimumDistance);
 
-		peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
-			dogFilterRadius, findNegativePeaks, RsquaredMin);
-		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
-
-		if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
-			integrationInnerRadius, integrationOuterRadius);
-
-		return peaks;
+		return objects;
+	}
+	
+	private PolygonRoi smoothPolygonRoi(PolygonRoi r) {
+	    FloatPolygon poly = r.getFloatPolygon();
+	    FloatPolygon poly2 = new FloatPolygon();
+	    int nPoints = poly.npoints;
+	    for (int i = 0; i < nPoints; i += 2) {
+	        int iMinus = (i + nPoints - 1) % nPoints;
+	        int iPlus = (i + 1) % nPoints;
+	        poly2.addPoint((poly.xpoints[iMinus] + poly.xpoints[iPlus] + poly.xpoints[i])/3,
+	                (poly.ypoints[iMinus] + poly.ypoints[iPlus] + poly.ypoints[i])/3);
+	    }
+//				return new PolygonRoi(poly2, r.getType());
+	    return new PolygonRoi(poly2, Roi.POLYGON);
 	}
 
 	private MarsOMEMetadata buildOMEMetadata() {
@@ -539,15 +560,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
-			
-			//Check for SliceLabels
-			if (metadata.get(0).getTable().containsKey("SliceLabels")) {
-				String[] sliceLabels = (String[]) metadata.get(0).getTable().get("SliceLabels");
-				metaDataStack.clear();
-					
-					for (int i=0; i<sliceLabels.length; i++)
-						metaDataStack.put(i, sliceLabels[i]);
-			}
 		}
 		
 		if (swapZandT) {
@@ -556,26 +568,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			
 			omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
 			omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
-		}
-		
-		//Check format
-		if (metaDataStack.containsKey(0) && metaDataStack.get(0).contains("DateTime: ")) {
-			//Must be Norpix format..
-			logService.info("Reading Norpix Format");
-
-			String metaUID = generateUID(metaDataStack);
-			//omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
-			//omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
-			//omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
-			//omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
-			//omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
-			omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
-			
-			MarsOMEMetadata marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-			
-			MarsOMEUtils.getTimeFromNoprixSliceLabels(marsOMEMetadata, metaDataStack);
-
-			return marsOMEMetadata;
 		}
 
 		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
@@ -602,14 +594,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
 
-	private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
-		String allLabels = "";
-		for (int i = 0; i < headerLabels.size(); i++)
-			allLabels += headerLabels.get(i);
-
-		return MarsMath.getFNV1aBase58(allLabels);
-	}
-
 	@Override
 	public void preview() {
 		if (preview) {
@@ -621,38 +605,48 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			if (swapZandT) image.setSlice(previewT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 
-			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
-				useDogFilter, false);
+			List<Peak> peaks = findObjectsInT(Integer.valueOf(channel), previewT);
 
 			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-				"tPeakCount", String.class);
+				"tObjectCount", String.class);
 
 			if (!peaks.isEmpty()) {
 
-				if (previewRoiType.equals("point")) {
+				if (previewRoiType.equals("contour")) {
 					Overlay overlay = new Overlay();
-					FloatPolygon poly = new FloatPolygon();
-					for (Peak p : peaks)
-						poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
 
-					PointRoi peakRoi = new PointRoi(poly);
+					for (Peak p : peaks) {
+						float[] xs = new float[p.getShape().x.length];
+						float[] ys = new float[p.getShape().y.length];
+			        	for (int i=0; i< xs.length; i++) {
+			        		xs[i] = (float) p.getShape().x[i];
+			        		ys[i] = (float) p.getShape().y[i];
+			        	}
+						
+						PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
+						overlay.add(r);
+					}
 
-					overlay.add(peakRoi);
 					image.setOverlay(overlay);
 				}
 				else {
-					Overlay overlay = new Overlay();
-					for (Peak p : peaks) {
+					//Overlay overlay = new Overlay();
+					
+					//FIX ME add area to image..
+					
+					//for (Peak p : peaks) {
+						
+						
 						// The pixel origin for OvalRois is at the upper left corner !!!!
 						// The pixel origin for PointRois is at the center !!!
-						final OvalRoi roi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-							fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-								2, fitRadius * 2);
-						roi.setStrokeColor(Color.CYAN.darker());
+						//final OvalRoi areaRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+						//	fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
+						//		2, fitRadius * 2);
+						//areaRoi.setStrokeColor(Color.CYAN.darker());
 
-						overlay.add(roi);
-					}
-					image.setOverlay(overlay);
+						//overlay.add(areaRoi);
+					//}
+					//image.setOverlay(overlay);
 				}
 
 				preFrameCount.setValue(this, "count: " + peaks.size());
@@ -687,28 +681,19 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 		else builder.addParameter("Dataset Name", dataset.getName());
+		
+		// FIX ME add missing fields and add missing getters and setters below...
 
 		builder.addParameter("useROI", String.valueOf(useROI));
 		builder.addParameter("Channel", channel);
-		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
-		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
-		builder.addParameter("Threshold", String.valueOf(threshold));
+		builder.addParameter("Local ostu radius", String.valueOf(ostuRadius));
 		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
-		builder.addParameter("Find negative peaks", String.valueOf(
-			findNegativePeaks));
-		builder.addParameter("Fit radius", String.valueOf(fitRadius));
-		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Max difference x", String.valueOf(maxDifferenceX));
 		builder.addParameter("Max difference y", String.valueOf(maxDifferenceY));
 		builder.addParameter("Max difference T", String.valueOf(maxDifferenceT));
 		builder.addParameter("Minimum track length", String.valueOf(
 			minTrajectoryLength));
-		builder.addParameter("Integrate", String.valueOf(integrate));
-		builder.addParameter("Integration inner radius", String.valueOf(
-			integrationInnerRadius));
-		builder.addParameter("Integration outer radius", String.valueOf(
-			integrationOuterRadius));
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
 		builder.addParameter("Pixel Units", this.pixelUnits);
@@ -717,7 +702,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	// Getters and Setters
-	public SingleMoleculeArchive getArchive() {
+	public ObjectArchive getArchive() {
 		return archive;
 	}
 
@@ -761,20 +746,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		return Integer.valueOf(channel);
 	}
 
-	public void setUseDogFiler(boolean useDogFilter) {
-		this.useDogFilter = useDogFilter;
+	public void setLocalOstuRadius(int ostuRadius) {
+		this.ostuRadius = ostuRadius;
 	}
 
-	public void setDogFilterRadius(double dogFilterRadius) {
-		this.dogFilterRadius = dogFilterRadius;
-	}
-
-	public void setThreshold(int threshold) {
-		this.threshold = threshold;
-	}
-
-	public double getThreshold() {
-		return threshold;
+	public double getLocalOstuRadius() {
+		return ostuRadius;
 	}
 
 	public void setMinimumDistance(int minimumDistance) {
@@ -783,30 +760,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	public int getMinimumDistance() {
 		return minimumDistance;
-	}
-
-	public void setFindNegativePeaks(boolean findNegativePeaks) {
-		this.findNegativePeaks = findNegativePeaks;
-	}
-
-	public boolean getFindNegativePeaks() {
-		return findNegativePeaks;
-	}
-
-	public void setFitRadius(int fitRadius) {
-		this.fitRadius = fitRadius;
-	}
-
-	public int getFitRadius() {
-		return fitRadius;
-	}
-
-	public void setMinimumRsquared(double Rsquared) {
-		this.RsquaredMin = Rsquared;
-	}
-
-	public double getMinimumRsquared() {
-		return RsquaredMin;
 	}
 
 	public void setVerboseOutput(boolean verbose) {
@@ -847,30 +800,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	public int getMinimumTrackLength() {
 		return minTrajectoryLength;
-	}
-
-	public void setIntegrate(boolean integrate) {
-		this.integrate = integrate;
-	}
-
-	public boolean getIntegrate() {
-		return integrate;
-	}
-
-	public void setIntegrationInnerRadius(int integrationInnerRadius) {
-		this.integrationInnerRadius = integrationInnerRadius;
-	}
-
-	public int getIntegrationInnerRadius() {
-		return integrationInnerRadius;
-	}
-
-	public void setIntegrationOuterRadius(int integrationOuterRadius) {
-		this.integrationOuterRadius = integrationOuterRadius;
-	}
-
-	public int getIntegrationOuterRadius() {
-		return integrationOuterRadius;
 	}
 
 	public void setMicroscope(String microscope) {
