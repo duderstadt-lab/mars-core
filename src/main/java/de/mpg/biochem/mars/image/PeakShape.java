@@ -1,7 +1,9 @@
 package de.mpg.biochem.mars.image;
 
+import java.io.IOException;
 import java.util.Arrays;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
@@ -17,22 +19,38 @@ import net.imglib2.type.logic.BoolType;
 import net.imglib2.view.Views;
 
 /**
- * Renamed copy of SpotRoi from trackmate with small modifications for integration into Mars.
+ * Stores shape information for objects as 2D polygons. 
+ * Extends AbstractJsonConvertibleRecord to allow for saving to 
+ * file as JSON. Provides utility methods to sample inside the shape,
+ * calculate the area and center position as well as Peak generation
+ * method. Peaks contain references to PeakShape for recovery of shape
+ * after tracking using the center position.
  * 
- * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
- * 
- * @author Karl Duderstadt; Marsified... 2020
+ * @author Karl Duderstadt
  */
 
 public class PeakShape extends AbstractJsonConvertibleRecord {
 	
-	public final double[] x, y;
+	public double[] x, y;
 	
 	public PeakShape( final double[] x, final double[] y )
 	{
 		this.x = x;
 		this.y = y;
 	}
+	
+	public PeakShape(JsonParser jParser) throws IOException {
+		super();
+		fromJSON(jParser);
+	}
+	
+	
+	/*
+	 * Utility methods from  SpotRoi from trackmate with small modifications for integration into Mars.
+	 * 
+	 * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
+	 * 
+	 */
 	
 	/**
 	 * Returns a new <code>int</code> array containing the X pixel coordinates
@@ -121,7 +139,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		}
 	}
 
-	public static Peak createSpot( final String UID, final double[] x, final double[] y )
+	public static Peak createPeak( final String UID, final double[] x, final double[] y )
 	{
 		// Put polygon coordinates with respect to centroid.
 		final double[] centroid = centroid( x, y );
@@ -132,18 +150,12 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		
 		// Create roi.
 		final PeakShape peakShape = new PeakShape( xr, yr );
-		
-		// Create spot.
 		final double r = peakShape.radius();
 		final Peak peak = new Peak( UID, xc, yc );
 		peak.setProperty("RADIUS", r);
 		peak.setShape( peakShape );
 		return peak;
 	}
-
-	/*
-	 * UTILS.
-	 */
 
 	private static final double[] centroid( final double[] x, final double[] y )
 	{
@@ -177,6 +189,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	@Override
 	protected void createIOMaps() {
 		setJsonField("shape", jGenerator -> {
+			jGenerator.writeNumberField("vertices", x.length);
 			if (x.length > 0) {
 				jGenerator.writeFieldName("x");
 				jGenerator.writeArray(x, 0, x.length);
@@ -186,18 +199,28 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 				jGenerator.writeArray(y, 0, y.length);
 			}
 		}, jParser -> {
+			int vertices = 0;
+			int xIndex = 0;
+			int yIndex = 0;
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				if ("vertices".equals(jParser.getCurrentName())) {
+					jParser.nextToken();
+					vertices = jParser.getIntValue();
+					x = new double[vertices];
+					y = new double[vertices];
+				}
+				
 				if ("x".equals(jParser.getCurrentName()))
 					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						
+						x[xIndex] = jParser.getDoubleValue();
+						xIndex++;
 					}
 					
 				if ("y".equals(jParser.getCurrentName()))
 					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						
+						y[yIndex] = jParser.getDoubleValue();
+						yIndex++;
 					}
-				
-				//NEED TO FILL x and y in these array while loops...
 			}
 		});
 	}

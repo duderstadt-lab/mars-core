@@ -116,12 +116,8 @@ public class MartianObject extends AbstractMolecule {
 
 					// Move to next field
 					jParser.nextToken();
-
-					PeakShape shape = new PeakShape("shape " + t);
-
-					shape.fromJSON(jParser);
-
-					if (t != -1) shapes.put(t, shape);
+					
+					if (t != -1) shapes.put(t, new PeakShape(jParser));
 				}
 			}
 		});
