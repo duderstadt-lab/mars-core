@@ -67,7 +67,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	private UIService uiService;
 
 	@Parameter(label = "MoleculeArchive")
-	private SingleMoleculeArchive archive;
+	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "Source:",
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "dt",
@@ -104,7 +104,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		// Loop through each molecule and add a Time (s) column using the metadata
 		// information...
 		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			SingleMolecule molecule = archive.get(UID);
+			Molecule molecule = archive.get(UID);
 
 			MarsMetadata metadata = archive.getMetadata(molecule.getMetadataUID());
 			MarsTable datatable = molecule.getTable();
@@ -225,11 +225,11 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		archive.logln("  ");
 	}
 
-	public void setArchive(SingleMoleculeArchive archive) {
+	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
 		this.archive = archive;
 	}
 
-	public SingleMoleculeArchive getArchive() {
+	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
 		return archive;
 	}
 
