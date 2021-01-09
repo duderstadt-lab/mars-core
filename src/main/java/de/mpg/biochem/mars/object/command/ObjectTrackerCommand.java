@@ -619,8 +619,8 @@ image = ij.op().run("scaleView", clown, scaleFactors, interpolationStrategy)
 						float[] xs = new float[p.getShape().x.length];
 						float[] ys = new float[p.getShape().y.length];
 			        	for (int i=0; i< xs.length; i++) {
-			        		xs[i] = (float) p.getShape().x[i];
-			        		ys[i] = (float) p.getShape().y[i];
+			        		xs[i] = (float) (p.getShape().x[i] + 0.5);
+			        		ys[i] = (float) (p.getShape().y[i] + 0.5);
 			        	}
 						
 						PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
