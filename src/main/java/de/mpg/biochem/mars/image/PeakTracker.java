@@ -50,6 +50,11 @@ import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 import org.scijava.table.DoubleColumn;
 
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -137,14 +142,14 @@ public class PeakTracker {
 	}
 	
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			SingleMoleculeArchive archive, int channel)
+			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, int channel)
 	{
 		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
 		track(peakStack, archive, channel, trackingTimePoints);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-		SingleMoleculeArchive archive, int channel, List<Integer> trackingTimePoints)
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive, int channel, List<Integer> trackingTimePoints)
 	{
 		metaDataUID = archive.getMetadata(0).getUID();
 
@@ -356,7 +361,7 @@ public class PeakTracker {
 	}
 
 	private void buildMolecule(Peak startingPeak,
-		HashMap<String, Integer> trajectoryLengths, SingleMoleculeArchive archive,
+		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		int channel)
 	{
 		// don't add the molecule if the trajectory length is below
@@ -406,7 +411,7 @@ public class PeakTracker {
 			});
 		}
 
-		SingleMolecule mol = new SingleMolecule(startingPeak.getUID(), table);
+		Molecule mol = archive.createMolecule(startingPeak.getUID(), table);
 		mol.setMetadataUID(metaDataUID);
 		mol.setChannel(channel);
 		mol.setImage(archive.getMetadata(0).images().findFirst().get()
