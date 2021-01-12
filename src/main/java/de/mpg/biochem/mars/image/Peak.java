@@ -247,6 +247,7 @@ public class Peak implements RealLocalizable {
 		if (columns.containsKey(HEIGHT)) columns.get(HEIGHT).add(properties.get(HEIGHT).doubleValue());
 		if (columns.containsKey(SIGMA)) columns.get(SIGMA).add(properties.get(SIGMA).doubleValue());
 		if (columns.containsKey(R2)) columns.get(R2).add(properties.get(R2).doubleValue());
+		if (columns.containsKey("area") && properties.containsKey("area")) columns.get("area").add(properties.get("area").doubleValue());
 	}
 
 	// used for pixel sort in the peak finder

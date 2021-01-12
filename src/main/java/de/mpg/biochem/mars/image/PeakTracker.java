@@ -397,10 +397,14 @@ public class PeakTracker {
 		// Now loop through all peaks connected to this starting peak and
 		// add them to a DataTable as we go
 		Peak peak = startingPeak;
-		peak.addToColumns(columns);
 		
-		if (archive instanceof ObjectArchive)
+		if (archive instanceof ObjectArchive) {
 			((MartianObject) mol).putShape(peak.getT(), peak.getShape());
+			if (peak.getProperties().containsKey("area"))
+				columns.put("area", new DoubleColumn("area"));
+		}
+		
+		peak.addToColumns(columns);
 
 		// fail-safe in case somehow a peak is linked to itself?
 		// Fixes some kind of bug observed very very rarely that

@@ -200,7 +200,6 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 			},
 			jParser -> {
 				int xIndex = 0;
-				//jParser.nextToken();
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					x[xIndex] = jParser.getDoubleValue();
 					xIndex++;
@@ -212,7 +211,6 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		},
 		jParser -> {
 			int yIndex = 0;
-			//jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				y[yIndex] = jParser.getDoubleValue();
 				yIndex++;

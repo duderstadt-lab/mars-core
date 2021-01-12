@@ -227,6 +227,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "linear interpolation factor")
 	private double interpolationFactor = 1;
+	
+	@Parameter(label = "Use area filter")
+	private boolean useAreaFilter = true;
+	
+	@Parameter(label = "Minimum area")
+	private double minArea = 1;
 
 	/**
 	 * TRACKER SETTINGS
@@ -520,7 +526,16 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
         		xs[i] = r.getFloatPolygon().xpoints[i]/interpolationFactor;
         		ys[i] = r.getFloatPolygon().ypoints[i]/interpolationFactor;
         	}
-        	objects.add(PeakShape.createPeak(xs, ys));
+        	
+        	Peak peak = PeakShape.createPeak(xs, ys);
+        	final double area = peak.getShape().area();
+        	peak.setProperty("area", area);
+        	
+        	if (useAreaFilter) { 
+        		if (area > minArea) 
+        			objects.add(peak);
+        	} else
+        		objects.add(peak);
         }
 
 		objects = MarsImageUtils.removeNearestNeighbors(objects, minimumDistance);
