@@ -106,18 +106,18 @@ public class MartianObject extends AbstractMolecule {
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				int t = -1;
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
-					int t = -1;
-
 					if ("t".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
 						t = jParser.getNumberValue().intValue();
 					}
 
-					// Move to next field
-					jParser.nextToken();
-					
-					if (t != -1) shapes.put(t, new PeakShape(jParser));
+					if ("shape".equals(jParser.getCurrentName())) {
+						jParser.nextToken();
+						PeakShape shape = new PeakShape(jParser);
+						if (t != -1) shapes.put(t, shape);
+					}
 				}
 			}
 		});

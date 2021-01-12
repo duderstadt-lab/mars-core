@@ -59,6 +59,8 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.SingleMolecule;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
+import de.mpg.biochem.mars.object.ObjectArchive;
+import de.mpg.biochem.mars.object.MartianObject;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
 
@@ -371,6 +373,12 @@ public class PeakTracker {
 		// minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getUID())
 			.intValue() < minTrajectoryLength) return;
+		
+		Molecule mol = archive.createMolecule(startingPeak.getUID());
+		mol.setMetadataUID(metaDataUID);
+		mol.setChannel(channel);
+		mol.setImage(archive.getMetadata(0).images().findFirst().get()
+			.getImageID());
 
 		Map<String, DoubleColumn> columns =
 			new LinkedHashMap<String, DoubleColumn>();
@@ -390,6 +398,9 @@ public class PeakTracker {
 		// add them to a DataTable as we go
 		Peak peak = startingPeak;
 		peak.addToColumns(columns);
+		
+		if (archive instanceof ObjectArchive)
+			((MartianObject) mol).putShape(peak.getT(), peak.getShape());
 
 		// fail-safe in case somehow a peak is linked to itself?
 		// Fixes some kind of bug observed very very rarely that
@@ -399,6 +410,8 @@ public class PeakTracker {
 		while (peak.getForwardLink() != null && count < sizeT) {
 			peak = peak.getForwardLink();
 			peak.addToColumns(columns);
+			if (archive instanceof ObjectArchive)
+				((MartianObject) mol).putShape(peak.getT(), peak.getShape());
 			count++;
 		}
 
@@ -414,11 +427,7 @@ public class PeakTracker {
 			});
 		}
 
-		Molecule mol = archive.createMolecule(startingPeak.getUID(), table);
-		mol.setMetadataUID(metaDataUID);
-		mol.setChannel(channel);
-		mol.setImage(archive.getMetadata(0).images().findFirst().get()
-			.getImageID());
+		mol.setTable(table);
 		archive.put((M) mol);
 	}
 }

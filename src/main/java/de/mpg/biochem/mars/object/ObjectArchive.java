@@ -75,9 +75,7 @@ public class ObjectArchive extends
 	 * Create MarsOMEMetadata record using JsonParser stream.
 	 */
 	public MarsOMEMetadata createMetadata(JsonParser jParser) throws IOException {
-		if (properties().getInputSchema() == null) return MarsOMEUtils
-			.translateToMarsOMEMetadata(new OLDMarsMetadata(jParser));
-		else return new MarsOMEMetadata(jParser);
+		return new MarsOMEMetadata(jParser);
 	}
 
 	public MarsOMEMetadata createMetadata(String metaUID) {

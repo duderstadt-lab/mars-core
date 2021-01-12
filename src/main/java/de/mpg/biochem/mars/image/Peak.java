@@ -76,7 +76,8 @@ public class Peak implements RealLocalizable {
 
 	private String UID, colorName;
 	private Peak forwardLink, backwardLink;
-	private double x, y, t, c, pixelValue;
+	private double x, y, pixelValue;
+	private int c, t;
 	private boolean valid = true;
 
 	/**
@@ -112,7 +113,7 @@ public class Peak implements RealLocalizable {
 	}
 
 	public Peak(double x, double y, double height, double baseline, double sigma,
-		double t)
+		int t)
 	{
 		this.x = x;
 		this.y = y;
@@ -122,7 +123,7 @@ public class Peak implements RealLocalizable {
 		this.t = t;
 	}
 
-	public Peak(double x, double y, double pixelValue, double t) {
+	public Peak(double x, double y, double pixelValue, int t) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
@@ -196,19 +197,19 @@ public class Peak implements RealLocalizable {
 		return UID;
 	}
 
-	public double getT() {
+	public int getT() {
 		return t;
 	}
 
-	public void setT(double t) {
+	public void setT(int t) {
 		this.t = t;
 	}
 
-	public double getC() {
+	public int getC() {
 		return c;
 	}
 
-	public void setC(double c) {
+	public void setC(int c) {
 		this.c = c;
 	}
 
@@ -238,7 +239,7 @@ public class Peak implements RealLocalizable {
 	}
 
 	public void addToColumns(Map<String, DoubleColumn> columns) {
-		if (columns.containsKey("T")) columns.get("T").add(t);
+		if (columns.containsKey("T")) columns.get("T").add((double)t);
 		if (columns.containsKey("x")) columns.get("x").add(x);
 		if (columns.containsKey("y")) columns.get("y").add(y);
 		if (columns.containsKey(INTENSITY)) columns.get(INTENSITY).add(properties.get(INTENSITY).doubleValue());

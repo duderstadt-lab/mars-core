@@ -188,39 +188,34 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 
 	@Override
 	protected void createIOMaps() {
-		setJsonField("shape", jGenerator -> {
-			jGenerator.writeNumberField("vertices", x.length);
-			if (x.length > 0) {
+		setJsonField("vertices", jGenerator -> jGenerator.writeNumberField("vertices", x.length),
+			jParser -> {
+				final int vertices = jParser.getIntValue();
+				x = new double[vertices];
+				y = new double[vertices];
+			});
+		setJsonField("x", jGenerator -> {
 				jGenerator.writeFieldName("x");
 				jGenerator.writeArray(x, 0, x.length);
-			}
-			if (y.length > 0) {
-				jGenerator.writeFieldName("y");
-				jGenerator.writeArray(y, 0, y.length);
-			}
-		}, jParser -> {
-			int vertices = 0;
-			int xIndex = 0;
-			int yIndex = 0;
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				if ("vertices".equals(jParser.getCurrentName())) {
-					jParser.nextToken();
-					vertices = jParser.getIntValue();
-					x = new double[vertices];
-					y = new double[vertices];
+			},
+			jParser -> {
+				int xIndex = 0;
+				//jParser.nextToken();
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					x[xIndex] = jParser.getDoubleValue();
+					xIndex++;
 				}
-				
-				if ("x".equals(jParser.getCurrentName()))
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						x[xIndex] = jParser.getDoubleValue();
-						xIndex++;
-					}
-					
-				if ("y".equals(jParser.getCurrentName()))
-					while (jParser.nextToken() != JsonToken.END_ARRAY) {
-						y[yIndex] = jParser.getDoubleValue();
-						yIndex++;
-					}
+			});
+		setJsonField("y", jGenerator -> {
+			jGenerator.writeFieldName("y");
+			jGenerator.writeArray(y, 0, y.length);
+		},
+		jParser -> {
+			int yIndex = 0;
+			//jParser.nextToken();
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				y[yIndex] = jParser.getDoubleValue();
+				yIndex++;
 			}
 		});
 	}

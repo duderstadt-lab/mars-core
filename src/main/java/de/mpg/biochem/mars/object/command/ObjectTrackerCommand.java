@@ -42,6 +42,8 @@ import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
@@ -54,6 +56,9 @@ import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -111,6 +116,10 @@ import net.imglib2.algorithm.labeling.ConnectedComponents;
 import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.outofbounds.OutOfBoundsMirrorFactory;
+import net.imglib2.outofbounds.OutOfBoundsMirrorFactory.Boundary;
 import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.roi.labeling.LabelRegions;
 import net.imglib2.type.numeric.IntegerType;
@@ -124,6 +133,8 @@ import ij.process.FloatPolygon;
 
 import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Scale;
 
 @Plugin(type = Command.class, label = "Object Tracker", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -215,7 +226,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	private final String fitterTitle = "Contour Settings:";
 
 	@Parameter(label = "linear interpolation factor")
-	private int interpolationFactor = 4;
+	private double interpolationFactor = 1;
 
 	/**
 	 * TRACKER SETTINGS
@@ -420,7 +431,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		archive.naturalOrderSortMoleculeIndex();
 
 		// Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
+		getInfo().getMutableOutput("archive", ObjectArchive.class).setLabel(
 			archive.getName());
 
 		if (image != null) image.setRoi(roi);
@@ -462,24 +473,26 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		List<Peak> objects = new ArrayList<Peak>();
 		
-		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
-
-		final long[] dims = new long[img.numDimensions()];
-        img.dimensions(dims);
+		Interval interval = (useROI && roi != null) ? Intervals.createMinMax(roi.getBounds().x, roi.getBounds().y, 
+				roi.getBounds().x + roi.getBounds().width - 1, roi.getBounds().y + roi.getBounds().height - 1) : 
+					Intervals.createMinMax(0, 0, dataset.dimension(0) - 1, dataset.dimension(1) - 1);
+       
+        double[] scaleFactors = new double[] {interpolationFactor, interpolationFactor};
+        NLinearInterpolatorFactory<T> interpolator = new NLinearInterpolatorFactory<T>();
         
-        /*
-         * scaleFactors = [0.5, 0.5, 1] // Reduce X and Y to 50%; leave C dimension alone.
-interpolationStrategy = new NLinearInterpolatorFactory()
+        Interval newInterval = Intervals.createMinMax(Math.round(interval.min(0) * interpolationFactor), 
+        		Math.round(interval.min(1) * interpolationFactor), Math.round(interval.max(0) * interpolationFactor), Math.round(interval.max(1) * interpolationFactor));
+        
+        IntervalView<T> scaledImg = Views.interval(Views.raster(RealViews.affineReal(
+				Views.interpolate(Views.extendMirrorSingle(img), interpolator),
+				new Scale(scaleFactors))), newInterval);
+        
+        final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", scaledImg, new BitType());
+		
+		opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.ostuRadius), 
+				new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(Boundary.SINGLE));
 
-// crop to only one channel left
-image = ij.op().run("scaleView", clown, scaleFactors, interpolationStrategy)
-         */
-		
-		final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", img, new BitType());
-		
-		opService.run("threshold.otsu", binaryImg, img, new HyperSphereShape(this.ostuRadius));
-		
-		final RandomAccessibleInterval<UnsignedShortType> indexImg = ArrayImgs.unsignedShorts(dims);
+		final RandomAccessibleInterval<UnsignedShortType> indexImg = (RandomAccessibleInterval<UnsignedShortType>) opService.run("create.img", binaryImg, new UnsignedShortType());
         final ImgLabeling<Integer, UnsignedShortType> labeling = new ImgLabeling<>(indexImg);
 
         opService.run("labeling.cca", labeling, binaryImg, StructuringElement.FOUR_CONNECTED);
@@ -504,13 +517,16 @@ image = ij.op().run("scaleView", clown, scaleFactors, interpolationStrategy)
         	double[] xs = new double[r.getFloatPolygon().xpoints.length];
         	double[] ys = new double[r.getFloatPolygon().ypoints.length];
         	for (int i=0; i< xs.length; i++) {
-        		xs[i] = r.getFloatPolygon().xpoints[i];
-        		ys[i] = r.getFloatPolygon().ypoints[i];
+        		xs[i] = r.getFloatPolygon().xpoints[i]/interpolationFactor;
+        		ys[i] = r.getFloatPolygon().ypoints[i]/interpolationFactor;
         	}
         	objects.add(PeakShape.createPeak(xs, ys));
         }
 
 		objects = MarsImageUtils.removeNearestNeighbors(objects, minimumDistance);
+		
+		//Set the T for the Peaks
+		objects.forEach(p -> p.setT(t));
 
 		return objects;
 	}
