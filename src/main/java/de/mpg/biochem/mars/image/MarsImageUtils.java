@@ -274,7 +274,7 @@ public class MarsImageUtils {
 				}
 			}
 
-			if (possiblePeaks.isEmpty()) return null;
+			if (possiblePeaks.isEmpty()) return new ArrayList<Peak>();
 
 			// Sort the list from lowest to highest pixel value...
 			Collections.sort(possiblePeaks, new Comparator<Peak>() {
