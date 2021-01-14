@@ -356,7 +356,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		
 		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
 		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
-
+		
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(img, dogFilterRadius, opService);
@@ -365,7 +365,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		}
 		else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
 			minimumDistance, findNegativePeaks);
-
+		
 		if (fitPeaks) {
 			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
 				dogFilterRadius, findNegativePeaks, RsquaredMin);
