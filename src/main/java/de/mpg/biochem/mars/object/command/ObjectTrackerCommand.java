@@ -197,8 +197,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
 
-	@Parameter(label = "Local ostu radius")
-	private long ostuRadius = 50;
+	@Parameter(label = "Local otsu radius")
+	private long otsuRadius = 50;
 
 	@Parameter(label = "Minimum distance between object centers")
 	private int minimumDistance = 4;
@@ -495,7 +495,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
         
         final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", scaledImg, new BitType());
 		
-		opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.ostuRadius), 
+		opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.otsuRadius), 
 				new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(Boundary.SINGLE));
 
 		final RandomAccessibleInterval<UnsignedShortType> indexImg = (RandomAccessibleInterval<UnsignedShortType>) opService.run("create.img", binaryImg, new UnsignedShortType());
@@ -717,7 +717,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		builder.addParameter("useROI", String.valueOf(useROI));
 		builder.addParameter("Channel", channel);
-		builder.addParameter("Local ostu radius", String.valueOf(ostuRadius));
+		builder.addParameter("Local otsu radius", String.valueOf(otsuRadius));
 		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Max difference x", String.valueOf(maxDifferenceX));
@@ -777,12 +777,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		return Integer.valueOf(channel);
 	}
 
-	public void setLocalOstuRadius(int ostuRadius) {
-		this.ostuRadius = ostuRadius;
+	public void setLocalOtsuRadius(int otsuRadius) {
+		this.otsuRadius = otsuRadius;
 	}
 
-	public double getLocalOstuRadius() {
-		return ostuRadius;
+	public double getLocalOtsuRadius() {
+		return otsuRadius;
 	}
 
 	public void setMinimumDistance(int minimumDistance) {
