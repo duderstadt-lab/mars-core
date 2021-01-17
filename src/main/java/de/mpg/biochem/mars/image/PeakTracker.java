@@ -79,11 +79,11 @@ public class PeakTracker {
 	private double[] maxDifference;
 	private boolean[] ckMaxDifference;
 	private int minTrajectoryLength;
-	public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
-		"sigma", "R2" };
+	//public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
+	//	"sigma", "R2" };
 	private double searchRadius;
 	private boolean verbose = false;
-	private boolean writeIntegration = false;
+	//private boolean writeIntegration = false;
 	private int minimumDistance;
 	private double pixelSize = 1;
 
@@ -100,12 +100,10 @@ public class PeakTracker {
 
 	public PeakTracker(double maxDifferenceX, double maxDifferenceY,
 		double maxDifferenceT, int minimumDistance, int minTrajectoryLength,
-		boolean writeIntegration, boolean verbose, LogService logService,
-		double pixelSize)
+		boolean verbose, LogService logService, double pixelSize)
 	{
 		this.logService = logService;
 		this.verbose = verbose;
-		this.writeIntegration = writeIntegration;
 
 		maxDifference = new double[6];
 		maxDifference[0] = Double.NaN;
@@ -134,7 +132,6 @@ public class PeakTracker {
 	{
 		this.logService = logService;
 		this.verbose = verbose;
-		this.writeIntegration = writeIntegration;
 		this.maxDifference = maxDifference;
 		this.ckMaxDifference = ckMaxDifference;
 		this.minimumDistance = minimumDistance;
@@ -380,54 +377,44 @@ public class PeakTracker {
 		mol.setImage(archive.getMetadata(0).images().findFirst().get()
 			.getImageID());
 
-		Map<String, DoubleColumn> columns =
-			new LinkedHashMap<String, DoubleColumn>();
-
-		columns.put("T", new DoubleColumn("T"));
-		columns.put("x", new DoubleColumn("x"));
-		columns.put("y", new DoubleColumn("y"));
-
-		if (writeIntegration) columns.put("intensity", new DoubleColumn(
-			"intensity"));
-
-		if (verbose) for (int i = 0; i < TABLE_HEADERS_VERBOSE.length; i++)
-			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(
-				TABLE_HEADERS_VERBOSE[i]));
+		MarsTable table = new MarsTable();
 
 		// Now loop through all peaks connected to this starting peak and
 		// add them to a DataTable as we go
 		Peak peak = startingPeak;
-		
-		if (archive instanceof ObjectArchive) {
-			((MartianObject) mol).putShape(peak.getT(), peak.getShape());
-			if (peak.getProperties().containsKey("area"))
-				columns.put("area", new DoubleColumn("area"));
-		}
-		
-		peak.addToColumns(columns);
-
-		// fail-safe in case somehow a peak is linked to itself?
-		// Fixes some kind of bug observed very very rarely that
-		// prevents creation of an archive...
+				
+		// fail-safe in case there are more peak links than sizeT
+		int row = 0;
 		int sizeT = archive.getMetadata(0).getImage(0).getSizeT();
-		int count = 0;
-		while (peak.getForwardLink() != null && count < sizeT) {
-			peak = peak.getForwardLink();
-			peak.addToColumns(columns);
+		do {
+			table.appendRow();
+			table.setValue("T", row, (double)peak.getT());
+			table.setValue("x", row, peak.getX());
+			table.setValue("y", row, peak.getY());
+			if (verbose) {
+				for (String name : peak.getProperties().keySet())
+					table.setValue(name, row, peak.getProperties().get(name));
+			} else {
+				if (peak.getProperties().containsKey(Peak.INTENSITY))
+					table.setValue(Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
+				if (archive instanceof ObjectArchive)
+					table.setValue("area", row, peak.getProperties().get("area"));
+			}
+			
 			if (archive instanceof ObjectArchive)
 				((MartianObject) mol).putShape(peak.getT(), peak.getShape());
-			count++;
-		}
-
-		MarsTable table = new MarsTable();
-		for (String key : columns.keySet())
-			table.add(columns.get(key));
+			
+			row++;
+			peak = peak.getForwardLink();
+		} while (peak != null && row < sizeT);
 
 		// Convert units
 		if (pixelSize != 1) {
-			table.rows().forEach(row -> {
-				row.setValue("x", row.getValue("x") * pixelSize);
-				row.setValue("y", row.getValue("y") * pixelSize);
+			table.rows().forEach(r -> {
+				r.setValue("x", r.getValue("x") * pixelSize);
+				r.setValue("y", r.getValue("y") * pixelSize);
+				
+				//What about objects? The polygons be multiplied also by pixelSize...
 			});
 		}
 

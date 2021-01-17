@@ -237,7 +237,7 @@ public class Peak implements RealLocalizable {
 		this.y = values[3];
 		this.properties.put(SIGMA, values[4]);
 	}
-
+/*
 	public void addToColumns(Map<String, DoubleColumn> columns) {
 		if (columns.containsKey("T")) columns.get("T").add((double)t);
 		if (columns.containsKey("x")) columns.get("x").add(x);
@@ -249,7 +249,7 @@ public class Peak implements RealLocalizable {
 		if (columns.containsKey(R2)) columns.get(R2).add(properties.get(R2).doubleValue());
 		if (columns.containsKey("area") && properties.containsKey("area")) columns.get("area").add(properties.get("area").doubleValue());
 	}
-
+*/
 	// used for pixel sort in the peak finder
 	// and for rejection of bad fits.
 	public void setValid() {

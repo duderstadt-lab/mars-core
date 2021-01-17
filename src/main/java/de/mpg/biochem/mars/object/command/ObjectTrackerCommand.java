@@ -411,7 +411,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			starttime) / 60000, 2) + " minutes.");
 
 		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, false, verbose, logService,
+			minimumDistance, minTrajectoryLength, verbose, logService,
 			pixelLength);
 
 		archive = new ObjectArchive("archive.yama");

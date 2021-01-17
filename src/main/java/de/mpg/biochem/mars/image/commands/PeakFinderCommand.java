@@ -400,27 +400,22 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		logService.info("Generating peak table..");
 		peakTable = new MarsTable("Peaks - " + dataset.getName());
 
-		Map<String, DoubleColumn> columns =
-			new LinkedHashMap<String, DoubleColumn>();
-
-		columns.put("T", new DoubleColumn("T"));
-		columns.put("x", new DoubleColumn("x"));
-		columns.put("y", new DoubleColumn("y"));
- 
-		if (integrate) columns.put("intensity", new DoubleColumn("intensity"));
-
-		if (verbose) for (int i = 0; i < TABLE_HEADERS_VERBOSE.length; i++)
-			columns.put(TABLE_HEADERS_VERBOSE[i], new DoubleColumn(
-				TABLE_HEADERS_VERBOSE[i]));
-
+		int row = 0;
 		for (int t : peakStack.keySet()) {
 			List<Peak> framePeaks = peakStack.get(t);
-			for (int j = 0; j < framePeaks.size(); j++)
-				framePeaks.get(j).addToColumns(columns);
+			for (int j = 0; j < framePeaks.size(); j++) {
+				peakTable.appendRow();
+				peakTable.setValue("T", row, (double)framePeaks.get(j).getT());
+				peakTable.setValue("x", row, framePeaks.get(j).getX());
+				peakTable.setValue("y", row, framePeaks.get(j).getY());
+				if (verbose) {
+					for (String name : framePeaks.get(j).getProperties().keySet())
+						peakTable.setValue(name, row, framePeaks.get(j).getProperties().get(name));
+				} else if (framePeaks.get(j).getProperties().containsKey(Peak.INTENSITY))
+					peakTable.setValue(Peak.INTENSITY, row, framePeaks.get(j).getProperties().get(Peak.INTENSITY));
+				row++;
+			}
 		}
-
-		for (String key : columns.keySet())
-			peakTable.add(columns.get(key));
 
 		getInfo().getMutableOutput("peakTable", MarsTable.class).setLabel(peakTable
 			.getName());
