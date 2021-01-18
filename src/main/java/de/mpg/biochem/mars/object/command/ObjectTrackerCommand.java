@@ -207,11 +207,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		callback = "previewChanged")
 	private boolean preview = false;
 
-	@Parameter(label = "Segmentation preview:",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "contour",
-			"area" })
-	private String previewRoiType;
-
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tObjectCount = "count: 0";
 
@@ -225,7 +220,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String fitterTitle = "Contour Settings:";
 
-	@Parameter(label = "linear interpolation factor")
+	@Parameter(label = "Linear interpolation factor")
 	private double interpolationFactor = 1;
 	
 	@Parameter(label = "Use area filter")
@@ -279,7 +274,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * OUTPUTS
 	 */
-	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
+	@Parameter(label = "Object Archive", type = ItemIO.OUTPUT)
 	private ObjectArchive archive;
 
 	/**
@@ -642,43 +637,21 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 				"tObjectCount", String.class);
 
 			if (!peaks.isEmpty()) {
+				Overlay overlay = new Overlay();
 
-				if (previewRoiType.equals("contour")) {
-					Overlay overlay = new Overlay();
-
-					for (Peak p : peaks) {
-						float[] xs = new float[p.getShape().x.length];
-						float[] ys = new float[p.getShape().y.length];
-			        	for (int i=0; i< xs.length; i++) {
-			        		xs[i] = (float) (p.getShape().x[i] + 0.5);
-			        		ys[i] = (float) (p.getShape().y[i] + 0.5);
-			        	}
-						
-						PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
-						overlay.add(r);
-					}
-
-					image.setOverlay(overlay);
-				}
-				else {
-					//Overlay overlay = new Overlay();
+				for (Peak p : peaks) {
+					float[] xs = new float[p.getShape().x.length];
+					float[] ys = new float[p.getShape().y.length];
+		        	for (int i=0; i< xs.length; i++) {
+		        		xs[i] = (float) (p.getShape().x[i] + 0.5);
+		        		ys[i] = (float) (p.getShape().y[i] + 0.5);
+		        	}
 					
-					//FIX ME add area to image..
-					
-					//for (Peak p : peaks) {
-						
-						
-						// The pixel origin for OvalRois is at the upper left corner !!!!
-						// The pixel origin for PointRois is at the center !!!
-						//final OvalRoi areaRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-						//	fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-						//		2, fitRadius * 2);
-						//areaRoi.setStrokeColor(Color.CYAN.darker());
-
-						//overlay.add(areaRoi);
-					//}
-					//image.setOverlay(overlay);
+					PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
+					overlay.add(r);
 				}
+
+				image.setOverlay(overlay);
 
 				preFrameCount.setValue(this, "count: " + peaks.size());
 			}
@@ -712,13 +685,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 		else builder.addParameter("Dataset Name", dataset.getName());
-		
-		// FIX ME add missing fields and add missing getters and setters below...
 
 		builder.addParameter("useROI", String.valueOf(useROI));
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Local otsu radius", String.valueOf(otsuRadius));
-		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
+		builder.addParameter("Interpolation factor", String.valueOf(interpolationFactor));
+		builder.addParameter("Use area filter", String.valueOf(useAreaFilter));
+		builder.addParameter("Minimum area", String.valueOf(minArea));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Max difference x", String.valueOf(maxDifferenceX));
 		builder.addParameter("Max difference y", String.valueOf(maxDifferenceY));
@@ -791,6 +765,30 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	public int getMinimumDistance() {
 		return minimumDistance;
+	}
+	
+	public void setInterpolationFactor(double interpolationFactor) {
+		this.interpolationFactor = interpolationFactor;
+	}
+	
+	public double getInterpolationFactor() {
+		return this.interpolationFactor;
+	}
+	
+	public void setUseAreaFilter(boolean useAreaFilter) {
+		this.useAreaFilter = useAreaFilter;
+	}
+	
+	public boolean getUseAreaFilter() {
+		return this.useAreaFilter;
+	}
+	
+	public void setMinimumArea(double minArea) {
+		this.minArea = minArea;
+	}
+	
+	public double getMinimumArea() {
+		return this.minArea;
 	}
 
 	public void setVerboseOutput(boolean verbose) {

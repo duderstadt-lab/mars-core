@@ -182,10 +182,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Add to ROIManager")
 	private boolean addToRoiManager;
 
-	@Parameter(label = "Molecule names in ROIManager")
+	@Parameter(label = "Molecule names in RoiManager")
 	private boolean moleculeNames;
 
-	@Parameter(label = "Process all frames")
+	@Parameter(label = "Process all time points")
 	private boolean allFrames;
 
 	/**
@@ -549,7 +549,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Generate peak table", String.valueOf(
 			generatePeakTable));
 		builder.addParameter("Add to ROIManager", String.valueOf(addToRoiManager));
-		builder.addParameter("Process all frames", String.valueOf(allFrames));
+		builder.addParameter("Process all time points", String.valueOf(allFrames));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
