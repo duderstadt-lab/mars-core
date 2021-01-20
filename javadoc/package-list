@@ -5,6 +5,8 @@ de.mpg.biochem.mars.kcp.commands
 de.mpg.biochem.mars.metadata
 de.mpg.biochem.mars.molecule
 de.mpg.biochem.mars.molecule.commands
+de.mpg.biochem.mars.object
+de.mpg.biochem.mars.object.command
 de.mpg.biochem.mars.roi.commands
 de.mpg.biochem.mars.table
 de.mpg.biochem.mars.table.commands
