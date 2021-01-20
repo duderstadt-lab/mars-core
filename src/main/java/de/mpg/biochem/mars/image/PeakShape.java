@@ -61,17 +61,18 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	 *            coordinates.
 	 * @param xcorner
 	 *            the top-left X corner of the view in the image to paint.
+	 * @param xcenter
+	 *            the x coordinate of the Peak center.
 	 * @param magnification
 	 *            the magnification of the view.
-	 * @param magnification2
-	 * @return a new <code>int</code> array.
+	 * @return a new <code>double</code> array.
 	 */
-	public double[] toPolygonX( final double calibration, final double xcorner, final double spotXCenter, final double magnification )
+	public double[] toPolygonX( final double calibration, final double xcorner, final double xcenter, final double magnification )
 	{
 		final double[] xp = new double[ x.length ];
 		for ( int i = 0; i < xp.length; i++ )
 		{
-			final double xc = ( spotXCenter + x[ i ] ) / calibration;
+			final double xc = ( xcenter + x[ i ] ) / calibration;
 			xp[ i ] = ( xc - xcorner ) * magnification;
 		}
 		return xp;
@@ -86,16 +87,18 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	 *            coordinates.
 	 * @param ycorner
 	 *            the top-left Y corner of the view in the image to paint.
+	 * @param ycenter
+	 *            the y coordinate of the Peak center.
 	 * @param magnification
 	 *            the magnification of the view.
 	 * @return a new <code>int</code> array.
 	 */
-	public double[] toPolygonY( final double calibration, final double ycorner, final double spotYCenter, final double magnification )
+	public double[] toPolygonY( final double calibration, final double ycorner, final double ycenter, final double magnification )
 	{
 		final double[] yp = new double[ y.length ];
 		for ( int i = 0; i < yp.length; i++ )
 		{
-			final double yc = ( spotYCenter + y[ i ] ) / calibration;
+			final double yc = ( ycenter + y[ i ] ) / calibration;
 			yp[ i ] = ( yc - ycorner ) * magnification;
 		}
 		return yp;

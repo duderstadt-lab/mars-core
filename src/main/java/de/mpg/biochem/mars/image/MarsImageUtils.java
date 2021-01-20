@@ -168,6 +168,7 @@ public class MarsImageUtils {
 	 * This method converts from a RealMaskRealInterval to an IterablRegion
 	 * 
 	 * @param roi A RealMaskRealInterval represent the region of interest to convert.
+	 * @return An IterableRegion.
 	 */
 	public static IterableRegion< BoolType > toIterableRegion(
  			RealMaskRealInterval roi)
@@ -184,6 +185,7 @@ public class MarsImageUtils {
 	 * 
 	 * @param mask The RealMaks representing the roi.
 	 * @param image The Interval of the image.
+	 * @return An IterableRegion.
 	 */
 	public static IterableRegion< BoolType > toIterableRegion( RealMask mask, Interval image )
 	{
@@ -202,7 +204,7 @@ public class MarsImageUtils {
 	 * 
 	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
-	 * @param interval The interval to search for peaks in the image.
+	 * @param iterableInterval The IterableInterval to search for peaks in the image.
 	 * @param IterableInterval Pixels to search for peaks.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
