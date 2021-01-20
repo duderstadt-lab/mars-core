@@ -205,7 +205,6 @@ public class MarsImageUtils {
 	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
 	 * @param iterableInterval The IterableInterval to search for peaks in the image.
-	 * @param IterableInterval Pixels to search for peaks.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
 	 * @param minimumDistance The minimum allowed distance between peaks.
