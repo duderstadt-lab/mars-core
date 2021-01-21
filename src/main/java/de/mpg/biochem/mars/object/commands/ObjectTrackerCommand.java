@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.object.command;
+package de.mpg.biochem.mars.object.commands;
 
 import java.awt.Color;
 import java.awt.Rectangle;
