@@ -45,7 +45,11 @@ import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.roi.Regions;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Intervals;
 
@@ -134,18 +138,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "use ROI", persist = false)
 	private boolean useROI = true;
-
-	@Parameter(label = "ROI x0", persist = false)
-	private int x0;
-
-	@Parameter(label = "ROI y0", persist = false)
-	private int y0;
-
-	@Parameter(label = "ROI width", persist = false)
-	private int width;
-
-	@Parameter(label = "ROI height", persist = false)
-	private int height;
 
 	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
@@ -245,8 +237,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	private ConcurrentMap<Integer, List<DNASegment>> dnaStack;
 
 	private boolean swapZandT = false;
-	private Interval interval;
-	private Roi startingRoi;
+	private Roi roi;
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -259,17 +250,12 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		}
 		else if (dataset == null) return;
 
-		Rectangle rect;
 		if (image.getRoi() == null) {
-			rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
 		}
-		else {
-			rect = image.getRoi().getBounds();
-			startingRoi = image.getRoi();
-		}
+		else roi = image.getRoi();
 
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
@@ -280,25 +266,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 
-		final MutableModuleItem<Integer> imgX0 = getInfo().getMutableInput("x0",
-			Integer.class);
-		imgX0.setValue(this, rect.x);
-
-		final MutableModuleItem<Integer> imgY0 = getInfo().getMutableInput("y0",
-			Integer.class);
-		imgY0.setValue(this, rect.y);
-
-		final MutableModuleItem<Integer> imgWidth = getInfo().getMutableInput(
-			"width", Integer.class);
-		imgWidth.setValue(this, rect.width);
-
-		final MutableModuleItem<Integer> imgHeight = getInfo().getMutableInput(
-			"height", Integer.class);
-		imgHeight.setValue(this, rect.height);
-
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
 			"theT", Integer.class);
-
 		if (image.getNFrames() < 2) {
 			preFrame.setValue(this, image.getSlice() - 1);
 			preFrame.setMaximumValue(image.getStackSize() - 1);
@@ -312,7 +281,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		updateInterval();
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
@@ -356,22 +328,11 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 		if (addToRoiManger) addToRoiManager();
 
-		if (image != null) image.setRoi(startingRoi);
+		if (image != null) image.setRoi(roi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
-	}
-
-	private void updateInterval() {
-		interval = (useROI) ? Intervals.createMinMax(x0, y0, x0 + width - 1, y0 +
-			height - 1) : Intervals.createMinMax(0, 0, dataset.dimension(0) - 1,
-				dataset.dimension(1) - 1);
-
-		if (image != null) {
-			image.deleteRoi();
-			image.setOverlay(null);
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -400,8 +361,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		dnaFinder.setFit(fit);
 		dnaFinder.setFitSecondOrder(fitSecondOrder);
 		dnaFinder.setFitRadius(fitRadius);
+		
+		//Convert from Roi to IterableInterval
+		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		
+		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
+		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
 
-		return dnaFinder.findDNAs(img, interval, t);
+		return dnaFinder.findDNAs(img, Regions.sample( iterableROI, img ), t);
 	}
 
 	private void generateDNACountTable() {
@@ -492,7 +459,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			updateInterval();
+			if (image != null) {
+				image.deleteRoi();
+				image.setOverlay(null);
+			}
 
 			if (swapZandT) image.setSlice(theT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
@@ -538,7 +508,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public void cancel() {
 		if (image != null) {
 			image.setOverlay(null);
-			image.setRoi(startingRoi);
+			image.setRoi(roi);
 		}
 	}
 
@@ -562,12 +532,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			builder.addParameter("Dataset Name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
-		if (useROI) {
-			builder.addParameter("ROI x0", String.valueOf(x0));
-			builder.addParameter("ROI y0", String.valueOf(y0));
-			builder.addParameter("ROI width", String.valueOf(width));
-			builder.addParameter("ROI height", String.valueOf(height));
-		}
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(
 			this.gaussSigma));
@@ -619,38 +583,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	public boolean getUseROI() {
 		return useROI;
-	}
-
-	public void setX0(int x0) {
-		this.x0 = x0;
-	}
-
-	public int getX0() {
-		return x0;
-	}
-
-	public void setY0(int y0) {
-		this.y0 = y0;
-	}
-
-	public int getY0() {
-		return y0;
-	}
-
-	public void setWidth(int width) {
-		this.width = width;
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public void setHeight(int height) {
-		this.height = height;
-	}
-
-	public int getHeight() {
-		return height;
 	}
 
 	public void setChannel(int channel) {
@@ -812,5 +744,4 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public int getFitRadius() {
 		return fitRadius;
 	}
-
 }

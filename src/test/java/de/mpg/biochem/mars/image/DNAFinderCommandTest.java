@@ -92,10 +92,6 @@ public class DNAFinderCommandTest {
 
 		peakFinder.setDataset(simulateDataset());
 		peakFinder.setUseROI(false);
-		peakFinder.setX0(0);
-		peakFinder.setY0(0);
-		peakFinder.setWidth(50);
-		peakFinder.setHeight(50);
 		peakFinder.setChannel(0);
 		peakFinder.setGaussianSigma(1);
 		peakFinder.setT(0);

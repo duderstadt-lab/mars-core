@@ -239,8 +239,8 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	private boolean swapZandT = false;
 	private Roi roi;
 
-	public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
-		"sigma", "R2" };
+	//public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
+	//	"sigma", "R2" };
 	private Dataset dataset;
 	private ImagePlus image;
 

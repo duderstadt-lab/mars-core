@@ -34,7 +34,7 @@ import java.util.List;
 
 import net.imagej.ops.OpService;
 import net.imglib2.Cursor;
-import net.imglib2.Interval;
+import net.imglib2.IterableInterval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -73,11 +73,10 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	public DNAFinder(OpService opService) {
 		this.opService = opService;
 	}
-
+	
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
-		Interval interval, int theT)
+			IterableInterval<T> iterableInterval, int theT)
 	{
-
 		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 
 		Img<DoubleType> input = opService.convert().float64(Views.iterable(img));
@@ -93,25 +92,25 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(gradImage, dogFilterRadius, opService);
-			topPeaks = MarsImageUtils.findPeaks(filteredImg, interval, theT,
+			topPeaks = MarsImageUtils.findPeaks(filteredImg, iterableInterval, theT,
 				threshold, minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, interval, theT,
+			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, iterableInterval, theT,
 				threshold, minimumDistance, true);
 		}
 		else {
-			topPeaks = MarsImageUtils.findPeaks(gradImage, interval, theT, threshold,
+			topPeaks = MarsImageUtils.findPeaks(gradImage, iterableInterval, theT, threshold,
 				minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(gradImage, interval, theT,
+			bottomPeaks = MarsImageUtils.findPeaks(gradImage, iterableInterval, theT,
 				threshold, minimumDistance, true);
 		}
 
 		if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
 
 			if (fit) {
-				topPeaks = MarsImageUtils.fitPeaks(gradImage, interval, topPeaks,
+				topPeaks = MarsImageUtils.fitPeaks(gradImage, gradImage, topPeaks,
 					fitRadius, dogFilterRadius, false, 0);
 
-				bottomPeaks = MarsImageUtils.fitPeaks(gradImage, interval, bottomPeaks,
+				bottomPeaks = MarsImageUtils.fitPeaks(gradImage, gradImage, bottomPeaks,
 					fitRadius, dogFilterRadius, true, 0);
 			}
 
@@ -140,15 +139,15 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 					median = opService.stats().median(secondOrderImage).getRealDouble();
 
 					// Remove positive peaks in preparation for fitting negative peaks.
-					Cursor<DoubleType> cursor = secondOrderImage.cursor();
-					while (cursor.hasNext()) {
-						cursor.fwd();
-						if (cursor.get().getRealDouble() > median) cursor.get().set(median);
+					Cursor<DoubleType> cursor2 = secondOrderImage.cursor();
+					while (cursor2.hasNext()) {
+						cursor2.fwd();
+						if (cursor2.get().getRealDouble() > median) cursor2.get().set(median);
 					}
 				}
 
-				RandomAccessibleInterval<T> view = Views.interval(img, interval);
-				RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
+				//RandomAccessibleInterval<T> view = Views.interval(img, interval);
+				RandomAccess<T> ra = Views.extendMirrorSingle(img).randomAccess();
 
 				for (Peak p : topPeaks) {
 					double xTOP = p.getDoublePosition(0);
@@ -183,13 +182,13 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 									List<Peak> top = new ArrayList<Peak>();
 									top.add(new Peak("top", segment.getX1(), segment.getY1() +
 										1));
-									top = MarsImageUtils.fitPeaks(secondOrderImage, interval, top,
+									top = MarsImageUtils.fitPeaks(secondOrderImage, secondOrderImage, top,
 										fitRadius, dogFilterRadius, median, true);
 
 									List<Peak> bottom = new ArrayList<Peak>();
 									bottom.add(new Peak("bottom", segment.getX2(), segment
 										.getY2() - 1));
-									bottom = MarsImageUtils.fitPeaks(secondOrderImage, interval,
+									bottom = MarsImageUtils.fitPeaks(secondOrderImage, secondOrderImage,
 										bottom, fitRadius, dogFilterRadius, median, true);
 
 									if (top.size() > 0 && distance(top.get(0).getX(), top.get(0)
