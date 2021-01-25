@@ -137,8 +137,7 @@ public class MarsOMEUtils {
 		marsOME.setNotes(oldMetadata.getNotes());
 		marsOME.log(oldMetadata.getLog());
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
-		oldMetadata.getParameters().keySet().forEach(name -> marsOME.setParameter(
-			name, oldMetadata.getParameter(name)));
+		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters().put(name, oldMetadata.getParameters().get(name)));
 		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
 		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
 			bdvSource));
@@ -336,8 +335,7 @@ public class MarsOMEUtils {
 		marsOME.setNotes(oldMetadata.getNotes());
 		marsOME.log(oldMetadata.getLog());
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
-		oldMetadata.getParameters().keySet().forEach(name -> marsOME.setParameter(
-			name, oldMetadata.getParameter(name)));
+		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters().put(name, oldMetadata.getParameters().get(name)));
 		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
 		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
 			bdvSource));
