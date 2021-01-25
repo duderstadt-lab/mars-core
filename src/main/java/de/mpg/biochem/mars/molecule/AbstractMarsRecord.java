@@ -518,9 +518,9 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	}
 
 	/**
-	 * Get the value of a string parameter.
+	 * Get the value of a boolean parameter.
 	 * 
-	 * @param parameter The string parameter name to retrieve the value for.
+	 * @param parameter The parameter name to retrieve.
 	 * @return Returns the boolean value for the parameter name given.
 	 */
 	public boolean getBooleanParameter(String parameter) {
@@ -533,7 +533,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	}
 
 	/**
-	 * Returns true if any type of parameter has the name give.
+	 * Returns true if any type of parameters has the name give.
 	 * 
 	 * @param parameter The parameter name to check for.
 	 * @return Returns true if a parameter with the name exists.
