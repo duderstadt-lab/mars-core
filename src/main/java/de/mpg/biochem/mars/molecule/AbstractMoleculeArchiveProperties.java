@@ -60,7 +60,9 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected AtomicInteger numberOfMolecules;
 	protected AtomicInteger numMetadata;
 	protected String comments, inputSchema;
-	public static final String SCHEMA = "2020-10-10";
+	
+	//Format YYYY-MM-DD
+	public static final String SCHEMA = "2021-01-25";
 
 	// Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
