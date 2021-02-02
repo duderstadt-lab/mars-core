@@ -170,18 +170,22 @@ public class GradientCommand extends DynamicCommand implements Command {
 				CTs.add(new int[] { c, t });
 
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
+		
+		List<Runnable> tasks = new ArrayList<Runnable>();
+		IntStream.range(0, CTs.size()).forEach(i -> {
+			tasks.add(() -> {
+				int[] ct = CTs.get(i);
+				Img<DoubleType> in = getInput2DSlice(ct);
+				RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(
+					gradImage, ct);
+				opService.filter().derivativeGauss(out, in, derivatives, sigma);
+				slicesDone.incrementAndGet();
+			});
+		});
 
-		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(slicesDone.get(), CTs.size(), "Calculating gradient for " +
-				dataset.getName()), () -> IntStream.range(0, CTs.size()).parallel()
-					.forEach(i -> {
-						int[] ct = CTs.get(i);
-						Img<DoubleType> in = getInput2DSlice(ct);
-						RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(
-							gradImage, ct);
-						opService.filter().derivativeGauss(out, in, derivatives, sigma);
-						slicesDone.incrementAndGet();
-					}), PARALLELISM_LEVEL);
+				dataset.getName()), tasks , PARALLELISM_LEVEL);
 
 		output = datasetService.create(gradImage);
 

@@ -194,13 +194,14 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
+		
+		List<Runnable> tasks = new ArrayList<Runnable>();
+		IntStream.rangeClosed(1, transformMe.getStackSize()).forEach(t -> 
+			tasks.add(() -> transformT(t, new ImagePlus("T " + t, oldStack.getProcessor(t)), transform)));
 
-		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(transformedImageMap.size(), transformMe.getStackSize(),
-				"Transforming " + transformMe.getTitle()), () -> IntStream.rangeClosed(
-					1, transformMe.getStackSize()).parallel().forEach(t -> transformT(t,
-						new ImagePlus("T " + t, oldStack.getProcessor(t)), transform)),
-			PARALLELISM_LEVEL);
+				"Transforming " + transformMe.getTitle()), tasks, PARALLELISM_LEVEL);
 
 		// Now we have a map with all the transformed images. We just need to add
 		// them to a new stack

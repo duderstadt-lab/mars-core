@@ -323,15 +323,20 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		logService.info("Integrating Peaks...");
 
 		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
-		// INTEGRATE PEAKS
-		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0)
-				.getPlaneCount(), "Integrating Molecules in " + dataset.getName()),
-			() -> marsOMEMetadata.getImage(0).planes().forEach(plane -> {
+		
+		List<Runnable> tasks = new ArrayList<Runnable>();
+		marsOMEMetadata.getImage(0).planes().forEach(plane -> {
+			tasks.add(() -> {
 				integratePeaksInT(plane.getC(), plane.getT());
 				progressInteger.incrementAndGet();
-			}), PARALLELISM_LEVEL);
+			});
+		});
+
+		// INTEGRATE PEAKS
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
+			.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0)
+				.getPlaneCount(), "Integrating Molecules in " + dataset.getName()),
+			tasks, PARALLELISM_LEVEL);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -349,12 +354,16 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			for (int t : integrationMap.getMap().keySet())
 				UIDs.addAll(integrationMap.getMap().get(t).keySet());
+		
+		tasks.clear();
+		for (String uid : UIDs) {
+			tasks.add(() -> buildMolecule(uid, imageIndex, channelToTtoDtMap));
+		}
 
 		progressInteger.set(0);
-		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(progressInteger.get(), UIDs.size(),
-				"Adding molecules to archive..."), () -> UIDs.parallelStream().forEach(
-					UID -> buildMolecule(UID, imageIndex, channelToTtoDtMap)),
+				"Adding molecules to archive..."), tasks ,
 			PARALLELISM_LEVEL);
 
 		archive.naturalOrderSortMoleculeIndex();

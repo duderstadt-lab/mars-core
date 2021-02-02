@@ -33,8 +33,16 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -66,13 +74,17 @@ import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
+import org.scijava.command.Previewable;
 import org.scijava.convert.ConvertService;
+import org.scijava.event.EventService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
@@ -143,7 +155,7 @@ import net.imglib2.realtransform.Scale;
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Object Tracker", weight = 10, mnemonic = 'p') })
 public class ObjectTrackerCommand extends DynamicCommand implements Command,
-	Initializable
+	Initializable, Previewable
 {
 
 	/**
@@ -172,6 +184,9 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private OpService opService;
+	
+	@Parameter
+	private EventService eventService;
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
@@ -196,12 +211,18 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
+	
+	@Parameter(label = "Use local otsu")
+	private boolean useLocalOstu = true;
 
 	@Parameter(label = "Local otsu radius")
 	private long otsuRadius = 50;
 
 	@Parameter(label = "Minimum distance between object centers")
 	private int minimumDistance = 4;
+	
+	@Parameter(label = "Preview timeout (s)")
+	private int previewTimeout = 10;
 	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
@@ -253,8 +274,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Verbose output")
 	private boolean verbose = false;
 
-	@Parameter(label = "Microscope")
-	private String microscope;
+	@Parameter(label = "Microscope", required = false)
+	private String microscope = "unknown";
 
 	@Parameter(label = "Pixel length")
 	private double pixelLength = 1;
@@ -362,7 +383,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		final int frameCount = (swapZandT) ? zSize : tSize;
 		
 		//build list of timepoints to process...
-		
 		List<int[]> excludeTimePoints = new ArrayList<int[]>();
 		if (excludeTimePointList.length() > 0) {
 			try {
@@ -381,6 +401,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		}
 		
 		List<Integer> processTimePoints = new ArrayList<Integer>();
+		List<Runnable> tasks = new ArrayList<Runnable>();
 		for (int t=0; t<frameCount; t++) {
 			boolean processedTimePoint = true;
 			for (int index=0; index<excludeTimePoints.size(); index++)
@@ -389,18 +410,19 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 					break;
 				}
 			
-			if (processedTimePoint)
+			if (processedTimePoint) {
 				processTimePoints.add(t);
+				final int theT = t;
+				tasks.add(() -> {
+					List<Peak> tobjects = findObjectsInT(Integer.valueOf(channel), theT);
+					if (tobjects.size() > 0) objectStack.put(theT, tobjects);
+				});
+			}
 		}
-
-		MarsUtil.forkJoinPoolBuilder(statusService, logService, () -> statusService
+ 
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(objectStack.size(), frameCount, "Finding objects for " + dataset
-				.getName()), () -> processTimePoints.parallelStream().forEach(
-					t -> {
-						List<Peak> tobjects = findObjectsInT(Integer.valueOf(channel), t);
-
-						if (tobjects.size() > 0) objectStack.put(t, tobjects);
-					}), PARALLELISM_LEVEL);
+				.getName()), tasks, PARALLELISM_LEVEL);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -490,8 +512,15 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
         
         final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", scaledImg, new BitType());
 		
-		opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.otsuRadius), 
-				new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(Boundary.SINGLE));
+        
+        //useLocalOstu  make global option here...
+        
+        if (useLocalOstu) {
+			opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.otsuRadius), 
+					new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(Boundary.SINGLE));
+		} else {
+			opService.run("threshold.otsu", binaryImg, scaledImg);
+		}
 
 		final RandomAccessibleInterval<UnsignedShortType> indexImg = (RandomAccessibleInterval<UnsignedShortType>) opService.run("create.img", binaryImg, new UnsignedShortType());
         final ImgLabeling<Integer, UnsignedShortType> labeling = new ImgLabeling<>(indexImg);
@@ -623,41 +652,54 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			if (image != null) {
-				image.deleteRoi();
-				image.setOverlay(null);
+			ExecutorService es = Executors.newSingleThreadExecutor();
+			try {
+				es.submit(() -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(null);
+						}
+			
+						if (swapZandT) image.setSlice(previewT + 1);
+						else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			
+						List<Peak> peaks = findObjectsInT(Integer.valueOf(channel), previewT);
+			
+						final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
+							"tObjectCount", String.class);
+			
+						if (!peaks.isEmpty()) {
+							Overlay overlay = new Overlay();
+			
+							for (Peak p : peaks) {
+								float[] xs = new float[p.getShape().x.length];
+								float[] ys = new float[p.getShape().y.length];
+					        	for (int i=0; i< xs.length; i++) {
+					        		xs[i] = (float) (p.getShape().x[i] + 0.5);
+					        		ys[i] = (float) (p.getShape().y[i] + 0.5);
+					        	}
+								
+								PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
+								overlay.add(r);
+							}
+			
+							image.setOverlay(overlay);
+			
+							preFrameCount.setValue(this, "count: " + peaks.size());
+						}
+						else {
+							preFrameCount.setValue(this, "count: 0");
+						}
+				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
-
-			if (swapZandT) image.setSlice(previewT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-
-			List<Peak> peaks = findObjectsInT(Integer.valueOf(channel), previewT);
-
-			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-				"tObjectCount", String.class);
-
-			if (!peaks.isEmpty()) {
-				Overlay overlay = new Overlay();
-
-				for (Peak p : peaks) {
-					float[] xs = new float[p.getShape().x.length];
-					float[] ys = new float[p.getShape().y.length];
-		        	for (int i=0; i< xs.length; i++) {
-		        		xs[i] = (float) (p.getShape().x[i] + 0.5);
-		        		ys[i] = (float) (p.getShape().y[i] + 0.5);
-		        	}
-					
-					PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
-					overlay.add(r);
-				}
-
-				image.setOverlay(overlay);
-
-				preFrameCount.setValue(this, "count: " + peaks.size());
+			catch (TimeoutException e1) {
+				es.shutdownNow();
+				uiService.showDialog(
+						"Preview took too long. Try a smaller region, a smaller local radius, or try again with a longer delay before preview timeout.",
+						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				cancel();
 			}
-			else {
-				preFrameCount.setValue(this, "count: 0");
-			}
+			catch (InterruptedException | ExecutionException e2) {}
 		}
 	}
 
@@ -749,6 +791,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	public int getChannel() {
 		return Integer.valueOf(channel);
+	}
+	
+	public void setUseLocalOstu(boolean useLocalOstu) {
+		this.useLocalOstu = useLocalOstu;
+	}
+	
+	public boolean getUseLocalOstu() {
+		return useLocalOstu;
 	}
 
 	public void setLocalOtsuRadius(int otsuRadius) {

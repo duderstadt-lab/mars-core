@@ -35,8 +35,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -54,7 +59,51 @@ import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 public class MarsUtil {
+	
+	public static void threadPoolBuilder(StatusService statusService,
+			LogService logService, Runnable updateStatus, List<Runnable> tasks, int numThreads)
+		{
 
+			final AtomicBoolean progressUpdating = new AtomicBoolean(true);
+			
+			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+
+			try {
+				Thread progressThread = new Thread() {
+
+					public synchronized void run() {
+						try {
+							while (progressUpdating.get()) {
+								Thread.sleep(100);
+								updateStatus.run();
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				};
+
+				progressThread.start();
+				
+				tasks.forEach(task -> threadPool.submit(task));
+				threadPool.shutdown();
+				threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+				progressUpdating.set(false);
+
+			}
+			catch (InterruptedException e) {
+				// handle exceptions
+				e.printStackTrace();
+				logService.info(LogBuilder.endBlock(false));
+			}
+			finally {
+				statusService.showProgress(100, 100);
+				statusService.showStatus("Done!");
+			}
+		}
+/*
 	public static void forkJoinPoolBuilder(StatusService statusService,
 		LogService logService, Runnable updateStatus, Runnable task, int numThreads)
 	{
@@ -96,7 +145,7 @@ public class MarsUtil {
 			statusService.showStatus("Done!");
 		}
 	}
-
+*/
 	/**
 	 * Return Json String in pretty print format.
 	 * 
