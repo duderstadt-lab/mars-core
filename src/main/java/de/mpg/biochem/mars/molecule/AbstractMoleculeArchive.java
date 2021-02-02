@@ -2,7 +2,7 @@
 f * #%L
  * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
  * %%
- * Copyright (C) 2018 - 2020 Karl Duderstadt
+ * Copyright (C) 2018 - 2021 Karl Duderstadt
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
