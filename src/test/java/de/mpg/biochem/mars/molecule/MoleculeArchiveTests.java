@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.scijava.Context;
+import org.scijava.io.location.LocationService;
 import org.scijava.options.OptionsService;
 import org.scijava.table.DoubleColumn;
 
@@ -70,7 +71,7 @@ public class MoleculeArchiveTests {
 	protected static MoleculeArchive<?, ?, ?, ?> archive;
 
 	protected static Context createContext() {
-		return new Context(MoleculeArchiveService.class, OptionsService.class);
+		return new Context(MoleculeArchiveService.class, OptionsService.class, LocationService.class);
 	}
 
 	@BeforeAll
