@@ -426,10 +426,23 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 				peakTable.setValue("x", row, framePeaks.get(j).getX());
 				peakTable.setValue("y", row, framePeaks.get(j).getY());
 				if (verbose) {
-					for (String name : framePeaks.get(j).getProperties().keySet())
-						peakTable.setValue(name, row, framePeaks.get(j).getProperties().get(name));
-				} else if (framePeaks.get(j).getProperties().containsKey(Peak.INTENSITY))
-					peakTable.setValue(Peak.INTENSITY, row, framePeaks.get(j).getProperties().get(Peak.INTENSITY));
+					peakTable.setValue(Peak.BASELINE, row, framePeaks.get(j).getBaseline());
+					peakTable.setValue(Peak.HEIGHT, row, framePeaks.get(j).getHeight());
+					peakTable.setValue(Peak.SIGMA, row, framePeaks.get(j).getSigma());
+					peakTable.setValue(Peak.R2, row, framePeaks.get(j).getRSquared());
+					
+					if (integrate) {
+						peakTable.setValue(Peak.MEDIAN_BACKGROUND, row, framePeaks.get(j).getMedianBackground());
+						peakTable.setValue(Peak.INTENSITY, row, framePeaks.get(j).getIntensity());
+					}
+					
+					if (framePeaks.get(j).getProperties() != null)
+						for (String name : framePeaks.get(j).getProperties().keySet())
+							peakTable.setValue(name, row, framePeaks.get(j).getProperties().get(name));
+					
+				} else if (integrate)
+					peakTable.setValue(Peak.INTENSITY, row, framePeaks.get(j).getIntensity());
+				
 				row++;
 			}
 		}
