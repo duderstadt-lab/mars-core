@@ -35,6 +35,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -65,6 +70,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
@@ -173,6 +180,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Minimum distance between peaks")
 	private int minimumDistance = 4;
+	
+	@Parameter(label = "Preview timeout (s)")
+	private int previewTimeout = 10;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
@@ -614,53 +624,66 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			if (image != null) {
-				image.deleteRoi();
-				image.setOverlay(null);
-			}
-
-			if (swapZandT) image.setSlice(previewT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-
-			List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
-				useDogFilter, false);
-
-			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-				"tPeakCount", String.class);
-
-			if (!peaks.isEmpty()) {
-
-				if (previewRoiType.equals("point")) {
-					Overlay overlay = new Overlay();
-					FloatPolygon poly = new FloatPolygon();
-					for (Peak p : peaks)
-						poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
-
-					PointRoi peakRoi = new PointRoi(poly);
-
-					overlay.add(peakRoi);
-					image.setOverlay(overlay);
-				}
-				else {
-					Overlay overlay = new Overlay();
-					for (Peak p : peaks) {
-						// The pixel origin for OvalRois is at the upper left corner !!!!
-						// The pixel origin for PointRois is at the center !!!
-						final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-							fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-								2, fitRadius * 2);
-						ovalRoi.setStrokeColor(Color.CYAN.darker());
-
-						overlay.add(ovalRoi);
+			ExecutorService es = Executors.newSingleThreadExecutor();
+			try {
+				es.submit(() -> {
+					if (image != null) {
+						image.deleteRoi();
+						image.setOverlay(null);
 					}
-					image.setOverlay(overlay);
-				}
-
-				preFrameCount.setValue(this, "count: " + peaks.size());
+		
+					if (swapZandT) image.setSlice(previewT + 1);
+					else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+		
+					List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
+						useDogFilter, false);
+		
+					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
+						"tPeakCount", String.class);
+		
+					if (!peaks.isEmpty()) {
+		
+						if (previewRoiType.equals("point")) {
+							Overlay overlay = new Overlay();
+							FloatPolygon poly = new FloatPolygon();
+							for (Peak p : peaks)
+								poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+		
+							PointRoi peakRoi = new PointRoi(poly);
+		
+							overlay.add(peakRoi);
+							image.setOverlay(overlay);
+						}
+						else {
+							Overlay overlay = new Overlay();
+							for (Peak p : peaks) {
+								// The pixel origin for OvalRois is at the upper left corner !!!!
+								// The pixel origin for PointRois is at the center !!!
+								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+									fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
+										2, fitRadius * 2);
+								ovalRoi.setStrokeColor(Color.CYAN.darker());
+		
+								overlay.add(ovalRoi);
+							}
+							image.setOverlay(overlay);
+						}
+		
+						preFrameCount.setValue(this, "count: " + peaks.size());
+					}
+					else {
+						preFrameCount.setValue(this, "count: 0");
+					}
+				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
-			else {
-				preFrameCount.setValue(this, "count: 0");
+			catch (TimeoutException e1) {
+				es.shutdownNow();
+				uiService.showDialog(
+						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				cancel();
 			}
+			catch (InterruptedException | ExecutionException e2) {}
 		}
 	}
 

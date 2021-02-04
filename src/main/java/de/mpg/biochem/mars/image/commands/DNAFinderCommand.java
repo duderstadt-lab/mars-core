@@ -212,6 +212,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
 		persist = false)
 	private int theT;
+	
+	@Parameter(label = "Preview timeout (s)")
+	private int previewTimeout = 10;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
@@ -474,48 +477,61 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			if (image != null) {
-				image.deleteRoi();
-				image.setOverlay(null);
+			ExecutorService es = Executors.newSingleThreadExecutor();
+			try {
+				es.submit(() -> {
+					if (image != null) {
+						image.deleteRoi();
+						image.setOverlay(null);
+					}
+		
+					if (swapZandT) image.setSlice(theT + 1);
+					else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+		
+					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT);
+		
+					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
+						"tDNACount", String.class);
+					if (segments.size() > 0) {
+						Overlay overlay = new Overlay();
+						for (DNASegment segment : segments) {
+							Line line = new Line(segment.getX1(), segment.getY1(), segment
+								.getX2(), segment.getY2());
+		
+							double value = Double.NaN;
+							if (previewLabelType.equals("Variance intensity")) value = segment
+								.getVariance();
+							else if (previewLabelType.equals("Median intensity")) value = segment
+								.getMedianIntensity();
+		
+							if (Double.isNaN(value)) line.setName("");
+							if (value > 1_000_000) line.setName(DoubleRounder.round(value /
+								1_000_000, 2) + " m");
+							else if (value > 1000) line.setName(DoubleRounder.round(value / 1000,
+								2) + " k");
+							else line.setName((int) value + "");
+		
+							overlay.add(line);
+						}
+						overlay.drawLabels(true);
+						overlay.drawNames(true);
+						overlay.setLabelColor(new Color(255, 255, 255));
+						image.setOverlay(overlay);
+						preFrameCount.setValue(this, "count: " + segments.size());
+					}
+					else {
+						preFrameCount.setValue(this, "count: 0");
+					}
+				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
-
-			if (swapZandT) image.setSlice(theT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-
-			List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT);
-
-			final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-				"tDNACount", String.class);
-			if (segments.size() > 0) {
-				Overlay overlay = new Overlay();
-				for (DNASegment segment : segments) {
-					Line line = new Line(segment.getX1(), segment.getY1(), segment
-						.getX2(), segment.getY2());
-
-					double value = Double.NaN;
-					if (previewLabelType.equals("Variance intensity")) value = segment
-						.getVariance();
-					else if (previewLabelType.equals("Median intensity")) value = segment
-						.getMedianIntensity();
-
-					if (Double.isNaN(value)) line.setName("");
-					if (value > 1_000_000) line.setName(DoubleRounder.round(value /
-						1_000_000, 2) + " m");
-					else if (value > 1000) line.setName(DoubleRounder.round(value / 1000,
-						2) + " k");
-					else line.setName((int) value + "");
-
-					overlay.add(line);
-				}
-				overlay.drawLabels(true);
-				overlay.drawNames(true);
-				overlay.setLabelColor(new Color(255, 255, 255));
-				image.setOverlay(overlay);
-				preFrameCount.setValue(this, "count: " + segments.size());
+			catch (TimeoutException e1) {
+				es.shutdownNow();
+				uiService.showDialog(
+						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				cancel();
 			}
-			else {
-				preFrameCount.setValue(this, "count: 0");
-			}
+			catch (InterruptedException | ExecutionException e2) {}
 		}
 	}
 
