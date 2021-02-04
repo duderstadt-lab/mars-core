@@ -266,7 +266,7 @@ public class MarsImageUtils {
 		List<Peak> possiblePeaks = new ArrayList<Peak>();
 
 		if (!findNegativePeaks) {
-			while (cursor.hasNext()) {
+			while (cursor.hasNext() && !Thread.currentThread().isInterrupted()) {
 				double pixel = cursor.next().getRealDouble();
 
 				if (pixel > threshold) {
@@ -287,7 +287,7 @@ public class MarsImageUtils {
 			});
 		}
 		else {
-			while (cursor.hasNext()) {
+			while (cursor.hasNext() && !Thread.currentThread().isInterrupted()) {
 				double pixel = cursor.next().getRealDouble();
 
 				if (pixel < threshold * (-1)) {
@@ -334,6 +334,9 @@ public class MarsImageUtils {
 		// That means if we setNotValid in one it is changing the same object in
 		// another that is required for the stuff below to work.
 		for (int i = possiblePeaks.size() - 1; i >= 0; i--) {
+			if (Thread.currentThread().isInterrupted())
+				break;
+			
 			Peak peak = possiblePeaks.get(i);
 			if (peak.isValid()) {
 				finalPeaks.add(peak);
@@ -416,6 +419,9 @@ public class MarsImageUtils {
 		RandomAccess<T> ra = rae.randomAccess();
 
 		for (Peak peak : peaks) {
+			
+			if (Thread.currentThread().isInterrupted())
+				break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
 				(int) (peak.getY() - radius), fitWidth, fitWidth);
@@ -490,6 +496,9 @@ public class MarsImageUtils {
 			interval));
 
 		for (Peak peak : peaks) {
+			
+			if (Thread.currentThread().isInterrupted())
+				break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
 				(int) (peak.getY() - radius), fitWidth, fitWidth);
@@ -629,6 +638,9 @@ public class MarsImageUtils {
 		// That means if we setNotValid in one it is changing the same object in
 		// another that is required for the stuff below to work.
 		for (int i = 0; i < peaks.size(); i++) {
+			if (Thread.currentThread().isInterrupted())
+				break;
+			
 			Peak peak = peaks.get(i);
 			if (peak.isValid()) {
 				finalPeaks.add(peak);
@@ -672,6 +684,9 @@ public class MarsImageUtils {
 		List<int[]> outerOffsets = outerOffets(innerRadius, outerRadius);
 
 		for (Peak peak : peaks) {
+			if (Thread.currentThread().isInterrupted())
+				break;
+			
 			// Type casting from double to int rounds down always, so we have to add
 			// 0.5 offset to be correct.
 			int x = (int) (peak.getX() + 0.5);
