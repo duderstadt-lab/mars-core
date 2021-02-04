@@ -500,16 +500,27 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							if (previewRoiType.equals("point")) {
 								Overlay overlay = new Overlay();
 								FloatPolygon poly = new FloatPolygon();
-								for (Peak p : peaks)
+								for (Peak p : peaks) {
 									poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+								
+									if (Thread.currentThread().isInterrupted())
+										return;
+								}
 			
 								PointRoi peakRoi = new PointRoi(poly);
 			
 								overlay.add(peakRoi);
+								
+								if (Thread.currentThread().isInterrupted())
+									return;
+								
 								image.setOverlay(overlay);
 							}
 							else {
 								Overlay overlay = new Overlay();
+								if (Thread.currentThread().isInterrupted())
+									return;
+								
 								for (Peak p : peaks) {
 									// The pixel origin for OvalRois is at the upper left corner !!!!
 									// The pixel origin for PointRois is at the center !!!
@@ -519,7 +530,12 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 									roi.setStrokeColor(Color.CYAN.darker());
 			
 									overlay.add(roi);
+									if (Thread.currentThread().isInterrupted())
+										return;
 								}
+								if (Thread.currentThread().isInterrupted())
+									return;
+								
 								image.setOverlay(overlay);
 							}
 			
@@ -537,7 +553,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
-			catch (InterruptedException | ExecutionException e2) {}
+			catch (InterruptedException | ExecutionException e2) {
+				es.shutdownNow();
+				cancel();
+			}
+			es.shutdownNow();
 		}
 	}
 

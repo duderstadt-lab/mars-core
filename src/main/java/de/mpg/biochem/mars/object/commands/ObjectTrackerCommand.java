@@ -681,8 +681,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 								
 								PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
 								overlay.add(r);
+								
+								if (Thread.currentThread().isInterrupted())
+									return;
 							}
 			
+							if (Thread.currentThread().isInterrupted())
+								return;
+							
 							image.setOverlay(overlay);
 			
 							preFrameCount.setValue(this, "count: " + peaks.size());
@@ -699,7 +705,11 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
-			catch (InterruptedException | ExecutionException e2) {}
+			catch (InterruptedException | ExecutionException e2) {
+				es.shutdownNow();
+				cancel();
+			}
+			es.shutdownNow();
 		}
 	}
 

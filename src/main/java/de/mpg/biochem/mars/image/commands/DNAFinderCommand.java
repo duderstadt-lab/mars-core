@@ -512,10 +512,16 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 							else line.setName((int) value + "");
 		
 							overlay.add(line);
+							if (Thread.currentThread().isInterrupted())
+								return;
 						}
 						overlay.drawLabels(true);
 						overlay.drawNames(true);
 						overlay.setLabelColor(new Color(255, 255, 255));
+						
+						if (Thread.currentThread().isInterrupted())
+							return;
+						
 						image.setOverlay(overlay);
 						preFrameCount.setValue(this, "count: " + segments.size());
 					}
@@ -531,7 +537,11 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
-			catch (InterruptedException | ExecutionException e2) {}
+			catch (InterruptedException | ExecutionException e2) {
+				es.shutdownNow();
+				cancel();
+			}
+			es.shutdownNow();
 		}
 	}
 
