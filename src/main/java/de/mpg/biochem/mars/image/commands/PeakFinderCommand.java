@@ -601,6 +601,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			builder.addParameter("Dataset Name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
+		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));

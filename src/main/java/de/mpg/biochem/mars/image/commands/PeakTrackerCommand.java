@@ -117,7 +117,6 @@ import ome.xml.model.primitives.PositiveInteger;
 public class PeakTrackerCommand extends DynamicCommand implements Command,
 	Initializable
 {
-
 	/**
 	 * SERVICES
 	 */
@@ -732,6 +731,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		else builder.addParameter("Dataset Name", dataset.getName());
 
 		builder.addParameter("useROI", String.valueOf(useROI));
+		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
