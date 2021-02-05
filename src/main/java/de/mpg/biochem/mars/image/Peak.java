@@ -26,41 +26,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
 
 package de.mpg.biochem.mars.image;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import net.imglib2.RealLocalizable;
-
-import org.scijava.table.DoubleColumn;
 
 /**
  * Stores information about detected 2D intensity peaks. Implements
@@ -72,9 +50,13 @@ import org.scijava.table.DoubleColumn;
  * 
  * @author Karl Duderstadt
  */
-public class Peak implements RealLocalizable {
+public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizable {
+	
+	public static AtomicLong idGenerator = new AtomicLong( -1 );
+	
+	private long id, forwardLinkID, backwardLinkID;
 
-	private String UID, colorName;
+	private String trackUID, colorName;
 	private Peak forwardLink, backwardLink;
 	private double x, y, pixelValue;
 	private int c, t;
@@ -93,18 +75,15 @@ public class Peak implements RealLocalizable {
 	public static final String INTENSITY = "intensity";
 	
 	private final Map< String, Double > properties = new ConcurrentHashMap<>();
-
-	public Peak(String UID) {
-		this.UID = UID;
-	}
-
-	public Peak(String UID, double x, double y) {
-		this.UID = UID;
-		this.x = x;
-		this.y = y;
+	
+	public Peak(JsonParser jParser) throws IOException {
+		super();
+		fromJSON(jParser);
 	}
 
 	public Peak(double[] values) {
+		this.id = idGenerator.incrementAndGet();
+		
 		setProperty(BASELINE, values[0]);
 		setProperty(HEIGHT, values[1]);
 		x = values[2];
@@ -115,6 +94,8 @@ public class Peak implements RealLocalizable {
 	public Peak(double x, double y, double height, double baseline, double sigma,
 		int t)
 	{
+		this.id = idGenerator.incrementAndGet();
+		
 		this.x = x;
 		this.y = y;
 		setProperty(BASELINE, baseline);
@@ -124,6 +105,8 @@ public class Peak implements RealLocalizable {
 	}
 
 	public Peak(double x, double y, double pixelValue, int t) {
+		this.id = idGenerator.incrementAndGet();
+		
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
@@ -131,6 +114,8 @@ public class Peak implements RealLocalizable {
 	}
 	
 	public Peak(double x, double y) {
+		this.id = idGenerator.incrementAndGet();
+		
 		this.x = x;
 		this.y = y;
 	}
@@ -139,11 +124,18 @@ public class Peak implements RealLocalizable {
 		this.x = peak.getX();
 		this.y = peak.getY();
 		this.pixelValue = peak.pixelValue;
-		this.UID = peak.UID;
+		this.trackUID = peak.trackUID;
 		this.colorName = peak.colorName;
 		this.t = peak.t;
 		this.c = peak.c;
+		this.id = peak.id;
+
+		this.backwardLinkID = peak.backwardLinkID;
+		this.forwardLinkID = peak.forwardLinkID;
 		
+		this.forwardLink = peak.forwardLink;
+		this.backwardLink = peak.backwardLink;
+
 		for (String key : peak.getProperties().keySet())
 		    this.properties.put(key, peak.getProperties().get(key));
 	}
@@ -193,8 +185,8 @@ public class Peak implements RealLocalizable {
 		return valid;
 	}
 
-	public String getUID() {
-		return UID;
+	public String getTrackUID() {
+		return trackUID;
 	}
 
 	public int getT() {
@@ -237,19 +229,7 @@ public class Peak implements RealLocalizable {
 		this.y = values[3];
 		this.properties.put(SIGMA, values[4]);
 	}
-/*
-	public void addToColumns(Map<String, DoubleColumn> columns) {
-		if (columns.containsKey("T")) columns.get("T").add((double)t);
-		if (columns.containsKey("x")) columns.get("x").add(x);
-		if (columns.containsKey("y")) columns.get("y").add(y);
-		if (columns.containsKey(INTENSITY)) columns.get(INTENSITY).add(properties.get(INTENSITY).doubleValue());
-		if (columns.containsKey(BASELINE)) columns.get(BASELINE).add(properties.get(BASELINE).doubleValue());
-		if (columns.containsKey(HEIGHT)) columns.get(HEIGHT).add(properties.get(HEIGHT).doubleValue());
-		if (columns.containsKey(SIGMA)) columns.get(SIGMA).add(properties.get(SIGMA).doubleValue());
-		if (columns.containsKey(R2)) columns.get(R2).add(properties.get(R2).doubleValue());
-		if (columns.containsKey("area") && properties.containsKey("area")) columns.get("area").add(properties.get("area").doubleValue());
-	}
-*/
+
 	// used for pixel sort in the peak finder
 	// and for rejection of bad fits.
 	public void setValid() {
@@ -260,8 +240,8 @@ public class Peak implements RealLocalizable {
 		valid = false;
 	}
 
-	public void setUID(String UID) {
-		this.UID = UID;
+	public void setTrackUID(String trackUID) {
+		this.trackUID = trackUID;
 	}
 
 	// Sets the reference to the next peak in the trajectory
@@ -273,6 +253,16 @@ public class Peak implements RealLocalizable {
 	public Peak getForwardLink() {
 		return forwardLink;
 	}
+	
+	// Sets the ID to the next peak in the trajectory
+	public void setForwardLinkID(long forwardLinkID) {
+		this.forwardLinkID = forwardLinkID;
+	}
+
+	// Gets the ID to the next peak in the trajectory
+	public long getForwardLinkUID() {
+		return forwardLinkID;
+	}
 
 	// Sets the reference to the previous peak in the trajectory
 	public void setBackwardLink(Peak link) {
@@ -282,6 +272,16 @@ public class Peak implements RealLocalizable {
 	// Gets the reference to the previous peak in the trajectory
 	public Peak getBackwardLink() {
 		return backwardLink;
+	}
+	
+	// Sets the ID to the previous peak in the trajectory
+	public void setBackwardLinkID(long backwardLinkID) {
+		this.backwardLinkID = backwardLinkID;
+	}
+
+	// Gets the ID to the previous peak in the trajectory
+	public long getBackwardLinkID() {
+		return backwardLinkID;
 	}
 
 	public void setIntensity(double intensity) {
@@ -355,5 +355,59 @@ public class Peak implements RealLocalizable {
 	public void localize(double[] arg0) {
 		arg0[0] = x;
 		arg0[1] = y;
+	}
+
+	@Override
+	protected void createIOMaps() {
+		setJsonField("id", jGenerator -> jGenerator.writeNumberField("id", id),
+				jParser -> id = jParser.getLongValue());
+		
+		setJsonField("trackUID", jGenerator -> jGenerator.writeStringField("trackUID", trackUID),
+				jParser -> trackUID = jParser.getText());
+		
+		setJsonField("colorName", jGenerator -> jGenerator.writeStringField("colorName", colorName),
+				jParser -> colorName = jParser.getText());
+		
+		setJsonField("x", jGenerator -> jGenerator.writeNumberField("x",
+				x), jParser -> x = jParser.getDoubleValue());
+		
+		setJsonField("y", jGenerator -> jGenerator.writeNumberField("y",
+				y), jParser -> y = jParser.getDoubleValue());
+		
+		setJsonField("pixelValue", jGenerator -> jGenerator.writeNumberField("pixelValue",
+				pixelValue), jParser -> pixelValue = jParser.getDoubleValue());	
+		
+		setJsonField("c", jGenerator -> jGenerator.writeNumberField("c",
+				c), jParser -> c = jParser.getIntValue());
+		
+		setJsonField("t", jGenerator -> jGenerator.writeNumberField("t",
+				t), jParser -> t = jParser.getIntValue());
+				
+		setJsonField("valid", jGenerator -> jGenerator.writeBooleanField("valid",
+				valid), jParser -> valid = jParser.getBooleanValue());
+		
+		setJsonField("forwardLinkID", jGenerator -> jGenerator.writeNumberField("forwardLinkID", forwardLinkID),
+				jParser -> forwardLinkID = jParser.getLongValue());
+		
+		setJsonField("backwardLinkID", jGenerator -> jGenerator.writeNumberField("backwardLinkID", backwardLinkID),
+				jParser -> backwardLinkID = jParser.getLongValue());
+		
+		setJsonField("properties", jGenerator -> {
+			if (properties.size() > 0) {
+				jGenerator.writeFieldName("properties");
+				jGenerator.writeStartObject();
+				for (String key : properties.keySet())
+					jGenerator.writeNumberField(key, properties.get(key));
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String field = jParser.getCurrentName();
+				jParser.nextToken();
+				properties.put(field, jParser.getDoubleValue());
+			}
+		});
+		
+		//TODO Add PeakShape
 	}
 }
