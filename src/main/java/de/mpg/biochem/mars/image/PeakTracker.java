@@ -79,11 +79,8 @@ public class PeakTracker {
 	private double[] maxDifference;
 	private boolean[] ckMaxDifference;
 	private int minTrajectoryLength;
-	//public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
-	//	"sigma", "R2" };
 	private double searchRadius;
 	private boolean verbose = false;
-	//private boolean writeIntegration = false;
 	private int minimumDistance;
 	private double pixelSize = 1;
 
@@ -230,15 +227,15 @@ public class PeakTracker {
 						radiusSearch.search(to, minimumDistance, false);
 
 						for (int w = 0; w < radiusSearch.numNeighbors(); w++) {
-							if (radiusSearch.getSampler(w).get().getUID() != null)
+							if (radiusSearch.getSampler(w).get().getTrackUID() != null)
 								regionAlreadyLinked = true;
 						}
 					}
 
-					if (from.getUID() != null && !regionAlreadyLinked) {
-						to.setUID(from.getUID());
-						trackLengths.put(from.getUID(), trackLengths.get(from
-							.getUID()) + 1);
+					if (from.getTrackUID() != null && !regionAlreadyLinked) {
+						to.setTrackUID(from.getTrackUID());
+						trackLengths.put(from.getTrackUID(), trackLengths.get(from
+							.getTrackUID()) + 1);
 
 						// Add references in each peak for forward and backward links...
 						from.setForwardLink(to);
@@ -248,8 +245,8 @@ public class PeakTracker {
 					else if (!regionAlreadyLinked) {
 						// Generate a new UID
 						String UID = MarsMath.getUUID58();
-						from.setUID(UID);
-						to.setUID(UID);
+						from.setTrackUID(UID);
+						to.setTrackUID(UID);
 						trackLengths.put(UID, 2);
 						trackFirstT.add(from);
 
@@ -368,10 +365,10 @@ public class PeakTracker {
 	{
 		// don't add the molecule if the trajectory length is below
 		// minTrajectoryLength
-		if (trajectoryLengths.get(startingPeak.getUID())
+		if (trajectoryLengths.get(startingPeak.getTrackUID())
 			.intValue() < minTrajectoryLength) return;
 		
-		Molecule mol = archive.createMolecule(startingPeak.getUID());
+		Molecule mol = archive.createMolecule(startingPeak.getTrackUID());
 		mol.setMetadataUID(metaDataUID);
 		mol.setChannel(channel);
 		mol.setImage(archive.getMetadata(0).images().findFirst().get()
