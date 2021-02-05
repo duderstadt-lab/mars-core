@@ -193,6 +193,14 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		return valid;
 	}
 
+	public long getPeakID() {
+		return id;
+	}
+	
+	public void setTrackUID(String trackUID) {
+		this.trackUID = trackUID;
+	}
+
 	public String getTrackUID() {
 		return trackUID;
 	}
@@ -246,10 +254,6 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 
 	public void setNotValid() {
 		valid = false;
-	}
-
-	public void setTrackUID(String trackUID) {
-		this.trackUID = trackUID;
 	}
 
 	// Sets the reference to the next peak in the trajectory
