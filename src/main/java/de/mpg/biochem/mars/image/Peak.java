@@ -193,7 +193,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		return valid;
 	}
 
-	public long getPeakID() {
+	public long getID() {
 		return id;
 	}
 	
