@@ -146,11 +146,11 @@ public class PeakTracker {
 			MoleculeArchive<?, ?, ?, ?> archive, int channel)
 	{
 		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
-		track(peakStack, archive, channel, trackingTimePoints, false);
+		track(peakStack, archive, channel, trackingTimePoints);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints, boolean writeIntegration)
+			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints)
 	{
 		metaDataUID = archive.getMetadata(0).getUID();
 
@@ -278,7 +278,7 @@ public class PeakTracker {
 		try {
 			forkJoinPool.submit(() -> trackFirstT.parallelStream().forEach(
 				startingPeak -> buildMolecule(startingPeak, trackLengths, archive,
-					channel, writeIntegration))).get();
+					channel))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
@@ -364,7 +364,7 @@ public class PeakTracker {
 	@SuppressWarnings("unchecked")
 	private <M extends Molecule> void buildMolecule(Peak startingPeak,
 		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<M, ?, ?, ?> archive,
-		int channel, boolean writeIntegration)
+		int channel)
 	{
 		// don't add the molecule if the trajectory length is below
 		// minTrajectoryLength
@@ -392,22 +392,12 @@ public class PeakTracker {
 			table.setValue("x", row, peak.getX());
 			table.setValue("y", row, peak.getY());
 			if (verbose) {
-				table.setValue(Peak.BASELINE, row, peak.getBaseline());
-				table.setValue(Peak.HEIGHT, row, peak.getHeight());
-				table.setValue(Peak.SIGMA, row, peak.getSigma());
-				table.setValue(Peak.R2, row, peak.getRSquared());
-				if (writeIntegration) {
-					table.setValue(Peak.MEDIAN_BACKGROUND, row, peak.getMedianBackground());
-					table.setValue(Peak.INTENSITY, row, peak.getIntensity());
-				}
-				
-				if (peak.getProperties() != null)
-					for (String name : peak.getProperties().keySet())
-						table.setValue(name, row, peak.getProperties().get(name));
+				for (String name : peak.getProperties().keySet())
+					table.setValue(name, row, peak.getProperties().get(name));
 			} else {
-				if (writeIntegration)
-					table.setValue(Peak.INTENSITY, row, peak.getIntensity());
-				if (archive instanceof ObjectArchive && peak.getProperties() != null && peak.getProperties().containsKey("area"))
+				if (peak.getProperties().containsKey(Peak.INTENSITY))
+					table.setValue(Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
+				if (archive instanceof ObjectArchive)
 					table.setValue("area", row, peak.getProperties().get("area"));
 			}
 			

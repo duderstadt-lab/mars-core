@@ -449,7 +449,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		tracker.track(objectStack, archive, Integer.valueOf(channel), processTimePoints, false);
+		tracker.track(objectStack, archive, Integer.valueOf(channel), processTimePoints);
 
 		archive.naturalOrderSortMoleculeIndex();
 
