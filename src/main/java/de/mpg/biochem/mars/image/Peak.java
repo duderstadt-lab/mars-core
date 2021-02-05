@@ -26,41 +26,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
 
 package de.mpg.biochem.mars.image;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.imglib2.RealLocalizable;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
-import org.scijava.table.DoubleColumn;
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
+import net.imglib2.RealLocalizable;
 
 /**
  * Stores information about detected 2D intensity peaks. Implements
@@ -72,9 +50,9 @@ import org.scijava.table.DoubleColumn;
  * 
  * @author Karl Duderstadt
  */
-public class Peak implements RealLocalizable {
+public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizable {
 
-	private String UID, colorName;
+	private String uid, colorName, forwardLinkUID, backwardLinkUID;
 	private Peak forwardLink, backwardLink;
 	private double x, y, pixelValue;
 	private int c, t;
@@ -93,13 +71,18 @@ public class Peak implements RealLocalizable {
 	public static final String INTENSITY = "intensity";
 	
 	private final Map< String, Double > properties = new ConcurrentHashMap<>();
-
-	public Peak(String UID) {
-		this.UID = UID;
+	
+	public Peak(JsonParser jParser) throws IOException {
+		super();
+		fromJSON(jParser);
 	}
 
-	public Peak(String UID, double x, double y) {
-		this.UID = UID;
+	public Peak(String uid) {
+		this.uid = uid;
+	}
+
+	public Peak(String uid, double x, double y) {
+		this.uid = uid;
 		this.x = x;
 		this.y = y;
 	}
@@ -139,7 +122,7 @@ public class Peak implements RealLocalizable {
 		this.x = peak.getX();
 		this.y = peak.getY();
 		this.pixelValue = peak.pixelValue;
-		this.UID = peak.UID;
+		this.uid = peak.uid;
 		this.colorName = peak.colorName;
 		this.t = peak.t;
 		this.c = peak.c;
@@ -194,7 +177,7 @@ public class Peak implements RealLocalizable {
 	}
 
 	public String getUID() {
-		return UID;
+		return uid;
 	}
 
 	public int getT() {
@@ -237,19 +220,7 @@ public class Peak implements RealLocalizable {
 		this.y = values[3];
 		this.properties.put(SIGMA, values[4]);
 	}
-/*
-	public void addToColumns(Map<String, DoubleColumn> columns) {
-		if (columns.containsKey("T")) columns.get("T").add((double)t);
-		if (columns.containsKey("x")) columns.get("x").add(x);
-		if (columns.containsKey("y")) columns.get("y").add(y);
-		if (columns.containsKey(INTENSITY)) columns.get(INTENSITY).add(properties.get(INTENSITY).doubleValue());
-		if (columns.containsKey(BASELINE)) columns.get(BASELINE).add(properties.get(BASELINE).doubleValue());
-		if (columns.containsKey(HEIGHT)) columns.get(HEIGHT).add(properties.get(HEIGHT).doubleValue());
-		if (columns.containsKey(SIGMA)) columns.get(SIGMA).add(properties.get(SIGMA).doubleValue());
-		if (columns.containsKey(R2)) columns.get(R2).add(properties.get(R2).doubleValue());
-		if (columns.containsKey("area") && properties.containsKey("area")) columns.get("area").add(properties.get("area").doubleValue());
-	}
-*/
+
 	// used for pixel sort in the peak finder
 	// and for rejection of bad fits.
 	public void setValid() {
@@ -260,8 +231,8 @@ public class Peak implements RealLocalizable {
 		valid = false;
 	}
 
-	public void setUID(String UID) {
-		this.UID = UID;
+	public void setUID(String uid) {
+		this.uid = uid;
 	}
 
 	// Sets the reference to the next peak in the trajectory
@@ -273,6 +244,16 @@ public class Peak implements RealLocalizable {
 	public Peak getForwardLink() {
 		return forwardLink;
 	}
+	
+	// Sets the UID to the next peak in the trajectory
+	public void setForwardLinkUID(String forwardLinkUID) {
+		this.forwardLinkUID = forwardLinkUID;
+	}
+
+	// Gets the UID to the next peak in the trajectory
+	public String getForwardLinkUID() {
+		return forwardLinkUID;
+	}
 
 	// Sets the reference to the previous peak in the trajectory
 	public void setBackwardLink(Peak link) {
@@ -282,6 +263,16 @@ public class Peak implements RealLocalizable {
 	// Gets the reference to the previous peak in the trajectory
 	public Peak getBackwardLink() {
 		return backwardLink;
+	}
+	
+	// Sets the UID to the previous peak in the trajectory
+	public void setBackwardLinkUID(String backwardLinkUID) {
+		this.backwardLinkUID = backwardLinkUID;
+	}
+
+	// Gets the UID to the previous peak in the trajectory
+	public String getBackwardLinkUID() {
+		return backwardLinkUID;
 	}
 
 	public void setIntensity(double intensity) {
@@ -355,5 +346,60 @@ public class Peak implements RealLocalizable {
 	public void localize(double[] arg0) {
 		arg0[0] = x;
 		arg0[1] = y;
+	}
+
+	@Override
+	protected void createIOMaps() {
+		setJsonField("uid", jGenerator -> jGenerator.writeStringField("uid", uid),
+				jParser -> uid = jParser.getText());
+		
+		setJsonField("colorName", jGenerator -> jGenerator.writeStringField("colorName", colorName),
+				jParser -> colorName = jParser.getText());
+		
+		setJsonField("x", jGenerator -> jGenerator.writeNumberField("x",
+				x), jParser -> x = jParser.getDoubleValue());
+		
+		setJsonField("y", jGenerator -> jGenerator.writeNumberField("y",
+				y), jParser -> y = jParser.getDoubleValue());
+		
+		setJsonField("pixelValue", jGenerator -> jGenerator.writeNumberField("pixelValue",
+				pixelValue), jParser -> pixelValue = jParser.getDoubleValue());	
+		
+		setJsonField("c", jGenerator -> jGenerator.writeNumberField("c",
+				c), jParser -> c = jParser.getIntValue());
+		
+		setJsonField("t", jGenerator -> jGenerator.writeNumberField("t",
+				t), jParser -> t = jParser.getIntValue());
+				
+		setJsonField("valid", jGenerator -> jGenerator.writeBooleanField("valid",
+				valid), jParser -> valid = jParser.getBooleanValue());
+		
+		setJsonField("forwardLinkUID", jGenerator -> {
+					if (forwardLinkUID != null) jGenerator.writeStringField("forwardLinkUID", forwardLinkUID);
+				},
+				jParser -> forwardLinkUID = jParser.getText());
+		
+		setJsonField("backwardLinkUID", jGenerator -> { 
+					if (backwardLinkUID != null) jGenerator.writeStringField("backwardLinkUID", backwardLinkUID);
+				},
+				jParser -> backwardLinkUID = jParser.getText());
+		
+		setJsonField("properties", jGenerator -> {
+			if (properties.size() > 0) {
+				jGenerator.writeFieldName("properties");
+				jGenerator.writeStartObject();
+				for (String key : properties.keySet())
+					jGenerator.writeNumberField(key, properties.get(key));
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String field = jParser.getCurrentName();
+				jParser.nextToken();
+				properties.put(field, jParser.getDoubleValue());
+			}
+		});
+		
+		//TODO Add PeakShape
 	}
 }
