@@ -180,13 +180,13 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 								if (fit && fitSecondOrder) {
 
 									List<Peak> top = new ArrayList<Peak>();
-									top.add(new Peak("top", segment.getX1(), segment.getY1() +
+									top.add(new Peak(segment.getX1(), segment.getY1() +
 										1));
 									top = MarsImageUtils.fitPeaks(secondOrderImage, secondOrderImage, top,
 										fitRadius, dogFilterRadius, median, true);
 
 									List<Peak> bottom = new ArrayList<Peak>();
-									bottom.add(new Peak("bottom", segment.getX2(), segment
+									bottom.add(new Peak(segment.getX2(), segment
 										.getY2() - 1));
 									bottom = MarsImageUtils.fitPeaks(secondOrderImage, secondOrderImage,
 										bottom, fitRadius, dogFilterRadius, median, true);

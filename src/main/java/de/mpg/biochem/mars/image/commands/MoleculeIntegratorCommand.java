@@ -414,7 +414,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i]
 				.getFloatBounds().height / 2;
 
-			Peak peak = new Peak(UID, x, y);
+			Peak peak = new Peak(x, y);
 
 			if (subStrings.length > 1) {
 				if (subStrings[1].equals("LONG") && MarsImageUtils.intervalContains(

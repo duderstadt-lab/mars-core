@@ -113,6 +113,14 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		this.t = t;
 	}
 	
+	public Peak(String trackUID, double x, double y) {
+		this.id = idGenerator.incrementAndGet();
+		
+		this.trackUID = trackUID;
+		this.x = x;
+		this.y = y;
+	}
+	
 	public Peak(double x, double y) {
 		this.id = idGenerator.incrementAndGet();
 		
