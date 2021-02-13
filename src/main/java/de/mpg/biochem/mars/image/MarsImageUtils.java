@@ -263,26 +263,26 @@ public class MarsImageUtils {
 		RandomAccessible<T> img, Cursor<T> cursor, int t, double threshold,
 		int minimumDistance, boolean findNegativePeaks)
 	{
-		List<Peak> possiblePeaks = new ArrayList<Peak>();
+		List<PeakPixel> possiblePeaks = new ArrayList<PeakPixel>();
 
 		if (!findNegativePeaks) {
 			while (cursor.hasNext() && !Thread.currentThread().isInterrupted()) {
 				double pixel = cursor.next().getRealDouble();
 
 				if (pixel > threshold) {
-					possiblePeaks.add(new Peak(cursor.getIntPosition(0), cursor
-						.getIntPosition(1), pixel, t));
+					possiblePeaks.add(new PeakPixel(cursor.getIntPosition(0), cursor
+						.getIntPosition(1), pixel));
 				}
 			}
 
 			if (possiblePeaks.isEmpty()) return new ArrayList<Peak>();
 
 			// Sort the list from lowest to highest pixel value...
-			Collections.sort(possiblePeaks, new Comparator<Peak>() {
+			Collections.sort(possiblePeaks, new Comparator<PeakPixel>() {
 
 				@Override
-				public int compare(Peak o1, Peak o2) {
-					return Double.compare(o1.getPixelValue(), o2.getPixelValue());
+				public int compare(PeakPixel o1, PeakPixel o2) {
+					return Double.compare(o1.pixelValue, o2.pixelValue);
 				}
 			});
 		}
@@ -291,19 +291,19 @@ public class MarsImageUtils {
 				double pixel = cursor.next().getRealDouble();
 
 				if (pixel < threshold * (-1)) {
-					possiblePeaks.add(new Peak(cursor.getIntPosition(0), cursor
-						.getIntPosition(1), pixel, t));
+					possiblePeaks.add(new PeakPixel(cursor.getIntPosition(0), cursor
+						.getIntPosition(1), pixel));
 				}
 			}
 
 			if (possiblePeaks.isEmpty()) return new ArrayList<Peak>();
 
 			// Sort the list from highest to lowest pixel value...
-			Collections.sort(possiblePeaks, new Comparator<Peak>() {
+			Collections.sort(possiblePeaks, new Comparator<PeakPixel>() {
 
 				@Override
-				public int compare(Peak o1, Peak o2) {
-					return Double.compare(o2.getPixelValue(), o1.getPixelValue());
+				public int compare(PeakPixel o1, PeakPixel o2) {
+					return Double.compare(o2.pixelValue, o1.pixelValue);
 				}
 			});
 		}
@@ -313,14 +313,14 @@ public class MarsImageUtils {
 		// peaks in for loop below.
 		// This is a shallow copy, which means it contains exactly the same elements
 		// as the first list, but the order can be completely different...
-		List<Peak> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
+		List<PeakPixel> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
 
 		// Allows for fast search of nearest peaks...
-		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks,
+		KDTree<PeakPixel> possiblePeakTree = new KDTree<PeakPixel>(KDTreePossiblePeaks,
 			KDTreePossiblePeaks);
 
-		RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-			new RadiusNeighborSearchOnKDTree<Peak>(possiblePeakTree);
+		RadiusNeighborSearchOnKDTree<PeakPixel> radiusSearch =
+			new RadiusNeighborSearchOnKDTree<PeakPixel>(possiblePeakTree);
 
 		// As we loop through all possible peaks and remove those that are too close
 		// we will add all the selected peaks to a new array
@@ -337,19 +337,22 @@ public class MarsImageUtils {
 			if (Thread.currentThread().isInterrupted())
 				break;
 			
-			Peak peak = possiblePeaks.get(i);
-			if (peak.isValid()) {
-				finalPeaks.add(peak);
+			PeakPixel peakPixel = possiblePeaks.get(i);
+			if (peakPixel.valid) {
+				finalPeaks.add(new Peak(peakPixel.x, peakPixel.y, t));
 
 				// Then we remove all possible peaks within the minimumDistance...
 				// This will include the peak we just added to the peaks list...
-				radiusSearch.search(peak, minimumDistance, false);
+				radiusSearch.search(peakPixel, minimumDistance, false);
 
 				for (int j = 0; j < radiusSearch.numNeighbors(); j++) {
-					radiusSearch.getSampler(j).get().setNotValid();
+					radiusSearch.getSampler(j).get().valid = false;
 				}
 			}
 		}
+		
+		possiblePeaks.clear();
+		KDTreePossiblePeaks.clear();
 			
 		return finalPeaks;
 	}
