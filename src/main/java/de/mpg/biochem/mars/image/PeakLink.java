@@ -39,7 +39,9 @@ package de.mpg.biochem.mars.image;
 public class PeakLink {
 
 	private Peak from;
+	private long fromID = -1;
 	private Peak to;
+	private long toID = -1;
 	private double distanceSq;
 	private int t;
 	private int tDifference;
@@ -53,12 +55,32 @@ public class PeakLink {
 		this.t = t;
 		this.tDifference = tDifference;
 	}
+	
+	public PeakLink(long fromID, long toID, double distanceSq, int t,
+			int tDifference)
+		{
+			this.fromID = fromID;
+			this.toID = toID;
+			this.distanceSq = distanceSq;
+			this.t = t;
+			this.tDifference = tDifference;
+		}
 
 	public void reset(Peak from, Peak to, double distanceSq, int t,
 		int tDifference)
 	{
 		this.from = from;
 		this.to = to;
+		this.distanceSq = distanceSq;
+		this.t = t;
+		this.tDifference = tDifference;
+	}
+	
+	public void reset(long fromID, long toID, double distanceSq, int t,
+		int tDifference)
+	{
+		this.fromID = fromID;
+		this.toID = toID;
 		this.distanceSq = distanceSq;
 		this.t = t;
 		this.tDifference = tDifference;
@@ -91,8 +113,16 @@ public class PeakLink {
 	public Peak getFrom() {
 		return from;
 	}
+	
+	public long getFromID() {
+		return fromID;
+	}
 
 	public Peak getTo() {
 		return to;
+	}
+	
+	public long getToID() {
+		return toID;
 	}
 }
