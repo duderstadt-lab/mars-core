@@ -483,21 +483,23 @@ public class MarsOMEUtils {
 				final long t0 = getNorPixMillisecondTime(DateTimeString1);
 
 				marsMetadata.getImage(0).planes().forEach(plane -> {
-					int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
-						"DateTime: ");
-					String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
-						dateTimeIndex2 + 10);
-					Time dt = null;
-					try {
-						double millisecondsDt = ((double) getNorPixMillisecondTime(
-							DateTimeString2) - t0) / 1000;
-						dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
-							(UnitsTime) timehandler.getEnumeration("s")));
+					if (metaDataStack.containsKey(plane.getT())) {
+						int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
+							"DateTime: ");
+						String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
+							dateTimeIndex2 + 10);
+						Time dt = null;
+						try {
+							double millisecondsDt = ((double) getNorPixMillisecondTime(
+								DateTimeString2) - t0) / 1000;
+							dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
+								(UnitsTime) timehandler.getEnumeration("s")));
+						}
+						catch (ParseException | EnumerationException e) {
+							e.printStackTrace();
+						}
+						plane.setDeltaT(dt);
 					}
-					catch (ParseException | EnumerationException e) {
-						e.printStackTrace();
-					}
-					plane.setDeltaT(dt);
 				});
 			}
 			catch (ParseException e1) {
