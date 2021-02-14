@@ -151,22 +151,26 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 	
 	public void reset() {
-		id = -1;
-		forwardLinkID = -1; 
-		backwardLinkID = -1;
+		reset(0, 0, -1);
+	}
+	
+	public void reset(double x, double y, int t) {
+		this.id = idGenerator.incrementAndGet();
+		this.forwardLinkID = -1; 
+		this.backwardLinkID = -1;
 
-		trackUID = null; 
-		colorName = null;
-		forwardLink = null;
-		backwardLink = null;
-		x = 0; 
-		y = 0; 
-		c = -1;
-		t = -1;
-		valid = true;
+		this.trackUID = null; 
+		this.colorName = null;
+		this.forwardLink = null;
+		this.backwardLink = null;
+		this.x = x; 
+		this.y = y; 
+		this.c = -1;
+		this.t = t;
+		this.valid = true;
 
-		peakShape = null;
-		properties.clear();
+		this.peakShape = null;
+		this.properties.clear();
 	}
 
 	// Getters
