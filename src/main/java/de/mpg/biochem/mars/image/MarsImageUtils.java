@@ -439,21 +439,21 @@ public class MarsImageUtils {
 
 			fitter.fitPeak(rae, p, e, subregion, findNegativePeaks);
 
-			peak.setValid();
+			peak.setValid(true);
 
 			for (int i = 0; i < p.length && peak.isValid(); i++) {
-				if (Double.isNaN(p[i])) peak.setNotValid();
+				if (Double.isNaN(p[i])) peak.setValid(false);
 			}
 
 			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
-				peak.setNotValid();
+				peak.setValid(false);
 			}
 
 			double Rsquared = 0;
 			if (peak.isValid()) {
 				Gaussian2D gauss = new Gaussian2D(p);
 				Rsquared = calcR2(ra, radius, gauss);
-				if (Rsquared <= RsquaredMin) peak.setNotValid();
+				if (Rsquared <= RsquaredMin) peak.setValid(false);
 			}
 
 			if (peak.isValid()) {
@@ -517,14 +517,14 @@ public class MarsImageUtils {
 			fitter.fitPeak(rae, p, e, subregion, fitRegionThreshold,
 				findNegativePeaks);
 
-			peak.setValid();
+			peak.setValid(true);
 
 			for (int i = 0; i < p.length && peak.isValid(); i++) {
-				if (Double.isNaN(p[i])) peak.setNotValid();
+				if (Double.isNaN(p[i])) peak.setValid(false);
 			}
 
 			if (p[2] < 0 || p[3] < 0 || p[4] < 0) {
-				peak.setNotValid();
+				peak.setValid(false);
 			}
 
 			if (peak.isValid()) {
@@ -633,7 +633,7 @@ public class MarsImageUtils {
 
 		// Reset all to valid for new search
 		for (int i = peaks.size() - 1; i >= 0; i--) {
-			peaks.get(i).setValid();
+			peaks.get(i).setValid(true);
 		}
 
 		// It is really important to remember here that possiblePeaks and
@@ -653,7 +653,7 @@ public class MarsImageUtils {
 				radiusSearch.search(peak, minimumDistance, false);
 
 				for (int j = 0; j < radiusSearch.numNeighbors(); j++) {
-					radiusSearch.getSampler(j).get().setNotValid();
+					radiusSearch.getSampler(j).get().setValid(false);
 				}
 			}
 		}

@@ -205,9 +205,13 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public void setShape(PeakShape peakShape) {
 		this.peakShape = peakShape;
 	}
-
+	
 	public boolean isValid() {
 		return valid;
+	}
+	
+	public void setValid(boolean valid) {
+		this.valid = valid;
 	}
 	
 	public void setID(long id) {
@@ -265,16 +269,6 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		this.x = values[2];
 		this.y = values[3];
 		this.properties.put(SIGMA, values[4]);
-	}
-
-	// used for pixel sort in the peak finder
-	// and for rejection of bad fits.
-	public void setValid() {
-		valid = true;
-	}
-
-	public void setNotValid() {
-		valid = false;
 	}
 
 	// Sets the reference to the next peak in the trajectory
@@ -424,7 +418,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 						jGenerator.writeNumberField("t", t);
 				},
 		 		jParser -> t = jParser.getIntValue());
-				
+		
 		setJsonField("valid", jGenerator -> jGenerator.writeBooleanField("valid",
 				valid), jParser -> valid = jParser.getBooleanValue());
 		

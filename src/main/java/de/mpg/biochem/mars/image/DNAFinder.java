@@ -118,7 +118,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 				// make sure they are all valid
 				// then we can remove them as we go.
 				for (int i = 0; i < bottomPeaks.size(); i++)
-					bottomPeaks.get(i).setValid();
+					bottomPeaks.get(i).setValid(true);
 
 				KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
 					bottomPeaks);
@@ -209,7 +209,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 								}
 
 								DNASegments.add(segment);
-								bottomEdge.setNotValid();
+								bottomEdge.setValid(false);
 							}
 						}
 					}
