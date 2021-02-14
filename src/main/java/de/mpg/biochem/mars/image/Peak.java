@@ -139,12 +139,15 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		this.t = peak.t;
 		this.c = peak.c;
 		this.id = peak.id;
+		this.valid = peak.valid;
 
 		this.backwardLinkID = peak.backwardLinkID;
 		this.forwardLinkID = peak.forwardLinkID;
 		
 		this.forwardLink = peak.forwardLink;
 		this.backwardLink = peak.backwardLink;
+		
+		this.peakShape = peak.peakShape;
 
 		for (String key : peak.getProperties().keySet())
 		    this.properties.put(key, peak.getProperties().get(key));
