@@ -88,8 +88,6 @@ public class SegmentDistributionBuilder {
 	private StatusService statusService;
 
 	private ForkJoinPool forkJoinPool;
-	// Need to determine the number of threads
-	final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 	public SegmentDistributionBuilder(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
@@ -144,7 +142,7 @@ public class SegmentDistributionBuilder {
 	}
 
 	// METHODS FOR EACH DISTRIBUTION TYPE
-	public MarsTable buildRateGaussian() {
+	public MarsTable buildRateGaussian(final int nThreads) {
 		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
 			table = new MarsTable(7, bins);
@@ -184,7 +182,7 @@ public class SegmentDistributionBuilder {
 			ConcurrentMap<Integer, double[]> boot_distributions =
 				new ConcurrentHashMap<>(bootstrap_cycles);
 
-			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			forkJoinPool = new ForkJoinPool(nThreads);
 
 			try {
 				// Start a thread to keep track of the progress of the number of frames
@@ -277,7 +275,7 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 
-	public MarsTable buildRateHistogram() {
+	public MarsTable buildRateHistogram(final int nThreads) {
 		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
 			table = new MarsTable(7, bins);
@@ -315,7 +313,7 @@ public class SegmentDistributionBuilder {
 			ConcurrentMap<Integer, double[]> boot_distributions =
 				new ConcurrentHashMap<>(bootstrap_cycles);
 
-			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			forkJoinPool = new ForkJoinPool(nThreads);
 
 			try {
 				// Start a thread to keep track of the progress of the number of frames
@@ -408,20 +406,20 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 
-	public MarsTable buildDurationHistogram() {
-		return buildDurationHistogram(false, false);
+	public MarsTable buildDurationHistogram(final int nTheads) {
+		return buildDurationHistogram(false, false, nTheads);
 	}
 
-	public MarsTable buildProcessivityByMoleculeHistogram() {
-		return buildDurationHistogram(false, true);
+	public MarsTable buildProcessivityByMoleculeHistogram(final int nTheads) {
+		return buildDurationHistogram(false, true, nTheads);
 	}
 
-	public MarsTable buildProcessivityByRegionHistogram() {
-		return buildDurationHistogram(true, false);
+	public MarsTable buildProcessivityByRegionHistogram(final int nTheads) {
+		return buildDurationHistogram(true, false, nTheads);
 	}
 
 	private MarsTable buildDurationHistogram(boolean processivityPerRegion,
-		boolean processivityPerMolecule)
+		boolean processivityPerMolecule, final int nThreads)
 	{
 		MarsTable table;
 		if (bootstrap_Segments || bootstrap_Molecules) {
@@ -450,7 +448,7 @@ public class SegmentDistributionBuilder {
 			ConcurrentMap<Integer, double[]> boot_distributions =
 				new ConcurrentHashMap<>(bootstrap_cycles);
 
-			forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			forkJoinPool = new ForkJoinPool(nThreads);
 
 			try {
 				// Start a thread to keep track of the progress of the number of frames

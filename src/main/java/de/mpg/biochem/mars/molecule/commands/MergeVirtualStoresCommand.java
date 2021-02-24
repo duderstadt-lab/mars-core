@@ -86,6 +86,9 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Override
 	public void run() {
@@ -125,7 +128,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				try {
 					File propertiesFile = new File(file.getAbsolutePath() +
 						"/MoleculeArchiveProperties.sml");
-					if (propertiesFile.exists()) archiveTypes.add(moleculeArchiveService
+					if (propertiesFile.exists()) archiveTypes.add(MoleculeArchiveService
 						.getArchiveTypeFromStore(propertiesFile));
 					else {
 						logService.info("Could not locate " + file.getAbsolutePath() +
@@ -411,8 +414,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				}
 			}
 
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-			ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+			ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 			try {
 				forkJoinPool.submit(() -> virtualStoreDirectoryList.parallelStream()
 					.forEach(directory -> {

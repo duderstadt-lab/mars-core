@@ -130,23 +130,21 @@ public class PeakTracker {
 	}
 	
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<?, ?, ?, ?> archive, int channel)
+			MoleculeArchive<?, ?, ?, ?> archive, final int channel, final int nThreads)
 	{
 		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
-		track(peakStack, archive, channel, trackingTimePoints);
+		track(peakStack, archive, channel, trackingTimePoints, nThreads);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints)
+			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints, final int nThreads)
 	{
 		metaDataUID = archive.getMetadata(0).getUID();
-
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 		KDTreeStack = new ConcurrentHashMap<>();
 		possibleLinks = new ConcurrentHashMap<>();
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		logService.info("building KDTrees and finding possible Peak links...");
 
@@ -256,7 +254,7 @@ public class PeakTracker {
 		starttime = System.currentTimeMillis();
 
 		// I think we need to reinitialize this pool since I shut it down above.
-		forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		forkJoinPool = new ForkJoinPool(nThreads);
 
 		// Now we build a MoleculeArchive in a multithreaded manner in which
 		// each molecule is build by a different thread just following the

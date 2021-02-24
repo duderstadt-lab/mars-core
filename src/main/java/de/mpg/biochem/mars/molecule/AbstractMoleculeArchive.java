@@ -223,11 +223,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected boolean smileEncoding = true;
 	protected String storeFileExtension = ".sml";
 
-	/**
-	 * Thread count. Should be derived from scijava or Fiji in the future.
-	 */
-	protected final int PARALLELISM_LEVEL = Runtime.getRuntime()
-		.availableProcessors();
+
 
 	/**
 	 * Constructor for creating an empty MoleculeArchive.
@@ -444,7 +440,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			put(molecule);
 		}
 	}
-
+	
 	/**
 	 * Rebuild all indexes by inspecting the contents of store directories. Then
 	 * save the new indexes to the indexes.json file in the store.
@@ -452,9 +448,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong saving the indexes.
 	 */
 	public void rebuildIndexes() throws IOException {
+		rebuildIndexes(Runtime.getRuntime().availableProcessors());
+	}
+	
+	/**
+	 * Rebuild all indexes by inspecting the contents of store directories. Then
+	 * save the new indexes to the indexes.json file in the store. Use the number
+	 * of threads specified.
+	 * 
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong saving the indexes.
+	 */
+	public void rebuildIndexes(final int nThreads) throws IOException {
 		properties().clear();
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		if (virtual) {
 			MoleculeArchiveIndex<M, I> newIndex = createIndex();
@@ -682,7 +690,20 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	public void saveAsJsonVirtualStore(File virtualDirectory) throws IOException {
-		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json");
+		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json", Runtime.getRuntime().availableProcessors());
+	}
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format with .json file extension. Rebuilds indexes in the process if
+	 * the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	public void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads) throws IOException {
+		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json", nThreads);
 	}
 
 	/**
@@ -694,11 +715,24 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	public void saveAsVirtualStore(File virtualDirectory) throws IOException {
-		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml");
+		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml", Runtime.getRuntime().availableProcessors());
+	}
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Rebuilds
+	 * indexes in the process if the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	public void saveAsVirtualStore(File virtualDirectory, final int nThreads) throws IOException {
+		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml", nThreads);
 	}
 
 	private void saveAsVirtualStore(File virtualDirectory, JsonFactory jfactory,
-		String fileExtension) throws IOException
+		String fileExtension, final int nThreads) throws IOException
 	{
 		virtualDirectory.mkdirs();
 		File metadataDir = new File(virtualDirectory.getAbsolutePath() +
@@ -712,7 +746,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		MoleculeArchiveIndex<M, I> newIndex = createIndex();
 		properties().clear();
 
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		try {
 			forkJoinPool.submit(() -> metadataList.parallelStream().forEach(
