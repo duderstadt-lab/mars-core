@@ -434,7 +434,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints);
+		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
 
 		archive.naturalOrderSortMoleculeIndex();
 
