@@ -128,6 +128,9 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "Merged Image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	// A map from slice to new transformed image
 	private ConcurrentMap<Integer, ImagePlus> transformedImageMap;
@@ -184,9 +187,6 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 		transformedImageMap = new ConcurrentHashMap<>();
 
-		// Need to determine the number of threads
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
 
@@ -201,7 +201,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(transformedImageMap.size(), transformMe.getStackSize(),
-				"Transforming " + transformMe.getTitle()), tasks, PARALLELISM_LEVEL);
+				"Transforming " + transformMe.getTitle()), tasks, nThreads);
 
 		// Now we have a map with all the transformed images. We just need to add
 		// them to a new stack
@@ -271,6 +271,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 		builder.addParameter("Affine2D m10", String.valueOf(m10));
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	public void setAddToMe(ImagePlus addToMe) {

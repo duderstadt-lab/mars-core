@@ -138,6 +138,9 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 
 	@Parameter(label = "Electronic offset")
 	private double electronicOffset = 0;
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = 1;
 
 	// For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
@@ -168,6 +171,8 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 
 		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput(
 			"backgroundImageName", String.class);
+		
+		nThreads = Runtime.getRuntime().availableProcessors();
 
 		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
 		// getting images.
@@ -216,8 +221,8 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		// Need to determine the number of threads
 		// final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
-		// ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
-		ForkJoinPool forkJoinPool = new ForkJoinPool(1);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
+		//ForkJoinPool forkJoinPool = new ForkJoinPool(1);
 		try {
 			// Start a thread to keep track of the progress of the number of frames
 			// that have been processed.
@@ -309,6 +314,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	public void setImage(ImagePlus image) {

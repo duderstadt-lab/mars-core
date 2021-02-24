@@ -265,6 +265,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Exclude", required = false)
 	private String excludeTimePointList = "";
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Parameter
 	private UIService uiService;
@@ -355,8 +358,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
 
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
 		int zSize = (int) dataset.getImgPlus().dimension(zDim);
 
@@ -406,7 +407,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(peakStack.size(), frameCount, "Finding Peaks for " + dataset
-				.getName()), tasks, PARALLELISM_LEVEL);
+				.getName()), tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -757,6 +758,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Pixel Units", this.pixelUnits);
 		builder.addParameter("Exclude time points", excludeTimePointList);
 		builder.addParameter("Swap Z and T", swapZandT);
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	// Getters and Setters

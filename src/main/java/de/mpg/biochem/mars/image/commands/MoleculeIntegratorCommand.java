@@ -185,6 +185,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String channelsTitle = "Channels:";
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	/**
 	 * OUTPUTS
@@ -321,8 +324,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
-
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
 		List<Runnable> tasks = new ArrayList<Runnable>();
 		marsOMEMetadata.getImage(0).planes().forEach(plane -> {
@@ -336,7 +337,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(progressInteger.get(), marsOMEMetadata.getImage(0)
 				.getPlaneCount(), "Integrating Molecules in " + dataset.getName()),
-			tasks, PARALLELISM_LEVEL);
+			tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -364,7 +365,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(progressInteger.get(), UIDs.size(),
 				"Adding molecules to archive..."), tasks ,
-			PARALLELISM_LEVEL);
+			nThreads);
 
 		archive.naturalOrderSortMoleculeIndex();
 
@@ -669,6 +670,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		if (marsOMEMetadata != null) channelColors.forEach(channel -> builder
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	// Getters and Setters

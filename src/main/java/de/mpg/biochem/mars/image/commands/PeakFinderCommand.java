@@ -235,6 +235,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(label = "Verbose output")
 	private boolean verbose = true;
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	/**
 	 * OUTPUTS
@@ -314,8 +317,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		logService.info("Finding Peaks...");
 		if (allFrames) {
 
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
 			int zSize = (int) dataset.getImgPlus().dimension(zDim);
 
@@ -335,7 +336,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 			MarsUtil.threadPoolBuilder(statusService, logService,
 				() -> statusService.showStatus(peakStack.size(), frameCount,
-					"Finding Peaks for " + dataset.getName()), tasks, PARALLELISM_LEVEL);
+					"Finding Peaks for " + dataset.getName()), tasks, nThreads);
 		}
 		else peakStack.put(theT, findPeaksInT(Integer.valueOf(channel), theT,
 			useDogFilter, fitPeaks, integrate));
@@ -610,6 +611,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Integration outer radius", String.valueOf(
 			integrationOuterRadius));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	public MarsTable getPeakCountTable() {

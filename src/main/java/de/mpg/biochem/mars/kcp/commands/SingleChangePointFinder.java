@@ -122,6 +122,9 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 	@Parameter(label = "Tags (comma separated list)")
 	private String tags = "";
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	// Global variables
 	// For the progress thread
@@ -201,12 +204,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			UIDs = archive.getMoleculeUIDs();
 		}
 
-		// Let's build a thread pool and in a multithreaded manner perform
-		// changepoint analysis on all molecules
-		// Need to determine the number of threads
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
-		ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM_LEVEL);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		// Output first part of log message...
 		logService.info(log);

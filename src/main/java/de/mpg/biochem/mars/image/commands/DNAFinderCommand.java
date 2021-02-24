@@ -237,6 +237,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Process all Frames")
 	private boolean allFrames;
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	/**
 	 * OUTPUTS
@@ -314,8 +317,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		logService.info("Finding DNAs...");
 		if (allFrames) {
 
-			final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
 			int zSize = (int) dataset.getImgPlus().dimension(zDim);
 
@@ -332,7 +333,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 			MarsUtil.threadPoolBuilder(statusService, logService,
 				() -> statusService.showStatus(dnaStack.size(), frameCount,
-					"Finding DNAs for " + dataset.getName()), tasks, PARALLELISM_LEVEL);
+					"Finding DNAs for " + dataset.getName()), tasks, nThreads);
 
 		}
 		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT));
@@ -600,6 +601,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Fit peaks", String.valueOf(fit));
 		builder.addParameter("Fit radius", String.valueOf(fitRadius));
 		builder.addParameter("Fit 2nd order", String.valueOf(fitSecondOrder));
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	public MarsTable getDNACountTable() {

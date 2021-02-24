@@ -136,6 +136,9 @@ public class GradientCommand extends DynamicCommand implements Command {
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
 			"Top to bottom", "Left to right" })
 	private String gradientDirection = "Top to bottom";
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Parameter(label = "Gradient image", type = ItemIO.OUTPUT)
 	private Dataset output;
@@ -168,8 +171,6 @@ public class GradientCommand extends DynamicCommand implements Command {
 		for (int c = 0; c < cSize; c++)
 			for (int t = 0; t < tSize; t++)
 				CTs.add(new int[] { c, t });
-
-		final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 		
 		List<Runnable> tasks = new ArrayList<Runnable>();
 		IntStream.range(0, CTs.size()).forEach(i -> {
@@ -185,7 +186,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(slicesDone.get(), CTs.size(), "Calculating gradient for " +
-				dataset.getName()), tasks , PARALLELISM_LEVEL);
+				dataset.getName()), tasks , nThreads);
 
 		output = datasetService.create(gradImage);
 
@@ -217,6 +218,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 		builder.addParameter("Dataset", dataset.getName());
 		builder.addParameter("Gaussian smoothing sigma", gaussSigma);
 		builder.addParameter("Direction", gradientDirection);
+		builder.addParameter("Thread count", nThreads);
 	}
 
 	public void setDataset(Dataset dataset) {
