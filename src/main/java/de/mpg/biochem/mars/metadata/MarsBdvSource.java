@@ -30,6 +30,8 @@
 package de.mpg.biochem.mars.metadata;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -48,6 +50,8 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	private String n5Dataset;
 	private int channel = 0;
 	private AffineTransform3D affine3D;
+	
+	private final Map< String, String > properties = new ConcurrentHashMap<>();
 
 	public MarsBdvSource(String name) {
 		super();
@@ -113,6 +117,22 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 			}
 			affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
 				trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
+		});
+		
+		setJsonField("properties", jGenerator -> {
+			if (properties.size() > 0) {
+				jGenerator.writeFieldName("properties");
+				jGenerator.writeStartObject();
+				for (String key : properties.keySet())
+					jGenerator.writeStringField(key, properties.get(key));
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String field = jParser.getCurrentName();
+				jParser.nextToken();
+				properties.put(field, jParser.getText());
+			}
 		});
 
 		/*
@@ -187,6 +207,15 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	
 	public String getN5Dataset() {
 		return n5Dataset;
+	}
+	
+	public Map< String, String > getProperties() {
+		return properties;
+	}
+
+	// Setters
+	public void setProperty(String name, String value) {
+		properties.put(name, value);
 	}
 
 	// See
