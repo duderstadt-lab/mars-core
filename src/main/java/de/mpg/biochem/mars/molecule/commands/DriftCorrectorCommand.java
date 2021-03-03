@@ -42,8 +42,10 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.molecule.ArchiveUtils;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
@@ -75,6 +77,29 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
+	@Parameter(label = "Calculate Drift")
+	private boolean calculateDrift = true;
+	
+	@Parameter(label = "Background Tag")
+	private String backgroundTag = "background";
+
+	@Parameter(label = "Input X (x)")
+	private String input_x = "x";
+
+	@Parameter(label = "Input Y (y)")
+	private String input_y = "y";
+
+	@Parameter(label = "Use incomplete traces")
+	private boolean use_incomplete_traces = false;
+
+	@Parameter(label = "mode", choices = { "mean", "median" })
+	private String mode = "mean";
+
+	@Parameter(label = "Zero:",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning",
+			"end" })
+	private String zeroPoint = "end";
+	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String header = "Region for background alignment:";
 
@@ -83,12 +108,6 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "end T")
 	private int end = 100;
-
-	@Parameter(label = "Input X (x)")
-	private String input_x = "x";
-
-	@Parameter(label = "Input Y (y)")
-	private String input_y = "y";
 
 	@Parameter(label = "Output X (x_drift_corr)")
 	private String output_x = "x_drift_corr";
@@ -101,291 +120,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Override
 	public void run() {
-		// Let's keep track of the time it takes
-		double starttime = System.currentTimeMillis();
-
-		// Build log message
-		LogBuilder builder = new LogBuilder();
-
-		String log = LogBuilder.buildTitleBlock("Drift Corrector");
-
-		addInputParameterLog(builder);
-		log += builder.buildParameterList();
-
-		// Output first part of log message...
-		logService.info(log);
-
-		// Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless()) archive.lock();
-
-		archive.logln(log);
-
-		// Build maps from slice to x and slice to y for each metadataset
-		HashMap<String, HashMap<Double, Double>> metaToMapX =
-			new HashMap<String, HashMap<Double, Double>>();
-		HashMap<String, HashMap<Double, Double>> metaToMapY =
-			new HashMap<String, HashMap<Double, Double>>();
-
-		for (String metaUID : archive.getMetadataUIDs()) {
-			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (!retainCoordinates) {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, start, end));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, start, end));
-			}
-			else {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
-			}
-		}
-
-		// Loop through each molecule and calculate drift corrected traces...
-		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			Molecule molecule = archive.get(UID);
-
-			if (molecule == null) {
-				logService.error("No record found for molecule with UID " + UID +
-					". Could be due to data corruption. Continuing with the rest.");
-				archive.logln("No record found for molecule with UID " + UID +
-					". Could be due to data corruption. Continuing with the rest.");
-				return;
-			}
-
-			HashMap<Double, Double> TtoXMap = metaToMapX.get(molecule
-				.getMetadataUID());
-			HashMap<Double, Double> TtoYMap = metaToMapY.get(molecule
-				.getMetadataUID());
-
-			MarsTable datatable = molecule.getTable();
-
-			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
-			if (!datatable.hasColumn(output_x)) molecule.getTable().appendColumn(
-				output_x);
-
-			if (!datatable.hasColumn(output_y)) molecule.getTable().appendColumn(
-				output_y);
-
-			// If we want to retain the original coordinates then
-			// we don't subtract anything except the drift.
-			double meanX = 0;
-			double meanY = 0;
-
-			if (!retainCoordinates) {
-				meanX = datatable.mean(input_x, "T", start, end);
-				meanY = datatable.mean(input_y, "T", start, end);
-			}
-
-			final double meanXFinal = meanX;
-			final double meanYFinal = meanY;
-			datatable.rows().forEach(row -> {
-				double T = row.getValue("T");
-
-				double molX = row.getValue(input_x) - meanXFinal;
-				double backgroundX = Double.NaN;
-
-				if (TtoXMap.containsKey(T)) backgroundX = TtoXMap.get(T);
-
-				double x_drift_corr_value = molX - backgroundX;
-				row.setValue(output_x, x_drift_corr_value);
-
-				double molY = row.getValue(input_y) - meanYFinal;
-				double backgroundY = Double.NaN;
-
-				if (TtoYMap.containsKey(T)) backgroundY = TtoYMap.get(T);
-
-				double y_drift_corr_value = molY - backgroundY;
-				row.setValue(output_y, y_drift_corr_value);
-			});
-
-			archive.put(molecule);
-		});
-
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
-		logService.info(LogBuilder.endBlock(true));
-		archive.logln("\n" + LogBuilder.endBlock(true));
-		archive.logln("  ");
-
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
-	}
-
-	// Add channel input?
-	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta,
-		int from, int to)
-	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		double meanXbg = 0;
-		int count = 0;
-		for (int t = from; t <= to; t++) {
-			meanXbg += meta.getPlane(0, 0, 0, t).getXDrift();
-			count++;
-		}
-		meanXbg = meanXbg / count;
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getXDrift() -
-				meanXbg);
-		}
-		return TtoColumn;
-	}
-
-	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta) {
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getXDrift());
-		}
-		return TtoColumn;
-	}
-
-	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta,
-		int from, int to)
-	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		double meanYbg = 0;
-		int count = 0;
-		for (int t = from; t <= to; t++) {
-			meanYbg += meta.getPlane(0, 0, 0, t).getYDrift();
-			count++;
-		}
-		meanYbg = meanYbg / count;
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getYDrift() -
-				meanYbg);
-		}
-		return TtoColumn;
-	}
-
-	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta) {
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getYDrift());
-		}
-		return TtoColumn;
-	}
-
-	public static void correctDrift(
-		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
-		int from, int to, String meta_x, String meta_y, String input_x,
-		String input_y, String output_x, String output_y, boolean retainCoordinates)
-	{
-		// Build log message
-		LogBuilder builder = new LogBuilder();
-
-		String log = LogBuilder.buildTitleBlock("Drift Corrector");
-
-		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("from slice", String.valueOf(from));
-		builder.addParameter("to slice", String.valueOf(to));
-		builder.addParameter("Metadata Background X", meta_x);
-		builder.addParameter("Metadata Background Y", meta_y);
-		builder.addParameter("Input X", input_x);
-		builder.addParameter("Input Y", input_y);
-		builder.addParameter("Output X", output_x);
-		builder.addParameter("Output Y", output_y);
-		builder.addParameter("correct original coordinates", String.valueOf(
-			retainCoordinates));
-		log += builder.buildParameterList();
-
-		archive.logln(log);
-
-		// Build maps from slice to x and slice to y for each metadataset
-		HashMap<String, HashMap<Double, Double>> metaToMapX =
-			new HashMap<String, HashMap<Double, Double>>();
-		HashMap<String, HashMap<Double, Double>> metaToMapY =
-			new HashMap<String, HashMap<Double, Double>>();
-
-		for (String metaUID : archive.getMetadataUIDs()) {
-			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (!retainCoordinates) {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, from, to));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, from, to));
-			}
-			else {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
-			}
-		}
-
-		// Loop through each molecule and calculate drift corrected traces...
-		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
-			Molecule molecule = archive.get(UID);
-
-			if (molecule == null) {
-				archive.logln("No record found for molecule with UID " + UID +
-					". Could be due to data corruption. Continuing with the rest.");
-				return;
-			}
-
-			HashMap<Double, Double> TtoXMap = metaToMapX.get(molecule
-				.getMetadataUID());
-			HashMap<Double, Double> TtoYMap = metaToMapY.get(molecule
-				.getMetadataUID());
-
-			MarsTable datatable = molecule.getTable();
-
-			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
-			if (!datatable.hasColumn(output_x)) molecule.getTable().appendColumn(
-				output_x);
-
-			if (!datatable.hasColumn(output_y)) molecule.getTable().appendColumn(
-				output_y);
-
-			// If we want to retain the original coordinates then
-			// we don't subtract anything except the drift.
-			double meanX = 0;
-			double meanY = 0;
-
-			if (!retainCoordinates) {
-				meanX = datatable.mean(input_x, "T", from, to);
-				meanY = datatable.mean(input_y, "T", from, to);
-			}
-
-			final double meanXFinal = meanX;
-			final double meanYFinal = meanY;
-			datatable.rows().forEach(row -> {
-				double T = row.getValue("T");
-
-				double molX = row.getValue(input_x) - meanXFinal;
-				double backgroundX = Double.NaN;
-
-				if (TtoXMap.containsKey(T)) backgroundX = TtoXMap.get(T);
-
-				double x_drift_corr_value = molX - backgroundX;
-				row.setValue(output_x, x_drift_corr_value);
-
-				double molY = row.getValue(input_y) - meanYFinal;
-				double backgroundY = Double.NaN;
-
-				if (TtoYMap.containsKey(T)) backgroundY = TtoYMap.get(T);
-
-				double y_drift_corr_value = molY - backgroundY;
-				row.setValue(output_y, y_drift_corr_value);
-			});
-
-			archive.put(molecule);
-		});
-
-		archive.logln(LogBuilder.endBlock(true));
-		archive.logln("  ");
-	}
-
-	private void addInputParameterLog(LogBuilder builder) {
-		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("from T", String.valueOf(start));
-		builder.addParameter("to T", String.valueOf(end));
-		builder.addParameter("Input X", input_x);
-		builder.addParameter("Input Y", input_y);
-		builder.addParameter("Output X", output_x);
-		builder.addParameter("Output Y", output_y);
-		builder.addParameter("correct original coordinates", String.valueOf(
-			retainCoordinates));
+		
+		if (calculateDrift) ArchiveUtils.calculateDrift(archive,
+			backgroundTag, input_x, input_y, output_x,
+			output_y, use_incomplete_traces, mode,
+			zeroPoint, logService);
+		
+		ArchiveUtils.correctDrift(archive, input_x, input_y, 
+			output_x, output_y, start, end, retainCoordinates, logService);
+		
 	}
 
 	public void setArchive(
@@ -399,6 +142,14 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		getArchive()
 	{
 		return archive;
+	}
+	
+	public void setCalculateDrift(boolean calculateDrift) {
+		this.calculateDrift = calculateDrift;
+	}
+	
+	public boolean getCalculateDrift() {
+		return this.calculateDrift;
 	}
 
 	public void setStartT(int start) {
@@ -431,6 +182,38 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	public String getInputY() {
 		return input_y;
+	}
+
+	public void setMode(String mode) {
+		this.mode = mode;
+	}
+	
+	public String getMode() {
+		return mode;
+	}
+
+	public void setZeroPoint(String zeroPoint) {
+		this.zeroPoint = zeroPoint;
+	}
+	
+	public String getZeroPoint() {
+		return zeroPoint;
+	}
+	
+	public void setUseIncompleteTraces(boolean use_incomplete_traces) {
+		this.use_incomplete_traces = use_incomplete_traces;
+	}
+	
+	public boolean getUseIncompleteTraces() {
+		return use_incomplete_traces;
+	}
+
+	public String getBackgroundTag() {
+		return backgroundTag;
+	}
+
+	public void setBackgroundTag(String backgroundTag) {
+		this.backgroundTag = backgroundTag;
 	}
 
 	public void setOutputX(String output_x) {
