@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.object;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -59,6 +60,10 @@ public class ObjectArchive extends
 		IOException
 	{
 		super(name, file);
+	}
+	
+	public Stream<MartianObject> objects() {
+		return this.moleculeList.stream().map(UID -> get(UID));
 	}
 
 	public ObjectArchiveProperties createProperties() {
