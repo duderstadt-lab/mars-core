@@ -72,7 +72,6 @@ import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.commands.BuildArchiveFromTableCommand;
-import de.mpg.biochem.mars.molecule.commands.DriftCalculatorCommand;
 import de.mpg.biochem.mars.molecule.commands.DriftCorrectorCommand;
 import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
 import de.mpg.biochem.mars.molecule.commands.RegionDifferenceCalculatorCommand;
