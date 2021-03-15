@@ -189,7 +189,8 @@ public class MarsUtil {
 	}
 
 	/**
-	 * Used to bypass unknown Json Objects with JacksonJson streaming interface.
+	 * Used to bypass unknown Json objects with JacksonJson streaming interface.
+	 * This will also pass through all arrays contained within the objects.
 	 * 
 	 * @param jParser JsonParser stream to processing pass through for.
 	 * @throws IOException Thrown if unable to parse Json from the JsonParser
@@ -205,7 +206,8 @@ public class MarsUtil {
 	}
 
 	/**
-	 * Used to bypass unknown Json Arrays with JacksonJson streaming interface.
+	 * Used to bypass unknown Json arrays with JacksonJson streaming interface.
+	 * This will also pass over all objects contained inside the arrays.
 	 * 
 	 * @param jParser JsonParser stream to processing pass through for.
 	 * @throws IOException Thrown if unable to parse Json from the JsonParser
