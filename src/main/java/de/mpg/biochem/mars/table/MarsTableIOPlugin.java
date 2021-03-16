@@ -36,12 +36,15 @@ import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
+import org.scijava.io.location.Location;
 import org.scijava.object.ObjectService;
 import org.scijava.options.OptionsService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.FileUtils;
+
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
 
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
@@ -69,10 +72,20 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 		final String ext = FileUtils.getExtension(source).toLowerCase();
 		return ext.equals("yamt");
 	}
+	
+	@Override
+	public boolean supportsOpen(final Location source) {
+		return supportsOpen(source.getURI().getPath());
+	}
 
 	@Override
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
+	}
+	
+	@Override
+	public boolean supportsSave(final Location destination) {
+		return supportsOpen(destination);
 	}
 
 	@Override
@@ -89,11 +102,23 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 
 		return table;
 	}
+	
+	@Override
+	public MarsTable open(final Location source) throws IOException {
+		return open(source.getURI().getPath());
+	}
 
 	@Override
 	public void save(final MarsTable table, final String destination)
 		throws IOException
 	{
 		table.saveAsYAMT(destination);
+	}
+	
+	@Override
+	public void save(final MarsTable table, final Location destination)
+			throws IOException
+	{
+		save(table, destination.getURI().getPath());
 	}
 }

@@ -45,8 +45,10 @@ import org.scijava.script.ScriptService;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
+import org.scijava.io.location.Location;
 
 import de.mpg.biochem.mars.util.LogBuilder;
+import net.imagej.Dataset;
 
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
@@ -83,10 +85,20 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		return source.endsWith(".yama") || source.endsWith(".yama.json") || source
 			.endsWith(".yama.store");
 	}
+	
+	@Override
+	public boolean supportsOpen(final Location source) {
+		return supportsOpen(source.getURI().getPath());
+	}
 
 	@Override
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
+	}
+	
+	@Override
+	public boolean supportsSave(final Location destination) {
+		return supportsOpen(destination);
 	}
 
 	@Override
@@ -98,11 +110,11 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		if (file.isDirectory()) {
 			File smlPropertiesFile = new File(file.getAbsolutePath() +
 				"/MoleculeArchiveProperties.sml");
-			if (smlPropertiesFile.exists()) archiveType = moleculeArchiveService
+			if (smlPropertiesFile.exists()) archiveType = MoleculeArchiveService
 				.getArchiveTypeFromStore(smlPropertiesFile);
 			else if (new File(file.getAbsolutePath() +
 				"/MoleculeArchiveProperties.json").exists()) archiveType =
-					moleculeArchiveService.getArchiveTypeFromStore(new File(file
+					MoleculeArchiveService.getArchiveTypeFromStore(new File(file
 						.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
 			else {
 				uiService.showDialog(
@@ -144,6 +156,11 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 		return archive;
 	}
+	
+	@Override
+	public MoleculeArchive open(final Location source) throws IOException {
+		return open(source.getURI().getPath());
+	}
 
 	@Override
 	public void save(final MoleculeArchive archive, final String destination)
@@ -152,5 +169,12 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		File file = new File(destination);
 		if (file.isDirectory()) archive.saveAsVirtualStore(file);
 		else archive.saveAs(file);
+	}
+	
+	@Override
+	public void save(final MoleculeArchive archive, final Location destination)
+			throws IOException
+	{
+		save(archive, destination.getURI().getPath());
 	}
 }
