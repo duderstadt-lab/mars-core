@@ -22,7 +22,7 @@ public class ArchiveUtils {
 	{
 		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
 				output_y, use_incomplete_traces, mode,
-				zeroPoint, -1, null);
+				zeroPoint, false, 0, null);
 	}
 	
 	public static void calculateDrift(
@@ -33,16 +33,18 @@ public class ArchiveUtils {
 		{
 		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
 				output_y, use_incomplete_traces, mode,
-				zeroPoint, -1, null);
+				zeroPoint, false, 0, null);
 		}
 	
 	public static void calculateDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		String backgroundTag, String input_x, String input_y, String output_x,
 		String output_y, boolean use_incomplete_traces, String mode,
-		String zeroPoint, final int channel, LogService logService)
+		String zeroPoint, final boolean singleChannel, final int theC, LogService logService)
 	{
 		double starttime = System.currentTimeMillis();
+		
+		final int channel = (singleChannel) ? theC : 0;
 
 		// Build log message
 		LogBuilder builder = new LogBuilder();
@@ -90,7 +92,7 @@ public class ArchiveUtils {
 					.getMetadataUIDforMolecule(UID).equals(meta.getUID())).filter(
 						UID -> archive.moleculeHasTag(UID, backgroundTag));
 				
-				if (channel != -1)
+				if (singleChannel)
 					UIDs = UIDs.filter(UID -> archive.getChannel(UID) == channel);
 				
 				UIDs.forEach(UID -> {
@@ -116,7 +118,7 @@ public class ArchiveUtils {
 					.getMetadataUIDforMolecule(UID).equals(meta.getUID())).filter(
 						UID -> archive.moleculeHasTag(UID, backgroundTag));
 				
-				if (channel != -1)
+				if (singleChannel)
 					UIDs = UIDs.filter(UID -> archive.getChannel(UID) == channel);
 				
 				UIDs.forEach(UID -> {
@@ -196,7 +198,7 @@ public class ArchiveUtils {
 
 			Stream<MarsOMEPlane> planes = meta.getImage(0).planes();
 			
-			if (channel != -1)
+			if (singleChannel)
 				planes = planes.filter(plane -> plane.getC() == channel);
 			
 			planes.forEach(plane -> {
@@ -208,20 +210,25 @@ public class ArchiveUtils {
 			double yZeroPoint = 0;
 
 			
-			final int zeroPointChannel = (channel != -1) ? channel : 0;
+			
 			if (zeroPoint.equals("beginning")) {
-				xZeroPoint = meta.getPlane(0, 0, zeroPointChannel, 0).getXDrift();
-				yZeroPoint = meta.getPlane(0, 0, zeroPointChannel, 0).getYDrift();
+				xZeroPoint = meta.getPlane(0, 0, channel, 0).getXDrift();
+				yZeroPoint = meta.getPlane(0, 0, channel, 0).getYDrift();
 			}
 			else if (zeroPoint.equals("end")) {
-				xZeroPoint = meta.getPlane(0, 0, zeroPointChannel, meta.getImage(0).getSizeT() - 1)
+				xZeroPoint = meta.getPlane(0, 0, channel, meta.getImage(0).getSizeT() - 1)
 					.getXDrift();
-				yZeroPoint = meta.getPlane(0, 0, zeroPointChannel, meta.getImage(0).getSizeT() - 1)
+				yZeroPoint = meta.getPlane(0, 0, channel, meta.getImage(0).getSizeT() - 1)
 					.getYDrift();
 			}
 
 			final double xZeroPointFinal = xZeroPoint;
 			final double yZeroPointFinal = yZeroPoint;
+			
+			planes = meta.getImage(0).planes();
+			
+			if (singleChannel)
+				planes = planes.filter(plane -> plane.getC() == channel);
 
 			planes.forEach(plane -> {
 				plane.setXDrift(plane.getXDrift() - xZeroPointFinal);
@@ -292,16 +299,18 @@ public class ArchiveUtils {
 			String input_x, String input_y, String output_x,
 			String output_y, int start, int end, boolean zeroToRegion, LogService logService)
 		{
-			correctDrift(archive, input_x, input_y, output_x, output_y, start, end, zeroToRegion, -1, logService);
+			correctDrift(archive, input_x, input_y, output_x, output_y, start, end, zeroToRegion, false, 0, logService);
 		}
 	
 	public static void correctDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		String input_x, String input_y, String output_x,
-		String output_y, int start, int end, boolean zeroToRegion, final int channel, LogService logService)
+		String output_y, int start, int end, boolean zeroToRegion, final boolean singleChannel, final int theC, LogService logService)
 	{
 		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
+		
+		final int channel = (singleChannel) ? theC : 0;
 
 		// Build log message
 		LogBuilder builder = new LogBuilder();
@@ -344,7 +353,7 @@ public class ArchiveUtils {
 		// Loop through each molecule and calculate drift corrected traces...
 		Stream<String> UIDs = archive.getMoleculeUIDs().parallelStream();
 		
-		if (channel != -1)
+		if (singleChannel)
 			UIDs.filter(UID -> archive.getChannel(UID) == channel);
 		
 		UIDs.forEach(UID -> {

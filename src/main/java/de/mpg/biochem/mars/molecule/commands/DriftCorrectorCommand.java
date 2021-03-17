@@ -81,7 +81,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private boolean singleChannel = false;
 	
 	@Parameter(label = "Channel")
-	private int channel = 0;
+	private int theC = 0;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String calcDriftMessage = "Drift calculator:";
@@ -136,15 +136,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Override
 	public void run() {
 		
-		final int theC = (singleChannel) ? channel : -1;
+		final int channel = (singleChannel) ? theC : 0;
 		
 		if (calculateDrift) ArchiveUtils.calculateDrift(archive,
 			backgroundTag, input_x, input_y, output_x,
 			output_y, use_incomplete_traces, mode,
-			zeroPoint, theC, logService);
+			zeroPoint, singleChannel, channel, logService);
 		
 		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y, 
-			output_x, output_y, start, end, zeroToRegion, theC, logService);
+			output_x, output_y, start, end, zeroToRegion, singleChannel, channel, logService);
 		
 	}
 
@@ -169,12 +169,12 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return this.singleChannel;
 	}
 	
-	public void setChannel(int channel) {
-		this.channel = channel;
+	public void setChannel(int theC) {
+		this.theC = theC;
 	}
 	
 	public int getChannel() {
-		return this.channel;
+		return this.theC;
 	}
 	
 	public void setCalculateDrift(boolean calculateDrift) {
