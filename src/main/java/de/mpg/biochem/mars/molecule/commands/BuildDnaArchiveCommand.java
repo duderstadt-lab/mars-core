@@ -189,6 +189,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
+			dnaMolecule.setMetadataUID(metadata1.getUID());
 			dnaMolecule.setImage(metadata1.getImage(0).getImageID());
 			dnaMolecule.setParameter("Dna_Top_x1", dnaSegment.getX1());
 			dnaMolecule.setParameter("Dna_Top_y1", dnaSegment.getY1());
