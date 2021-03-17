@@ -1,12 +1,14 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 import org.scijava.table.DoubleColumn;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 
@@ -20,14 +22,25 @@ public class ArchiveUtils {
 	{
 		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
 				output_y, use_incomplete_traces, mode,
-				zeroPoint, null);
+				zeroPoint, -1, null);
 	}
+	
+	public static void calculateDrift(
+			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
+			String backgroundTag, String input_x, String input_y, String output_x,
+			String output_y, boolean use_incomplete_traces, String mode,
+			String zeroPoint, LogService logService)
+		{
+		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
+				output_y, use_incomplete_traces, mode,
+				zeroPoint, -1, null);
+		}
 	
 	public static void calculateDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		String backgroundTag, String input_x, String input_y, String output_x,
 		String output_y, boolean use_incomplete_traces, String mode,
-		String zeroPoint, LogService logService)
+		String zeroPoint, final int channel, LogService logService)
 	{
 		double starttime = System.currentTimeMillis();
 
@@ -41,7 +54,7 @@ public class ArchiveUtils {
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Use incomplete traces", String.valueOf(
 			use_incomplete_traces));
-		builder.addParameter("Zero Point", zeroPoint);
+		builder.addParameter("Zero point", zeroPoint);
 		builder.addParameter("Background Tag", backgroundTag);
 		builder.addParameter("mode", mode);
 		log += builder.buildParameterList();
@@ -73,9 +86,14 @@ public class ArchiveUtils {
 			if (use_incomplete_traces) {
 				// For all molecules in this dataset that are marked with the background
 				// tag and have all Ts
-				archive.getMoleculeUIDs().stream().filter(UID -> archive
+				Stream<String> UIDs = archive.getMoleculeUIDs().stream().filter(UID -> archive
 					.getMetadataUIDforMolecule(UID).equals(meta.getUID())).filter(
-						UID -> archive.moleculeHasTag(UID, backgroundTag)).forEach(UID -> {
+						UID -> archive.moleculeHasTag(UID, backgroundTag));
+				
+				if (channel != -1)
+					UIDs = UIDs.filter(UID -> archive.getChannel(UID) == channel);
+				
+				UIDs.forEach(UID -> {
 							MarsTable datatable = archive.get(UID).getTable();
 							double x_mean = datatable.mean(input_x);
 							double y_mean = datatable.mean(input_y);
@@ -94,9 +112,14 @@ public class ArchiveUtils {
 				// tag and have all Ts
 				long[] num_full_traj = new long[1];
 				num_full_traj[0] = 0;
-				archive.getMoleculeUIDs().stream().filter(UID -> archive
+				Stream<String> UIDs = archive.getMoleculeUIDs().stream().filter(UID -> archive
 					.getMetadataUIDforMolecule(UID).equals(meta.getUID())).filter(
-						UID -> archive.moleculeHasTag(UID, backgroundTag)).forEach(UID -> {
+						UID -> archive.moleculeHasTag(UID, backgroundTag));
+				
+				if (channel != -1)
+					UIDs = UIDs.filter(UID -> archive.getChannel(UID) == channel);
+				
+				UIDs.forEach(UID -> {
 							MarsTable datatable = archive.get(UID).getTable();
 							if (archive.get(UID).getTable().getRowCount() == sizeT) {
 								double x_mean = datatable.mean(input_x);
@@ -171,7 +194,12 @@ public class ArchiveUtils {
 				TtoYMap.put((int) row.getValue("T"), row.getValue("y"));
 			});
 
-			meta.getImage(0).planes().forEach(plane -> {
+			Stream<MarsOMEPlane> planes = meta.getImage(0).planes();
+			
+			if (channel != -1)
+				planes = planes.filter(plane -> plane.getC() == channel);
+			
+			planes.forEach(plane -> {
 				plane.setXDrift(TtoXMap.get(plane.getT()));
 				plane.setYDrift(TtoYMap.get(plane.getT()));
 			});
@@ -179,20 +207,23 @@ public class ArchiveUtils {
 			double xZeroPoint = 0;
 			double yZeroPoint = 0;
 
+			
+			final int zeroPointChannel = (channel != -1) ? channel : 0;
 			if (zeroPoint.equals("beginning")) {
-				xZeroPoint = meta.getPlane(0, 0, 0, 0).getXDrift();
-				yZeroPoint = meta.getPlane(0, 0, 0, 0).getYDrift();
+				xZeroPoint = meta.getPlane(0, 0, zeroPointChannel, 0).getXDrift();
+				yZeroPoint = meta.getPlane(0, 0, zeroPointChannel, 0).getYDrift();
 			}
 			else if (zeroPoint.equals("end")) {
-				xZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1)
+				xZeroPoint = meta.getPlane(0, 0, zeroPointChannel, meta.getImage(0).getSizeT() - 1)
 					.getXDrift();
-				yZeroPoint = meta.getPlane(0, 0, 0, meta.getImage(0).getSizeT() - 1)
+				yZeroPoint = meta.getPlane(0, 0, zeroPointChannel, meta.getImage(0).getSizeT() - 1)
 					.getYDrift();
 			}
 
 			final double xZeroPointFinal = xZeroPoint;
 			final double yZeroPointFinal = yZeroPoint;
-			meta.getImage(0).planes().forEach(plane -> {
+
+			planes.forEach(plane -> {
 				plane.setXDrift(plane.getXDrift() - xZeroPointFinal);
 				plane.setYDrift(plane.getYDrift() - yZeroPointFinal);
 			});
@@ -257,9 +288,17 @@ public class ArchiveUtils {
 	}
 	
 	public static void correctDrift(
+			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
+			String input_x, String input_y, String output_x,
+			String output_y, int start, int end, boolean zeroToRegion, LogService logService)
+		{
+			correctDrift(archive, input_x, input_y, output_x, output_y, start, end, zeroToRegion, -1, logService);
+		}
+	
+	public static void correctDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		String input_x, String input_y, String output_x,
-		String output_y, int start, int end, boolean retainCoordinates, LogService logService)
+		String output_y, int start, int end, boolean zeroToRegion, final int channel, LogService logService)
 	{
 		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
@@ -276,8 +315,8 @@ public class ArchiveUtils {
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);
 		builder.addParameter("Output Y", output_y);
-		builder.addParameter("correct original coordinates", String.valueOf(
-			retainCoordinates));
+		builder.addParameter("Zero to region", String.valueOf(
+				zeroToRegion));
 		log += builder.buildParameterList();
 
 		// Output first part of log message...
@@ -292,18 +331,23 @@ public class ArchiveUtils {
 
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (!retainCoordinates) {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, start, end));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, start, end));
+			if (zeroToRegion) {
+				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel, start, end));
+				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel, start, end));
 			}
 			else {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta));
+				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel));
+				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel));
 			}
 		}
 
 		// Loop through each molecule and calculate drift corrected traces...
-		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
+		Stream<String> UIDs = archive.getMoleculeUIDs().parallelStream();
+		
+		if (channel != -1)
+			UIDs.filter(UID -> archive.getChannel(UID) == channel);
+		
+		UIDs.forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 
 			if (molecule == null) {
@@ -334,7 +378,7 @@ public class ArchiveUtils {
 			double meanX = 0;
 			double meanY = 0;
 
-			if (!retainCoordinates) {
+			if (zeroToRegion) {
 				meanX = datatable.mean(input_x, "T", start, end);
 				meanY = datatable.mean(input_y, "T", start, end);
 			}
@@ -372,60 +416,59 @@ public class ArchiveUtils {
 	}
 	
 	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta,
-		int from, int to)
+		final int channel, int from, int to)
 	{
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
 		double meanXbg = 0;
 		int count = 0;
-		for (int t = from; t <= to; t++) {
-			meanXbg += meta.getPlane(0, 0, 0, t).getXDrift();
+		for (int t = from; t <= to; t++)
+			meanXbg += meta.getPlane(0, 0, channel, t).getXDrift();
 			count++;
-		}
+		
 		meanXbg = meanXbg / count;
 
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getXDrift() -
+		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
+			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getXDrift() -
 				meanXbg);
-		}
+		
 		return TtoColumn;
 	}
 
-	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta) {
+	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta, final int channel) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getXDrift());
-		}
+		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
+			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getXDrift());
+		
 		return TtoColumn;
 	}
 
 	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta,
-		int from, int to)
+		final int channel, int from, int to)
 	{
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
 		double meanYbg = 0;
 		int count = 0;
 		for (int t = from; t <= to; t++) {
-			meanYbg += meta.getPlane(0, 0, 0, t).getYDrift();
+			meanYbg += meta.getPlane(0, 0, channel, t).getYDrift();
 			count++;
 		}
 		meanYbg = meanYbg / count;
 
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getYDrift() -
+		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
+			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getYDrift() -
 				meanYbg);
-		}
 		return TtoColumn;
 	}
 
-	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta) {
+	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta, final int channel) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++) {
-			TtoColumn.put((double) t, meta.getPlane(0, 0, 0, t).getYDrift());
-		}
+		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
+			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getYDrift());
+
 		return TtoColumn;
 	}
 }

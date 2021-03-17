@@ -76,8 +76,17 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
+	
+	@Parameter(label = "Single channel")
+	private boolean singleChannel = false;
+	
+	@Parameter(label = "Channel")
+	private int channel = 0;
 
-	@Parameter(label = "Calculate Drift")
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String calcDriftMessage = "Drift calculator:";
+	
+	@Parameter(label = "Calculate drift")
 	private boolean calculateDrift = true;
 	
 	@Parameter(label = "Background Tag")
@@ -91,7 +100,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "Use incomplete traces")
 	private boolean use_incomplete_traces = false;
-
+	
 	@Parameter(label = "mode", choices = { "mean", "median" })
 	private String mode = "mean";
 
@@ -101,7 +110,22 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private String zeroPoint = "end";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String header = "Region for background alignment:";
+	private final String corrDriftMessage = "Drift corrector:";
+	
+	@Parameter(label = "Correct drift")
+	private boolean correctDrift = true;
+	
+	@Parameter(label = "Output X (x_drift_corr)")
+	private String output_x = "x_drift_corr";
+
+	@Parameter(label = "Output Y (y_drift_corr)")
+	private String output_y = "y_drift_corr";
+	
+	@Parameter(label = "set output zero to mean of region")
+	private boolean zeroToRegion = false;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String header = "Region:";
 
 	@Parameter(label = "start T")
 	private int start = 0;
@@ -109,25 +133,18 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "end T")
 	private int end = 100;
 
-	@Parameter(label = "Output X (x_drift_corr)")
-	private String output_x = "x_drift_corr";
-
-	@Parameter(label = "Output Y (y_drift_corr)")
-	private String output_y = "y_drift_corr";
-
-	@Parameter(label = "correct original coordinates")
-	private boolean retainCoordinates = false;
-
 	@Override
 	public void run() {
+		
+		final int theC = (singleChannel) ? channel : -1;
 		
 		if (calculateDrift) ArchiveUtils.calculateDrift(archive,
 			backgroundTag, input_x, input_y, output_x,
 			output_y, use_incomplete_traces, mode,
-			zeroPoint, logService);
+			zeroPoint, theC, logService);
 		
-		ArchiveUtils.correctDrift(archive, input_x, input_y, 
-			output_x, output_y, start, end, retainCoordinates, logService);
+		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y, 
+			output_x, output_y, start, end, zeroToRegion, theC, logService);
 		
 	}
 
@@ -142,6 +159,22 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		getArchive()
 	{
 		return archive;
+	}
+	
+	public void setSingleChannel(boolean singleChannel) {
+		this.singleChannel = singleChannel;
+	}
+	
+	public boolean getSingleChannel() {
+		return this.singleChannel;
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = channel;
+	}
+	
+	public int getChannel() {
+		return this.channel;
 	}
 	
 	public void setCalculateDrift(boolean calculateDrift) {
@@ -215,6 +248,14 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	public void setBackgroundTag(String backgroundTag) {
 		this.backgroundTag = backgroundTag;
 	}
+	
+	public void setCorrectDrift(boolean correctDrift) {
+		this.correctDrift = correctDrift;
+	}
+	
+	public boolean getCorrectDrift() {
+		return this.correctDrift;
+	}
 
 	public void setOutputX(String output_x) {
 		this.output_x = output_x;
@@ -232,7 +273,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		return output_y;
 	}
 
-	public void setCorrectOriginalCoordinates(boolean retainCoordinates) {
-		this.retainCoordinates = retainCoordinates;
+	public void setZeroToRegion(boolean zeroToRegion) {
+		this.zeroToRegion = zeroToRegion;
 	}
 }
