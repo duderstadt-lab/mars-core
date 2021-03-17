@@ -157,7 +157,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 		}
 	}
 
-	protected void setJsonField(String field,
+	public void setJsonField(String field,
 		ThrowingConsumer<JsonGenerator, IOException> output,
 		ThrowingConsumer<JsonParser, IOException> input)
 	{
@@ -174,7 +174,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param field Json field.
 	 * @return JsonGenerator predicate for field.
 	 */
-	protected Predicate<JsonGenerator> getJsonGenerator(String field) {
+	public Predicate<JsonGenerator> getJsonGenerator(String field) {
 		return outputMap.get(field);
 	}
 
@@ -184,7 +184,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param field Json field.
 	 * @return JsonParser predicate for field.
 	 */
-	protected Predicate<JsonParser> getJsonParser(String field) {
+	public Predicate<JsonParser> getJsonParser(String field) {
 		return inputMap.get(field);
 	}
 
