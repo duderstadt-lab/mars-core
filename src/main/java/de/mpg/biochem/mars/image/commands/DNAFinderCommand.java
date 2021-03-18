@@ -390,7 +390,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
 		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
 
-		return dnaFinder.findDNAs(img, Regions.sample( iterableROI, img ), t);
+		return dnaFinder.findDNAs(img, iterableROI, t);
 	}
 
 	private void generateDNACountTable() {

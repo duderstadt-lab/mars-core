@@ -40,7 +40,10 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.Regions;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -75,7 +78,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	}
 	
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
-			IterableInterval<T> iterableInterval, int theT)
+			IterableRegion< BoolType > iterableRegion, int theT)
 	{
 		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 
@@ -92,15 +95,15 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		if (useDogFilter) {
 			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
 				.dogFilter(gradImage, dogFilterRadius, opService);
-			topPeaks = MarsImageUtils.findPeaks(filteredImg, iterableInterval, theT,
+			topPeaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableRegion, filteredImg ), theT,
 				threshold, minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, iterableInterval, theT,
+			bottomPeaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableRegion, filteredImg ), theT,
 				threshold, minimumDistance, true);
 		}
 		else {
-			topPeaks = MarsImageUtils.findPeaks(gradImage, iterableInterval, theT, threshold,
+			topPeaks = MarsImageUtils.findPeaks(gradImage, Regions.sample( iterableRegion, img ), theT, threshold,
 				minimumDistance, false);
-			bottomPeaks = MarsImageUtils.findPeaks(gradImage, iterableInterval, theT,
+			bottomPeaks = MarsImageUtils.findPeaks(gradImage, Regions.sample( iterableRegion, img ), theT,
 				threshold, minimumDistance, true);
 		}
 
