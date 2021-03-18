@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.image.commands;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.swing.JDialog;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -685,6 +688,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 						}
 		
 						preFrameCount.setValue(this, "count: " + peaks.size());
+						for (Window window : Window.getWindows())
+							if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
+								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peaks.size());
+							}
 					}
 					else {
 						preFrameCount.setValue(this, "count: 0");

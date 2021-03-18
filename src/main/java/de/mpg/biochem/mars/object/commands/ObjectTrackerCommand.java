@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.object.commands;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -43,6 +44,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
+
+import javax.swing.JDialog;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -693,6 +696,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 							image.setOverlay(overlay);
 			
 							preFrameCount.setValue(this, "count: " + peaks.size());
+							for (Window window : Window.getWindows())
+								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
+									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peaks.size());
+								}
 						}
 						else {
 							preFrameCount.setValue(this, "count: 0");

@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.image.commands;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +42,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
+
+import javax.swing.JDialog;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -525,6 +528,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 						
 						image.setOverlay(overlay);
 						preFrameCount.setValue(this, "count: " + segments.size());
+						for (Window window : Window.getWindows())
+							if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
+								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + segments.size());
+							}
 					}
 					else {
 						preFrameCount.setValue(this, "count: 0");

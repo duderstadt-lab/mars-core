@@ -29,6 +29,8 @@
 
 package de.mpg.biochem.mars.util;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,6 +47,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import javax.swing.JLabel;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -103,6 +107,19 @@ public class MarsUtil {
 				statusService.showStatus("Done!");
 			}
 		}
+	
+	public static void updateJLabelTextInContainer(Container parent, String searchForPrefix, String newText) {
+	    for (Component c : parent.getComponents())
+	    {
+	        if (c instanceof JLabel) {
+	        	if(((JLabel) c).getText().startsWith(searchForPrefix))
+	        		((JLabel) c).setText(newText);
+	        }
+
+	        if (c instanceof Container)
+	        	updateJLabelTextInContainer((Container)c, searchForPrefix, newText);
+	    }
+	}
 /*
 	public static void forkJoinPoolBuilder(StatusService statusService,
 		LogService logService, Runnable updateStatus, Runnable task, int numThreads)

@@ -30,7 +30,11 @@
 package de.mpg.biochem.mars.image.commands;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Frame;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +47,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
+
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JRootPane;
 
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
@@ -73,6 +83,7 @@ import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.object.ObjectService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -91,6 +102,7 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
@@ -128,6 +140,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private DatasetService datasetService;
+	
+	@Parameter
+	private ObjectService objectService;
 	
 	@Parameter
 	private UIService uiService;
@@ -496,6 +511,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			
 						final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 							"tPeakCount", String.class);
+						
 						if (!peaks.isEmpty()) {
 			
 							if (previewRoiType.equals("point")) {
@@ -541,6 +557,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							}
 			
 							preFrameCount.setValue(this, "count: " + peaks.size());
+							for (Window window : Window.getWindows())
+								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
+									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peaks.size());
+								}
 						}
 						else {
 							preFrameCount.setValue(this, "count: 0");
