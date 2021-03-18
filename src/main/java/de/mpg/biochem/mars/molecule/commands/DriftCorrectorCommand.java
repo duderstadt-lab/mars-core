@@ -121,17 +121,17 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "Output Y (y_drift_corr)")
 	private String output_y = "y_drift_corr";
 	
-	@Parameter(label = "set output zero to mean of region")
-	private boolean zeroToRegion = false;
+	//@Parameter(label = "set output zero to mean of region")
+	//private boolean zeroToRegion = false;
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String header = "Region:";
+	//@Parameter(visibility = ItemVisibility.MESSAGE)
+	//private final String header = "Region:";
 
-	@Parameter(label = "start T")
-	private int start = 0;
+	//@Parameter(label = "start T")
+	//private int start = 0;
 
-	@Parameter(label = "end T")
-	private int end = 100;
+	//@Parameter(label = "end T")
+	//private int end = 100;
 
 	@Override
 	public void run() {
@@ -144,7 +144,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 			zeroPoint, singleChannel, channel, logService);
 		
 		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y, 
-			output_x, output_y, start, end, zeroToRegion, singleChannel, channel, logService);
+			output_x, output_y, singleChannel, channel, logService);
 		
 	}
 
@@ -183,22 +183,6 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	
 	public boolean getCalculateDrift() {
 		return this.calculateDrift;
-	}
-
-	public void setStartT(int start) {
-		this.start = start;
-	}
-
-	public int getStartT() {
-		return start;
-	}
-
-	public void setEndT(int end) {
-		this.end = end;
-	}
-
-	public int getEndT() {
-		return end;
 	}
 
 	public void setInputX(String input_x) {
@@ -271,9 +255,5 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	public String getOutputY() {
 		return output_y;
-	}
-
-	public void setZeroToRegion(boolean zeroToRegion) {
-		this.zeroToRegion = zeroToRegion;
 	}
 }

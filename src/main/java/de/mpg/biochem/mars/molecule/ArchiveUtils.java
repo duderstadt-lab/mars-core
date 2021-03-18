@@ -297,15 +297,15 @@ public class ArchiveUtils {
 	public static void correctDrift(
 			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 			String input_x, String input_y, String output_x,
-			String output_y, int start, int end, boolean zeroToRegion, LogService logService)
+			String output_y, LogService logService)
 		{
-			correctDrift(archive, input_x, input_y, output_x, output_y, start, end, zeroToRegion, false, 0, logService);
+			correctDrift(archive, input_x, input_y, output_x, output_y, false, 0, logService);
 		}
 	
 	public static void correctDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		String input_x, String input_y, String output_x,
-		String output_y, int start, int end, boolean zeroToRegion, final boolean singleChannel, final int theC, LogService logService)
+		String output_y, final boolean singleChannel, final int theC, LogService logService)
 	{
 		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
@@ -318,14 +318,10 @@ public class ArchiveUtils {
 		String log = LogBuilder.buildTitleBlock("Drift Corrector");
 
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("from T", String.valueOf(start));
-		builder.addParameter("to T", String.valueOf(end));
 		builder.addParameter("Input X", input_x);
 		builder.addParameter("Input Y", input_y);
 		builder.addParameter("Output X", output_x);
 		builder.addParameter("Output Y", output_y);
-		builder.addParameter("Zero to region", String.valueOf(
-				zeroToRegion));
 		log += builder.buildParameterList();
 
 		// Output first part of log message...
@@ -340,14 +336,8 @@ public class ArchiveUtils {
 
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
-			if (zeroToRegion) {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel, start, end));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel, start, end));
-			}
-			else {
-				metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel));
-				metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel));
-			}
+			metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel));
+			metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel));
 		}
 
 		// Loop through each molecule and calculate drift corrected traces...
@@ -387,11 +377,6 @@ public class ArchiveUtils {
 			double meanX = 0;
 			double meanY = 0;
 
-			if (zeroToRegion) {
-				meanX = datatable.mean(input_x, "T", start, end);
-				meanY = datatable.mean(input_y, "T", start, end);
-			}
-
 			final double meanXFinal = meanX;
 			final double meanYFinal = meanY;
 			datatable.rows().forEach(row -> {
@@ -423,26 +408,6 @@ public class ArchiveUtils {
 		archive.logln("\n" + LogBuilder.endBlock(true));
 		archive.logln("  ");
 	}
-	
-	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta,
-		final int channel, int from, int to)
-	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		double meanXbg = 0;
-		int count = 0;
-		for (int t = from; t <= to; t++)
-			meanXbg += meta.getPlane(0, 0, channel, t).getXDrift();
-			count++;
-		
-		meanXbg = meanXbg / count;
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
-			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getXDrift() -
-				meanXbg);
-		
-		return TtoColumn;
-	}
 
 	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta, final int channel) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
@@ -450,25 +415,6 @@ public class ArchiveUtils {
 		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
 			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getXDrift());
 		
-		return TtoColumn;
-	}
-
-	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta,
-		final int channel, int from, int to)
-	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
-
-		double meanYbg = 0;
-		int count = 0;
-		for (int t = from; t <= to; t++) {
-			meanYbg += meta.getPlane(0, 0, channel, t).getYDrift();
-			count++;
-		}
-		meanYbg = meanYbg / count;
-
-		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
-			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getYDrift() -
-				meanYbg);
 		return TtoColumn;
 	}
 
