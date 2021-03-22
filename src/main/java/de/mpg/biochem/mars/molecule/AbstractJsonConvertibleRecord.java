@@ -70,6 +70,8 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * before the first call. If false this field triggers initialization.
 	 */
 	private boolean IOMapsInitialized;
+	
+	private boolean showWarnings = true;
 
 	/**
 	 * Constructor for creating a JsonConvertiableRecord.
@@ -141,13 +143,15 @@ public abstract class AbstractJsonConvertibleRecord implements
 			// In that case we simply pass through it and all substructures that
 			// contain arrays or objects
 			if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-				System.out.println("unknown object " + fieldBlockName +
-					" encountered in the record ... skipping");
+				if (showWarnings)
+					System.out.println("unknown object " + fieldBlockName +
+						" encountered in the record ... skipping");
 				MarsUtil.passThroughUnknownObjects(jParser);
 			}
 			else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
-				System.out.println("unknown array " + fieldBlockName +
-					" encountered in the record ... skipping");
+				if (showWarnings)
+					System.out.println("unknown array " + fieldBlockName +
+						" encountered in the record ... skipping");
 				MarsUtil.passThroughUnknownArrays(jParser);
 			}
 			else {
@@ -155,6 +159,10 @@ public abstract class AbstractJsonConvertibleRecord implements
 				// prematurely.
 			}
 		}
+	}
+	
+	public void setShowWarnings(boolean showWarnings) {
+		this.showWarnings = showWarnings;
 	}
 
 	public void setJsonField(String field,
