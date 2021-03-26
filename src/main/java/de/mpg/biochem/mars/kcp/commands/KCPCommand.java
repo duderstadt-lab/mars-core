@@ -556,4 +556,12 @@ public class KCPCommand extends DynamicCommand implements Command,
 	public boolean getFitSteps() {
 		return step_analysis;
 	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
+	}
 }

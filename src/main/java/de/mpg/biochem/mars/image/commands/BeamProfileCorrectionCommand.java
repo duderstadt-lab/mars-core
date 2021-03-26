@@ -340,4 +340,12 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	public double getElectronicOffset() {
 		return electronicOffset;
 	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
+	}
 }

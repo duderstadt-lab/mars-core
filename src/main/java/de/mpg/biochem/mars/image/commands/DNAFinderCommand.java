@@ -235,10 +235,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Add to RoiManger")
 	private boolean addToRoiManger;
 
-	@Parameter(label = "Molecule Names in Manager")
-	private boolean moleculeNames;
+	//@Parameter(label = "Molecule Names in Manager")
+	//private boolean moleculeNames;
 
-	@Parameter(label = "Process all Frames")
+	@Parameter(label = "Process all frames")
 	private boolean allFrames;
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
@@ -465,8 +465,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			for (DNASegment segment : segments) {
 				Line line = new Line(segment.getX1(), segment.getY1(), segment.getX2(),
 					segment.getY2());
-				if (moleculeNames) line.setName("Molecule" + dnaCount);
-				else line.setName(MarsMath.getUUID58());
+				//if (moleculeNames) line.setName("Molecule" + dnaCount);
+				//else 
+				
+				line.setName(MarsMath.getUUID58());
 
 				if (swapZandT) line.setPosition(channel, t + 1, 1);
 				else line.setPosition(channel, 1, t + 1);
@@ -793,5 +795,13 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	public int getFitRadius() {
 		return fitRadius;
+	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
 	}
 }

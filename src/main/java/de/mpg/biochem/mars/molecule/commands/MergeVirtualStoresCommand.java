@@ -467,4 +467,12 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 	public File getDirectory() {
 		return directory;
 	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
+	}
 }

@@ -345,4 +345,12 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	public double getM12() {
 		return m12;
 	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
+	}
 }

@@ -211,10 +211,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Add to ROIManager")
 	private boolean addToRoiManager;
 
-	@Parameter(label = "Molecule names in RoiManager")
-	private boolean moleculeNames;
+	//@Parameter(label = "Molecule names in RoiManager")
+	//private boolean moleculeNames;
 
-	@Parameter(label = "Process all time points")
+	@Parameter(label = "Process all frames")
 	private boolean allFrames;
 
 	/**
@@ -480,8 +480,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 						.getDoublePosition(0) + 0.5 - fitRadius, peak.getDoublePosition(1) +
 							0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
 
-				if (moleculeNames) peakRoi.setName("Molecule" + pCount);
-				else peakRoi.setName(MarsMath.getUUID58());
+				//if (moleculeNames) peakRoi.setName("Molecule" + pCount);
+				//else 
+				peakRoi.setName(MarsMath.getUUID58());
 
 				if (swapZandT) peakRoi.setPosition(channel + 1, t + 1, 1);
 				else peakRoi.setPosition(channel + 1, 1, t + 1);
@@ -800,5 +801,13 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	public boolean getVerboseOutput() {
 		return verbose;
+	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
 	}
 }

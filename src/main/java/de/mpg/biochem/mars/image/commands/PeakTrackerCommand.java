@@ -956,4 +956,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	public String getExcludedTimePointsList() {
 		return this.excludeTimePointList;
 	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
+	}
 }

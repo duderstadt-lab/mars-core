@@ -182,12 +182,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(label = "FRET long wavelength name")
 	private String fretLongName = "Red";
-
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String channelsTitle = "Channels:";
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private final String channelsTitle = "Channels:";
 
 	/**
 	 * OUTPUTS
@@ -782,5 +782,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public Interval getSHORTInterval() {
 		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1,
 			SHORTy0 + SHORTheight - 1);
+	}
+	
+	public void setThreads(int nThreads) {
+		this.nThreads = nThreads;
+	}
+	
+	public int getThreads() {
+		return this.nThreads;
 	}
 }
