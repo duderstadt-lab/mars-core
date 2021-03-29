@@ -230,7 +230,6 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 						jParser.nextToken();
 						metaUID = jParser.getText();
 						metadataUIDs.add(metaUID);
-						System.out.println("metaUID " + metaUID);
 					}
 
 					if ("Tags".equals(jParser.getCurrentName())) {
@@ -303,7 +302,6 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 						jParser.nextToken();
 						UID = jParser.getText();
 						moleculeUIDs.add(UID);
-						System.out.println("UID " + UID);
 					}
 
 					if ("ImageMetaDataUID".equals(jParser.getCurrentName()) ||
