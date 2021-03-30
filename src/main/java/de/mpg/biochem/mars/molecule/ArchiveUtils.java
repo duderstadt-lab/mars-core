@@ -297,6 +297,14 @@ public class ArchiveUtils {
 	public static void correctDrift(
 			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 			String input_x, String input_y, String output_x,
+			String output_y)
+		{
+			correctDrift(archive, input_x, input_y, output_x, output_y, false, 0, null);
+		}
+	
+	public static void correctDrift(
+			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
+			String input_x, String input_y, String output_x,
 			String output_y, LogService logService)
 		{
 			correctDrift(archive, input_x, input_y, output_x, output_y, false, 0, logService);
@@ -325,7 +333,7 @@ public class ArchiveUtils {
 		log += builder.buildParameterList();
 
 		// Output first part of log message...
-		logService.info(log);
+		if (logService != null) logService.info(log);
 		archive.logln(log);
 
 		// Build maps from slice to x and slice to y for each metadataset
@@ -350,7 +358,7 @@ public class ArchiveUtils {
 			Molecule molecule = archive.get(UID);
 
 			if (molecule == null) {
-				logService.error("No record found for molecule with UID " + UID +
+				if (logService != null) logService.error("No record found for molecule with UID " + UID +
 					". Could be due to data corruption. Continuing with the rest.");
 				archive.logln("No record found for molecule with UID " + UID +
 					". Could be due to data corruption. Continuing with the rest.");
@@ -402,9 +410,11 @@ public class ArchiveUtils {
 			archive.put(molecule);
 		});
 
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
-		logService.info(LogBuilder.endBlock(true));
+		if (logService != null) {
+			logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+				starttime) / 60000, 2) + " minutes.");
+			logService.info(LogBuilder.endBlock(true));
+		}
 		archive.logln("\n" + LogBuilder.endBlock(true));
 		archive.logln("  ");
 	}
