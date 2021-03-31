@@ -139,8 +139,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		final int channel = (singleChannel) ? theC : 0;
 		
 		if (calculateDrift) ArchiveUtils.calculateDrift(archive,
-			backgroundTag, input_x, input_y, output_x,
-			output_y, use_incomplete_traces, mode,
+			backgroundTag, input_x, input_y, use_incomplete_traces, mode,
 			zeroPoint, singleChannel, channel, logService);
 		
 		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y, 

@@ -16,30 +16,25 @@ public class ArchiveUtils {
 	
 	public static void calculateDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
-		String backgroundTag, String input_x, String input_y, String output_x,
-		String output_y, boolean use_incomplete_traces, String mode,
+		String backgroundTag, String input_x, String input_y, boolean use_incomplete_traces, String mode,
 		String zeroPoint)
 	{
-		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
-				output_y, use_incomplete_traces, mode,
+		calculateDrift(archive, backgroundTag, input_x, input_y, use_incomplete_traces, mode,
 				zeroPoint, false, 0, null);
 	}
 	
 	public static void calculateDrift(
 			MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
-			String backgroundTag, String input_x, String input_y, String output_x,
-			String output_y, boolean use_incomplete_traces, String mode,
+			String backgroundTag, String input_x, String input_y, boolean use_incomplete_traces, String mode,
 			String zeroPoint, LogService logService)
 		{
-		calculateDrift(archive, backgroundTag, input_x, input_y, output_x,
-				output_y, use_incomplete_traces, mode,
+		calculateDrift(archive, backgroundTag, input_x, input_y, use_incomplete_traces, mode,
 				zeroPoint, false, 0, null);
 		}
 	
 	public static void calculateDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
-		String backgroundTag, String input_x, String input_y, String output_x,
-		String output_y, boolean use_incomplete_traces, String mode,
+		String backgroundTag, String input_x, String input_y, boolean use_incomplete_traces, String mode,
 		String zeroPoint, final boolean singleChannel, final int theC, LogService logService)
 	{
 		double starttime = System.currentTimeMillis();
