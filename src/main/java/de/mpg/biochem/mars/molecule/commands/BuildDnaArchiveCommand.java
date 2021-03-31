@@ -409,11 +409,11 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 		builder.addParameter("DNA length in bps", String.valueOf(DNALength));
 		builder.addParameter("xColumn", String.valueOf(xColumn));
 		builder.addParameter("yColumn", String.valueOf(yColumn));
-		builder.addParameter("SingleMoleculeArchive 1", archive1.getName());
+		builder.addParameter("SingleMoleculeArchive 1", archive1InputName);
 		builder.addParameter("SingleMoleculeArchive 1 Name", archive1Name);
-		builder.addParameter("SingleMoleculeArchive 2", archive2.getName());
+		builder.addParameter("SingleMoleculeArchive 2", archive2InputName);
 		builder.addParameter("SingleMoleculeArchive 2 Name", archive2Name);
-		builder.addParameter("SingleMoleculeArchive 3", archive3.getName());
+		builder.addParameter("SingleMoleculeArchive 3", archive3InputName);
 		builder.addParameter("SingleMoleculeArchive 3 Name", archive3Name);
 	}
 
