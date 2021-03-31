@@ -32,6 +32,11 @@ package de.mpg.biochem.mars.roi.commands;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -62,6 +67,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.widget.NumberWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
@@ -168,6 +175,9 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Colocalize search radius")
 	private int colocalizeRadius = 0;
+	
+	@Parameter(label = "Preview timeout (s)")
+	private int previewTimeout = 10;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged")
@@ -360,64 +370,83 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
-			image.deleteRoi();
-			image.setOverlay(null);
-
-			if (swapZandT) image.setSlice(theT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-
-			List<Roi> transformedROIs = new ArrayList<Roi>();
-			List<Roi> originalROIs = new ArrayList<>();
-			int roiNum = roiManager.getCount();
-			for (int i = 0; i < roiNum; i++) {
-				Roi roi = roiManager.getRoi(i);
-				if (roi instanceof OvalRoi) {
-					final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
-						.getFloatBounds().y, roi.getFloatBounds().width, roi
-							.getFloatBounds().height);
-					ovalRoi.setStrokeColor(Color.CYAN.darker());
-					originalROIs.add(ovalRoi);
-				}
-				else {
-					final PointRoi pointRoi = new PointRoi(roi.getFloatBounds().x, roi
-						.getFloatBounds().y);
-					originalROIs.add(pointRoi);
-				}
-			}
-
-			transformROIs(transformedROIs, originalROIs);
-
-			List<Integer> colocalizedIndex = new ArrayList<Integer>();
-
-			Overlay overlay = new Overlay();
-			if (colocalize) {
-				colocalizedIndex = colocalize(transformedROIs, threshold, Integer
-					.valueOf(channel), theT);
-
-				if (filterOriginalRois) {
-					for (int i = 0; i < colocalizedIndex.size(); i++) {
-						overlay.add(originalROIs.get(colocalizedIndex.get(i)));
-						overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
-					}
-				}
-				else {
-					for (int i = 0; i < transformedROIs.size(); i++) {
-						overlay.add(originalROIs.get(i));
-						if (colocalizedIndex.contains(i)) {
-							overlay.add(transformedROIs.get(colocalizedIndex.get(
-								colocalizedIndex.indexOf(i))));
+			ExecutorService es = Executors.newSingleThreadExecutor();
+			try {
+				es.submit(() -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(null);
 						}
-					}
-				}
-			}
-			else {
-				for (int i = 0; i < transformedROIs.size(); i++) {
-					overlay.add(originalROIs.get(i));
-					overlay.add(transformedROIs.get(i));
-				}
-			}
 
-			image.setOverlay(overlay);
+						if (swapZandT) image.setSlice(theT + 1);
+						else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+			
+						List<Roi> transformedROIs = new ArrayList<Roi>();
+						List<Roi> originalROIs = new ArrayList<>();
+						int roiNum = roiManager.getCount();
+						for (int i = 0; i < roiNum; i++) {
+							Roi roi = roiManager.getRoi(i);
+							if (roi instanceof OvalRoi) {
+								final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
+									.getFloatBounds().y, roi.getFloatBounds().width, roi
+										.getFloatBounds().height);
+								ovalRoi.setStrokeColor(Color.CYAN.darker());
+								originalROIs.add(ovalRoi);
+							}
+							else {
+								final PointRoi pointRoi = new PointRoi(roi.getFloatBounds().x, roi
+									.getFloatBounds().y);
+								originalROIs.add(pointRoi);
+							}
+						}
+			
+						transformROIs(transformedROIs, originalROIs);
+			
+						List<Integer> colocalizedIndex = new ArrayList<Integer>();
+			
+						Overlay overlay = new Overlay();
+						if (colocalize) {
+							colocalizedIndex = colocalize(transformedROIs, threshold, Integer
+								.valueOf(channel), theT);
+			
+							if (filterOriginalRois) {
+								for (int i = 0; i < colocalizedIndex.size(); i++) {
+									overlay.add(originalROIs.get(colocalizedIndex.get(i)));
+									overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
+								}
+							}
+							else {
+								for (int i = 0; i < transformedROIs.size(); i++) {
+									overlay.add(originalROIs.get(i));
+									if (colocalizedIndex.contains(i)) {
+										overlay.add(transformedROIs.get(colocalizedIndex.get(
+											colocalizedIndex.indexOf(i))));
+									}
+								}
+							}
+						}
+						else {
+							for (int i = 0; i < transformedROIs.size(); i++) {
+								overlay.add(originalROIs.get(i));
+								overlay.add(transformedROIs.get(i));
+							}
+						}
+			
+						image.setOverlay(overlay);
+				}).get(previewTimeout, TimeUnit.SECONDS);
+			}
+			catch (TimeoutException e1) {
+				es.shutdownNow();
+				uiService.showDialog(
+						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+				cancel();
+			}
+			catch (InterruptedException | ExecutionException e2) {
+				es.shutdownNow();
+				cancel();
+			}
+			es.shutdownNow();		
 		}
 	}
 
