@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
+import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
@@ -43,6 +44,7 @@ import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -65,7 +67,7 @@ import ij.plugin.frame.RoiManager;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Molecule", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Build DNA Archive", weight = 1, mnemonic = 'b') })
-public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
+public class BuildDnaArchiveCommand extends DynamicCommand implements Command, Initializable {
 
 	// GENERAL SERVICES NEEDED
 	@Parameter
@@ -82,6 +84,9 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 
 	@Parameter
 	private MarsTableService marsTableService;
+	
+	@Parameter
+	private MoleculeArchiveService moleculeArchiveService;
 
 	@Parameter(label = "Search radius around DNA")
 	private double radius;
@@ -94,27 +99,21 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "y column")
 	private String yColumn = "y_drift_corr";
-
-	@Parameter(label = "SingleMoleculeArchive 1")
-	private SingleMoleculeArchive archive1;
+	
+	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" })
+	private String archive1InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 1 Name")
 	private String archive1Name = "mol1";
 
-	@Parameter(label = "Merge")
-	private boolean merge2;
-
-	@Parameter(label = "SingleMoleculeArchive 2")
-	private SingleMoleculeArchive archive2;
+	@Parameter(label = "SingleMoleculeArchive 2", choices = { "a", "b", "c" })
+	private String archive2InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 2 Name")
 	private String archive2Name = "mol2";
-
-	@Parameter(label = "Merge")
-	private boolean merge3;
-
-	@Parameter(label = "SingleMoleculeArchive 3")
-	private SingleMoleculeArchive archive3;
+	
+	@Parameter(label = "SingleMoleculeArchive 3", choices = { "a", "b", "c" })
+	private String archive3InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 3 Name")
 	private String archive3Name = "mol3";
@@ -122,9 +121,37 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 	// OUTPUT PARAMETERS
 	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)
 	private DnaMoleculeArchive dnaMoleculeArchive;
+	
+	private SingleMoleculeArchive archive1, archive2, archive3;
+	
+	@Override
+	public void initialize() {
+		ArrayList<String> archiveNames = new ArrayList<String>();
+		archiveNames.add("None");
+		
+		for (MoleculeArchive<?, ?, ?, ?> archive : moleculeArchiveService.getArchives())
+			if (archive instanceof SingleMoleculeArchive)
+				archiveNames.add(archive.getName());
+
+		final MutableModuleItem<String> singleMoleculeArchive1Items = getInfo().getMutableInput(
+			"archive1InputName", String.class);
+		singleMoleculeArchive1Items.setChoices(archiveNames);
+
+		final MutableModuleItem<String> singleMoleculeArchive2Items = getInfo().getMutableInput(
+			"archive2InputName", String.class);
+		singleMoleculeArchive2Items.setChoices(archiveNames);
+		
+		final MutableModuleItem<String> singleMoleculeArchive3Items = getInfo().getMutableInput(
+			"archive3InputName", String.class);
+		singleMoleculeArchive3Items.setChoices(archiveNames);
+	}
 
 	@Override
 	public void run() {
+		
+		if (!archive1InputName.equals("None") && moleculeArchiveService.contains(archive1InputName)) archive1 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive1InputName);
+		if (!archive2InputName.equals("None") && moleculeArchiveService.contains(archive2InputName)) archive2 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive2InputName);
+		if (!archive3InputName.equals("None") && moleculeArchiveService.contains(archive3InputName)) archive3 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive3InputName);
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
@@ -142,7 +169,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 
 		Roi[] rois = roiManager.getRoisAsArray();
 		if (rois.length == 0) {
-			logService.info("Found 0 DNA records in the RoiManager. Aborting.");
+			logService.info("Found 0 DNA records in the RoiManager.");
 			return;
 		}
 		else {
@@ -157,14 +184,21 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 				line.x2d - 0.5, line.y2d - 0.5);
 			DNASegments.add(dnaSegment);
 		}
+		
+		if (archive1InputName.equals("None")) {
+			logService.info("SingleMoleculeArchive 1 was not specified.");
+			return;
+		} else {
+			
+		}
 
 		MarsOMEMetadata metadata1 = archive1.getMetadata(0);
-		if (merge2 && merge3) {
+		if (archive2 != null) {
 			metadata1.merge(archive2.getMetadata(0));
-			metadata1.merge(archive3.getMetadata(0));
 		}
-		else if (merge2) {
-			metadata1.merge(archive2.getMetadata(0));
+		
+		if (archive3 != null) {
+			metadata1.merge(archive3.getMetadata(0));
 		}
 
 		metadata1.setParameter("DnaMoleculeCount", rois.length);
@@ -183,9 +217,9 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 
 		archive1PositionSearcher = getMoleculeSearcher(archive1);
 
-		if (merge2) archive2PositionSearcher = getMoleculeSearcher(archive2);
+		if (archive2 != null) archive2PositionSearcher = getMoleculeSearcher(archive2);
 
-		if (merge3) archive3PositionSearcher = getMoleculeSearcher(archive3);
+		if (archive3 != null) archive3PositionSearcher = getMoleculeSearcher(archive3);
 
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
@@ -206,7 +240,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 			}
 			dnaMolecule.setParameter("Number_" + archive1Name, moleculesOnDNA.size());
 
-			if (merge2) {
+			if (archive2 != null) {
 				moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2,
 					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
@@ -217,7 +251,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 					.size());
 			}
 
-			if (merge3) {
+			if (archive3 != null) {
 				moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3,
 					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
@@ -377,10 +411,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command {
 		builder.addParameter("yColumn", String.valueOf(yColumn));
 		builder.addParameter("SingleMoleculeArchive 1", archive1.getName());
 		builder.addParameter("SingleMoleculeArchive 1 Name", archive1Name);
-		builder.addParameter("Merge 2", String.valueOf(merge2));
 		builder.addParameter("SingleMoleculeArchive 2", archive2.getName());
 		builder.addParameter("SingleMoleculeArchive 2 Name", archive2Name);
-		builder.addParameter("Merge 3", String.valueOf(merge3));
 		builder.addParameter("SingleMoleculeArchive 3", archive3.getName());
 		builder.addParameter("SingleMoleculeArchive 3 Name", archive3Name);
 	}
