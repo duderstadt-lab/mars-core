@@ -118,9 +118,9 @@ import de.mpg.biochem.mars.util.*;
  * {@link PeakTrackerCommand}, {@link MoleculeIntegratorCommand} and
  * {@link BuildArchiveFromTableCommand}. Required input for all commands in the
  * molecule package, including {@link RegionDifferenceCalculatorCommand},
- * {@link VarianceCalculatorCommand}, {@link DriftCorrectorCommand},
- * {@link DriftCalculatorCommand} as well as commands in the kcp package,
- * including {@link KCPCommand}, and {@link SigmaCalculatorCommand}.
+ * {@link VarianceCalculatorCommand}, {@link DriftCorrectorCommand}
+ * as well as commands in the kcp package, including {@link KCPCommand}, 
+ * and {@link SigmaCalculatorCommand}.
  * </p>
  * <p>
  * MoleculeArchives can be saved in json (or smile) format as a single file or
@@ -1192,6 +1192,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param molecule The molecule record to save.
 	 * @param jfactory the JsonFactory to use when saving. Determines if smile or
 	 *          text encoding is used.
+	 * @param fileExtension The file extension.
 	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
 	protected void saveMoleculeToFile(File directory, M molecule,
@@ -1230,6 +1231,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param metadata The MarsMetadata record to save.
 	 * @param jfactory the JsonFactory to use when saving. Determines if smile or
 	 *          text encoding is used.
+	 * @param fileExtension The file extension.
 	 * @throws IOException if the MarsMetadata can't be saved to the file given.
 	 */
 	protected void saveMetadataToFile(File directory, I metadata,
