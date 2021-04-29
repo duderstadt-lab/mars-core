@@ -98,13 +98,13 @@ import ome.xml.meta.OMEXMLMetadata;
  * 
  * @author Karl Duderstadt
  */
-@Plugin(type = Command.class, label = "Molecule Integrator", menu = { @Menu(
+@Plugin(type = Command.class, label = "Molecule Integrator (Dual View)", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
 				label = "Molecule Integrator", weight = 30, mnemonic = 'm') })
-public class MoleculeIntegratorCommand extends DynamicCommand implements
+public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	Command, Initializable
 {
 
@@ -161,6 +161,18 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(label = "LONG height")
 	private int LONGheight = 500;
+
+	@Parameter(label = "SHORT x0")
+	private int SHORTx0 = 0;
+
+	@Parameter(label = "SHORT y0")
+	private int SHORTy0 = 524;
+
+	@Parameter(label = "SHORT width")
+	private int SHORTwidth = 1024;
+
+	@Parameter(label = "SHORT height")
+	private int SHORTheight = 500;
 
 	@Parameter(label = "Microscope")
 	private String microscope = "Unknown";
