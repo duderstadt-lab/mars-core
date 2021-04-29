@@ -274,13 +274,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			
 		List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(
 				channel -> channel.getName()).collect(Collectors.toList());
-		
-		//If there is no channel information provided, create a channel 0
-		if (channelNames.size() == 1 && channelNames.get(0) == null) {
-			marsOMEMetadata.getImage(0).getChannel(0).setName("0");
-			channelNames.remove(0);
-			channelNames.add("0");
-		}
 			
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
