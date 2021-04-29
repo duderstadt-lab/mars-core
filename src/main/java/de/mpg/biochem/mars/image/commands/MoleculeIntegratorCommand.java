@@ -91,9 +91,8 @@ import ome.xml.meta.OMEXMLMetadata;
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
  * peaks for integration can be provided as OvalRois or PointRois in the
- * RoiManger with the format UID_LONG or UID_SHORT for long and short
- * wavelengths. The positions given are integrated for all T for all colors
- * specified to generate a SingleMoleculeArchive in which all molecule record
+ * RoiManger. Names should be UIDs. The positions given are integrated for all T 
+ * for all colors specified to generate a SingleMoleculeArchive in which all molecule record
  * tables have columns for all integrated colors.
  * 
  * @author Karl Duderstadt
@@ -150,26 +149,20 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter(required = false)
 	private RoiManager roiManager;
 
-	@Parameter(label = "LONG x0")
-	private int LONGx0 = 0;
+	@Parameter(label = "x0")
+	private int x0 = 0;
 
-	@Parameter(label = "LONG y0")
-	private int LONGy0 = 0;
+	@Parameter(label = "y0")
+	private int y0 = 0;
 
-	@Parameter(label = "LONG width")
-	private int LONGwidth = 1024;
+	@Parameter(label = "width")
+	private int width = 1024;
 
-	@Parameter(label = "LONG height")
-	private int LONGheight = 500;
+	@Parameter(label = "height")
+	private int height = 500;
 
 	@Parameter(label = "Microscope")
 	private String microscope = "Unknown";
-
-	@Parameter(label = "FRET short wavelength name")
-	private String fretShortName = "Green";
-
-	@Parameter(label = "FRET long wavelength name")
-	private String fretLongName = "Red";
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
@@ -199,7 +192,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private List<MutableModuleItem<String>> channelColors;
 
 	private List<String> channelColorOptions = new ArrayList<String>(Arrays
-		.asList("None", "FRET", "Short", "Long"));
+		.asList("Do not integrate", "Integrate"));
 
 	@Override
 	public void initialize() {
@@ -383,21 +376,17 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 
 	private void buildIntegrationLists() {
-		final Interval longInterval = getLONGInterval();
-		final Interval shortInterval = getSHORTInterval();
+		final Interval interval = getInterval();
 
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
 
-		Map<String, Peak> shortIntegrationList = new HashMap<String, Peak>();
-		Map<String, Peak> longIntegrationList = new HashMap<String, Peak>();
+		Map<String, Peak> integrationList = new HashMap<String, Peak>();
 
-		// Build single T integration lists for short and long wavelengths.
+		// Build integration list
 		for (int i = 0; i < rois.length; i++) {
-			// split UID from LONG or SHORT
-			String[] subStrings = rois[i].getName().split("_");
-			String UID = subStrings[0];
+			String UID = rois[i].getName();
 
 			// The pixel origin for OvalRois is at the upper left corner !!
 			// The pixel origin for PointRois is at the center !!
@@ -411,19 +400,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 			Peak peak = new Peak(x, y);
 
-			if (subStrings.length > 1) {
-				if (subStrings[1].equals("LONG") && MarsImageUtils.intervalContains(
-					longInterval, x, y)) longIntegrationList.put(UID, peak);
-				else if (subStrings[1].equals("SHORT") && MarsImageUtils
-					.intervalContains(shortInterval, x, y)) shortIntegrationList.put(UID,
-						peak);
-			}
-			else {
-				if (MarsImageUtils.intervalContains(longInterval, x, y))
-					longIntegrationList.put(UID, peak);
-				else if (MarsImageUtils.intervalContains(shortInterval, x, y))
-					shortIntegrationList.put(UID, peak);
-			}
+			if (MarsImageUtils.intervalContains(interval, x, y))
+				integrationList.put(UID, peak);
 		}
 
 		// Build integration lists for all T for all colors.
@@ -431,20 +409,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			MutableModuleItem<String> channel = channelColors.get(i);
 			String colorOption = channel.getValue(this);
 
-			if (colorOption.equals("Short")) addIntegrationMap(channel.getName(), i,
-				shortInterval, createColorIntegrationList(channel.getName(),
-					shortIntegrationList));
-			else if (colorOption.equals("Long")) addIntegrationMap(channel.getName(),
-				i, longInterval, createColorIntegrationList(channel.getName(),
-					longIntegrationList));
-			else if (colorOption.equals("FRET")) {
-				addIntegrationMap(channel.getName() + " " + fretShortName, i,
-					shortInterval, createColorIntegrationList(channel.getName(),
-						shortIntegrationList));
-				addIntegrationMap(channel.getName() + " " + fretLongName, i,
-					longInterval, createColorIntegrationList(channel.getName(),
-						longIntegrationList));
-			}
+			if (colorOption.equals("Integrate")) addIntegrationMap(channel.getName(), i,
+				interval, createColorIntegrationList(channel.getName(),
+					integrationList));
 		}
 	}
 
@@ -651,16 +618,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
-		builder.addParameter("LONG x0", String.valueOf(LONGx0));
-		builder.addParameter("LONG y0", String.valueOf(LONGy0));
-		builder.addParameter("LONG width", String.valueOf(LONGwidth));
-		builder.addParameter("LONG height", String.valueOf(LONGheight));
-		builder.addParameter("SHORT x0", String.valueOf(SHORTx0));
-		builder.addParameter("SHORT y0", String.valueOf(SHORTy0));
-		builder.addParameter("SHORT width", String.valueOf(SHORTwidth));
-		builder.addParameter("SHORT height", String.valueOf(SHORTheight));
-		builder.addParameter("FRET short wavelength name", fretShortName);
-		builder.addParameter("FRET short wavelength name", fretLongName);
+		builder.addParameter("x0", String.valueOf(x0));
+		builder.addParameter("y0", String.valueOf(y0));
+		builder.addParameter("width", String.valueOf(width));
+		builder.addParameter("height", String.valueOf(height));
 		if (marsOMEMetadata != null) channelColors.forEach(channel -> builder
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
@@ -704,78 +665,41 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		return outerRadius;
 	}
 
-	public void setLONGx0(int LONGx0) {
-		this.LONGx0 = LONGx0;
+	public void setx0(int x0) {
+		this.x0 = x0;
 	}
 
-	public int getLONGx0() {
-		return LONGx0;
+	public int getx0() {
+		return x0;
 	}
 
-	public void setLONGy0(int LONGy0) {
-		this.LONGy0 = LONGy0;
+	public void sety0(int y0) {
+		this.y0 = y0;
 	}
 
-	public int getLONGy0() {
-		return LONGy0;
+	public int gety0() {
+		return y0;
 	}
 
-	public void setLONGWidth(int LONGwidth) {
-		this.LONGwidth = LONGwidth;
+	public void setWidth(int width) {
+		this.width = width;
 	}
 
-	public int getLONGWidth() {
-		return LONGwidth;
+	public int getWidth() {
+		return width;
 	}
 
-	public void setLONGHeight(int LONGheight) {
-		this.LONGheight = LONGheight;
+	public void setHeight(int height) {
+		this.height = height;
 	}
 
-	public int getLONGHeight() {
-		return LONGheight;
+	public int getHeight() {
+		return height;
 	}
 
-	public Interval getLONGInterval() {
-		return Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1,
-			LONGy0 + LONGheight - 1);
-	}
-
-	public void setSHORTx0(int SHORTx0) {
-		this.SHORTx0 = SHORTx0;
-	}
-
-	public int getSHORTx0() {
-		return SHORTx0;
-	}
-
-	public void setSHORTy0(int SHORTy0) {
-		this.SHORTy0 = SHORTy0;
-	}
-
-	public int getSHORTy0() {
-		return SHORTy0;
-	}
-
-	public void setSHORTWidth(int SHORTwidth) {
-		this.SHORTwidth = SHORTwidth;
-	}
-
-	public int getSHORTWidth() {
-		return SHORTwidth;
-	}
-
-	public void setSHORTHeight(int SHORTheight) {
-		this.SHORTheight = SHORTheight;
-	}
-
-	public int getSHORTHeight() {
-		return SHORTheight;
-	}
-
-	public Interval getSHORTInterval() {
-		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1,
-			SHORTy0 + SHORTheight - 1);
+	public Interval getInterval() {
+		return Intervals.createMinMax(x0, y0, x0 + width - 1,
+			y0 + height - 1);
 	}
 	
 	public void setThreads(int nThreads) {

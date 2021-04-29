@@ -301,7 +301,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	public void run() {
 		// BUILD LOG
 		LogBuilder builder = new LogBuilder();
-		String log = LogBuilder.buildTitleBlock("Molecule Integrator");
+		String log = LogBuilder.buildTitleBlock("Molecule Integrator (dualview)");
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		logService.info(log);
