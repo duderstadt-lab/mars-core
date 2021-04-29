@@ -1,4 +1,4 @@
-/*-
+/*
  * #%L
  * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
  * %%
@@ -266,6 +266,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+		
+		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
+			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
+				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
+		}
 			
 		List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(
 				channel -> channel.getName()).collect(Collectors.toList());

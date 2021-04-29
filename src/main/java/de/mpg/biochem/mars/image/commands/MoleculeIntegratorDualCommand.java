@@ -278,16 +278,14 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 		else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+		
+		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
+			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
+				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
+		}
 			
 		List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(
 				channel -> channel.getName()).collect(Collectors.toList());
-		
-		//If there is no channel information provided, create a channel 0
-		if (channelNames.size() == 1 && channelNames.get(0) == null) {
-			marsOMEMetadata.getImage(0).getChannel(0).setName("0");
-			channelNames.remove(0);
-			channelNames.add("0");
-		}
 			
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
