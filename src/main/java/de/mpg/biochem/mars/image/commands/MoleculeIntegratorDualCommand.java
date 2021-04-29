@@ -98,12 +98,12 @@ import ome.xml.meta.OMEXMLMetadata;
  * 
  * @author Karl Duderstadt
  */
-@Plugin(type = Command.class, label = "Molecule Integrator (Dual View)", menu = { @Menu(
+@Plugin(type = Command.class, label = "Molecule Integrator (dualview)", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Molecule Integrator", weight = 30, mnemonic = 'm') })
+				label = "Molecule Integrator (dualview)", weight = 30, mnemonic = 'm') })
 public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	Command, Initializable
 {
