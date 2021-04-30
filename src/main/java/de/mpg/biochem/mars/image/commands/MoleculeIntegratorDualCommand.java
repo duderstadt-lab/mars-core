@@ -211,7 +211,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	private List<MutableModuleItem<String>> channelColors;
 
 	private List<String> channelColorOptions = new ArrayList<String>(Arrays
-		.asList("None", "FRET", "Short", "Long"));
+		.asList("Do not integrate", "Both", "Short", "Long"));
 
 	@Override
 	public void initialize() {
@@ -449,7 +449,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			else if (colorOption.equals("Long")) addIntegrationMap(channel.getName(),
 				i, longInterval, createColorIntegrationList(channel.getName(),
 					longIntegrationList));
-			else if (colorOption.equals("FRET")) {
+			else if (colorOption.equals("Both")) {
 				addIntegrationMap(channel.getName() + " " + fretShortName, i,
 					shortInterval, createColorIntegrationList(channel.getName(),
 						shortIntegrationList));
