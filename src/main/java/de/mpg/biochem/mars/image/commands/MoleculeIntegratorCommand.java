@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -130,6 +131,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
+	
+	/**
+	 * ROIs
+	 */
+	@Parameter(required = false)
+	private RoiManager roiManager;
+	
+	@Parameter(label = "Use ROI", persist = false)
+	private boolean useROI = true;
 
 	/**
 	 * IMAGE
@@ -142,24 +152,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(label = "Outer Radius")
 	private int outerRadius = 3;
-
-	/**
-	 * ROIs
-	 */
-	@Parameter(required = false)
-	private RoiManager roiManager;
-
-	@Parameter(label = "x0")
-	private int x0 = 0;
-
-	@Parameter(label = "y0")
-	private int y0 = 0;
-
-	@Parameter(label = "width")
-	private int width = 1024;
-
-	@Parameter(label = "height")
-	private int height = 500;
 
 	@Parameter(label = "Microscope")
 	private String microscope = "Unknown";
@@ -184,6 +176,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
+	
+	private Roi roi;
 
 	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
@@ -201,6 +195,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
+		
+		if (image.getRoi() == null) {
+			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
+				"useROI", Boolean.class);
+			useRoifield.setValue(this, false);
+		}
+		else roi = image.getRoi();
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -280,6 +281,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Override
 	public void run() {
+		if (image != null) {
+			image.deleteRoi();
+			image.setOverlay(null);
+		}
+		
 		// BUILD LOG
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Molecule Integrator");
@@ -355,6 +361,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			nThreads);
 
 		archive.naturalOrderSortMoleculeIndex();
+		
+		if (image != null) image.setRoi(roi);
 
 		// FINISH UP
 		statusService.clearStatus();
@@ -376,8 +384,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 
 	private void buildIntegrationLists() {
-		final Interval interval = getInterval();
-
+		Interval interval = (useROI) ? Intervals.createMinMax(roi.getBounds().x, roi.getBounds().y, roi.getBounds().x + roi.getBounds().width - 1,
+				roi.getBounds().y + roi.getBounds().height - 1) : dataset;
+		
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
@@ -400,7 +409,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 			Peak peak = new Peak(x, y);
 
-			if (MarsImageUtils.intervalContains(interval, x, y))
+			if (useROI && roi.contains((int)x, (int)y))
+				integrationList.put(UID, peak);
+			else if (!useROI)
 				integrationList.put(UID, peak);
 		}
 
@@ -613,15 +624,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					.getOriginalFileInfo().directory);
 			}
 		}
-		else builder.addParameter("Dataset name", dataset.getName());
+		else {
+			builder.addParameter("Dataset Name", dataset.getName());
+		}
+		builder.addParameter("Use ROI", String.valueOf(useROI));
+		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
 
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
-		builder.addParameter("x0", String.valueOf(x0));
-		builder.addParameter("y0", String.valueOf(y0));
-		builder.addParameter("width", String.valueOf(width));
-		builder.addParameter("height", String.valueOf(height));
 		if (marsOMEMetadata != null) channelColors.forEach(channel -> builder
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
@@ -639,6 +650,22 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	public Dataset getDataset() {
 		return dataset;
+	}
+	
+	public void setUseRoi(boolean useROI) {
+		this.useROI = useROI;
+	}
+
+	public boolean getUseRoi() {
+		return useROI;
+	}
+	
+	public void setRoi(Roi roi) {
+		this.roi = roi;
+	}
+	
+	public Roi getROI() {
+		return this.roi;
 	}
 
 	public void setMicroscope(String microscope) {
@@ -663,43 +690,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	public int getOuterRadius() {
 		return outerRadius;
-	}
-
-	public void setx0(int x0) {
-		this.x0 = x0;
-	}
-
-	public int getx0() {
-		return x0;
-	}
-
-	public void sety0(int y0) {
-		this.y0 = y0;
-	}
-
-	public int gety0() {
-		return y0;
-	}
-
-	public void setWidth(int width) {
-		this.width = width;
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public void setHeight(int height) {
-		this.height = height;
-	}
-
-	public int getHeight() {
-		return height;
-	}
-
-	public Interval getInterval() {
-		return Intervals.createMinMax(x0, y0, x0 + width - 1,
-			y0 + height - 1);
 	}
 	
 	public void setThreads(int nThreads) {
