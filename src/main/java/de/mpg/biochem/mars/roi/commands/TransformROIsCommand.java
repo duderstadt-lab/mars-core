@@ -170,11 +170,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Detection threshold")
 	private double threshold = 50;
 
-	@Parameter(label = "Filter Original ROIs")
-	private boolean filterOriginalRois = true;
-
 	@Parameter(label = "Colocalize search radius")
 	private int colocalizeRadius = 0;
+	
+	@Parameter(label = "Filter Original ROIs")
+	private boolean filterOriginalRois = true;
+	
+	@Parameter(label = "Remove colocalizing ROIs")
+	private boolean filterColocalizingRois = false;
 	
 	@Parameter(label = "Preview timeout (s)")
 	private int previewTimeout = 10;
@@ -362,7 +365,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 				for (int Sx = x - colocalizeRadius; Sx <= x + colocalizeRadius; Sx++)
 					if (max < ra.setPositionAndGet(Sx, Sy).get()) max = ra.get().get();
 
-			if (max > threshold) colocalizedIndex.add(i);
+			if (!filterColocalizingRois && max > threshold) colocalizedIndex.add(i);
+			else if (filterColocalizingRois && max < threshold) colocalizedIndex.add(i);
 		}
 		return colocalizedIndex;
 	}
@@ -471,9 +475,11 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
+		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
 		builder.addParameter("filterOriginalRois", String.valueOf(
 			filterOriginalRois));
-		builder.addParameter("colocalizeRadius", String.valueOf(colocalizeRadius));
+		builder.addParameter("filterColocalizingRois", String.valueOf(
+				filterColocalizingRois));
 	}
 
 	public void setM00(double m00) {
@@ -562,6 +568,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 	public boolean getFilterOriginalRois() {
 		return filterOriginalRois;
+	}
+	
+	public void setFilterColocalizingRois(boolean filterColocalizingRois) {
+		this.filterColocalizingRois = filterColocalizingRois;
+	}
+
+	public boolean getFilterColocalizingRois() {
+		return filterColocalizingRois;
 	}
 
 	public void setColocalizeSearchRadius(int colocalizeRadius) {
