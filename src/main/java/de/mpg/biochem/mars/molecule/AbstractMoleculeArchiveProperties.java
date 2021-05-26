@@ -265,14 +265,6 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		 * 
 		 */
 
-		setJsonField("ArchiveType", jGenerator -> {
-			if (parent != null) jGenerator.writeStringField("ArchiveType", parent
-				.getClass().getName());
-		}, null);
-
-		setJsonField("Type", jGenerator -> jGenerator.writeStringField("Type", this
-			.getClass().getName()), null);
-
 		setJsonField("Schema", null, jParser -> inputSchema = jParser.getText());
 
 		setJsonField("MoleculeDataTableColumnSet", null, jParser -> {
