@@ -545,19 +545,19 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		return archive;
 	}
 
-	public void setxColumn(String xColumn) {
+	public void setXColumn(String xColumn) {
 		this.xColumn = xColumn;
 	}
 
-	public String getxColumn() {
+	public String getXColumn() {
 		return xColumn;
 	}
 
-	public void setyColumn(String yColumn) {
+	public void setYColumn(String yColumn) {
 		this.yColumn = yColumn;
 	}
 
-	public String getyColumn() {
+	public String getYColumn() {
 		return yColumn;
 	}
 
