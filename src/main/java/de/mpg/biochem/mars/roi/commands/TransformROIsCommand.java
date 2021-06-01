@@ -481,6 +481,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		builder.addParameter("filterColocalizingRois", String.valueOf(
 				filterColocalizingRois));
 	}
+	
+	public void setRoiManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
+	}
 
 	public void setM00(double m00) {
 		this.m00 = m00;
