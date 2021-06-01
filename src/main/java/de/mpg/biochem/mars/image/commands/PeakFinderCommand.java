@@ -190,7 +190,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Preview:",
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
 			"point" })
-	private String previewRoiType;
+	private String roiType = "point";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String tPeakCount = "count: 0";
@@ -475,7 +475,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			for (Peak peak : peaks) {
 				// The pixel origin for OvalRois is at the upper left corner !!!!
 				// The pixel origin for PointRois is at the center !!!
-				Roi peakRoi = (previewRoiType.equals("point")) ? new PointRoi(peak
+				Roi peakRoi = (roiType.equals("point")) ? new PointRoi(peak
 					.getDoublePosition(0), peak.getDoublePosition(1)) : new OvalRoi(peak
 						.getDoublePosition(0) + 0.5 - fitRadius, peak.getDoublePosition(1) +
 							0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
@@ -515,7 +515,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 						
 						if (!peaks.isEmpty()) {
 			
-							if (previewRoiType.equals("point")) {
+							if (roiType.equals("point")) {
 								Overlay overlay = new Overlay();
 								FloatPolygon poly = new FloatPolygon();
 								for (Peak p : peaks) {
@@ -622,6 +622,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Generate peak table", String.valueOf(
 			generatePeakTable));
 		builder.addParameter("Add to ROIManager", String.valueOf(addToRoiManager));
+		builder.addParameter("Roi Type", roiType);
 		builder.addParameter("Process all time points", String.valueOf(allFrames));
 		builder.addParameter("Fit peaks", String.valueOf(fitPeaks));
 		builder.addParameter("Fit Radius", String.valueOf(fitRadius));
@@ -745,6 +746,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	public boolean getAddToRoiManager() {
 		return addToRoiManager;
+	}
+	
+	public void setRoiType(String roiType) {
+		this.roiType = roiType;
+	}
+
+	public String getRoiType() {
+		return roiType;
 	}
 
 	public void setProcessAllFrames(boolean allFrames) {
