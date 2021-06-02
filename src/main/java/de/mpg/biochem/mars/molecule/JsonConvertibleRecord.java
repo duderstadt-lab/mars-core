@@ -30,9 +30,13 @@
 package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+
+import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 /**
  * Interface for objects that are Json serialized and deserialized.
@@ -57,6 +61,28 @@ public interface JsonConvertibleRecord {
 	 * @throws IOException Thrown if unable to read from JsonParser.
 	 */
 	void fromJSON(JsonParser jParser) throws IOException;
+	
+	public void setShowWarnings(boolean showWarnings);
+
+	public void setJsonField(String field,
+		ThrowingConsumer<JsonGenerator, IOException> output,
+		ThrowingConsumer<JsonParser, IOException> input);
+
+	/**
+	 * Get the JsonGenerator for a field.
+	 * 
+	 * @param field Json field.
+	 * @return JsonGenerator predicate for field.
+	 */
+	public Predicate<JsonGenerator> getJsonGenerator(String field);
+
+	/**
+	 * Get the JsonParser for a field.
+	 * 
+	 * @param field Json field.
+	 * @return JsonParser predicate for field.
+	 */
+	public Predicate<JsonParser> getJsonParser(String field);
 
 	/**
 	 * Get the record in Json string format.

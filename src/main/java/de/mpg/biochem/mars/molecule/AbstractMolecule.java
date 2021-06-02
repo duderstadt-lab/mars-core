@@ -130,7 +130,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 		setTable(table);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void createIOMaps() {
 		super.createIOMaps();
@@ -314,6 +313,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param image Integer value for the image index.
 	 */
+	@Override
 	public void setImage(int image) {
 		if (image > -1) {
 			this.image = image;
@@ -331,6 +331,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @return The image integer or -1 if not set.
 	 */
+	@Override
 	public int getImage() {
 		return image;
 	}
@@ -341,6 +342,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param channel Integer value for the channel.
 	 */
+	@Override
 	public void setChannel(int channel) {
 		if (channel > -1) {
 			this.channel = channel;
@@ -358,6 +360,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @return The channel integer or -1 if not set.
 	 */
+	@Override
 	public int getChannel() {
 		return channel;
 	}
@@ -369,6 +372,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param parameter The string parameter name.
 	 * @param value The double value to set for the parameter name.
 	 */
+	@Override
 	public void setParameter(String parameter, double value) {
 		super.setParameter(parameter, value);
 		if (parent != null)
@@ -381,6 +385,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param parameter The string parameter name.
 	 * @param value The string value to set for the parameter name.
 	 */
+	@Override
 	public void setParameter(String parameter, String value) {
 		super.setParameter(parameter, value);
 		if (parent != null)
@@ -393,6 +398,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param parameter The string parameter name.
 	 * @param value The boolean value to set for the parameter name.
 	 */
+	@Override
 	public void setParameter(String parameter, boolean value) {
 		super.setParameter(parameter, value);
 		if (parent != null)
@@ -405,6 +411,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param tag The string tag to be added.
 	 */
+	@Override
 	public void addTag(String tag) {
 		super.addTag(tag);
 		if (parent != null)
@@ -419,6 +426,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param regionOfInterest The region to add to the record.
 	 */
+	@Override
 	public void putRegion(MarsRegion regionOfInterest) {
 		super.putRegion(regionOfInterest);
 		if (parent != null)
@@ -433,6 +441,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param positionOfInterest The position to add to the record.
 	 */
+	@Override
 	public void putPosition(MarsPosition positionOfInterest) {
 		super.putPosition(positionOfInterest);
 		if (parent != null)
@@ -444,6 +453,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @return Table for this record.
 	 */
+	@Override
 	public MarsTable getTable() {
 		return table;
 	}
@@ -454,6 +464,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param table The {@link MarsTable} to add or update in the record.
 	 */
+	@Override
 	public void setTable(MarsTable table) {
 		this.table = table;
 	}
@@ -465,6 +476,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * 
 	 * @param metadataUID The new MarsMetadata UID to set.
 	 */
+	@Override
 	public void setMetadataUID(String metadataUID) {
 		this.metadataUID = metadataUID;
 	}
@@ -477,6 +489,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @return Return UID string of the metadata record associated with this
 	 *         molecule.
 	 */
+	@Override
 	public String getMetadataUID() {
 		return metadataUID;
 	}
@@ -492,6 +505,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param segmentsTable The {@link MarsTable} to add that contains the
 	 *          segments.
 	 */
+	@Override
 	public void putSegmentsTable(String xColumn, String yColumn,
 		MarsTable segmentsTable)
 	{
@@ -514,6 +528,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param segmentsTable The {@link MarsTable} to add that contains the
 	 *          segments.
 	 */
+	@Override
 	public void putSegmentsTable(String xColumn, String yColumn, String region,
 		MarsTable segmentsTable)
 	{
@@ -532,6 +547,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param yColumn The name of the y column used for analysis.
 	 * @return The segments table.
 	 */
+	@Override
 	public MarsTable getSegmentsTable(String xColumn, String yColumn) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(xColumn);
@@ -549,6 +565,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param region The name of the region used for analysis.
 	 * @return The segments table generated using the columns specified.
 	 */
+	@Override
 	public MarsTable getSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
@@ -567,6 +584,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param yColumn The name of the y column used for analysis.
 	 * @return Returns true if the table exists and false if not.
 	 */
+	@Override
 	public boolean hasSegmentsTable(String xColumn, String yColumn) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(xColumn);
@@ -584,6 +602,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param region The name of the region used for analysis.
 	 * @return Returns true if the table exists and false if not.
 	 */
+	@Override
 	public boolean hasSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
@@ -602,6 +621,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param tableColumnNames The list of x column, y column and region names.
 	 * @return The MarsTable generated using the columns specified.
 	 */
+	@Override
 	public MarsTable getSegmentsTable(ArrayList<String> tableColumnNames) {
 		if (tableColumnNames.size() < 3) tableColumnNames.add("");
 		return segmentTables.get(tableColumnNames);
@@ -614,6 +634,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param tableColumnNames List of the x column, y column, and region names of
 	 *          the segment table to remove.
 	 */
+	@Override
 	public void removeSegmentsTable(ArrayList<String> tableColumnNames) {
 		segmentTables.remove(tableColumnNames);
 	}
@@ -625,6 +646,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param xColumn The name of the x column used for analysis.
 	 * @param yColumn The name of the y column used for analysis.
 	 */
+	@Override
 	public void removeSegmentsTable(String xColumn, String yColumn) {
 		ArrayList<String> tableColumnNames = new ArrayList<String>();
 		tableColumnNames.add(xColumn);
@@ -641,6 +663,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @param yColumn The name of the y column used for analysis.
 	 * @param region The name of the region used for analysis.
 	 */
+	@Override
 	public void removeSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
@@ -657,6 +680,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * @return The set of ArrayLists holding the x and y column and region names
 	 *         at index positions 0, 1 and 2, respectively.
 	 */
+	@Override
 	public Set<ArrayList<String>> getSegmentsTableNames() {
 		return segmentTables.keySet();
 	}

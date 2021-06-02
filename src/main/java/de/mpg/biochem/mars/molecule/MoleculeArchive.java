@@ -31,9 +31,8 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -81,6 +80,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong saving the indexes.
 	 */
 	void rebuildIndexes() throws IOException;
+	
+	/**
+	 * Rebuild all indexes by inspecting the contents of store directories. Then
+	 * save the new indexes to the indexes.json file in the store. Use the number
+	 * of threads specified.
+	 * 
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong saving the indexes.
+	 */
+	void rebuildIndexes(final int nThreads) throws IOException;
 
 	/**
 	 * Saves the MoleculeAchive to the file from which it was opened.
@@ -117,6 +126,17 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	void saveAsVirtualStore(File virtualDirectory) throws IOException;
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Rebuilds
+	 * indexes in the process if the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	void saveAsVirtualStore(File virtualDirectory, final int nThreads) throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
@@ -127,6 +147,17 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	void saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
+	
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format with .json file extension. Rebuilds indexes in the process if
+	 * the archive was loaded from a virtual store.
+	 * 
+	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads) throws IOException;
 
 	/**
 	 * Adds a molecule to the archive. If a molecule with the same UID is already
@@ -184,7 +215,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return The list of all metadata UIDs.
 	 */
-	ArrayList<String> getMetadataUIDs();
+	List<String> getMetadataUIDs();
 
 	/**
 	 * Number of molecule records in the MoleculeArchive.
@@ -257,7 +288,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return The list with all Molecule UIDs.
 	 */
-	ArrayList<String> getMoleculeUIDs();
+	List<String> getMoleculeUIDs();
 
 	/**
 	 * Comma separated list of tags for the molecule with the given UID.
@@ -273,7 +304,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param UID The UID of the molecule to retrieve the tag set for.
 	 * @return A set containing all tags for the given molecule.
 	 */
-	LinkedHashSet<String> getTagSet(String UID);
+	Set<String> getTagSet(String UID);
 
 	/**
 	 * Channel for the molecule with the given UID.
@@ -305,7 +336,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param UID The UID of the metadata record to retrieve the tag list for.
 	 * @return The set of tags for the given metadata record.
 	 */
-	LinkedHashSet<String> getMetadataTagSet(String UID);
+	Set<String> getMetadataTagSet(String UID);
 
 	/**
 	 * Utility function to generate batches of molecules data in an optimal format
@@ -372,7 +403,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param UID The UID of the molecule to retrieve the tags of.
 	 * @return Returns the set of for the molecule with UID.
 	 */
-	public LinkedHashSet<String> moleculeTags(String UID);
+	Set<String> moleculeTags(String UID);
 
 	/**
 	 * Check if a MARSImageMetadata record has a tag. This offers optimal
@@ -440,7 +471,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return Molecule stream.
 	 */
-	public Stream<M> molecules();
+	Stream<M> molecules();
 
 	/**
 	 * Convenience method to retrieve a metadata stream. Can be used to iterate
@@ -448,7 +479,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return Metadata stream.
 	 */
-	public Stream<I> metadata();
+	Stream<I> metadata();
 
 	/**
 	 * Convenience method to retrieve a multithreated Molecule stream. Can be used
@@ -456,7 +487,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return Molecule stream.
 	 */
-	public Stream<I> parallelMetadata();
+	Stream<I> parallelMetadata();
 
 	/**
 	 * Convenience method to retrieve a multithreated Molecule stream. Can be used
@@ -471,7 +502,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param action Action to perform on all molecules.
 	 */
-	public void forEach(Consumer<? super Molecule> action);
+	void forEach(Consumer<? super Molecule> action);
 
 	/**
 	 * Get the UID of the metadata for a molecule record. If working from a
@@ -589,7 +620,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return An empty MoleculeArchiveIndex.
 	 */
-	public X createIndex();
+	X createIndex();
 
 	/**
 	 * Create empty MoleculeArchiveIndex using the JsonParser stream given.
@@ -598,7 +629,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return MoleculeArchiveIndex created using the JsonParser stream.
 	 */
-	public X createIndex(JsonParser jParser) throws IOException;
+	X createIndex(JsonParser jParser) throws IOException;
 
 	/**
 	 * Get the {@link MoleculeArchiveProperties} which contain general information
@@ -615,7 +646,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return Empty MoleculeArchiveProperties.
 	 */
-	public P createProperties();
+	P createProperties();
 
 	/**
 	 * Create MoleculeArchiveProperties record using JsonParser stream.
@@ -624,7 +655,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return MoleculeArchiveProperties created.
 	 */
-	public P createProperties(JsonParser jParser) throws IOException;
+	P createProperties(JsonParser jParser) throws IOException;
 
 	/**
 	 * Create MarsMetadata record using JsonParser stream.
@@ -633,7 +664,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return MarsMetadata record created using JsonParser stream.
 	 */
-	public I createMetadata(JsonParser jParser) throws IOException;
+	I createMetadata(JsonParser jParser) throws IOException;
 
 	/**
 	 * Create empty MarsMetadata record with the metaUID specified.
@@ -642,14 +673,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 *          record.
 	 * @return MarsMetadata record.
 	 */
-	public I createMetadata(String metaUID);
+	I createMetadata(String metaUID);
 
 	/**
 	 * Create empty Molecule record.
 	 * 
 	 * @return Empty molecule record.
 	 */
-	public M createMolecule();
+	M createMolecule();
 
 	/**
 	 * Create Molecule record using the JsonParser stream given.
@@ -658,7 +689,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException Thrown if unable to read Json from JsonParser stream.
 	 * @return Molecule created using the JsonParser stream.
 	 */
-	public M createMolecule(JsonParser jParser) throws IOException;
+	M createMolecule(JsonParser jParser) throws IOException;
 
 	/**
 	 * Create empty Molecule record with the UID specified.
@@ -666,7 +697,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param UID The UID to use during creation.
 	 * @return Empty molecule with the UID given.
 	 */
-	public M createMolecule(String UID);
+	M createMolecule(String UID);
 
 	/**
 	 * Create Molecule record using the UID and {@link MarsTable} specified.
@@ -675,5 +706,5 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param table The MarsTable set as the DataTable during creation.
 	 * @return Molecule created.
 	 */
-	public M createMolecule(String UID, MarsTable table);
+	M createMolecule(String UID, MarsTable table);
 }

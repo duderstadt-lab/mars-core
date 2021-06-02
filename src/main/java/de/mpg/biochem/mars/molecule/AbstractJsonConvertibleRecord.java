@@ -89,6 +89,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param jGenerator A JsonGenerator for streaming a record to a file.
 	 * @throws IOException if there is a problem reading from the file.
 	 */
+	@Override
 	public void toJSON(JsonGenerator jGenerator) throws IOException {
 		if (!IOMapsInitialized) {
 			createIOMaps();
@@ -110,6 +111,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param jParser A JsonParser for loading the record from a file.
 	 * @throws IOException if there is a problem reading from the file.
 	 */
+	@Override
 	public void fromJSON(JsonParser jParser) throws IOException {
 		if (!IOMapsInitialized) {
 			createIOMaps();
@@ -161,10 +163,12 @@ public abstract class AbstractJsonConvertibleRecord implements
 		}
 	}
 	
+	@Override
 	public void setShowWarnings(boolean showWarnings) {
 		this.showWarnings = showWarnings;
 	}
 
+	@Override
 	public void setJsonField(String field,
 		ThrowingConsumer<JsonGenerator, IOException> output,
 		ThrowingConsumer<JsonParser, IOException> input)
@@ -182,6 +186,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param field Json field.
 	 * @return JsonGenerator predicate for field.
 	 */
+	@Override
 	public Predicate<JsonGenerator> getJsonGenerator(String field) {
 		return outputMap.get(field);
 	}
@@ -192,6 +197,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * @param field Json field.
 	 * @return JsonParser predicate for field.
 	 */
+	@Override
 	public Predicate<JsonParser> getJsonParser(String field) {
 		return inputMap.get(field);
 	}
@@ -201,6 +207,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * 
 	 * @return Json string representation of the record.
 	 */
+	@Override
 	public String dumpJSON() {
 		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
 	}
