@@ -363,9 +363,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	public void addTag(String tag) {
 		tags.add(tag);
-		if (parent != null) {
-			parent.properties().addTag(tag);
-		}
 	}
 
 	/**
@@ -424,19 +421,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 
 	/**
 	 * Add or update a parameter value. Parameters are used to store single values
-	 * associated with the record. For example, this can be the start and stop
-	 * times for a region of interest. Or calculated features such as a slope.
-	 * Storing parameters with the record data allows for easier and more
-	 * efficient processing and data extraction.
+	 * associated with the record. 
 	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The double value to set for the parameter name.
 	 */
 	public void setParameter(String parameter, double value) {
 		parameters.put(parameter, value);
-		if (parent != null) {
-			parent.properties().addParameter(parameter);
-		}
 	}
 
 	/**
@@ -447,9 +438,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	public void setParameter(String parameter, String value) {
 		parameters.put(parameter, value);
-		if (parent != null) {
-			parent.properties().addParameter(parameter);
-		}
 	}
 
 	/**
@@ -460,9 +448,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	public void setParameter(String parameter, boolean value) {
 		parameters.put(parameter, value);
-		if (parent != null) {
-			parent.properties().addParameter(parameter);
-		}
 	}
 
 	/**
@@ -600,9 +585,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	public void putRegion(MarsRegion regionOfInterest) {
 		regionsOfInterest.put(regionOfInterest.getName(), regionOfInterest);
-		if (parent != null) {
-			parent.properties().addRegion(regionOfInterest.getName());
-		}
 	}
 
 	/**
@@ -664,9 +646,6 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	public void putPosition(MarsPosition positionOfInterest) {
 		positionsOfInterest.put(positionOfInterest.getName(), positionOfInterest);
-		if (parent != null) {
-			parent.properties().addPosition(positionOfInterest.getName());
-		}
 	}
 
 	/**

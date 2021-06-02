@@ -40,6 +40,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 /**
  * Abstract superclass for molecule records. Molecule records act as the storage
@@ -358,6 +360,83 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 */
 	public int getChannel() {
 		return channel;
+	}
+	
+	/**
+	 * Add or update a parameter value. Parameters are used to store single values
+	 * associated with the record. 
+	 * 
+	 * @param parameter The string parameter name.
+	 * @param value The double value to set for the parameter name.
+	 */
+	public void setParameter(String parameter, double value) {
+		super.setParameter(parameter, value);
+		if (parent != null)
+			parent.properties().addParameter(parameter);
+	}
+
+	/**
+	 * Add or update a parameter value.
+	 * 
+	 * @param parameter The string parameter name.
+	 * @param value The string value to set for the parameter name.
+	 */
+	public void setParameter(String parameter, String value) {
+		super.setParameter(parameter, value);
+		if (parent != null)
+			parent.properties().addParameter(parameter);
+	}
+
+	/**
+	 * Add or update a parameter value.
+	 * 
+	 * @param parameter The string parameter name.
+	 * @param value The boolean value to set for the parameter name.
+	 */
+	public void setParameter(String parameter, boolean value) {
+		super.setParameter(parameter, value);
+		if (parent != null)
+			parent.properties().addParameter(parameter);
+	}
+	
+	/**
+	 * Add a string tag to the record. Tags are used for marking individual record
+	 * to sorting and processing with subsets of molecules.
+	 * 
+	 * @param tag The string tag to be added.
+	 */
+	public void addTag(String tag) {
+		super.addTag(tag);
+		if (parent != null)
+			parent.properties().addTag(tag);
+	}
+	
+	/**
+	 * Add or update a {@link MarsRegion}. This can be a region of interest for
+	 * further analysis steps: slope calculations or KCP calculations
+	 * {@link KCPCommand}. Region names are unique. If a region that has this name
+	 * already exists in the record it will be overwritten by this method.
+	 * 
+	 * @param regionOfInterest The region to add to the record.
+	 */
+	public void putRegion(MarsRegion regionOfInterest) {
+		super.putRegion(regionOfInterest);
+		if (parent != null)
+			parent.properties().addRegion(regionOfInterest.getName());
+	}
+	
+	/**
+	 * Add or update a {@link MarsPosition}. This can be a position of interest
+	 * for further analysis steps. Position names are unique. If a position with
+	 * has this name already exists in the record it will be overwritten by this
+	 * method.
+	 * 
+	 * @param positionOfInterest The position to add to the record.
+	 */
+	public void putPosition(MarsPosition positionOfInterest) {
+		super.putPosition(positionOfInterest);
+		if (parent != null)
+			parent.properties().addPosition(positionOfInterest.getName());
 	}
 
 	/**
