@@ -748,6 +748,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		return addToRoiManager;
 	}
 	
+	/**
+	 * This method specifies the type of Roi to add to the
+	 * RoiManager. The currently available types are "point" 
+	 * or "circle" with non-available string defaulting to
+	 * points.
+	 * 
+	 * @param roiType String specifying the roi type.
+	 */
 	public void setRoiType(String roiType) {
 		this.roiType = roiType;
 	}
