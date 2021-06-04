@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -76,6 +77,7 @@ import org.scijava.table.*;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 /**
  * Mars implementation of a scijava results table. All numbers are stored as
@@ -1823,5 +1825,30 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		String getStringValue(int colIndex) {
 			return stringValues.get(table.getColumnHeader(colIndex));
 		}
+	}
+
+	@Override
+	public void setShowWarnings(boolean showWarnings) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setJsonField(String field, ThrowingConsumer<JsonGenerator, IOException> output,
+			ThrowingConsumer<JsonParser, IOException> input) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Predicate<JsonGenerator> getJsonGenerator(String field) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Predicate<JsonParser> getJsonParser(String field) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

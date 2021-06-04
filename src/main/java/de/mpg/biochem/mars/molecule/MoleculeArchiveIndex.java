@@ -63,9 +63,9 @@ public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata
 
 	Set<String> getMetadataUIDSet();
 
-	Map<String, LinkedHashSet<String>> getMetadataUIDtoTagListMap();
+	Map<String, Set<String>> getMetadataUIDtoTagListMap();
 
-	Map<String, LinkedHashSet<String>> getMoleculeUIDtoTagListMap();
+	Map<String, Set<String>> getMoleculeUIDtoTagListMap();
 
 	Map<String, Integer> getMoleculeUIDtoImageMap();
 

@@ -33,6 +33,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -175,7 +176,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		archive.logln(log);
 
 		// Build Collection of UIDs based on tags if they exist...
-		ArrayList<String> UIDs;
+		List<String> UIDs;
 		if (include.equals("Tagged with")) {
 			// First we parse tags to make a list...
 			String[] tagList = tags.split(",");
@@ -183,7 +184,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 				tagList[i] = tagList[i].trim();
 			}
 
-			UIDs = (ArrayList<String>) archive.getMoleculeUIDs().stream().filter(
+			UIDs = archive.getMoleculeUIDs().stream().filter(
 				UID -> {
 					boolean hasTags = true;
 					for (int i = 0; i < tagList.length; i++) {

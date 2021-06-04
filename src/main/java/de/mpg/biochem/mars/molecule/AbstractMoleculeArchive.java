@@ -1115,7 +1115,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public String getTagList(String UID) {
-		LinkedHashSet<String> tags;
+		Set<String> tags;
 		if (UID == null) return null;
 		else if (virtual) {
 			tags = index().getMoleculeUIDtoTagListMap().get(UID);
@@ -1186,7 +1186,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public String getMetadataTagList(String UID) {
-		LinkedHashSet<String> tags;
+		Set<String> tags;
 		if (UID == null) return null;
 		else if (virtual) {
 			tags = index().getMetadataUIDtoTagListMap().get(UID);

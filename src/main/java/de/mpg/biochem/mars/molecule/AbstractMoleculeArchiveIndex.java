@@ -61,12 +61,12 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	/*
 	 * Map from molecule UID to tag set.
 	 */
-	private ConcurrentMap<String, LinkedHashSet<String>> moleculeUIDtoTagList;
+	private ConcurrentMap<String, Set<String>> moleculeUIDtoTagList;
 
 	/*
 	 * Map from metadata UID to tag set.
 	 */
-	private ConcurrentMap<String, LinkedHashSet<String>> metadataUIDtoTagList;
+	private ConcurrentMap<String, Set<String>> metadataUIDtoTagList;
 
 	/*
 	 * Map from molecule UID to channel index.
@@ -431,12 +431,12 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	}
 
 	@Override
-	public Map<String, LinkedHashSet<String>> getMetadataUIDtoTagListMap() {
+	public Map<String, Set<String>> getMetadataUIDtoTagListMap() {
 		return metadataUIDtoTagList;
 	}
 
 	@Override
-	public Map<String, LinkedHashSet<String>> getMoleculeUIDtoTagListMap() {
+	public Map<String, Set<String>> getMoleculeUIDtoTagListMap() {
 		return moleculeUIDtoTagList;
 	}
 
