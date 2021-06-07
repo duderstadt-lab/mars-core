@@ -153,9 +153,6 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 
 		archive.getWindow().updateLockMessage("Calculating Region Differences...");
 
-		// Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless()) archive.lock();
-
 		archive.logln(log);
 
 		if (regionSource.equals("Molecules")) {
@@ -229,9 +226,6 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln("\n" + LogBuilder.endBlock(true));
 		archive.logln("   ");
-
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {

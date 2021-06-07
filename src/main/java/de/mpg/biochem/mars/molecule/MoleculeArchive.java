@@ -199,7 +199,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index The index of the metadata record to retrieve.
 	 * @return A metadata record.
 	 */
-	I getMetadata(int index);
+	//I getMetadata(int index);
 
 	/**
 	 * Retrieves a metadata record.
@@ -236,7 +236,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return The String absolute path of the open virtual store.
 	 */
-	String getStoreLocation();
+	//String getStoreLocation();
 
 	/**
 	 * Global comments.
@@ -266,7 +266,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index The integer index position of the molecule record.
 	 * @return A Molecule record.
 	 */
-	M get(int index);
+	//M get(int index);
 
 	/**
 	 * Removes the molecule record with the given UID.
@@ -463,7 +463,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param UID The UID to find the index location for.
 	 * @return The Integer location in the index of the UID provided.
 	 */
-	int getIndex(String UID);
+	//int getIndex(String UID);
 
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
@@ -522,7 +522,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index Retrieve the UID at this index location.
 	 * @return The UID at the index location provided.
 	 */
-	String getUIDAtIndex(int index);
+	//String getUIDAtIndex(int index);
 
 	/**
 	 * Get the metadata UID at the provided index location.
@@ -530,7 +530,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index Retrieve the metadata UID at this index location.
 	 * @return The metadata UID at the index location provided.
 	 */
-	String getMetadataUIDAtIndex(int index);
+	//String getMetadataUIDAtIndex(int index);
 
 	/**
 	 * Returns the File from which the archive was opened.
@@ -578,24 +578,24 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	/**
 	 * Lock the archive window during processing, if one exists.
 	 */
-	void lock();
+	//void lock();
 
 	/**
 	 * Unlock the archive window after processing is done, if one exists.
 	 */
-	void unlock();
+	//void unlock();
 
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
 	 * records or after recovery to ensure the molecule records preserve an order.
 	 */
-	void naturalOrderSortMoleculeIndex();
+	//void naturalOrderSortMoleculeIndex();
 
 	/**
 	 * Natural Order Sort all Metadata UIDs in the index. Run after adding new
 	 * records or after recovery to ensure the metadata records preserve an order.
 	 */
-	void naturalOrderSortMetadataIndex();
+	//void naturalOrderSortMetadataIndex();
 
 	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing

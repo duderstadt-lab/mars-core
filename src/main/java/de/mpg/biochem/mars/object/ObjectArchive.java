@@ -63,7 +63,7 @@ public class ObjectArchive extends
 	}
 	
 	public Stream<MartianObject> objects() {
-		return this.moleculeList.stream().map(UID -> get(UID));
+		return this.moleculeMap.keySet().stream().map(UID -> get(UID));
 	}
 
 	public ObjectArchiveProperties createProperties() {

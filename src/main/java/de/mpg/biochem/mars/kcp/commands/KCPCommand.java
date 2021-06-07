@@ -282,9 +282,6 @@ public class KCPCommand extends DynamicCommand implements Command,
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
-
 		statusService.showStatus(1, 1, "Change point search for archive " + archive
 			.getName() + " - Done!");
 	}

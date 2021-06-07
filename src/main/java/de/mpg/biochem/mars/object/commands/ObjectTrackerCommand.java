@@ -455,8 +455,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		tracker.track(objectStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
 
-		archive.naturalOrderSortMoleculeIndex();
-
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", ObjectArchive.class).setLabel(
 			archive.getName());

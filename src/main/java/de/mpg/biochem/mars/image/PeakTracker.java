@@ -139,7 +139,7 @@ public class PeakTracker {
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
 			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints, final int nThreads)
 	{
-		metaDataUID = archive.getMetadata(0).getUID();
+		metaDataUID = archive.getMetadataUIDs().get(0);
 
 		KDTreeStack = new ConcurrentHashMap<>();
 		possibleLinks = new ConcurrentHashMap<>();
@@ -359,7 +359,7 @@ public class PeakTracker {
 		Molecule mol = archive.createMolecule(startingPeak.getTrackUID());
 		mol.setMetadataUID(metaDataUID);
 		mol.setChannel(channel);
-		mol.setImage(archive.getMetadata(0).images().findFirst().get()
+		mol.setImage(archive.metadata().findFirst().get().images().findFirst().get()
 			.getImageID());
 
 		MarsTable table = new MarsTable();
@@ -370,7 +370,7 @@ public class PeakTracker {
 				
 		// fail-safe in case there are more peak links than sizeT
 		int row = 0;
-		int sizeT = archive.getMetadata(0).getImage(0).getSizeT();
+		int sizeT = archive.metadata().findFirst().get().getImage(0).getSizeT();
 		do {
 			table.appendRow();
 			table.setValue("T", row, (double)peak.getT());

@@ -373,8 +373,6 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 				"Adding molecules to archive..."), tasks ,
 			nThreads);
 
-		archive.naturalOrderSortMoleculeIndex();
-
 		// FINISH UP
 		statusService.clearStatus();
 		logService.info("Finished in " + DoubleRounder.round((System

@@ -78,7 +78,6 @@ public class MoleculeArchiveTests {
 	public static void setup() {
 		context = createContext();
 		archive = generateSingleMoleculeArchive();
-		archive.naturalOrderSortMoleculeIndex();
 	}
 
 	@AfterAll
@@ -174,11 +173,10 @@ public class MoleculeArchiveTests {
 		isEqual(archive1.properties(), archive2.properties());
 
 		for (int meta = 0; meta < archive1.getNumberOfMetadatas(); meta++)
-			isEqual(archive1.getMetadata(meta), archive2.getMetadata(meta));
+			isEqual(archive1.getMetadata(archive1.getMetadataUIDs().get(meta)), archive2.getMetadata(archive2.getMetadataUIDs().get(meta)));
 
 		for (int mol = 0; mol < archive1.getNumberOfMolecules(); mol++)
-			isEqual(archive1.get(mol), archive2.get(mol));
-
+			isEqual(archive1.get(archive1.getMoleculeUIDs().get(0)), archive2.get(archive2.getMoleculeUIDs().get(0)));
 	}
 
 	void isEqual(Molecule molecule1, Molecule molecule2) {

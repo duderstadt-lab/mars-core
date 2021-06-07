@@ -147,9 +147,6 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		// Output first part of log message...
 		logService.info(log);
 
-		// Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless()) archive.lock();
-
 		archive.logln(log);
 
 		final String paramName = yColumn + "_sigma";
@@ -201,9 +198,6 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 		archive.logln("   ");
-
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {

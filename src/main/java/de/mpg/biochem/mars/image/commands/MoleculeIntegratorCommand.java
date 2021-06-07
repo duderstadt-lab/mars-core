@@ -359,8 +359,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			.showStatus(progressInteger.get(), UIDs.size(),
 				"Adding molecules to archive..."), tasks ,
 			nThreads);
-
-		archive.naturalOrderSortMoleculeIndex();
 		
 		if (image != null) image.setRoi(roi);
 

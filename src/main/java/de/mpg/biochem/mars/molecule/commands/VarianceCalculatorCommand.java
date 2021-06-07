@@ -123,9 +123,6 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 		// Output first part of log message...
 		logService.info(log);
 
-		// Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless()) archive.lock();
-
 		archive.logln(log);
 
 		// Loop through each molecule and add Variance parameter for each
@@ -143,9 +140,6 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 		archive.logln("   ");
-
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {

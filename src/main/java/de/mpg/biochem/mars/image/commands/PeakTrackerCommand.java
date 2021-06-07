@@ -439,7 +439,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
 
-		archive.naturalOrderSortMoleculeIndex();
+		//archive.naturalOrderSortMoleculeIndex();
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(

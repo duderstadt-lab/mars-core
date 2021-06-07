@@ -192,13 +192,13 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 			
 		}
 
-		MarsOMEMetadata metadata1 = archive1.getMetadata(0);
+		MarsOMEMetadata metadata1 = archive1.metadata().findFirst().get();
 		if (archive2 != null) {
-			metadata1.merge(archive2.getMetadata(0));
+			metadata1.merge(archive2.metadata().findFirst().get());
 		}
 		
 		if (archive3 != null) {
-			metadata1.merge(archive3.getMetadata(0));
+			metadata1.merge(archive3.metadata().findFirst().get());
 		}
 
 		metadata1.setParameter("DnaMoleculeCount", rois.length);

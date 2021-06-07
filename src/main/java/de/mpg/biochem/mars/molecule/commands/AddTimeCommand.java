@@ -96,9 +96,6 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		// Output first part of log message...
 		logService.info(log);
 
-		// Lock the window so it can't be changed while processing
-		if (!uiService.isHeadless()) archive.lock();
-
 		archive.logln(log);
 
 		// Loop through each molecule and add a Time (s) column using the metadata
@@ -146,9 +143,6 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 		archive.logln(LogBuilder.endBlock(true));
 		archive.logln("  ");
-
-		// Unlock the window so it can be changed
-		if (!uiService.isHeadless()) archive.unlock();
 	}
 
 	public static void addTime(SingleMoleculeArchive archive) {
