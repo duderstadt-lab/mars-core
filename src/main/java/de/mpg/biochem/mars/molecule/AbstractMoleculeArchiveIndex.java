@@ -32,10 +32,12 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -51,12 +53,12 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	/*
 	 * The set of molecule UIDs.
 	 */
-	private Set<String> moleculeUIDs;
+	private ConcurrentSkipListSet<String> moleculeUIDs;
 
 	/*
 	 * The set of metadata UIDs.
 	 */
-	private Set<String> metadataUIDs;
+	private ConcurrentSkipListSet<String> metadataUIDs;
 
 	/*
 	 * Map from molecule UID to tag set.
@@ -101,8 +103,8 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		metadataUIDtoTagList = new ConcurrentHashMap<>();
 		moleculeUIDtoMetadataUID = new ConcurrentHashMap<>();
 
-		moleculeUIDs = ConcurrentHashMap.newKeySet();
-		metadataUIDs = ConcurrentHashMap.newKeySet();
+		moleculeUIDs = new ConcurrentSkipListSet<String>();//ConcurrentHashMap.newKeySet();
+		metadataUIDs = new ConcurrentSkipListSet<String>();//ConcurrentHashMap.newKeySet();
 	}
 
 	@Override
@@ -421,12 +423,12 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	}
 
 	@Override
-	public Set<String> getMoleculeUIDSet() {
+	public ConcurrentSkipListSet<String> getMoleculeUIDSet() {
 		return moleculeUIDs;
 	}
 
 	@Override
-	public Set<String> getMetadataUIDSet() {
+	public ConcurrentSkipListSet<String> getMetadataUIDSet() {
 		return metadataUIDs;
 	}
 

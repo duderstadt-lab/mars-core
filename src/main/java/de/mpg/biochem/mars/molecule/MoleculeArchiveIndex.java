@@ -32,8 +32,10 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.fasterxml.jackson.core.JsonFactory;
 
@@ -59,9 +61,9 @@ public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata
 
 	boolean containsMetadataUID(String metadataUID);
 
-	Set<String> getMoleculeUIDSet();
+	ConcurrentSkipListSet<String> getMoleculeUIDSet();
 
-	Set<String> getMetadataUIDSet();
+	ConcurrentSkipListSet<String> getMetadataUIDSet();
 
 	Map<String, Set<String>> getMetadataUIDtoTagListMap();
 

@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.locks.ReentrantLock;
@@ -65,6 +66,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.*;
+import com.google.common.collect.ImmutableList;
 
 import org.scijava.table.*;
 
@@ -183,31 +185,31 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized
 	 * with metadataList always.
 	 */
-	protected ConcurrentMap<String, I> metadataMap;
+	protected ConcurrentSkipListMap<String, I> metadataMap;
 
 	/**
 	 * List of metadata UIDs. Items should match keys in metadataMap always. All
 	 * write operations must be placed in synchronized blocks.
 	 * synchronized(metadataList) { ... }
 	 */
-	protected ArrayList<String> metadataList;
+	//protected ArrayList<String> metadataList;
 
 	/**
 	 * Map from molecule UID to Molecule object. Keys should be synchronized with
 	 * moleculeList always. Left null in virtual memory mode.
 	 */
-	protected ConcurrentMap<String, M> moleculeMap;
+	protected ConcurrentSkipListMap<String, M> moleculeMap;
 
 	/**
 	 * List of molecule UIDs. Items should match keys in moleculeMap always. All
 	 * write operations must be placed in synchronized blocks.
 	 * synchronized(moleculeList) { ... }
 	 */
-	protected ArrayList<String> moleculeList;
+	//protected ArrayList<String> moleculeList;
 
 	/**
 	 * Map from molecule UID to ReentrantLock to ensure thread blocking when
-	 * accessing molecule files.
+	 * accessing molecule files in virtual mode.
 	 */
 	protected ConcurrentMap<String, ReentrantLock> recordLocks;
 
@@ -310,15 +312,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	private void initializeVariables() {
-		moleculeList = new ArrayList<String>();
-		metadataList = new ArrayList<String>();
-		metadataMap = new ConcurrentHashMap<>();
+		//moleculeList = new ArrayList<String>();
+		//metadataList = new ArrayList<String>();
+		metadataMap = new ConcurrentSkipListMap<>();
+		moleculeMap = new ConcurrentSkipListMap<>();
 
 		archiveProperties = createProperties();
 		archiveProperties.setParent(this);
 
 		recordLocks = new ConcurrentHashMap<>();
-		moleculeMap = new ConcurrentHashMap<>();
 	}
 
 	protected JsonParser detectEncoding(InputStream inputStream)
@@ -519,27 +521,27 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				forkJoinPool.shutdown();
 			}
 
-			moleculeList = (ArrayList<String>) newIndex.getMoleculeUIDSet().stream()
-				.sorted().collect(toList());
-			metadataList = (ArrayList<String>) newIndex.getMetadataUIDSet().stream()
-				.sorted().collect(toList());
+			//moleculeList = (ArrayList<String>) newIndex.getMoleculeUIDs().stream()
+			//	.sorted().collect(toList());
+			//metadataList = (ArrayList<String>) newIndex.getMetadataUIDs().stream()
+			//	.sorted().collect(toList());
 
 			this.archiveIndex = newIndex;
 
-			properties().setNumberOfMolecules(moleculeList.size());
-			properties().setNumberOfMetadatas(metadataList.size());
+			properties().setNumberOfMolecules(newIndex.getMoleculeUIDSet().size());
+			properties().setNumberOfMetadatas(newIndex.getMetadataUIDSet().size());
 
 			index().save(file, jfactory, storeFileExtension);
 			properties().save(file, jfactory, storeFileExtension);
 		}
 		else {
 			try {
-				forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> {
+				forkJoinPool.submit(() -> moleculeMap.keySet().parallelStream().forEach(UID -> {
 					M molecule = get(UID);
 					properties().addMoleculeProperties(molecule);
 				})).get();
 
-				forkJoinPool.submit(() -> metadataList.parallelStream().forEach(
+				forkJoinPool.submit(() -> metadataMap.keySet().parallelStream().forEach(
 					metaUID -> {
 						I metadata = getMetadata(metaUID);
 						properties().addMetadataProperties(metadata);
@@ -553,8 +555,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				forkJoinPool.shutdown();
 			}
 
-			properties().setNumberOfMolecules(moleculeList.size());
-			properties().setNumberOfMetadatas(metadataList.size());
+			properties().setNumberOfMolecules(moleculeMap.size());
+			properties().setNumberOfMetadatas(metadataMap.size());
 		}
 	}
 
@@ -627,9 +629,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}, jParser -> archiveProperties.fromJSON(jParser));
 
 		setJsonField("metadata", jGenerator -> {
-			if (metadataList.size() > 0) {
+			if (metadataMap.size() > 0) {
 				jGenerator.writeArrayFieldStart("metadata");
-				Iterator<String> iter = metadataList.iterator();
+				Iterator<String> iter = metadataMap.keySet().iterator();
 				while (iter.hasNext())
 					getMetadata(iter.next()).toJSON(jGenerator);
 				jGenerator.writeEndArray();
@@ -640,9 +642,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		});
 
 		setJsonField("molecules", jGenerator -> {
-			if (moleculeList.size() > 0) {
+			if (moleculeMap.size() > 0) {
 				jGenerator.writeArrayFieldStart("molecules");
-				Iterator<String> iterator = moleculeList.iterator();
+				Iterator<String> iterator = moleculeMap.keySet().iterator();
 				while (iterator.hasNext())
 					get(iterator.next()).toJSON(jGenerator);
 				jGenerator.writeEndArray();
@@ -756,7 +758,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		try {
-			forkJoinPool.submit(() -> metadataList.parallelStream().forEach(
+			forkJoinPool.submit(() -> metadataMap.keySet().parallelStream().forEach(
 				metaUID -> {
 					try {
 						I metadata = getMetadata(metaUID);
@@ -770,7 +772,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					}
 				})).get();
 
-			forkJoinPool.submit(() -> moleculeList.parallelStream().forEach(UID -> {
+			forkJoinPool.submit(() -> moleculeMap.keySet().parallelStream().forEach(UID -> {
 				try {
 					M molecule = get(UID);
 					newIndex.addMolecule(molecule);
@@ -790,8 +792,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			forkJoinPool.shutdown();
 		}
 
-		properties().setNumberOfMolecules(moleculeList.size());
-		properties().setNumberOfMetadatas(metadataList.size());
+		properties().setNumberOfMolecules(moleculeMap.size());
+		properties().setNumberOfMetadatas(metadataMap.size());
 
 		newIndex.save(virtualDirectory, jfactory, fileExtension);
 		properties().save(virtualDirectory, jfactory, fileExtension);
@@ -810,11 +812,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void put(M molecule) {
 		if (virtual) {
 			if (!index().getMoleculeUIDSet().contains(molecule.getUID()))
-				synchronized (moleculeList)
-				{
-					moleculeList.add(molecule.getUID());
-				}
-
 			index().addMolecule(molecule);
 
 			try {
@@ -828,13 +825,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else if (!moleculeMap.containsKey(molecule.getUID())) {
 			molecule.setParent(this);
 			moleculeMap.put(molecule.getUID(), molecule);
-			synchronized (moleculeList) {
-				moleculeList.add(molecule.getUID());
-			}
 		}
 
 		properties().addMoleculeProperties(molecule);
-		properties().setNumberOfMolecules(moleculeList.size());
+		properties().setNumberOfMolecules(moleculeMap.size());
 	}
 
 	/**
@@ -849,11 +843,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		// If virtual we save the metadata to file
 		if (virtual) {
 			if (!index().getMetadataUIDSet().contains(metadata.getUID()))
-				synchronized (metadataList)
-				{
-					metadataList.add(metadata.getUID());
-				}
-
 			index().addMetadata(metadata);
 
 			try {
@@ -869,13 +858,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (!metadataMap.containsKey(metadata.getUID())) {
 			metadata.setParent(this);
 			metadataMap.put(metadata.getUID(), metadata);
-			synchronized (metadataList) {
-				metadataList.add(metadata.getUID());
-			}
 		}
 
 		properties().addMetadataProperties(metadata);
-		properties().setNumberOfMetadatas(metadataList.size());
+		properties().setNumberOfMetadatas(metadataMap.size());
 	}
 
 	/**
@@ -895,11 +881,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		if (metadataMap.containsKey(metaUID)) metadataMap.remove(metaUID);
 
-		synchronized (metadataList) {
-			metadataList.remove(metaUID);
-		}
-
-		properties().setNumberOfMetadatas(metadataList.size());
+		properties().setNumberOfMetadatas(metadataMap.size());
 	}
 
 	/**
@@ -919,10 +901,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param index The index of the MarsMetadata record to retrieve.
 	 * @return A MarsMetadata record.
 	 */
-	@Override
-	public I getMetadata(int index) {
-		return getMetadata(metadataList.get(index));
-	}
+	//@Override
+	//public I getMetadata(int index) {
+	//	return getMetadata(metadataMap.get(index));
+	//}
 
 	/**
 	 * Retrieves a MarsMetadata record.
@@ -989,7 +971,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public final List<String> getMetadataUIDs() {
-		return metadataList;
+		if (virtual)
+			return ImmutableList.copyOf(index().getMetadataUIDSet());
+		else
+			return ImmutableList.copyOf(metadataMap.keySet());
 	}
 
 	/**
@@ -999,7 +984,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public int getNumberOfMolecules() {
-		return moleculeList.size();
+		if (virtual)
+			return index().getMoleculeUIDSet().size();
+		else
+			return moleculeMap.size();
 	}
 
 	/**
@@ -1009,7 +997,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public int getNumberOfMetadatas() {
-		return metadataList.size();
+		if (virtual)
+			return index().getMetadataUIDSet().size();
+		else
+			return metadataMap.size();
 	}
 
 	/**
@@ -1059,10 +1050,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param index The integer index position of the molecule record.
 	 * @return A Molecule record.
 	 */
-	@Override
-	public M get(int index) {
-		return get(moleculeList.get(index));
-	}
+	//@Override
+	//public M get(int index) {
+	//	return get(moleculeList.get(index));
+	//}
 
 	/**
 	 * Removes the molecule record with the given UID.
@@ -1080,10 +1071,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else {
 			moleculeMap.remove(UID);
 		}
-		synchronized (moleculeList) {
-			moleculeList.remove(UID);
-		}
-		properties().setNumberOfMolecules(moleculeList.size());
+		properties().setNumberOfMolecules(moleculeMap.size());
 	}
 
 	/**
@@ -1104,7 +1092,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public final List<String> getMoleculeUIDs() {
-		return moleculeList;
+		if (virtual)
+			return ImmutableList.copyOf(index().getMoleculeUIDSet());
+		else
+			return ImmutableList.copyOf(moleculeMap.keySet());
 	}
 
 	/**
@@ -1617,10 +1608,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param UID The UID to find the index location for.
 	 * @return The Integer location in the index of the UID provided.
 	 */
-	@Override
-	public int getIndex(String UID) {
-		return moleculeList.indexOf(UID);
-	}
+	//@Override
+	//public int getIndex(String UID) {
+	//	return moleculeList.indexOf(UID);
+	//}
 
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
@@ -1630,7 +1621,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<M> molecules() {
-		return this.moleculeList.stream().map(UID -> get(UID));
+		return this.moleculeMap.keySet().stream().map(UID -> get(UID));
 	}
 
 	/**
@@ -1641,7 +1632,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<I> metadata() {
-		return this.metadataList.stream().map(UID -> getMetadata(UID));
+		return this.metadataMap.keySet().stream().map(UID -> getMetadata(UID));
 	}
 
 	/**
@@ -1652,7 +1643,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<I> parallelMetadata() {
-		return this.metadataList.parallelStream().map(UID -> getMetadata(UID));
+		return this.metadataMap.keySet().parallelStream().map(UID -> getMetadata(UID));
 	}
 
 	/**
@@ -1663,7 +1654,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<M> parallelMolecules() {
-		return this.moleculeList.parallelStream().map(UID -> get(UID));
+		return this.moleculeMap.keySet().parallelStream().map(UID -> get(UID));
 	}
 
 	/**
@@ -1673,7 +1664,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public void forEach(Consumer<? super Molecule> action) {
-		this.moleculeList.stream().map(UID -> get(UID)).forEach(action);
+		this.moleculeMap.keySet().stream().map(UID -> get(UID)).forEach(action);
 	}
 
 	/**
@@ -1698,10 +1689,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param index Retrieve the UID at this index location.
 	 * @return The UID at the index location provided.
 	 */
-	@Override
-	public String getUIDAtIndex(int index) {
-		return moleculeList.get(index);
-	}
+	//@Override
+	//public String getUIDAtIndex(int index) {
+	//	return moleculeList.get(index);
+	//}
 
 	/**
 	 * Get the metadata UID at the provided index location.
@@ -1709,10 +1700,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param index Retrieve the metadata UID at this index location.
 	 * @return The metadata UID at the index location provided.
 	 */
-	@Override
-	public String getMetadataUIDAtIndex(int index) {
-		return metadataList.get(index);
-	}
+	//@Override
+	//public String getMetadataUIDAtIndex(int index) {
+	//	return metadataList.get(index);
+	//}
 
 	/**
 	 * Returns the File from which the archive was opened.
@@ -1779,42 +1770,42 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Lock the archive window during processing, if one exists.
 	 */
-	@Override
-	public void lock() {
-		if (win != null) win.lock();
-	}
+	//@Override
+	//public void lock() {
+	//	if (win != null) win.lock();
+	//}
 
 	/**
 	 * Unlock the archive window after processing is done, if one exists.
 	 */
-	@Override
-	public void unlock() {
-		if (win != null) win.unlock();
-	}
+	//@Override
+	//public void unlock() {
+	//	if (win != null) win.unlock();
+	//}
 
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
 	 * records or after recovery to ensure the molecule records preserve an order.
 	 */
-	@Override
-	public void naturalOrderSortMoleculeIndex() {
-		synchronized (moleculeList) {
-			moleculeList = (ArrayList<String>) moleculeList.stream().sorted().collect(
-				toList());
-		}
-	}
+	//@Override
+	//public void naturalOrderSortMoleculeIndex() {
+	//	synchronized (moleculeList) {
+	//		moleculeList = (ArrayList<String>) moleculeList.stream().sorted().collect(
+	//			toList());
+	//	}
+	//}
 
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
 	 * records or after recovery to ensure the molecule records preserve an order.
 	 */
-	@Override
-	public void naturalOrderSortMetadataIndex() {
-		synchronized (metadataList) {
-			metadataList = (ArrayList<String>) metadataList.stream().sorted().collect(
-				toList());
-		}
-	}
+	//@Override
+	//public void naturalOrderSortMetadataIndex() {
+	//	synchronized (metadataList) {
+	//		metadataList = (ArrayList<String>) metadataList.stream().sorted().collect(
+	//			toList());
+	//	}
+	//}
 
 	/**
 	 * Add a log message to all metadata records. Used by Mars commands to keep a
@@ -1825,7 +1816,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public void logln(String message) {
-		for (String metaUID : metadataList) {
+		for (String metaUID : metadataMap.keySet()) {
 			if (virtual) {
 				I meta = getMetadata(metaUID);
 				meta.logln(message);
@@ -1848,7 +1839,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public void log(String message) {
-		for (String metaUID : metadataList) {
+		for (String metaUID : metadataMap.keySet()) {
 			if (virtual) {
 				I meta = getMetadata(metaUID);
 				meta.log(message);
@@ -1887,13 +1878,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		throws IOException
 	{
 		MoleculeArchiveIndex<M, I> idx = createIndex(jParser);
-		if (idx != null) {
+		if (idx != null)
 			archiveIndex = idx;
-			moleculeList = (ArrayList<String>) archiveIndex.getMoleculeUIDSet()
-				.stream().sorted().collect(toList());
-			metadataList = (ArrayList<String>) archiveIndex.getMetadataUIDSet()
-				.stream().sorted().collect(toList());
-		}
 		return idx;
 	}
 
