@@ -194,14 +194,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void removeMetadata(I meta);
 
 	/**
-	 * Retrieves an metadata record.
-	 * 
-	 * @param index The index of the metadata record to retrieve.
-	 * @return A metadata record.
-	 */
-	//I getMetadata(int index);
-
-	/**
 	 * Retrieves a metadata record.
 	 * 
 	 * @param metaUID The UID of the metadata record to retrieve.
@@ -232,13 +224,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	int getNumberOfMetadatas();
 
 	/**
-	 * Location of the virtual store.
-	 * 
-	 * @return The String absolute path of the open virtual store.
-	 */
-	//String getStoreLocation();
-
-	/**
 	 * Global comments.
 	 * 
 	 * @return The global comments String.
@@ -259,14 +244,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return A boolean which is true if working from a virtual store.
 	 */
 	boolean isVirtual();
-
-	/**
-	 * Retrieves the molecule record at the provided index.
-	 * 
-	 * @param index The integer index position of the molecule record.
-	 * @return A Molecule record.
-	 */
-	//M get(int index);
 
 	/**
 	 * Removes the molecule record with the given UID.
@@ -458,14 +435,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	M get(String UID);
 
 	/**
-	 * Get the index position of the UID given.
-	 * 
-	 * @param UID The UID to find the index location for.
-	 * @return The Integer location in the index of the UID provided.
-	 */
-	//int getIndex(String UID);
-
-	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
 	 * over all molecules using forEach.
 	 * 
@@ -517,22 +486,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	String getMetadataUIDforMolecule(String UID);
 
 	/**
-	 * Get the UID at the provided index location.
-	 * 
-	 * @param index Retrieve the UID at this index location.
-	 * @return The UID at the index location provided.
-	 */
-	//String getUIDAtIndex(int index);
-
-	/**
-	 * Get the metadata UID at the provided index location.
-	 * 
-	 * @param index Retrieve the metadata UID at this index location.
-	 * @return The metadata UID at the index location provided.
-	 */
-	//String getMetadataUIDAtIndex(int index);
-
-	/**
 	 * Returns the File from which the archive was opened.
 	 * 
 	 * @return The File the archive was opened from.
@@ -574,28 +527,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param win Set the MoleculeArchiveWindow that contains this archive.
 	 */
 	void setWindow(MoleculeArchiveWindow win);
-
-	/**
-	 * Lock the archive window during processing, if one exists.
-	 */
-	//void lock();
-
-	/**
-	 * Unlock the archive window after processing is done, if one exists.
-	 */
-	//void unlock();
-
-	/**
-	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
-	 * records or after recovery to ensure the molecule records preserve an order.
-	 */
-	//void naturalOrderSortMoleculeIndex();
-
-	/**
-	 * Natural Order Sort all Metadata UIDs in the index. Run after adding new
-	 * records or after recovery to ensure the metadata records preserve an order.
-	 */
-	//void naturalOrderSortMetadataIndex();
 
 	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing
