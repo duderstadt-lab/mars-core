@@ -635,6 +635,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Thread count", nThreads);
 	}
+	
+	public void setRoiManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
+	}
 
 	public MarsTable getPeakCountTable() {
 		return peakCount;

@@ -554,7 +554,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		return colocalize;
 	}
 
-	public void setUseDogFiler(boolean useDogFilter) {
+	public void setUseDogFilter(boolean useDogFilter) {
 		this.useDogFilter = useDogFilter;
 	}
 
