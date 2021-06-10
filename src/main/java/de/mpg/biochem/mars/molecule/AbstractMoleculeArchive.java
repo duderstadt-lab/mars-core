@@ -319,6 +319,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		recordLocks = new ConcurrentHashMap<>();
 		moleculeMap = new ConcurrentHashMap<>();
+		
+		if (virtual) index();
 	}
 
 	protected JsonParser detectEncoding(InputStream inputStream)
