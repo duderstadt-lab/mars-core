@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -65,6 +66,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
@@ -292,6 +295,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			final MutableModuleItem<String> channelChoice =
 				new DefaultMutableModuleItem<String>(this, name, String.class);
 			channelChoice.setChoices(channelColorOptions);
+			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
 			getInfo().addInput(channelChoice);
 		});
@@ -788,6 +792,44 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	public Interval getSHORTInterval() {
 		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1,
 			SHORTy0 + SHORTheight - 1);
+	}
+	
+	public void setFretShortName(String fretShortName) {
+		this.fretShortName = fretShortName;
+	}
+	
+	public String getFretShortName() {
+		return fretShortName;
+	}
+	
+	public void setFretLongName(String fretLongName) {
+		this.fretLongName = fretLongName;
+	}
+	
+	public String getFretLongName() {
+		return fretLongName;
+	}
+	
+	/**
+	 * Method used to set the channels that will be integrated in a script.
+	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * 
+	 * @param channel Index of the channel to integrate.
+	 * @param integrationType The type of integration to perform.
+	 */
+	public void setIntegrationChannel(int channel, String integrationType) {
+		channelColors.get(channel).setValue(this, integrationType);
+	}
+	
+	/**
+	 * Method used to set the channels that will be integrated in a script.
+	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * 
+	 * @param channelName Name of the channel to integrate.
+	 * @param integrationType The type of integration to perform.
+	 */
+	public void setIntegrationChannel(String channelName, String integrationType) {
+		channelColors.stream().filter(channelInput -> channelInput.getName().equals(channelName)).findAny().get().setValue(this, integrationType);
 	}
 	
 	public void setThreads(int nThreads) {
