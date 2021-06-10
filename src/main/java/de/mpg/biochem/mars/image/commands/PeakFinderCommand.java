@@ -672,6 +672,10 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		this.roi = roi;
 	}
 	
+	public void setRoi(int x, int y, int width, int height) {
+		this.roi = Roi.create(x, y, width, height);
+	}
+	
 	public Roi getROI() {
 		return this.roi;
 	}
