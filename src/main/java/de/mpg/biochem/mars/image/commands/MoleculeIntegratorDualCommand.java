@@ -687,6 +687,14 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
+	
+	public void setRoiManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
+	}
 
 	public void setDataset(Dataset dataset) {
 		this.dataset = dataset;
