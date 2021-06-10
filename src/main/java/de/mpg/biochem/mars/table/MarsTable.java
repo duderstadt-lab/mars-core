@@ -1156,6 +1156,38 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		return StatUtils.mean(this.getColumnAsDoublesNoNaNs(meanColumn,
 			rowSelectionColumn, lowerBound, upperBound));
 	}
+	
+	/**
+	 * Calculates the sum of the values for the column given. NaN values are
+	 * ignored.
+	 * 
+	 * @param column name of the column.
+	 * @return sum value of the column values. NaN is returned if all values are
+	 *         NaN or the column does not exist.
+	 */
+	public double sum(String column) {
+		return StatUtils.sum(this.getColumnAsDoublesNoNaNs(column));
+	}
+
+	/**
+	 * Calculates the sum of the values for the sumColumn within the range given
+	 * for a rowSelectionColumn (inclusive of bounds). NaN values are ignored. If
+	 * no values exist for the bounds provided NaN is returned.
+	 * 
+	 * @param sumColumn name of the column used for calculating the mean.
+	 * @param rowSelectionColumn name of the column used for filtering a range of
+	 *          values.
+	 * @param lowerBound smallest value included in the row selection range.
+	 * @param upperBound largest value included in the row selection range.
+	 * @return sum value of the column values. NaN is returned if all values are
+	 *         NaN or one of the columns does not exist.
+	 */
+	public double sum(String sumColumn, String rowSelectionColumn,
+		double lowerBound, double upperBound)
+	{
+		return StatUtils.sum(this.getColumnAsDoublesNoNaNs(sumColumn,
+			rowSelectionColumn, lowerBound, upperBound));
+	}
 
 	/**
 	 * Calculates the median of the column values. NaN values are ignored.
