@@ -527,6 +527,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param win Set the MoleculeArchiveWindow that contains this archive.
 	 */
 	void setWindow(MoleculeArchiveWindow win);
+	
+	/**
+	 * Lock the archive window during processing, if one exists.
+	 */
+	void lock();
+
+	/**
+	 * Unlock the archive window after processing is done, if one exists.
+	 */
+	void unlock();
 
 	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing

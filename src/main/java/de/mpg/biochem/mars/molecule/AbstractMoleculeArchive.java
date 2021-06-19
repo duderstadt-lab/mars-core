@@ -1775,18 +1775,18 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	/**
 	 * Lock the archive window during processing, if one exists.
 	 */
-	//@Override
-	//public void lock() {
-	//	if (win != null) win.lock();
-	//}
+	@Override
+	public void lock() {
+		if (win != null) win.lock();
+	}
 
 	/**
 	 * Unlock the archive window after processing is done, if one exists.
 	 */
-	//@Override
-	//public void unlock() {
-	//	if (win != null) win.unlock();
-	//}
+	@Override
+	public void unlock() {
+		if (win != null) win.unlock();
+	}
 
 	/**
 	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
