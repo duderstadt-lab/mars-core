@@ -1654,16 +1654,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
-	 * Convenience method to execute an action on all molecules using a Consumer.
-	 * 
-	 * @param action Action to perform on all molecules.
-	 */
-	@Override
-	public void forEach(Consumer<? super Molecule> action) {
-		this.moleculeMap.keySet().stream().map(UID -> get(UID)).forEach(action);
-	}
-
-	/**
 	 * Get the UID of the metadata for a molecule record. If working from a
 	 * virtual store, this will use an index providing optimal performance. If
 	 * working in memory this is the same as retrieving the molecule record and
@@ -1739,22 +1729,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void setWindow(MoleculeArchiveWindow win) {
 		this.win = win;
-	}
-
-	/**
-	 * Lock the archive window during processing, if one exists.
-	 */
-	@Override
-	public void lock() {
-		if (win != null) win.lock();
-	}
-
-	/**
-	 * Unlock the archive window after processing is done, if one exists.
-	 */
-	@Override
-	public void unlock() {
-		if (win != null) win.unlock();
 	}
 
 	/**

@@ -475,19 +475,12 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	Stream<I> parallelMetadata();
 
 	/**
-	 * Convenience method to retrieve a multithreated Molecule stream. Can be used
+	 * Convenience method to retrieve a multithreaded Molecule stream. Can be used
 	 * to iterate over all molecules using forEach in a multithreaded manner.
 	 * 
 	 * @return Molecule stream.
 	 */
 	public Stream<M> parallelMolecules();
-
-	/**
-	 * Convenience method to execute an action on all molecules using a Consumer.
-	 * 
-	 * @param action Action to perform on all molecules.
-	 */
-	void forEach(Consumer<? super Molecule> action);
 
 	/**
 	 * Get the UID of the metadata for a molecule record. If working from a
@@ -543,16 +536,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param win Set the MoleculeArchiveWindow that contains this archive.
 	 */
 	void setWindow(MoleculeArchiveWindow win);
-	
-	/**
-	 * Lock the archive window during processing, if one exists.
-	 */
-	void lock();
-
-	/**
-	 * Unlock the archive window after processing is done, if one exists.
-	 */
-	void unlock();
 
 	/**
 	 * Add a log message to all MarsImageMetadata records. Used by all processing
