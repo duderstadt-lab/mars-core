@@ -182,14 +182,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected MoleculeArchiveIndex<M, I> archiveIndex;
 
 	/**
-	 * Map from metadata UID to MarsMetadata object. Keys should be synchronized
-	 * with metadataList always.
+	 * Map from metadata UID to MarsMetadata object. 
 	 */
 	protected ConcurrentSkipListMap<String, I> metadataMap;
 
 	/**
-	 * Map from molecule UID to Molecule object. Keys should be synchronized with
-	 * moleculeList always. Left null in virtual memory mode.
+	 * Map from molecule UID to Molecule object.
 	 */
 	protected ConcurrentSkipListMap<String, M> moleculeMap;
 
@@ -1139,8 +1137,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Set<String> getTagSet(String UID) {
-		if (!virtual) return moleculeMap.get(UID).getTags();
-		else return archiveIndex.getMoleculeUIDtoTagListMap().get(UID);
+		if (virtual) return archiveIndex.getMoleculeUIDtoTagListMap().get(UID);
+		else return moleculeMap.get(UID).getTags();
 	}
 
 	/**
@@ -1151,9 +1149,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public int getChannel(String UID) {
-		if (!virtual) {
-			return moleculeMap.get(UID).getChannel();
-		}
+		if (!virtual) return moleculeMap.get(UID).getChannel();
 		else if (archiveIndex.getMoleculeUIDtoChannelMap().containsKey(UID))
 			return archiveIndex.getMoleculeUIDtoChannelMap().get(UID);
 		else return -1;
@@ -1167,9 +1163,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public int getImage(String UID) {
-		if (!virtual) {
-			return moleculeMap.get(UID).getImage();
-		}
+		if (!virtual) return moleculeMap.get(UID).getImage();
 		else if (archiveIndex.getMoleculeUIDtoImageMap().containsKey(UID)) return archiveIndex
 			.getMoleculeUIDtoImageMap().get(UID);
 		else return -1;
@@ -1210,8 +1204,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Set<String> getMetadataTagSet(String UID) {
-		if (!virtual) return metadataMap.get(UID).getTags();
-		else return archiveIndex.getMetadataUIDtoTagListMap().get(UID);
+		if (virtual) return archiveIndex.getMetadataUIDtoTagListMap().get(UID);
+		else return metadataMap.get(UID).getTags();
 	}
 
 	/**
