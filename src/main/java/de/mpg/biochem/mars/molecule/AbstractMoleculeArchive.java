@@ -43,11 +43,11 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -188,24 +188,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected ConcurrentSkipListMap<String, I> metadataMap;
 
 	/**
-	 * List of metadata UIDs. Items should match keys in metadataMap always. All
-	 * write operations must be placed in synchronized blocks.
-	 * synchronized(metadataList) { ... }
-	 */
-	//protected ArrayList<String> metadataList;
-
-	/**
 	 * Map from molecule UID to Molecule object. Keys should be synchronized with
 	 * moleculeList always. Left null in virtual memory mode.
 	 */
 	protected ConcurrentSkipListMap<String, M> moleculeMap;
-
-	/**
-	 * List of molecule UIDs. Items should match keys in moleculeMap always. All
-	 * write operations must be placed in synchronized blocks.
-	 * synchronized(moleculeList) { ... }
-	 */
-	//protected ArrayList<String> moleculeList;
 
 	/**
 	 * Map from molecule UID to ReentrantLock to ensure thread blocking when
@@ -312,8 +298,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	private void initializeVariables() {
-		//moleculeList = new ArrayList<String>();
-		//metadataList = new ArrayList<String>();
 		metadataMap = new ConcurrentSkipListMap<>();
 		moleculeMap = new ConcurrentSkipListMap<>();
 
@@ -377,11 +361,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			JsonParser indexJParser = jfactory.createParser(indexInputStream);
 
 			archiveIndex = createIndex(indexJParser);
-
-			//moleculeList = (ArrayList<String>) archiveIndex.getMoleculeUIDSet()
-			//	.stream().sorted().collect(toList());
-			//metadataList = (ArrayList<String>) archiveIndex.getMetadataUIDSet()
-			//	.stream().sorted().collect(toList());
 
 			indexJParser.close();
 			indexInputStream.close();
@@ -525,11 +504,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			finally {
 				forkJoinPool.shutdown();
 			}
-
-			//moleculeList = (ArrayList<String>) newIndex.getMoleculeUIDs().stream()
-			//	.sorted().collect(toList());
-			//metadataList = (ArrayList<String>) newIndex.getMetadataUIDs().stream()
-			//	.sorted().collect(toList());
 
 			this.archiveIndex = newIndex;
 
@@ -906,10 +880,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param index The index of the MarsMetadata record to retrieve.
 	 * @return A MarsMetadata record.
 	 */
-	//@Override
-	//public I getMetadata(int index) {
-	//	return getMetadata(metadataMap.get(index));
-	//}
+	@Override
+	public I getMetadata(int index) {
+		Iterator<String> iterator = metadataMap.keySet().iterator();
+		
+		int i = 0;
+		while (iterator.hasNext()) {
+			if (i == index)
+				return getMetadata(iterator.next());
+			else {
+				iterator.next();
+				i++;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Retrieves a MarsMetadata record.
@@ -1050,15 +1035,32 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
-	 * Retrieves the molecule record at the provided index.
+	 * Retrieves the molecule record at the provided index. Molecule
+	 * records are stored in Map and not a List, so this method creates
+	 * a new UID list everything it is called. Therefore, it is does 
+	 * not offer the best performance. The molecules() method to get(UID) 
+	 * methods are preferred patterns. If a list is required the 
+	 * getMoleculeUIDs() method should be used once and then the list
+	 * can be iterated.
 	 * 
 	 * @param index The integer index position of the molecule record.
 	 * @return A Molecule record.
 	 */
-	//@Override
-	//public M get(int index) {
-	//	return get(moleculeList.get(index));
-	//}
+	@Override
+	public M get(int index) {
+		Iterator<String> iterator = moleculeMap.keySet().iterator();
+		
+		int i = 0;
+		while (iterator.hasNext()) {
+			if (i == index)
+				return get(iterator.next());
+			else {
+				iterator.next();
+				i++;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Removes the molecule record with the given UID.
@@ -1481,7 +1483,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @param tagMap The UID to tag map for add to molecules.
 	 */
 	@Override
-	public void addMoleculeTags(HashMap<String, String> tagMap) {
+	public void addMoleculeTags(Map<String, String> tagMap) {
 		tagMap.keySet().parallelStream().forEach(UID -> {
 			M molecule = get(UID);
 			molecule.addTag(tagMap.get(UID));
@@ -1608,17 +1610,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
-	 * Get the index position of the UID given.
-	 * 
-	 * @param UID The UID to find the index location for.
-	 * @return The Integer location in the index of the UID provided.
-	 */
-	//@Override
-	//public int getIndex(String UID) {
-	//	return moleculeList.indexOf(UID);
-	//}
-
-	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
 	 * over all molecules using forEach.
 	 * 
@@ -1687,28 +1678,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (virtual) return archiveIndex.getMetadataUIDforMolecule(UID);
 		else return get(UID).getMetadataUID();
 	}
-
-	/**
-	 * Get the molecule UID for the provided index location.
-	 * 
-	 * @param index Retrieve the UID at this index location.
-	 * @return The UID at the index location provided.
-	 */
-	//@Override
-	//public String getUIDAtIndex(int index) {
-	//	return moleculeList.get(index);
-	//}
-
-	/**
-	 * Get the metadata UID at the provided index location.
-	 * 
-	 * @param index Retrieve the metadata UID at this index location.
-	 * @return The metadata UID at the index location provided.
-	 */
-	//@Override
-	//public String getMetadataUIDAtIndex(int index) {
-	//	return metadataList.get(index);
-	//}
 
 	/**
 	 * Returns the File from which the archive was opened.
@@ -1787,30 +1756,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void unlock() {
 		if (win != null) win.unlock();
 	}
-
-	/**
-	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
-	 * records or after recovery to ensure the molecule records preserve an order.
-	 */
-	//@Override
-	//public void naturalOrderSortMoleculeIndex() {
-	//	synchronized (moleculeList) {
-	//		moleculeList = (ArrayList<String>) moleculeList.stream().sorted().collect(
-	//			toList());
-	//	}
-	//}
-
-	/**
-	 * Natural Order Sort all Molecule UIDs in the index. Run after adding new
-	 * records or after recovery to ensure the molecule records preserve an order.
-	 */
-	//@Override
-	//public void naturalOrderSortMetadataIndex() {
-	//	synchronized (metadataList) {
-	//		metadataList = (ArrayList<String>) metadataList.stream().sorted().collect(
-	//			toList());
-	//	}
-	//}
 
 	/**
 	 * Add a log message to all metadata records. Used by Mars commands to keep a

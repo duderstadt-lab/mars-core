@@ -31,9 +31,9 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -192,6 +192,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param meta metadata record to remove.
 	 */
 	void removeMetadata(I meta);
+	
+	/**
+	 * Retrieves an MarsMetadata record.
+	 * 
+	 * @param index The index of the MarsMetadata record to retrieve.
+	 * @return A MarsMetadata record.
+	 */
+	public I getMetadata(int index);
 
 	/**
 	 * Retrieves a metadata record.
@@ -371,7 +379,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param tagMap The UID to tag map for add to molecules.
 	 */
-	void addMoleculeTags(HashMap<String, String> tagMap);
+	void addMoleculeTags(Map<String, String> tagMap);
 
 	/**
 	 * Retrieve the list of tags for a molecule. Will retrieve the list from the
@@ -433,6 +441,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The Molecule record with the UID given or null if none is located.
 	 */
 	M get(String UID);
+	
+	/**
+	 * Retrieves the molecule record at the provided index.
+	 * 
+	 * @param index The integer index position of the molecule record.
+	 * @return A Molecule record.
+	 */
+	public M get(int index);
 
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
