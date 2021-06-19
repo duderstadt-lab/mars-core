@@ -376,7 +376,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				new FileInputStream(indexFile));
 			JsonParser indexJParser = jfactory.createParser(indexInputStream);
 
-			index(indexJParser);
+			archiveIndex = createIndex(indexJParser);
+
+			//moleculeList = (ArrayList<String>) archiveIndex.getMoleculeUIDSet()
+			//	.stream().sorted().collect(toList());
+			//metadataList = (ArrayList<String>) archiveIndex.getMetadataUIDSet()
+			//	.stream().sorted().collect(toList());
 
 			indexJParser.close();
 			indexInputStream.close();
@@ -531,7 +536,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			properties().setNumberOfMolecules(newIndex.getMoleculeUIDSet().size());
 			properties().setNumberOfMetadatas(newIndex.getMetadataUIDSet().size());
 
-			index().save(file, jfactory, storeFileExtension);
+			archiveIndex.save(file, jfactory, storeFileExtension);
 			properties().save(file, jfactory, storeFileExtension);
 		}
 		else {
@@ -569,7 +574,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void save() throws IOException {
 		if (virtual) {
 			properties().save(file, jfactory, storeFileExtension);
-			index().save(file, jfactory, storeFileExtension);
+			archiveIndex.save(file, jfactory, storeFileExtension);
 		}
 		else if (smileEncoding) {
 			this.file = saveAs(file);
@@ -811,8 +816,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void put(M molecule) {
 		if (virtual) {
-			if (!index().getMoleculeUIDSet().contains(molecule.getUID()))
-			index().addMolecule(molecule);
+			if (!archiveIndex.getMoleculeUIDSet().contains(molecule.getUID()))
+				archiveIndex.addMolecule(molecule);
 
 			try {
 				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"),
@@ -842,8 +847,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void putMetadata(I metadata) {
 		// If virtual we save the metadata to file
 		if (virtual) {
-			if (!index().getMetadataUIDSet().contains(metadata.getUID()))
-			index().addMetadata(metadata);
+			if (!archiveIndex.getMetadataUIDSet().contains(metadata.getUID()))
+				archiveIndex.addMetadata(metadata);
 
 			try {
 				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"),
@@ -873,7 +878,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void removeMetadata(String metaUID) {
 		if (virtual) {
-			index().removeMetadata(metaUID);
+			archiveIndex.removeMetadata(metaUID);
 			File metadataFile = new File(file.getAbsolutePath() + "/Metadata/" +
 				metaUID + storeFileExtension);
 			if (metadataFile.exists()) metadataFile.delete();
@@ -972,7 +977,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public final List<String> getMetadataUIDs() {
 		if (virtual)
-			return ImmutableList.copyOf(index().getMetadataUIDSet());
+			return ImmutableList.copyOf(archiveIndex.getMetadataUIDSet());
 		else
 			return ImmutableList.copyOf(metadataMap.keySet());
 	}
@@ -985,7 +990,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public int getNumberOfMolecules() {
 		if (virtual)
-			return index().getMoleculeUIDSet().size();
+			return archiveIndex.getMoleculeUIDSet().size();
 		else
 			return moleculeMap.size();
 	}
@@ -998,7 +1003,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public int getNumberOfMetadatas() {
 		if (virtual)
-			return index().getMetadataUIDSet().size();
+			return archiveIndex.getMetadataUIDSet().size();
 		else
 			return metadataMap.size();
 	}
@@ -1066,7 +1071,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			File moleculeFile = new File(file.getAbsolutePath() + "/Molecules/" +
 				UID + storeFileExtension);
 			if (moleculeFile.exists()) moleculeFile.delete();
-			index().removeMolecule(UID);
+			archiveIndex.removeMolecule(UID);
 		}
 		else {
 			moleculeMap.remove(UID);
@@ -1093,7 +1098,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public final List<String> getMoleculeUIDs() {
 		if (virtual)
-			return ImmutableList.copyOf(index().getMoleculeUIDSet());
+			return ImmutableList.copyOf(archiveIndex.getMoleculeUIDSet());
 		else
 			return ImmutableList.copyOf(moleculeMap.keySet());
 	}
@@ -1109,7 +1114,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		Set<String> tags;
 		if (UID == null) return null;
 		else if (virtual) {
-			tags = index().getMoleculeUIDtoTagListMap().get(UID);
+			tags = archiveIndex.getMoleculeUIDtoTagListMap().get(UID);
 		}
 		else {
 			tags = get(UID).getTags();
@@ -1133,7 +1138,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public Set<String> getTagSet(String UID) {
 		if (!virtual) return moleculeMap.get(UID).getTags();
-		else return index().getMoleculeUIDtoTagListMap().get(UID);
+		else return archiveIndex.getMoleculeUIDtoTagListMap().get(UID);
 	}
 
 	/**
@@ -1147,8 +1152,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (!virtual) {
 			return moleculeMap.get(UID).getChannel();
 		}
-		else if (index().getMoleculeUIDtoChannelMap().containsKey(UID))
-			return index().getMoleculeUIDtoChannelMap().get(UID);
+		else if (archiveIndex.getMoleculeUIDtoChannelMap().containsKey(UID))
+			return archiveIndex.getMoleculeUIDtoChannelMap().get(UID);
 		else return -1;
 	}
 
@@ -1163,7 +1168,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (!virtual) {
 			return moleculeMap.get(UID).getImage();
 		}
-		else if (index().getMoleculeUIDtoImageMap().containsKey(UID)) return index()
+		else if (archiveIndex.getMoleculeUIDtoImageMap().containsKey(UID)) return archiveIndex
 			.getMoleculeUIDtoImageMap().get(UID);
 		else return -1;
 	}
@@ -1180,7 +1185,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		Set<String> tags;
 		if (UID == null) return null;
 		else if (virtual) {
-			tags = index().getMetadataUIDtoTagListMap().get(UID);
+			tags = archiveIndex.getMetadataUIDtoTagListMap().get(UID);
 		}
 		else {
 			tags = getMetadata(UID).getTags();
@@ -1204,7 +1209,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public Set<String> getMetadataTagSet(String UID) {
 		if (!virtual) return metadataMap.get(UID).getTags();
-		else return index().getMetadataUIDtoTagListMap().get(UID);
+		else return archiveIndex.getMetadataUIDtoTagListMap().get(UID);
 	}
 
 	/**
@@ -1370,7 +1375,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index()
+				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) && archiveIndex
 					.getMoleculeUIDtoTagListMap().get(UID).contains(tag)) return true;
 				else return false;
 			}
@@ -1391,10 +1396,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasNoTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index()
+				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) && archiveIndex
 					.getMoleculeUIDtoTagListMap().get(UID).isEmpty()) return true;
-				else if (index().getMoleculeUIDtoTagListMap().containsKey(UID) &&
-					!index().getMoleculeUIDtoTagListMap().get(UID).isEmpty())
+				else if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
+					!archiveIndex.getMoleculeUIDtoTagListMap().get(UID).isEmpty())
 					return false;
 				else return true;
 			}
@@ -1414,8 +1419,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public Set<String> moleculeTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (index().getMoleculeUIDtoTagListMap().containsKey(UID))
-					return index().getMoleculeUIDtoTagListMap().get(UID);
+				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID))
+					return archiveIndex.getMoleculeUIDtoTagListMap().get(UID);
 				else return new LinkedHashSet<String>();
 			}
 			else return get(UID).getTags();
@@ -1435,7 +1440,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (index().getMoleculeUIDtoTagListMap().containsKey(UID) && index()
+				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) && archiveIndex
 					.getMoleculeUIDtoTagListMap().get(UID).size() > 0) return true;
 				else return false;
 			}
@@ -1458,7 +1463,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean metadataHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (index().getMetadataUIDtoTagListMap().containsKey(UID) && index()
+				if (archiveIndex.getMetadataUIDtoTagListMap().containsKey(UID) && archiveIndex
 					.getMetadataUIDtoTagListMap().get(UID).contains(tag)) return true;
 				else return false;
 			}
@@ -1521,7 +1526,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public boolean contains(String UID) {
 		if (virtual) {
-			return index().getMoleculeUIDSet().contains(UID);
+			return archiveIndex.getMoleculeUIDSet().contains(UID);
 		}
 		else {
 			return moleculeMap.containsKey(UID);
@@ -1538,7 +1543,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public boolean containsMetadata(String UID) {
 		if (virtual) {
-			return index().getMetadataUIDSet().contains(UID);
+			return archiveIndex.getMetadataUIDSet().contains(UID);
 		}
 		else {
 			return metadataMap.containsKey(UID);
@@ -1679,7 +1684,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public String getMetadataUIDforMolecule(String UID) {
-		if (virtual) return index().getMetadataUIDforMolecule(UID);
+		if (virtual) return archiveIndex.getMetadataUIDforMolecule(UID);
 		else return get(UID).getMetadataUID();
 	}
 
@@ -1864,25 +1869,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public P properties() {
 		return archiveProperties;
 	}
-
-	private MoleculeArchiveIndex<M, I> index() {
-		MoleculeArchiveIndex<M, I> idx = archiveIndex;
-		if (idx == null) {
-			idx = createIndex();
-			archiveIndex = idx;
-		}
-		return idx;
-	}
-
-	private MoleculeArchiveIndex<M, I> index(JsonParser jParser)
-		throws IOException
-	{
-		MoleculeArchiveIndex<M, I> idx = createIndex(jParser);
-		if (idx != null)
-			archiveIndex = idx;
-		return idx;
-	}
-
+	
 	/**
 	 * Create empty MoleculeArchiveIndex.
 	 */

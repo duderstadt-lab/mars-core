@@ -274,6 +274,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			final MutableModuleItem<String> channelChoice =
 				new DefaultMutableModuleItem<String>(this, name, String.class);
 			channelChoice.setChoices(channelColorOptions);
+			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
 			getInfo().addInput(channelChoice);
 		});
@@ -641,6 +642,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
+	
+	public void setRoiManager(RoiManager roiManager) {
+		this.roiManager = roiManager;
+	}
+	
+	public RoiManager getRoiManager() {
+		return roiManager;
+	}
 
 	public void setDataset(Dataset dataset) {
 		this.dataset = dataset;
@@ -688,6 +697,28 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	public int getOuterRadius() {
 		return outerRadius;
+	}
+	
+	/**
+	 * Method used to set the channels that will be integrated in a script.
+	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * 
+	 * @param channel Index of the channel to integrate.
+	 * @param integrationType The type of integration to perform.
+	 */
+	public void setIntegrationChannel(int channel, String integrationType) {
+		channelColors.get(channel).setValue(this, integrationType);
+	}
+	
+	/**
+	 * Method used to set the channels that will be integrated in a script.
+	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * 
+	 * @param channelName Name of the channel to integrate.
+	 * @param integrationType The type of integration to perform.
+	 */
+	public void setIntegrationChannel(String channelName, String integrationType) {
+		channelColors.stream().filter(channelInput -> channelInput.getName().equals(channelName)).findAny().get().setValue(this, integrationType);
 	}
 	
 	public void setThreads(int nThreads) {
