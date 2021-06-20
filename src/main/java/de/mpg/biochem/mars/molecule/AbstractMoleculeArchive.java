@@ -788,8 +788,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void put(M molecule) {
 		if (virtual) {
-			if (!archiveIndex.getMoleculeUIDSet().contains(molecule.getUID()))
-				archiveIndex.addMolecule(molecule);
+			archiveIndex.addMolecule(molecule);
 
 			try {
 				saveMoleculeToFile(new File(file.getAbsolutePath() + "/Molecules"),
@@ -817,10 +816,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public void putMetadata(I metadata) {
-		// If virtual we save the metadata to file
 		if (virtual) {
-			if (!archiveIndex.getMetadataUIDSet().contains(metadata.getUID()))
-				archiveIndex.addMetadata(metadata);
+			archiveIndex.addMetadata(metadata);
 
 			try {
 				saveMetadataToFile(new File(file.getAbsolutePath() + "/Metadata"),
