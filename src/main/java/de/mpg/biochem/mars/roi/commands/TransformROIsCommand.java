@@ -278,6 +278,9 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 				roiManager.addRoi(transformedROIs.get(i));
 			}
 		}
+		
+		if (!uiService.isHeadless())
+			roiManager.repaint();
 
 		logService.info(LogBuilder.endBlock(true));
 	}
