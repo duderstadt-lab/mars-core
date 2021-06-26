@@ -235,6 +235,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
+			
+			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 		}
 
 		// Ensures that MarsMicromanagerFormat correctly sets the ImageID based on

@@ -554,6 +554,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				omexmlMetadata = omeMeta.getRoot();
 			}
 			
+			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
+			
 			//Check for SliceLabels
 			if (metadata.get(0).getTable().containsKey("SliceLabels")) {
 				String[] sliceLabels = (String[]) metadata.get(0).getTable().get("SliceLabels");

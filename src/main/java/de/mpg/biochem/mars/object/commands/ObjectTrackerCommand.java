@@ -617,6 +617,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
+			
+			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 		}
 		
 		if (swapZandT) {
