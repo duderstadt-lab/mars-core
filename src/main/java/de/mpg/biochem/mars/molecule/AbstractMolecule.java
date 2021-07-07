@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
@@ -90,7 +91,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * Constructor for creating an empty Molecule record.
 	 */
 	public AbstractMolecule() {
-		super();
+		super(MarsMath.getUUID58());
 	}
 
 	/**
