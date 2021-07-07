@@ -49,6 +49,8 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	private boolean driftCorrect, isN5;
 	private String n5Dataset;
 	private int channel = 0;
+	private int singleTimePoint = 0;
+	private boolean singleTimePointMode = false;
 	private AffineTransform3D affine3D;
 	
 	private final Map< String, String > properties = new ConcurrentHashMap<>();
@@ -96,6 +98,13 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		
 		setJsonField("channel", jGenerator -> jGenerator.writeNumberField(
 				"channel", channel), jParser -> channel = jParser.getIntValue());
+		
+		setJsonField("singleTimePointMode", jGenerator -> jGenerator.writeBooleanField(
+				"singleTimePointMode", singleTimePointMode), jParser -> singleTimePointMode = jParser
+					.getBooleanValue());
+		
+		setJsonField("singleTimePoint", jGenerator -> jGenerator.writeNumberField(
+				"singleTimePoint", singleTimePoint), jParser -> singleTimePoint = jParser.getIntValue());
 
 		setJsonField("affineTransform3D", jGenerator -> {
 			// Jackson 2.9.9 compatible stuff
@@ -199,6 +208,22 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	
 	public void setChannel(int channel) {
 		this.channel = channel;
+	}
+	
+	public void setSingleTimePointMode(boolean singleTimePointMode) {
+		this.singleTimePointMode = singleTimePointMode;
+	}
+	
+	public boolean getSingleTimePointMode() {
+		return this.singleTimePointMode;
+	}
+	
+	public int getSingleTimePoint() {
+		return singleTimePoint;
+	}
+	
+	public void setSingleTimePoint(int singleTimePoint) {
+		this.singleTimePoint = singleTimePoint;
 	}
 	
 	public void setN5Dataset(String n5Dataset) {
