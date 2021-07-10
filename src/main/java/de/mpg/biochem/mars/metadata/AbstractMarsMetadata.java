@@ -239,7 +239,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		logln("Source was " + metadata.getSourceDirectory() + ".");
 		logln("");
 		logln(metadata.getLog());
-		getBdvSources().addAll(metadata.getBdvSources());
+		for (MarsBdvSource source : metadata.getBdvSources())
+			putBdvSource(source);
 
 		// Get set of imageIndexes contained in this record..
 		Set<Integer> imageIndexes = new HashSet<Integer>();
