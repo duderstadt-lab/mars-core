@@ -312,7 +312,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * 
 	 * @return ArrayList containing the column headers.
 	 */
-	public ArrayList<String> getColumnHeadingList() {
+	public List<String> getColumnHeadingList() {
 		ArrayList<String> columns = new ArrayList<String>();
 
 		for (int i = 0; i < getColumnCount(); i++) {
@@ -1633,7 +1633,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * @param rows An ArrayList containing the rows to remove.
 	 * @return MarsTable for next operation.
 	 */
-	public MarsTable deleteRows(ArrayList<Integer> rows) {
+	public MarsTable deleteRows(List<Integer> rows) {
 		if (rows.size() == 0) return this;
 
 		int pos = 0;
@@ -1693,10 +1693,10 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * Keep rows at the positions specified in the ordered list given. Remove all
 	 * other rows.
 	 * 
-	 * @param rows An ArrayList containing the rows to keep.
+	 * @param rows A List containing the rows to keep.
 	 * @return MarsTable for next operation.
 	 */
-	public MarsTable keepRows(ArrayList<Integer> rows) {
+	public MarsTable keepRows(List<Integer> rows) {
 		if (rows.size() == 0) {
 			// Then we remove all rows...
 			// Maybe we just need to change size...
