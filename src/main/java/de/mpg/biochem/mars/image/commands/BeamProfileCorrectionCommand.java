@@ -306,7 +306,9 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 			builder.addParameter("Image Directory", image
 				.getOriginalFileInfo().directory);
 		}
-		builder.addParameter("Background Image Title", backgroundImage.getTitle());
+		builder.addParameter("Channel", channel);
+		if (backgroundImage.getTitle() != null)
+			builder.addParameter("Background Image Title", backgroundImage.getTitle());
 		if (backgroundImage.getOriginalFileInfo() != null && backgroundImage
 			.getOriginalFileInfo().directory != null)
 		{
@@ -315,6 +317,14 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		}
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
 		builder.addParameter("Thread count", nThreads);
+	}
+	
+	public void setChannel(int channel) {
+		this.channel = String.valueOf(channel);
+	}
+
+	public int getChannel() {
+		return Integer.valueOf(channel);
 	}
 
 	public void setImage(ImagePlus image) {
