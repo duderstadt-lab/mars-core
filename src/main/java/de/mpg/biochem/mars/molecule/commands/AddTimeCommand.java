@@ -89,7 +89,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 		builder.addParameter("MoleculeArchive", archive.getName());
 		builder.addParameter("Source", source);
-		if (source.equals("Time increment")) builder.addParameter(
+		if (source.equals("constant time increment")) builder.addParameter(
 			"Time increment (s)", timeIncrement);
 		log += builder.buildParameterList();
 
@@ -108,7 +108,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 			// If the column already exists we don't need to add it
 			// instead we will just be overwriting the values below..
-			if (!datatable.hasColumn("Time (s)")) datatable.appendColumn("Time (s)");
+			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
 			int imageIndex = 0;
 			if (metadata.getImageCount() > 1) for (int index = 0; index < metadata
@@ -122,18 +122,17 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 			final int finalImageIndex = imageIndex;
 
-			if (source.equals("dt")) datatable.rows().forEach(row -> row.setValue(
-				"Time (s)", metadata.getPlane(finalImageIndex, 0, (int) molecule
-					.getParameter("Channel"), (int) row.getValue("T"))
+			if (source.equals("from metadata (dt)")) datatable.rows().forEach(row -> row.setValue(
+				"Time (s)", metadata.getPlane(finalImageIndex, 0, molecule.getChannel(), (int) row.getValue("T"))
 					.getDeltaTinSeconds()));
-			else molecule.getTable().rows().forEach(row -> row.setValue("Time (s)",
+			else molecule.getTable().rows().forEach(row -> row.setValue("Time_(s)",
 				row.getValue("T") * timeIncrement));
 
 			archive.put(molecule);
 		});
 
 		// Set the incrementTime for all metadata to match that provided.
-		if (source.equals("Time increment")) archive.metadata().forEach(
+		if (source.equals("constant time increment")) archive.metadata().forEach(
 			metadata -> metadata.images().forEach(image -> image
 				.setTimeIncrementInSeconds(timeIncrement)));
 
@@ -152,7 +151,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		String log = LogBuilder.buildTitleBlock("Add Time (s)");
 
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("Source", "dt");
+		builder.addParameter("Source", "from metadata (dt)");
 		log += builder.buildParameterList();
 
 		archive.logln(log);
@@ -167,10 +166,10 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 			// If the column already exists we don't need to add it
 			// instead we will just be overwriting the values below..
-			if (!datatable.hasColumn("Time (s)")) datatable.appendColumn("Time (s)");
+			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
-			datatable.rows().forEach(row -> row.setValue("Time (s)", metadata
-				.getPlane(0, 0, (int) molecule.getParameter("Channel"), (int) row
+			datatable.rows().forEach(row -> row.setValue("Time_(s)", metadata
+				.getPlane(0, 0, molecule.getChannel(), (int) row
 					.getValue("T")).getDeltaTinSeconds()));
 
 			archive.put(molecule);
@@ -203,9 +202,9 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 			// If the column already exists we don't need to add it
 			// instead we will just be overwriting the values below..
-			if (!datatable.hasColumn("Time (s)")) datatable.appendColumn("Time (s)");
+			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
-			molecule.getTable().rows().forEach(row -> row.setValue("Time (s)", row
+			molecule.getTable().rows().forEach(row -> row.setValue("Time_(s)", row
 				.getValue("T") * timeIncrement));
 
 			archive.put(molecule);
