@@ -310,7 +310,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 			// Distance from the DNA top END
 			DoubleColumn dnaPositionColumn = new DoubleColumn(name + "_" + index +
-				"_position_on_DNA");
+				"_Position_on_DNA");
 			for (int row = 0; row < table.getRowCount(); row++) {
 				dnaPositionColumn.add(dnaSegment.getPositionOnDNA(table.getValue(
 					xColumn, row), table.getValue(yColumn, row)));
