@@ -62,7 +62,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected String comments, inputSchema;
 	
 	//Format YYYY-MM-DD
-	public static final String SCHEMA = "2021-01-25";
+	public static final String SCHEMA = "2021-07-13";
 
 	// Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
