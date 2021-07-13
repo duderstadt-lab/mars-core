@@ -144,13 +144,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	/**
 	 * IMAGE
 	 */
-	@Parameter(label = "Image for Integration")
+	@Parameter(label = "Image for integration")
 	private ImageDisplay imageDisplay;
 
-	@Parameter(label = "Inner Radius")
+	@Parameter(label = "Inner radius")
 	private int innerRadius = 1;
 
-	@Parameter(label = "Outer Radius")
+	@Parameter(label = "Outer radius")
 	private int outerRadius = 3;
 
 	@Parameter(label = "Microscope")
