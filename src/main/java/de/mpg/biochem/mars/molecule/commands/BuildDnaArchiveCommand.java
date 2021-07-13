@@ -310,7 +310,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 			// Distance from the DNA top END
 			DoubleColumn dnaPositionColumn = new DoubleColumn(name + "_" + index +
-				"_Position_on_DNA");
+				"_position_on_DNA");
 			for (int row = 0; row < table.getRowCount(); row++) {
 				dnaPositionColumn.add(dnaSegment.getPositionOnDNA(table.getValue(
 					xColumn, row), table.getValue(yColumn, row)));
@@ -335,8 +335,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 			new ArrayList<MoleculePosition>();
 
 		archive.molecules().forEach(molecule -> moleculePositionList.add(
-			new MoleculePosition(molecule.getUID(), molecule.getTable().median("x"),
-				molecule.getTable().median("y"))));
+			new MoleculePosition(molecule.getUID(), molecule.getTable().median(Peak.X),
+				molecule.getTable().median(Peak.Y))));
 
 		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(
 			moleculePositionList, moleculePositionList);
@@ -407,8 +407,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("Search radius around DNA", String.valueOf(radius));
 		builder.addParameter("DNA length in bps", String.valueOf(DNALength));
-		builder.addParameter("xColumn", String.valueOf(xColumn));
-		builder.addParameter("yColumn", String.valueOf(yColumn));
+		builder.addParameter("X column", String.valueOf(xColumn));
+		builder.addParameter("Y column", String.valueOf(yColumn));
 		builder.addParameter("SingleMoleculeArchive 1", archive1InputName);
 		builder.addParameter("SingleMoleculeArchive 1 Name", archive1Name);
 		builder.addParameter("SingleMoleculeArchive 2", archive2InputName);
@@ -572,7 +572,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 	// for now we just use this...
 	class DNASegment implements RealLocalizable {
 
-		private double x1, y1, x2, y2, A, B;
+		private double x1, y1, x2, y2, a, b;
 
 		private double centerX, centerY;
 
@@ -592,18 +592,18 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 			linearFit.addData(x2, y2);
 
 			// y = A + Bx
-			A = linearFit.getIntercept();
-			B = linearFit.getSlope();
+			a = linearFit.getIntercept();
+			b = linearFit.getSlope();
 
 			bpsPerPixels = DNALength / getLength();
 		}
 
 		double getA() {
-			return A;
+			return a;
 		}
 
 		double getB() {
-			return B;
+			return b;
 		}
 
 		double getX1() {
