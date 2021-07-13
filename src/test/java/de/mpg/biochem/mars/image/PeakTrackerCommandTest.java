@@ -127,44 +127,44 @@ public class PeakTrackerCommandTest {
 		SingleMoleculeArchive archive = peakTracker.getArchive();
 
 		SingleMolecule molecule1 = archive.molecules().filter(m -> m.getTable()
-			.getValue("x", 0) < 11).findFirst().get();
+			.getValue(Peak.X, 0) < 11).findFirst().get();
 		for (int t = 0; t < 50; t++) {
-			assertTrue(Math.abs(10d - molecule1.getTable().getValue("x",
+			assertTrue(Math.abs(10d - molecule1.getTable().getValue(Peak.X,
 				t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 10 was " +
-					molecule1.getTable().getValue("x", t));
-			assertTrue(Math.abs(10d + t / 4 - molecule1.getTable().getValue("y",
+					molecule1.getTable().getValue(Peak.X, t));
+			assertTrue(Math.abs(10d + t / 4 - molecule1.getTable().getValue(Peak.Y,
 				t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " + (10d +
-					t / 4) + " was " + molecule1.getTable().getValue("y", t));
+					t / 4) + " was " + molecule1.getTable().getValue(Peak.Y, t));
 		}
 
 		SingleMolecule molecule2 = archive.molecules().filter(m -> m.getTable()
-			.getValue("x", 0) < 34 && m.getTable().getValue("x", 0) > 30).findFirst()
+			.getValue(Peak.X, 0) < 34 && m.getTable().getValue(Peak.X, 0) > 30).findFirst()
 			.get();
 		for (int t = 0; t < 50; t++) {
-			assertTrue(Math.abs(32.5d - molecule2.getTable().getValue("x",
+			assertTrue(Math.abs(32.5d - molecule2.getTable().getValue(Peak.X,
 				t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 32.5 was " +
-					molecule2.getTable().getValue("x", t));
-			assertTrue(Math.abs(20d + t / 4 - molecule2.getTable().getValue("y",
+					molecule2.getTable().getValue(Peak.X, t));
+			assertTrue(Math.abs(20d + t / 4 - molecule2.getTable().getValue(Peak.Y,
 				t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " + (40d +
-					t / 4) + " was " + molecule2.getTable().getValue("y", t));
+					t / 4) + " was " + molecule2.getTable().getValue(Peak.Y, t));
 		}
 
 		SingleMolecule molecule3 = archive.molecules().filter(m -> m.getTable()
-			.getValue("x", 0) < 45 && m.getTable().getValue("x", 0) > 40).findFirst()
+			.getValue(Peak.X, 0) < 45 && m.getTable().getValue(Peak.X, 0) > 40).findFirst()
 			.get();
 		for (int t = 0; t < 50; t++) {
-			assertTrue(Math.abs(43.7d - molecule3.getTable().getValue("x",
+			assertTrue(Math.abs(43.7d - molecule3.getTable().getValue(Peak.X,
 				t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-					molecule3.getTable().getValue("x", t));
-			assertTrue(Math.abs(26.7d + t / 4 - molecule3.getTable().getValue("y",
+					molecule3.getTable().getValue(Peak.X, t));
+			assertTrue(Math.abs(26.7d + t / 4 - molecule3.getTable().getValue(Peak.Y,
 				t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " +
-					(26.7d + t / 4) + " was " + molecule3.getTable().getValue("y", t));
+					(26.7d + t / 4) + " was " + molecule3.getTable().getValue(Peak.Y, t));
 		}
 	}
 

@@ -177,10 +177,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Optimal DNA length (in pixels)")
 	private int optimalDNALength = 38;
 
-	@Parameter(label = "DNA end search y (in pixels)")
+	@Parameter(label = "DNA end search Y (in pixels)")
 	private int yDNAEndSearchRadius = 6;
 
-	@Parameter(label = "DNA end search x (in pixels)")
+	@Parameter(label = "DNA end search X (in pixels)")
 	private int xDNAEndSearchRadius = 5;
 
 	@Parameter(label = "Filter by median intensity")
@@ -416,8 +416,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		logService.info("Generating peak table..");
 		// build a table with all peaks
 		String title = "DNAs Table - " + dataset.getName();
-		dnaTable = new MarsTable(title, "T", "x1", "y1", "x2", "y2", "length",
-			"median intensity", "intensity variance");
+		dnaTable = new MarsTable(title, "T", "X1", "Y1", "X2", "Y2", "Length",
+			"Median intensity", "Intensity variance");
 
 		int row = 0;
 		for (int t : dnaStack.keySet()) {
@@ -425,14 +425,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			for (int j = 0; j < tDNAs.size(); j++) {
 				dnaTable.appendRow();
 				dnaTable.setValue("T", row, t);
-				dnaTable.setValue("x1", row, tDNAs.get(j).getX1());
-				dnaTable.setValue("y1", row, tDNAs.get(j).getY1());
-				dnaTable.setValue("x2", row, tDNAs.get(j).getX2());
-				dnaTable.setValue("y2", row, tDNAs.get(j).getY2());
-				dnaTable.setValue("length", row, tDNAs.get(j).getLength());
-				dnaTable.setValue("median intensity", row, tDNAs.get(j)
+				dnaTable.setValue("X1", row, tDNAs.get(j).getX1());
+				dnaTable.setValue("Y1", row, tDNAs.get(j).getY1());
+				dnaTable.setValue("X2", row, tDNAs.get(j).getX2());
+				dnaTable.setValue("Y2", row, tDNAs.get(j).getY2());
+				dnaTable.setValue("Length", row, tDNAs.get(j).getLength());
+				dnaTable.setValue("Median intensity", row, tDNAs.get(j)
 					.getMedianIntensity());
-				dnaTable.setValue("intensity variance", row, tDNAs.get(j)
+				dnaTable.setValue("Intensity variance", row, tDNAs.get(j)
 					.getVariance());
 				row++;
 			}
@@ -571,16 +571,16 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		if (image != null) {
-			builder.addParameter("Image Title", image.getTitle());
+			builder.addParameter("Image title", image.getTitle());
 			if (image.getOriginalFileInfo() != null && image
 				.getOriginalFileInfo().directory != null)
 			{
-				builder.addParameter("Image Directory", image
+				builder.addParameter("Image directory", image
 					.getOriginalFileInfo().directory);
 			}
 		}
 		else {
-			builder.addParameter("Dataset Name", dataset.getName());
+			builder.addParameter("Dataset name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
 		builder.addParameter("Channel", channel);
@@ -589,19 +589,19 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
-		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("Optimal DNA length", String.valueOf(
 			optimalDNALength));
-		builder.addParameter("DNA end search radius y", String.valueOf(
+		builder.addParameter("DNA end search radius Y", String.valueOf(
 			yDNAEndSearchRadius));
-		builder.addParameter("DNA end search radius x", String.valueOf(
+		builder.addParameter("DNA end search radius X", String.valueOf(
 			xDNAEndSearchRadius));
 		builder.addParameter("Filter by median intensity", String.valueOf(
 			medianIntensityFilter));
 		builder.addParameter("Median intensity lower bound", String.valueOf(
 			medianIntensityLowerBound));
-		builder.addParameter("Filter by Variance", String.valueOf(varianceFilter));
-		builder.addParameter("Intensity Variance upper bound", String.valueOf(
+		builder.addParameter("Filter by variance", String.valueOf(varianceFilter));
+		builder.addParameter("Intensity variance upper bound", String.valueOf(
 			varianceUpperBound));
 		builder.addParameter("Generate peak table", String.valueOf(
 			generateDNATable));

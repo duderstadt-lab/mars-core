@@ -574,15 +574,15 @@ public class SegmentDistributionBuilder {
 
 		for (int a = 0; a < bins; a++) {
 			for (int i = 0; i < allSegments.size(); i++) {
-				if (Double.isNaN(allSegments.get(i).B) || Double.isNaN(allSegments.get(
+				if (Double.isNaN(allSegments.get(i).b) || Double.isNaN(allSegments.get(
 					i).x1) || Double.isNaN(allSegments.get(i).x2)) continue;
-				if (!filter || (allSegments.get(i).B > filter_region_start &&
-					allSegments.get(i).B < filter_region_stop))
+				if (!filter || (allSegments.get(i).b > filter_region_start &&
+					allSegments.get(i).b < filter_region_stop))
 				{
 					// We test to see if the current slope is in the current bin, which is
 					// centered at the positon on the x-axis.
-					if (((Dstart + a * binWidth) < allSegments.get(i).B) && (allSegments
-						.get(i).B <= (Dstart + (a + 1) * binWidth)))
+					if (((Dstart + a * binWidth) < allSegments.get(i).b) && (allSegments
+						.get(i).b <= (Dstart + (a + 1) * binWidth)))
 					{
 						// If it is inside we add the number of observations of that slope
 						// minus 1 since it takes at least two frames to find the slope.
@@ -609,14 +609,14 @@ public class SegmentDistributionBuilder {
 
 		if (processivityPerMolecule) {
 			for (int i = 0; i < allSegments.size(); i++) {
-				if (!filter || (allSegments.get(i).B > filter_region_start &&
-					allSegments.get(i).B < filter_region_stop))
+				if (!filter || (allSegments.get(i).b > filter_region_start &&
+					allSegments.get(i).b < filter_region_stop))
 				{
 					if (allSegments.get(i).getUID().equals(curUID)) {
 						durations.add(duration);
 						duration = 0;
 					}
-					duration += allSegments.get(i).B * (allSegments.get(i).x2 -
+					duration += allSegments.get(i).b * (allSegments.get(i).x2 -
 						allSegments.get(i).x1);
 					curUID = allSegments.get(i).getUID();
 				}
@@ -625,8 +625,8 @@ public class SegmentDistributionBuilder {
 		}
 		else {
 			for (int i = 0; i < allSegments.size(); i++) {
-				if (!filter || (allSegments.get(i).B > filter_region_start &&
-					allSegments.get(i).B < filter_region_stop))
+				if (!filter || (allSegments.get(i).b > filter_region_start &&
+					allSegments.get(i).b < filter_region_stop))
 				{
 					if (allSegments.get(i).getUID().equals(curUID)) {
 						if (wasInsideRegion) {
@@ -634,7 +634,7 @@ public class SegmentDistributionBuilder {
 							duration = 0;
 						}
 					}
-					if (processivityPerRegion) duration += allSegments.get(i).B *
+					if (processivityPerRegion) duration += allSegments.get(i).b *
 						(allSegments.get(i).x2 - allSegments.get(i).x1);
 					else duration += allSegments.get(i).x2 - allSegments.get(i).x1;
 					wasInsideRegion = true;
@@ -695,16 +695,16 @@ public class SegmentDistributionBuilder {
 
 				for (int row = 0; row < segments.getRowCount(); row++) {
 					if (Double.isNaN(segments.getValue("B", row)) || Double.isNaN(segments
-						.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("x2",
-							row)) || Double.isNaN(segments.getValue("x1", row))) continue;
+						.getValue("sigma_B", row)) || Double.isNaN(segments.getValue("X2",
+							row)) || Double.isNaN(segments.getValue("X1", row))) continue;
 					if (!filter || segments.getValue("B", row) > filter_region_start &&
 						segments.getValue("B", row) < filter_region_stop)
 					{
 						if (segments.getValue("sigma_B", row) != 0 && segments.getValue(
-							"x1", row) != 0 && segments.getValue("x2", row) != 0) Gaussians
+							"X1", row) != 0 && segments.getValue("X2", row) != 0) Gaussians
 								.add(new Gaussian(segments.getValue("B", row), segments
-									.getValue("sigma_B", row), segments.getValue("x2", row) -
-										segments.getValue("x1", row)));
+									.getValue("sigma_B", row), segments.getValue("X2", row) -
+										segments.getValue("X1", row)));
 					}
 				}
 			}

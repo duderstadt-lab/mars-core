@@ -81,7 +81,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 	@Parameter(label = "Column", choices = { "a", "b", "c" })
 	private String column;
 
-	@Parameter(label = "Parameter Name")
+	@Parameter(label = "Parameter name")
 	private String ParameterName = "column_Variance";
 
 	// -- Callback methods --

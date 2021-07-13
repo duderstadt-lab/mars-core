@@ -229,17 +229,17 @@ public class KCP {
 				cp_positions.get(q + 1) - cp_positions.get(q), step_analysis);
 			// First I add the end points of the linear fit for each pair of
 			// consecutive change points...
-			segmentTable.setValue("x1", q, xData[cp_positions.get(q)]);
-			segmentTable.setValue("y1", q, segment[0] + segment[2] *
+			segmentTable.setValue(KCPSegment.X1, q, xData[cp_positions.get(q)]);
+			segmentTable.setValue(KCPSegment.Y1, q, segment[0] + segment[2] *
 				xData[cp_positions.get(q)]);
-			segmentTable.setValue("x2", q, xData[cp_positions.get(q + 1)]);
-			segmentTable.setValue("y2", q, segment[0] + segment[2] *
+			segmentTable.setValue(KCPSegment.X2, q, xData[cp_positions.get(q + 1)]);
+			segmentTable.setValue(KCPSegment.Y2, q, segment[0] + segment[2] *
 				xData[cp_positions.get(q + 1)]);
 			// Then I add the slope, intercept and associated STDs
-			segmentTable.setValue("A", q, segment[0]);
-			segmentTable.setValue("sigma_A", q, segment[1]);
-			segmentTable.setValue("B", q, segment[2]);
-			segmentTable.setValue("sigma_B", q, segment[3]);
+			segmentTable.setValue(KCPSegment.A, q, segment[0]);
+			segmentTable.setValue(KCPSegment.SIGMA_A, q, segment[1]);
+			segmentTable.setValue(KCPSegment.B, q, segment[2]);
+			segmentTable.setValue(KCPSegment.SIGMA_B, q, segment[3]);
 		}
 		return segmentTable;
 	}

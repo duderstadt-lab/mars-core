@@ -493,15 +493,15 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		// Build columns
 		List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
-		columns.add(new DoubleColumn("T"));
+		columns.add(new DoubleColumn(Peak.T));
 
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
 			columns.add(new DoubleColumn(name + " Time (s)"));
-			columns.add(new DoubleColumn(name + " x"));
-			columns.add(new DoubleColumn(name + " y"));
+			columns.add(new DoubleColumn(name + " X"));
+			columns.add(new DoubleColumn(name + " Y"));
 			columns.add(new DoubleColumn(name));
-			columns.add(new DoubleColumn(name + " background"));
+			columns.add(new DoubleColumn(name + " Background"));
 		}
 
 		for (DoubleColumn column : columns)
@@ -510,7 +510,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		for (int t = 0; t < marsOMEMetadata.getImage(0).getSizeT(); t++) {
 			table.appendRow();
 			int row = table.getRowCount() - 1;
-			table.set("T", row, (double) t);
+			table.set(Peak.T, row, (double) t);
 
 			for (IntegrationMap integrationMap : peakIntegrationMaps) {
 				String name = integrationMap.getName();
@@ -521,16 +521,16 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
 					table.setValue(name, row, peak.getIntensity());
-					table.setValue(name + " background", row, peak.getMedianBackground());
-					table.setValue(name + " x", row, peak.getX());
-					table.setValue(name + " y", row, peak.getY());
+					table.setValue(name + " Background", row, peak.getMedianBackground());
+					table.setValue(name + " X", row, peak.getX());
+					table.setValue(name + " Y", row, peak.getY());
 				}
 				else {
 					table.setValue(name + " Time (s)", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
-					table.setValue(name + " background", row, Double.NaN);
-					table.setValue(name + " x", row, Double.NaN);
-					table.setValue(name + " y", row, Double.NaN);
+					table.setValue(name + " Background", row, Double.NaN);
+					table.setValue(name + " X", row, Double.NaN);
+					table.setValue(name + " Y", row, Double.NaN);
 				}
 			}
 		}

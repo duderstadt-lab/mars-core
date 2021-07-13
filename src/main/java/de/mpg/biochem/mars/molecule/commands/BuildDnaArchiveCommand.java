@@ -94,11 +94,11 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 	@Parameter(label = "DNA length in bps")
 	private int DNALength = 21236;
 
-	@Parameter(label = "x column")
-	private String xColumn = "x_drift_corr";
+	@Parameter(label = "X column")
+	private String xColumn = "X_drift_corr";
 
-	@Parameter(label = "y column")
-	private String yColumn = "y_drift_corr";
+	@Parameter(label = "Y column")
+	private String yColumn = "Y_drift_corr";
 	
 	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" })
 	private String archive1InputName;
@@ -225,10 +225,10 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
 			dnaMolecule.setMetadataUID(metadata1.getUID());
 			dnaMolecule.setImage(metadata1.getImage(0).getImageID());
-			dnaMolecule.setParameter("Dna_Top_x1", dnaSegment.getX1());
-			dnaMolecule.setParameter("Dna_Top_y1", dnaSegment.getY1());
-			dnaMolecule.setParameter("Dna_Bottom_x2", dnaSegment.getX2());
-			dnaMolecule.setParameter("Dna_Bottom_y2", dnaSegment.getY2());
+			dnaMolecule.setParameter("Dna_Top_X1", dnaSegment.getX1());
+			dnaMolecule.setParameter("Dna_Top_Y1", dnaSegment.getY1());
+			dnaMolecule.setParameter("Dna_Bottom_X2", dnaSegment.getX2());
+			dnaMolecule.setParameter("Dna_Bottom_Y2", dnaSegment.getY2());
 
 			MarsTable mergedTable = new MarsTable();
 
@@ -578,10 +578,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 		private double bpsPerPixels;
 
-		private int medianIntensity;
-
-		private double msd;
-
 		DNASegment(double x1, double y1, double x2, double y2) {
 			this.x1 = x1;
 			this.y1 = y1;
@@ -640,22 +636,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 		void setY2(double y2) {
 			this.y2 = y2;
-		}
-
-		void setMedianIntensity(int medianIntensity) {
-			this.medianIntensity = medianIntensity;
-		}
-
-		int getMedianIntensity() {
-			return medianIntensity;
-		}
-
-		void setMSD(double msd) {
-			this.msd = msd;
-		}
-
-		double getMSD() {
-			return msd;
 		}
 
 		double getLength() {

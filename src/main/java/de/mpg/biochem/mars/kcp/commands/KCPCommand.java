@@ -94,10 +94,10 @@ public class KCPCommand extends DynamicCommand implements Command,
 	@Parameter(callback = "archiveSelectionChanged", label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
-	@Parameter(label = "X Column", choices = { "a", "b", "c" })
+	@Parameter(label = "X column", choices = { "a", "b", "c" })
 	private String xColumn;
 
-	@Parameter(label = "Y Column", choices = { "a", "b", "c" })
+	@Parameter(label = "Y column", choices = { "a", "b", "c" })
 	private String yColumn;
 
 	@Parameter(label = "Confidence value")
@@ -406,30 +406,30 @@ public class KCPCommand extends DynamicCommand implements Command,
 		numFinished.incrementAndGet();
 	}
 
-	private MarsTable buildSegmentTable(ArrayList<KCPSegment> segments) {
+	private MarsTable buildSegmentTable(List<KCPSegment> segments) {
 		MarsTable output = new MarsTable();
 
 		// Do i need to add these columns first? I can't remember...
-		output.add(new DoubleColumn("x1"));
-		output.add(new DoubleColumn("y1"));
-		output.add(new DoubleColumn("x2"));
-		output.add(new DoubleColumn("y2"));
-		output.add(new DoubleColumn("A"));
-		output.add(new DoubleColumn("sigma_A"));
-		output.add(new DoubleColumn("B"));
-		output.add(new DoubleColumn("sigma_B"));
+		output.add(new DoubleColumn(KCPSegment.X1));
+		output.add(new DoubleColumn(KCPSegment.Y1));
+		output.add(new DoubleColumn(KCPSegment.X2));
+		output.add(new DoubleColumn(KCPSegment.Y2));
+		output.add(new DoubleColumn(KCPSegment.A));
+		output.add(new DoubleColumn(KCPSegment.SIGMA_A));
+		output.add(new DoubleColumn(KCPSegment.B));
+		output.add(new DoubleColumn(KCPSegment.SIGMA_B));
 
 		int row = 0;
 		for (KCPSegment seg : segments) {
 			output.appendRow();
-			output.setValue("x1", row, seg.x1);
-			output.setValue("y1", row, seg.y1);
-			output.setValue("x2", row, seg.x2);
-			output.setValue("y2", row, seg.y2);
-			output.setValue("A", row, seg.A);
-			output.setValue("sigma_A", row, seg.A_sigma);
-			output.setValue("B", row, seg.B);
-			output.setValue("sigma_B", row, seg.B_sigma);
+			output.setValue(KCPSegment.X1, row, seg.x1);
+			output.setValue(KCPSegment.Y1, row, seg.y1);
+			output.setValue(KCPSegment.X2, row, seg.x2);
+			output.setValue(KCPSegment.Y2, row, seg.y2);
+			output.setValue(KCPSegment.A, row, seg.a);
+			output.setValue(KCPSegment.SIGMA_A, row, seg.sigma_a);
+			output.setValue(KCPSegment.B, row, seg.b);
+			output.setValue(KCPSegment.SIGMA_B, row, seg.sigma_b);
 			row++;
 		}
 		return output;

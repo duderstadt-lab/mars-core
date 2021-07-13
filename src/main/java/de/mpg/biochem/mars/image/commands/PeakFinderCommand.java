@@ -211,9 +211,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Add to ROIManager")
 	private boolean addToRoiManager;
 
-	//@Parameter(label = "Molecule names in RoiManager")
-	//private boolean moleculeNames;
-
 	@Parameter(label = "Process all frames")
 	private boolean allFrames;
 
@@ -270,9 +267,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	private boolean swapZandT = false;
 	private Roi roi;
-
-	//public static final String[] TABLE_HEADERS_VERBOSE = { "baseline", "height",
-	//	"sigma", "R2" };
 	private Dataset dataset;
 	private ImagePlus image;
 
@@ -414,8 +408,8 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	private void generatePeakCountTable() {
 		logService.info("Generating peak count table..");
 		peakCount = new MarsTable("Peak Count - " + dataset.getName());
-		DoubleColumn frameColumn = new DoubleColumn("T");
-		DoubleColumn countColumn = new DoubleColumn("peaks");
+		DoubleColumn frameColumn = new DoubleColumn(Peak.T);
+		DoubleColumn countColumn = new DoubleColumn("Peaks");
 
 		for (int t : peakStack.keySet()) {
 			frameColumn.addValue(t);
@@ -438,9 +432,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			List<Peak> framePeaks = peakStack.get(t);
 			for (int j = 0; j < framePeaks.size(); j++) {
 				peakTable.appendRow();
-				peakTable.setValue("T", row, (double)framePeaks.get(j).getT());
-				peakTable.setValue("x", row, framePeaks.get(j).getX());
-				peakTable.setValue("y", row, framePeaks.get(j).getY());
+				peakTable.setValue(Peak.T, row, (double)framePeaks.get(j).getT());
+				peakTable.setValue(Peak.X, row, framePeaks.get(j).getX());
+				peakTable.setValue(Peak.Y, row, framePeaks.get(j).getY());
 				if (verbose) {
 					for (String name : framePeaks.get(j).getProperties().keySet())
 						peakTable.setValue(name, row, framePeaks.get(j).getProperties().get(name));
@@ -598,16 +592,16 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		if (image != null) {
-			builder.addParameter("Image Title", image.getTitle());
+			builder.addParameter("Image title", image.getTitle());
 			if (image.getOriginalFileInfo() != null && image
 				.getOriginalFileInfo().directory != null)
 			{
-				builder.addParameter("Image Directory", image
+				builder.addParameter("Image directory", image
 					.getOriginalFileInfo().directory);
 			}
 		}
 		else {
-			builder.addParameter("Dataset Name", dataset.getName());
+			builder.addParameter("Dataset name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
 		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());

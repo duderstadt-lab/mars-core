@@ -122,106 +122,106 @@ public class DNAFinderCommandTest {
 		MarsTable dnaTable = peakFinder.getDNATable();
 
 		assertEquals(dnaTable.getValue("T", 0), 0);
-		assertTrue(Math.abs(32 - dnaTable.getValue("x1", 0)) < TOLERANCE,
-			"x1 is off by more than the tolerance. Should be 32 was " + dnaTable
-				.getValue("x1", 0));
-		assertTrue(Math.abs(15 - dnaTable.getValue("y1", 0)) < TOLERANCE,
-			"y1 is off by more than the tolerance. Should be 15 was " + dnaTable
-				.getValue("y1", 0));
-		assertTrue(Math.abs(32 - dnaTable.getValue("x2", 0)) < TOLERANCE,
-			"x2 is off by more than the tolerance. Should be 32 was " + dnaTable
-				.getValue("x2", 0));
-		assertTrue(Math.abs(35 - dnaTable.getValue("y2", 0)) < TOLERANCE,
-			"y2 is off by more than the tolerance. Should be 35 was " + dnaTable
-				.getValue("y2", 0));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 0)) < TOLERANCE,
+		assertTrue(Math.abs(32 - dnaTable.getValue(DNASegment.X1, 0)) < TOLERANCE,
+			"X1 is off by more than the tolerance. Should be 32 was " + dnaTable
+				.getValue(DNASegment.X1, 0));
+		assertTrue(Math.abs(15 - dnaTable.getValue(DNASegment.Y1, 0)) < TOLERANCE,
+			"Y1 is off by more than the tolerance. Should be 15 was " + dnaTable
+				.getValue(DNASegment.Y1, 0));
+		assertTrue(Math.abs(32 - dnaTable.getValue(DNASegment.X2, 0)) < TOLERANCE,
+			"X2 is off by more than the tolerance. Should be 32 was " + dnaTable
+				.getValue(DNASegment.X2, 0));
+		assertTrue(Math.abs(35 - dnaTable.getValue(DNASegment.Y2, 0)) < TOLERANCE,
+			"Y2 is off by more than the tolerance. Should be 35 was " + dnaTable
+				.getValue(DNASegment.Y2, 0));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 0)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 0));
+				.getValue(DNASegment.LENGTH, 0));
 
 		assertEquals(dnaTable.getValue("T", 1), 0);
-		assertTrue(Math.abs(10 - dnaTable.getValue("x1", 1)) < TOLERANCE,
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.X1, 1)) < TOLERANCE,
 			"x1 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("x1", 1));
-		assertTrue(Math.abs(10 - dnaTable.getValue("y1", 1)) < TOLERANCE,
+				.getValue(DNASegment.X1, 1));
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.Y1, 1)) < TOLERANCE,
 			"y1 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("y1", 1));
-		assertTrue(Math.abs(10 - dnaTable.getValue("x2", 1)) < TOLERANCE,
+				.getValue(DNASegment.Y1, 1));
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.X2, 1)) < TOLERANCE,
 			"x2 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("x2", 1));
-		assertTrue(Math.abs(30 - dnaTable.getValue("y2", 1)) < TOLERANCE,
+				.getValue(DNASegment.X2, 1));
+		assertTrue(Math.abs(30 - dnaTable.getValue(DNASegment.Y2, 1)) < TOLERANCE,
 			"y2 is off by more than the tolerance. Should be 30 was " + dnaTable
-				.getValue("y2", 1));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 1)) < TOLERANCE,
+				.getValue(DNASegment.Y2, 1));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 1)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 1));
+				.getValue(DNASegment.LENGTH, 1));
 
 		assertEquals(dnaTable.getValue("T", 2), 0);
-		assertTrue(Math.abs(43 - dnaTable.getValue("x1", 2)) < TOLERANCE,
+		assertTrue(Math.abs(43 - dnaTable.getValue(DNASegment.X1, 2)) < TOLERANCE,
 			"x1 is off by more than the tolerance. Should be 43 was " + dnaTable
-				.getValue("x1", 2));
-		assertTrue(Math.abs(20 - dnaTable.getValue("y1", 2)) < TOLERANCE,
+				.getValue(DNASegment.X1, 2));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.Y1, 2)) < TOLERANCE,
 			"y1 is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("y1", 2));
-		assertTrue(Math.abs(43 - dnaTable.getValue("x2", 2)) < TOLERANCE,
+				.getValue(DNASegment.Y1, 2));
+		assertTrue(Math.abs(43 - dnaTable.getValue(DNASegment.X2, 2)) < TOLERANCE,
 			"x2 is off by more than the tolerance. Should be 43 was " + dnaTable
-				.getValue("x2", 2));
-		assertTrue(Math.abs(40 - dnaTable.getValue("y2", 2)) < TOLERANCE,
+				.getValue(DNASegment.X2, 2));
+		assertTrue(Math.abs(40 - dnaTable.getValue(DNASegment.Y2, 2)) < TOLERANCE,
 			"y2 is off by more than the tolerance. Should be 40 was " + dnaTable
-				.getValue("y2", 2));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 2)) < TOLERANCE,
+				.getValue(DNASegment.Y2, 2));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 2)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 2));
+				.getValue(DNASegment.LENGTH, 2));
 
 		assertEquals(dnaTable.getValue("T", 3), 1);
-		assertTrue(Math.abs(32 - dnaTable.getValue("x1", 3)) < TOLERANCE,
+		assertTrue(Math.abs(32 - dnaTable.getValue(DNASegment.X1, 3)) < TOLERANCE,
 			"x1 is off by more than the tolerance. Should be 32 was " + dnaTable
-				.getValue("x1", 3));
-		assertTrue(Math.abs(15 - dnaTable.getValue("y1", 3)) < TOLERANCE,
+				.getValue(DNASegment.X1, 3));
+		assertTrue(Math.abs(15 - dnaTable.getValue(DNASegment.Y1, 3)) < TOLERANCE,
 			"y1 is off by more than the tolerance. Should be 15 was " + dnaTable
-				.getValue("y1", 3));
-		assertTrue(Math.abs(32 - dnaTable.getValue("x2", 3)) < TOLERANCE,
+				.getValue(DNASegment.Y1, 3));
+		assertTrue(Math.abs(32 - dnaTable.getValue(DNASegment.X2, 3)) < TOLERANCE,
 			"x2 is off by more than the tolerance. Should be 32 was " + dnaTable
-				.getValue("x2", 3));
-		assertTrue(Math.abs(35 - dnaTable.getValue("y2", 3)) < TOLERANCE,
+				.getValue(DNASegment.X2, 3));
+		assertTrue(Math.abs(35 - dnaTable.getValue(DNASegment.Y2, 3)) < TOLERANCE,
 			"y2 is off by more than the tolerance. Should be 35 was " + dnaTable
-				.getValue("y2", 3));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 3)) < TOLERANCE,
+				.getValue(DNASegment.Y2, 3));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 3)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 3));
+				.getValue(DNASegment.LENGTH, 3));
 
 		assertEquals(dnaTable.getValue("T", 4), 1);
-		assertTrue(Math.abs(10 - dnaTable.getValue("x1", 4)) < TOLERANCE,
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.X1, 4)) < TOLERANCE,
 			"x1 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("x1", 4));
-		assertTrue(Math.abs(10 - dnaTable.getValue("y1", 4)) < TOLERANCE,
+				.getValue(DNASegment.X1, 4));
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.Y1, 4)) < TOLERANCE,
 			"y1 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("y1", 4));
-		assertTrue(Math.abs(10 - dnaTable.getValue("x2", 4)) < TOLERANCE,
+				.getValue(DNASegment.Y1, 4));
+		assertTrue(Math.abs(10 - dnaTable.getValue(DNASegment.X2, 4)) < TOLERANCE,
 			"x2 is off by more than the tolerance. Should be 10 was " + dnaTable
-				.getValue("x2", 4));
-		assertTrue(Math.abs(30 - dnaTable.getValue("y2", 4)) < TOLERANCE,
+				.getValue(DNASegment.X2, 4));
+		assertTrue(Math.abs(30 - dnaTable.getValue(DNASegment.Y2, 4)) < TOLERANCE,
 			"y2 is off by more than the tolerance. Should be 30 was " + dnaTable
-				.getValue("y2", 4));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 4)) < TOLERANCE,
+				.getValue(DNASegment.Y2, 4));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 4)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 4));
+				.getValue(DNASegment.LENGTH, 4));
 
 		assertEquals(dnaTable.getValue("T", 5), 1);
-		assertTrue(Math.abs(43 - dnaTable.getValue("x1", 5)) < TOLERANCE,
+		assertTrue(Math.abs(43 - dnaTable.getValue(DNASegment.X1, 5)) < TOLERANCE,
 			"x1 is off by more than the tolerance. Should be 43 was " + dnaTable
-				.getValue("x1", 5));
-		assertTrue(Math.abs(20 - dnaTable.getValue("y1", 5)) < TOLERANCE,
+				.getValue(DNASegment.X1, 5));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.Y1, 5)) < TOLERANCE,
 			"y1 is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("y1", 5));
-		assertTrue(Math.abs(43 - dnaTable.getValue("x2", 5)) < TOLERANCE,
+				.getValue(DNASegment.Y1, 5));
+		assertTrue(Math.abs(43 - dnaTable.getValue(DNASegment.X2, 5)) < TOLERANCE,
 			"x2 is off by more than the tolerance. Should be 43 was " + dnaTable
-				.getValue("x2", 5));
-		assertTrue(Math.abs(40 - dnaTable.getValue("y2", 5)) < TOLERANCE,
+				.getValue(DNASegment.X2, 5));
+		assertTrue(Math.abs(40 - dnaTable.getValue(DNASegment.Y2, 5)) < TOLERANCE,
 			"y2 is off by more than the tolerance. Should be 40 was " + dnaTable
-				.getValue("y2", 5));
-		assertTrue(Math.abs(20 - dnaTable.getValue("length", 5)) < TOLERANCE,
+				.getValue(DNASegment.Y2, 5));
+		assertTrue(Math.abs(20 - dnaTable.getValue(DNASegment.LENGTH, 5)) < TOLERANCE,
 			"length is off by more than the tolerance. Should be 20 was " + dnaTable
-				.getValue("length", 5));
+				.getValue(DNASegment.LENGTH, 5));
 	}
 
 	public Dataset simulateDataset() {

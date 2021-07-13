@@ -93,10 +93,10 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	/**
 	 * IMAGES
 	 */
-	@Parameter(label = "Add To Me", choices = { "a", "b", "c" })
+	@Parameter(label = "Add to me", choices = { "a", "b", "c" })
 	private String addToMeName;
 
-	@Parameter(label = "Transform Me", choices = { "a", "b", "c" })
+	@Parameter(label = "Transform me", choices = { "a", "b", "c" })
 	private String transformMeName;
 
 	/**
@@ -126,7 +126,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	@Parameter(label = "m12")
 	private double m12;
 
-	@Parameter(label = "Merged Image", type = ItemIO.OUTPUT)
+	@Parameter(label = "Merged image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")

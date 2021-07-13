@@ -71,12 +71,16 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	 */
 	private PeakShape peakShape;
 
-	public static final String HEIGHT = "height";
-	public static final String BASELINE = "baseline";
-	public static final String SIGMA = "sigma";
+	public static final String X = "X";
+	public static final String Y = "Y";
+	public static final String T = "T";
+	public static final String HEIGHT = "Height";
+	public static final String BASELINE = "Baseline";
+	public static final String SIGMA = "Sigma";
 	public static final String R2 = "R2";
-	public static final String MEDIAN_BACKGROUND = "medianBackground";
-	public static final String INTENSITY = "intensity";
+	public static final String MEDIAN_BACKGROUND = "Median Background";
+	public static final String INTENSITY = "Intensity";
+	public static final String AREA = "Area";
 	
 	private final Map< String, Double > properties = new ConcurrentHashMap<>();
 	
@@ -334,12 +338,12 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		return this.properties.get(MEDIAN_BACKGROUND).doubleValue();
 	}
 
-	public void setRsquared(double R2) {
-		this.properties.put("R2", R2);
+	public void setRsquared(double R2value) {
+		this.properties.put(R2, R2value);
 	}
 
 	public double getRSquared() {
-		if (properties.containsKey("R2"))
+		if (properties.containsKey(R2))
 			return this.properties.get(R2).doubleValue();
 		else
 			return 0;

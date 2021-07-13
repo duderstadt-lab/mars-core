@@ -118,149 +118,149 @@ public class PeakFinderCommandTest {
 
 		MarsTable peakTable = peakFinder.getPeakTable();
 
-		assertEquals(peakTable.getValue("T", 0), 0);
-		assertTrue(Math.abs(10 - peakTable.getValue("x", 0)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 0), 0);
+		assertTrue(Math.abs(10 - peakTable.getValue(Peak.X, 0)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 10 was " +
-				peakTable.getValue("x", 0));
-		assertTrue(Math.abs(10 - peakTable.getValue("y", 0)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 0));
+		assertTrue(Math.abs(10 - peakTable.getValue(Peak.Y, 0)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 10 was " +
-				peakTable.getValue("y", 0));
-		assertTrue(Math.abs(15789.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 0));
+		assertTrue(Math.abs(15789.0 - peakTable.getValue(Peak.INTENSITY,
 			0)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 15789 was " +
-				peakTable.getValue("intensity", 0));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 0)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 0));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 0)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 0));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 0)) < 1,
+				.getValue(Peak.BASELINE, 0));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 0)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 0));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 0)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 0));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 0)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 0));
-		assertTrue(Math.abs(1 - peakTable.getValue("R2", 0)) < TOLERANCE,
+				.getValue(Peak.SIGMA, 0));
+		assertTrue(Math.abs(1 - peakTable.getValue(Peak.R2, 0)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 0));
+				.getValue(Peak.SIGMA, 0));
 
-		assertEquals(peakTable.getValue("T", 1), 0);
-		assertTrue(Math.abs(43.7 - peakTable.getValue("x", 1)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 1), 0);
+		assertTrue(Math.abs(43.7 - peakTable.getValue(Peak.X, 1)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-				peakTable.getValue("x", 1));
-		assertTrue(Math.abs(26.7 - peakTable.getValue("y", 1)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 1));
+		assertTrue(Math.abs(26.7 - peakTable.getValue(Peak.Y, 1)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
-				peakTable.getValue("y", 1));
-		assertTrue(Math.abs(14756.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 1));
+		assertTrue(Math.abs(14756.0 - peakTable.getValue(Peak.INTENSITY,
 			1)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("intensity", 1));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 1)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 1));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 1)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 1));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 1)) < 1,
+				.getValue(Peak.BASELINE, 1));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 1)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 1));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 1)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 1));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 1)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 1));
-		assertTrue(Math.abs(1 - peakTable.getValue("R2", 1)) < TOLERANCE,
+				.getValue(Peak.SIGMA, 1));
+		assertTrue(Math.abs(1 - peakTable.getValue(Peak.R2, 1)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 1));
+				.getValue(Peak.SIGMA, 1));
 
-		assertEquals(peakTable.getValue("T", 2), 0);
-		assertTrue(Math.abs(32.5 - peakTable.getValue("x", 2)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 2), 0);
+		assertTrue(Math.abs(32.5 - peakTable.getValue(Peak.X, 2)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-				peakTable.getValue("x", 2));
-		assertTrue(Math.abs(40 - peakTable.getValue("y", 2)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 2));
+		assertTrue(Math.abs(40 - peakTable.getValue(Peak.Y, 2)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
-				peakTable.getValue("y", 2));
-		assertTrue(Math.abs(14416.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 2));
+		assertTrue(Math.abs(14416.0 - peakTable.getValue(Peak.INTENSITY,
 			2)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("intensity", 2));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 2)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 2));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 2)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 2));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 2)) < 1,
+				.getValue(Peak.BASELINE, 2));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 2)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 2));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 2)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 2));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 2)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 2));
+				.getValue(Peak.SIGMA, 2));
 		assertTrue(Math.abs(1 - peakTable.getValue("R2", 2)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 2));
+				.getValue(Peak.SIGMA, 2));
 
-		assertEquals(peakTable.getValue("T", 3), 1);
-		assertTrue(Math.abs(10 - peakTable.getValue("x", 3)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 3), 1);
+		assertTrue(Math.abs(10 - peakTable.getValue(Peak.X, 3)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 10 was " +
-				peakTable.getValue("x", 3));
-		assertTrue(Math.abs(10 - peakTable.getValue("y", 3)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 3));
+		assertTrue(Math.abs(10 - peakTable.getValue(Peak.Y, 3)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 10 was " +
-				peakTable.getValue("y", 3));
-		assertTrue(Math.abs(15789.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 3));
+		assertTrue(Math.abs(15789.0 - peakTable.getValue(Peak.INTENSITY,
 			3)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 15789 was " +
-				peakTable.getValue("intensity", 3));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 3)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 3));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 3)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 3));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 3)) < 1,
+				.getValue(Peak.BASELINE, 3));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 3)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 3));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 3)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 3));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 3)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 3));
+				.getValue(Peak.SIGMA, 3));
 		assertTrue(Math.abs(1 - peakTable.getValue("R2", 3)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 3));
+				.getValue(Peak.SIGMA, 3));
 
-		assertEquals(peakTable.getValue("T", 4), 1);
-		assertTrue(Math.abs(43.7 - peakTable.getValue("x", 4)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 4), 1);
+		assertTrue(Math.abs(43.7 - peakTable.getValue(Peak.X, 4)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-				peakTable.getValue("x", 4));
-		assertTrue(Math.abs(26.7 - peakTable.getValue("y", 4)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 4));
+		assertTrue(Math.abs(26.7 - peakTable.getValue(Peak.Y, 4)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
-				peakTable.getValue("y", 4));
-		assertTrue(Math.abs(14756.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 4));
+		assertTrue(Math.abs(14756.0 - peakTable.getValue(Peak.INTENSITY,
 			4)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("intensity", 4));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 4)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 4));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 4)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 4));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 4)) < 1,
+				.getValue(Peak.BASELINE, 4));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 4)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 4));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 4)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 4));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 4)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 4));
+				.getValue(Peak.SIGMA, 4));
 		assertTrue(Math.abs(1 - peakTable.getValue("R2", 4)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 4));
+				.getValue(Peak.SIGMA, 4));
 
-		assertEquals(peakTable.getValue("T", 5), 1);
-		assertTrue(Math.abs(32.5 - peakTable.getValue("x", 5)) < TOLERANCE,
+		assertEquals(peakTable.getValue(Peak.T, 5), 1);
+		assertTrue(Math.abs(32.5 - peakTable.getValue(Peak.X, 5)) < TOLERANCE,
 			"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-				peakTable.getValue("x", 5));
-		assertTrue(Math.abs(40 - peakTable.getValue("y", 5)) < TOLERANCE,
+				peakTable.getValue(Peak.X, 5));
+		assertTrue(Math.abs(40 - peakTable.getValue(Peak.Y, 5)) < TOLERANCE,
 			"Peak y position is off by more than the tolerance. Should be 26.7 was " +
-				peakTable.getValue("y", 5));
-		assertTrue(Math.abs(14416.0 - peakTable.getValue("intensity",
+				peakTable.getValue(Peak.Y, 5));
+		assertTrue(Math.abs(14416.0 - peakTable.getValue(Peak.INTENSITY,
 			5)) < TOLERANCE,
 			"Peak intensity is off by more than the tolerance. Should be 14756 was " +
-				peakTable.getValue("intensity", 5));
-		assertTrue(Math.abs(3500.0 - peakTable.getValue("baseline", 5)) < 1,
+				peakTable.getValue(Peak.INTENSITY, 5));
+		assertTrue(Math.abs(3500.0 - peakTable.getValue(Peak.BASELINE, 5)) < 1,
 			"Peak baseline is off by more than the 1. Should be 3500 was " + peakTable
-				.getValue("baseline", 5));
-		assertTrue(Math.abs(3000.0 - peakTable.getValue("height", 5)) < 1,
+				.getValue(Peak.BASELINE, 5));
+		assertTrue(Math.abs(3000.0 - peakTable.getValue(Peak.HEIGHT, 5)) < 1,
 			"Peak height is off by more than the 1. Should be 3000 was " + peakTable
-				.getValue("height", 5));
-		assertTrue(Math.abs(1.2 - peakTable.getValue("sigma", 5)) < TOLERANCE,
+				.getValue(Peak.HEIGHT, 5));
+		assertTrue(Math.abs(1.2 - peakTable.getValue(Peak.SIGMA, 5)) < TOLERANCE,
 			"Peak sigma is off by more than the 10. Should be 3000 was " + peakTable
-				.getValue("sigma", 5));
+				.getValue(Peak.SIGMA, 5));
 		assertTrue(Math.abs(1 - peakTable.getValue("R2", 5)) < TOLERANCE,
 			"Peak R2 is off by more than the tolerance. Should be 1 was " + peakTable
-				.getValue("sigma", 5));
+				.getValue(Peak.SIGMA, 5));
 
 	}
 

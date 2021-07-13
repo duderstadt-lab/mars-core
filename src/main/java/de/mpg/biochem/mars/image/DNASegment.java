@@ -36,6 +36,14 @@ public class DNASegment {
 	private int medianIntensity;
 
 	private double variance;
+	
+	public static final String X1 = "X1";
+	public static final String Y1 = "Y1";
+	public static final String X2 = "X2";
+	public static final String Y2 = "Y2";
+	public static final String MEDIAN_INTENSITY = "Median intensity";
+	public static final String INTENSITY_Variance = "Intensity variance";
+	public static final String LENGTH = "Length";
 
 	public DNASegment(double x1, double y1, double x2, double y2) {
 		this.x1 = x1;

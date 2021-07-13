@@ -33,56 +33,65 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class KCPSegment {
 
-	public double x1, y1, x2, y2, A, A_sigma, B, B_sigma;
+	public double x1, y1, x2, y2, a, sigma_a, b, sigma_b;
 	public String UID;
+	
+	public static final String X1 = "X1";
+	public static final String X2 = "X2";
+	public static final String Y1 = "Y1";
+	public static final String Y2 = "Y2";
+	public static final String A = "A";
+	public static final String B = "B";
+	public static final String SIGMA_A = "Sigma_A";
+	public static final String SIGMA_B = "Sigma_B";
 
 	public KCPSegment(MarsTable table, int index, String UID) {
-		x1 = table.getValue("x1", index);
-		y1 = table.getValue("y1", index);
-		x2 = table.getValue("x2", index);
-		y2 = table.getValue("y2", index);
-		A = table.getValue("A", index);
-		A_sigma = table.getValue("sigma_A", index);
-		B = table.getValue("B", index);
-		B_sigma = table.getValue("sigma_B", index);
+		x1 = table.getValue(X1, index);
+		y1 = table.getValue(Y1, index);
+		x2 = table.getValue(X2, index);
+		y2 = table.getValue(Y2, index);
+		a = table.getValue(A, index);
+		sigma_a = table.getValue(SIGMA_A, index);
+		b = table.getValue(B, index);
+		sigma_b = table.getValue(SIGMA_B, index);
 		this.UID = UID;
 	}
 
 	public KCPSegment(MarsTable table, int index) {
-		x1 = table.getValue("x1", index);
-		y1 = table.getValue("y1", index);
-		x2 = table.getValue("x2", index);
-		y2 = table.getValue("y2", index);
-		A = table.getValue("A", index);
-		A_sigma = table.getValue("sigma_A", index);
-		B = table.getValue("B", index);
-		B_sigma = table.getValue("sigma_B", index);
+		x1 = table.getValue(X1, index);
+		y1 = table.getValue(Y1, index);
+		x2 = table.getValue(X2, index);
+		y2 = table.getValue(Y2, index);
+		a = table.getValue(A, index);
+		sigma_a = table.getValue(SIGMA_A, index);
+		b = table.getValue(B, index);
+		sigma_b = table.getValue(SIGMA_B, index);
 	}
 
-	public KCPSegment(double X1, double Y1, double X2, double Y2, double A,
-		double A_sigma, double B, double B_sigma)
+	public KCPSegment(double x1, double y1, double x2, double y2, double a,
+		double sigma_a, double b, double sigma_b)
 	{
-		x1 = X1;
-		y1 = Y1;
-		x2 = X2;
-		y2 = Y2;
-		this.A = A;
-		this.A_sigma = A_sigma;
-		this.B = B;
-		this.B_sigma = B_sigma;
+		this.x1 = x1;
+		this.y1 = y1;
+		this.x2 = x2;
+		this.y2 = y2;
+		this.a = a;
+		this.sigma_a = sigma_a;
+		this.b = b;
+		this.sigma_b = sigma_b;
 	}
 
-	public KCPSegment(double X1, double Y1, double X2, double Y2, double A,
-		double A_sigma, double B, double B_sigma, String UID)
+	public KCPSegment(double x1, double y1, double x2, double y2, double a,
+			double sigma_a, double b, double sigma_b, String UID)
 	{
-		x1 = X1;
-		y1 = Y1;
-		x2 = X2;
-		y2 = Y2;
-		this.A = A;
-		this.A_sigma = A_sigma;
-		this.B = B;
-		this.B_sigma = B_sigma;
+		this.x1 = x1;
+		this.y1 = y1;
+		this.x2 = x2;
+		this.y2 = y2;
+		this.a = a;
+		this.sigma_a = sigma_a;
+		this.b = b;
+		this.sigma_b = sigma_b;
 		this.UID = UID;
 	}
 

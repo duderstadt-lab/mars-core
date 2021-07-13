@@ -373,9 +373,9 @@ public class PeakTracker {
 		int sizeT = archive.metadata().findFirst().get().getImage(0).getSizeT();
 		do {
 			table.appendRow();
-			table.setValue("T", row, (double)peak.getT());
-			table.setValue("x", row, peak.getX());
-			table.setValue("y", row, peak.getY());
+			table.setValue(Peak.T, row, (double)peak.getT());
+			table.setValue(Peak.X, row, peak.getX());
+			table.setValue(Peak.Y, row, peak.getY());
 			if (verbose) {
 				for (String name : peak.getProperties().keySet())
 					table.setValue(name, row, peak.getProperties().get(name));
@@ -383,7 +383,7 @@ public class PeakTracker {
 				if (peak.getProperties().containsKey(Peak.INTENSITY))
 					table.setValue(Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
 				if (archive instanceof ObjectArchive)
-					table.setValue("area", row, peak.getProperties().get("area"));
+					table.setValue(Peak.AREA, row, peak.getProperties().get(Peak.AREA));
 			}
 			
 			if (archive instanceof ObjectArchive)
@@ -396,8 +396,8 @@ public class PeakTracker {
 		// Convert units
 		if (pixelSize != 1) {
 			table.rows().forEach(r -> {
-				r.setValue("x", r.getValue("x") * pixelSize);
-				r.setValue("y", r.getValue("y") * pixelSize);
+				r.setValue(Peak.X, r.getValue(Peak.X) * pixelSize);
+				r.setValue(Peak.Y, r.getValue(Peak.Y) * pixelSize);
 				
 				//What about objects? The polygons be multiplied also by pixelSize...
 			});

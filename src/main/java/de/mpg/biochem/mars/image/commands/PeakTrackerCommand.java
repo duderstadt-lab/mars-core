@@ -153,7 +153,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * IMAGE
 	 */
-	@Parameter(label = "Image to search for Peaks")
+	@Parameter(label = "Image to search for peaks")
 	private ImageDisplay imageDisplay;
 
 	/**
@@ -190,7 +190,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		callback = "previewChanged")
 	private boolean preview = false;
 
-	@Parameter(label = "Preview Roi:",
+	@Parameter(label = "Preview roi:",
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
 			"point" })
 	private String previewRoiType;
@@ -224,10 +224,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String trackerTitle = "Peak tracker settings:";
 
-	@Parameter(label = "Max difference x")
+	@Parameter(label = "Max difference X")
 	private double maxDifferenceX = 1;
 
-	@Parameter(label = "Max difference y")
+	@Parameter(label = "Max difference Y")
 	private double maxDifferenceY = 1;
 
 	@Parameter(label = "Max difference T")
@@ -730,15 +730,15 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		if (image != null) {
-			builder.addParameter("Image Title", image.getTitle());
+			builder.addParameter("Image title", image.getTitle());
 			if (image.getOriginalFileInfo() != null && image
 				.getOriginalFileInfo().directory != null)
 			{
-				builder.addParameter("Image Directory", image
+				builder.addParameter("Image directory", image
 					.getOriginalFileInfo().directory);
 			}
 		}
-		else builder.addParameter("Dataset Name", dataset.getName());
+		else builder.addParameter("Dataset name", dataset.getName());
 
 		builder.addParameter("useROI", String.valueOf(useROI));
 		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
@@ -746,14 +746,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
-		builder.addParameter("Minimum Distance", String.valueOf(minimumDistance));
+		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("Find negative peaks", String.valueOf(
 			findNegativePeaks));
 		builder.addParameter("Fit radius", String.valueOf(fitRadius));
 		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
-		builder.addParameter("Max difference x", String.valueOf(maxDifferenceX));
-		builder.addParameter("Max difference y", String.valueOf(maxDifferenceY));
+		builder.addParameter("Max difference X", String.valueOf(maxDifferenceX));
+		builder.addParameter("Max difference Y", String.valueOf(maxDifferenceY));
 		builder.addParameter("Max difference T", String.valueOf(maxDifferenceT));
 		builder.addParameter("Minimum track length", String.valueOf(
 			minTrajectoryLength));
@@ -763,8 +763,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Integration outer radius", String.valueOf(
 			integrationOuterRadius));
 		builder.addParameter("Microscope", microscope);
-		builder.addParameter("Pixel Length", String.valueOf(this.pixelLength));
-		builder.addParameter("Pixel Units", this.pixelUnits);
+		builder.addParameter("Pixel length", String.valueOf(this.pixelLength));
+		builder.addParameter("Pixel units", this.pixelUnits);
 		builder.addParameter("Exclude time points", excludeTimePointList);
 		builder.addParameter("Swap Z and T", swapZandT);
 		builder.addParameter("Thread count", nThreads);

@@ -153,10 +153,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	@Parameter(required = false)
 	private RoiManager roiManager;
 
-	@Parameter(label = "LONG x0")
+	@Parameter(label = "LONG X0")
 	private int LONGx0 = 0;
 
-	@Parameter(label = "LONG y0")
+	@Parameter(label = "LONG Y0")
 	private int LONGy0 = 0;
 
 	@Parameter(label = "LONG width")
@@ -165,10 +165,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	@Parameter(label = "LONG height")
 	private int LONGheight = 500;
 
-	@Parameter(label = "SHORT x0")
+	@Parameter(label = "SHORT X0")
 	private int SHORTx0 = 0;
 
-	@Parameter(label = "SHORT y0")
+	@Parameter(label = "SHORT Y0")
 	private int SHORTy0 = 524;
 
 	@Parameter(label = "SHORT width")

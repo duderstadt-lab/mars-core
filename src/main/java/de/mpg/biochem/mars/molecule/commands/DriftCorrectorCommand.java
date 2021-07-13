@@ -89,19 +89,19 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "Calculate drift")
 	private boolean calculateDrift = true;
 	
-	@Parameter(label = "Background Tag")
+	@Parameter(label = "Background tag")
 	private String backgroundTag = "background";
 
-	@Parameter(label = "Input X (x)")
-	private String input_x = "x";
+	@Parameter(label = "Input X")
+	private String input_x = "X";
 
-	@Parameter(label = "Input Y (y)")
-	private String input_y = "y";
+	@Parameter(label = "Input Y")
+	private String input_y = "Y";
 
 	@Parameter(label = "Use incomplete traces")
 	private boolean use_incomplete_traces = false;
 	
-	@Parameter(label = "mode", choices = { "mean", "median" })
+	@Parameter(label = "Mode", choices = { "mean", "median" })
 	private String mode = "mean";
 
 	@Parameter(label = "Zero:",
@@ -115,11 +115,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "Correct drift")
 	private boolean correctDrift = true;
 	
-	@Parameter(label = "Output X (x_drift_corr)")
-	private String output_x = "x_drift_corr";
+	@Parameter(label = "Output X (X_drift_corr)")
+	private String output_x = "X_drift_corr";
 
-	@Parameter(label = "Output Y (y_drift_corr)")
-	private String output_y = "y_drift_corr";
+	@Parameter(label = "Output Y (Y_drift_corr)")
+	private String output_y = "Y_drift_corr";
 	
 	//@Parameter(label = "set output zero to mean of region")
 	//private boolean zeroToRegion = false;

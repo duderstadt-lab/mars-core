@@ -202,8 +202,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 
 	private void addInputParameterLog(LogBuilder builder) {
 		builder.addParameter("MoleculeArchive", archive.getName());
-		builder.addParameter("X Column", xColumn);
-		builder.addParameter("Y Column", yColumn);
+		builder.addParameter("X column", xColumn);
+		builder.addParameter("Y column", yColumn);
 		builder.addParameter("Region type", regionType);
 		builder.addParameter("from", String.valueOf(from));
 		builder.addParameter("to", String.valueOf(to));

@@ -143,7 +143,7 @@ public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 		// Build log message
 		LogBuilder builder = new LogBuilder();
 
-		String log = builder.buildTitleBlock("Region Difference Calculator");
+		String log = LogBuilder.buildTitleBlock("Region Difference Calculator");
 
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
