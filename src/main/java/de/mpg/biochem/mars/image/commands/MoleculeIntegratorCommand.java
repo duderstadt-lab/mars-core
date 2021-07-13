@@ -497,11 +497,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
-			columns.add(new DoubleColumn(name + " Time (s)"));
-			columns.add(new DoubleColumn(name + " X"));
-			columns.add(new DoubleColumn(name + " Y"));
+			columns.add(new DoubleColumn(name + "_Time_(s)"));
+			columns.add(new DoubleColumn(name + "_X"));
+			columns.add(new DoubleColumn(name + "_Y"));
 			columns.add(new DoubleColumn(name));
-			columns.add(new DoubleColumn(name + " Background"));
+			columns.add(new DoubleColumn(name + "_Background"));
 		}
 
 		for (DoubleColumn column : columns)
@@ -521,16 +521,16 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
 					table.setValue(name, row, peak.getIntensity());
-					table.setValue(name + " Background", row, peak.getMedianBackground());
-					table.setValue(name + " X", row, peak.getX());
-					table.setValue(name + " Y", row, peak.getY());
+					table.setValue(name + "_Background", row, peak.getMedianBackground());
+					table.setValue(name + "_X", row, peak.getX());
+					table.setValue(name + "_Y", row, peak.getY());
 				}
 				else {
-					table.setValue(name + " Time (s)", row, Double.NaN);
+					table.setValue(name + "_Time_(s)", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
-					table.setValue(name + " Background", row, Double.NaN);
-					table.setValue(name + " X", row, Double.NaN);
-					table.setValue(name + " Y", row, Double.NaN);
+					table.setValue(name + "_Background", row, Double.NaN);
+					table.setValue(name + "_X", row, Double.NaN);
+					table.setValue(name + "_Y", row, Double.NaN);
 				}
 			}
 		}
@@ -626,7 +626,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			}
 		}
 		else {
-			builder.addParameter("Dataset Name", dataset.getName());
+			builder.addParameter("Dataset name", dataset.getName());
 		}
 		builder.addParameter("Use ROI", String.valueOf(useROI));
 		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
