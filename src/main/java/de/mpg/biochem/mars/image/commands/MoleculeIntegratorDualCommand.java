@@ -534,11 +534,11 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
-			columns.add(new DoubleColumn(name + " Time (s)"));
-			columns.add(new DoubleColumn(name + " x"));
-			columns.add(new DoubleColumn(name + " y"));
+			columns.add(new DoubleColumn(name + "_Time_(s)"));
+			columns.add(new DoubleColumn(name + "_X"));
+			columns.add(new DoubleColumn(name + "_Y"));
 			columns.add(new DoubleColumn(name));
-			columns.add(new DoubleColumn(name + " background"));
+			columns.add(new DoubleColumn(name + "_Background"));
 		}
 
 		for (DoubleColumn column : columns)
@@ -558,16 +558,16 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
 					table.setValue(name, row, peak.getIntensity());
-					table.setValue(name + " background", row, peak.getMedianBackground());
-					table.setValue(name + " x", row, peak.getX());
-					table.setValue(name + " y", row, peak.getY());
+					table.setValue(name + "_Background", row, peak.getMedianBackground());
+					table.setValue(name + "_X", row, peak.getX());
+					table.setValue(name + "_Y", row, peak.getY());
 				}
 				else {
-					table.setValue(name + " Time (s)", row, Double.NaN);
+					table.setValue(name + "_Time_(s)", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
-					table.setValue(name + " background", row, Double.NaN);
-					table.setValue(name + " x", row, Double.NaN);
-					table.setValue(name + " y", row, Double.NaN);
+					table.setValue(name + "_Background", row, Double.NaN);
+					table.setValue(name + "_X", row, Double.NaN);
+					table.setValue(name + "_Y", row, Double.NaN);
 				}
 			}
 		}

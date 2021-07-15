@@ -78,7 +78,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public static final String BASELINE = "Baseline";
 	public static final String SIGMA = "Sigma";
 	public static final String R2 = "R2";
-	public static final String MEDIAN_BACKGROUND = "Median Background";
+	public static final String MEDIAN_BACKGROUND = "Median_background";
 	public static final String INTENSITY = "Intensity";
 	public static final String AREA = "Area";
 	

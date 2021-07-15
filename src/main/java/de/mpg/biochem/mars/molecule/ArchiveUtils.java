@@ -28,7 +28,10 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.decimal4j.util.DoubleRounder;
@@ -80,8 +83,8 @@ public class ArchiveUtils {
 		builder.addParameter("Use incomplete traces", String.valueOf(
 			use_incomplete_traces));
 		builder.addParameter("Zero point", zeroPoint);
-		builder.addParameter("Background Tag", backgroundTag);
-		builder.addParameter("mode", mode);
+		builder.addParameter("Background tag", backgroundTag);
+		builder.addParameter("Mode", mode);
 		log += builder.buildParameterList();
 
 		// Output first part of log message...
@@ -104,8 +107,8 @@ public class ArchiveUtils {
 				new HashMap<Integer, DoubleColumn>();
 
 			for (int t = 0; t <= sizeT; t++) {
-				xValuesColumns.put(t, new DoubleColumn("X " + t));
-				yValuesColumns.put(t, new DoubleColumn("Y " + t));
+				xValuesColumns.put(t, new DoubleColumn("X_" + t));
+				yValuesColumns.put(t, new DoubleColumn("Y_" + t));
 			}
 
 			if (use_incomplete_traces) {
@@ -174,8 +177,8 @@ public class ArchiveUtils {
 
 			MarsTable driftTable = new MarsTable();
 			driftTable.appendColumn("T");
-			driftTable.appendColumn("x");
-			driftTable.appendColumn("y");
+			driftTable.appendColumn("X");
+			driftTable.appendColumn("Y");
 
 			int gRow = 0;
 			for (int t = 0; t <= sizeT; t++) {
@@ -192,18 +195,18 @@ public class ArchiveUtils {
 				yTempTable.add(yValuesColumns.get(t));
 
 				if (mode.equals("mean")) {
-					xTFinalValue = xTempTable.mean("X " + t);
-					yTFinalValue = yTempTable.mean("Y " + t);
+					xTFinalValue = xTempTable.mean("X_" + t);
+					yTFinalValue = yTempTable.mean("Y_" + t);
 				}
 				else {
-					xTFinalValue = xTempTable.median("X " + t);
-					yTFinalValue = yTempTable.median("Y " + t);
+					xTFinalValue = xTempTable.median("X_" + t);
+					yTFinalValue = yTempTable.median("Y_" + t);
 				}
 
 				driftTable.appendRow();
 				driftTable.setValue("T", gRow, t);
-				driftTable.setValue("x", gRow, xTFinalValue);
-				driftTable.setValue("y", gRow, yTFinalValue);
+				driftTable.setValue("X", gRow, xTFinalValue);
+				driftTable.setValue("Y", gRow, yTFinalValue);
 				gRow++;
 			}
 
@@ -211,12 +214,12 @@ public class ArchiveUtils {
 				sizeT);
 
 			// Build Maps
-			HashMap<Integer, Double> TtoXMap = new HashMap<Integer, Double>();
-			HashMap<Integer, Double> TtoYMap = new HashMap<Integer, Double>();
+			Map<Integer, Double> TtoXMap = new HashMap<Integer, Double>();
+			Map<Integer, Double> TtoYMap = new HashMap<Integer, Double>();
 
 			driftTable.rows().forEach(row -> {
-				TtoXMap.put((int) row.getValue("T"), row.getValue("x"));
-				TtoYMap.put((int) row.getValue("T"), row.getValue("y"));
+				TtoXMap.put((int) row.getValue("T"), row.getValue("X"));
+				TtoYMap.put((int) row.getValue("T"), row.getValue("Y"));
 			});
 
 			Stream<MarsOMEPlane> planes = meta.getImage(0).planes();
@@ -280,11 +283,11 @@ public class ArchiveUtils {
 				for (int w = 1; w < current_T - previous_T; w++) {
 					table.appendRow();
 					table.setValue("T", table.getRowCount() - 1, previous_T + w);
-					table.setValue("x", table.getRowCount() - 1, table.getValue("x", i -
-						1) + w * (table.getValue("x", i) - table.getValue("x", i - 1)) /
+					table.setValue("X", table.getRowCount() - 1, table.getValue("X", i -
+						1) + w * (table.getValue("X", i) - table.getValue("X", i - 1)) /
 							(current_T - previous_T));
-					table.setValue("y", table.getRowCount() - 1, table.getValue("y", i -
-						1) + w * (table.getValue("y", i) - table.getValue("y", i - 1)) /
+					table.setValue("Y", table.getRowCount() - 1, table.getValue("Y", i -
+						1) + w * (table.getValue("Y", i) - table.getValue("Y", i - 1)) /
 							(current_T - previous_T));
 				}
 			}
@@ -295,8 +298,8 @@ public class ArchiveUtils {
 			for (int t = 0; t < table.getValue("T", 0); t++) {
 				table.appendRow();
 				table.setValue("T", table.getRowCount() - 1, t);
-				table.setValue("x", table.getRowCount() - 1, table.getValue("x", 0));
-				table.setValue("y", table.getRowCount() - 1, table.getValue("y", 0));
+				table.setValue("X", table.getRowCount() - 1, table.getValue("X", 0));
+				table.setValue("Y", table.getRowCount() - 1, table.getValue("Y", 0));
 			}
 		}
 
@@ -306,9 +309,9 @@ public class ArchiveUtils {
 			{
 				table.appendRow();
 				table.setValue("T", table.getRowCount() - 1, t);
-				table.setValue("x", table.getRowCount() - 1, table.getValue("x", rows -
+				table.setValue("X", table.getRowCount() - 1, table.getValue("X", rows -
 					1));
-				table.setValue("y", table.getRowCount() - 1, table.getValue("y", rows -
+				table.setValue("Y", table.getRowCount() - 1, table.getValue("Y", rows -
 					1));
 			}
 		}
@@ -332,6 +335,128 @@ public class ArchiveUtils {
 		{
 			correctDrift(archive, input_x, input_y, output_x, output_y, false, 0, logService);
 		}
+	
+	public static void updateTableHeaders(MoleculeArchive<Molecule,?,?,?> archive) {
+		LogBuilder builder = new LogBuilder();
+
+		String log = LogBuilder.buildTitleBlock("Updating table headers");
+
+		builder.addParameter("MoleculeArchive", archive.getName());
+		builder.addParameter("Outdated schema from", archive.properties().getInputSchema());
+		log += builder.buildParameterList();
+		
+		//Check and update molecule table headers
+		archive.parallelMolecules().forEach(molecule -> {
+			MarsTable table = molecule.getTable();
+			String[] headers = table.getColumnHeadings();
+			
+			if (molecule instanceof DnaMolecule) {
+				for (int col=0; col<headers.length; col++) {
+					String header = headers[col];
+					if (header.endsWith("_x"))
+				    	table.setColumnHeader(col, header.substring(0, header.length() - 1) + "X");
+					else if (header.endsWith("_y"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 1) + "Y");
+					else if (header.endsWith("_height"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 6) + "Height");
+					else if (header.endsWith("_baseline"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 8) + "Baseline");
+					else if (header.endsWith("_sigma"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 5) + "Sigma");
+					else if (header.endsWith("_intensity"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 9) + "Intensity");
+					else if (header.endsWith("_medianBackground"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 16) + "Median_background");
+					else if (header.endsWith("_Time (s)"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 8) + "Time_(s)");
+					else if (header.endsWith("_x_drift_corr"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 12) + "X_drift_corr");
+					else if (header.endsWith("_y_drift_corr"))
+						table.setColumnHeader(col, header.substring(0, header.length() - 12) + "Y_drift_corr");
+				}
+			} else {
+				for (int col=0; col<headers.length; col++) {
+					String header = headers[col];
+					switch (header) {
+				    	case "x":
+				    		table.setColumnHeader(col, "X");
+				    		break;
+				    	case "y":
+				    		table.setColumnHeader(col, "Y");
+				    		break;
+				    	case "height":
+				    		table.setColumnHeader(col, "Height");
+				    		break;
+				    	case "baseline":
+				    		table.setColumnHeader(col, "Baseline");
+				    		break;
+				    	case "sigma":
+				    		table.setColumnHeader(col, "Sigma");
+				    		break;
+				    	case "intensity":
+				    		table.setColumnHeader(col, "Intensity");
+				    		break;
+				    	case "medianBackground":
+				    		table.setColumnHeader(col, "Median_background");
+				    		break;
+				    	case "Time (s)":
+				    		table.setColumnHeader(col, "Time_(s)");
+				    		break;
+				    	case "area":
+				    		table.setColumnHeader(col, "Area");
+				    		break;
+				    	case "length":
+				    		table.setColumnHeader(col, "Length");
+				    		break;
+				    	case "x_drift_corr":
+				    		table.setColumnHeader(col, "X_drift_corr");
+				    		break;
+				    	case "y_drift_corr":
+				    		table.setColumnHeader(col, "Y_drift_corr");
+				    		break;
+					}
+				}
+			}
+			//Check and update molecule segment table headers and table title
+			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
+				MarsTable segmentTable = molecule.getSegmentsTable(tableColumnNames);
+				String[] segmentHeaders = segmentTable.getColumnHeadings();
+				
+				for (int col=0; col<segmentHeaders.length; col++) {
+					String header = segmentHeaders[col];
+					switch (header) {
+				    	case "x1":
+				    		table.setColumnHeader(col, "X1");
+				    		break;
+				    	case "y1":
+				    		table.setColumnHeader(col, "Y1");
+				    		break;
+				    	case "x2":
+				    		table.setColumnHeader(col, "X2");
+				    		break;
+				    	case "y2":
+				    		table.setColumnHeader(col, "Y2");
+				    		break;
+				    	case "sigma_A":
+				    		table.setColumnHeader(col, "Sigma_A");
+				    		break;
+				    	case "sigma_B":
+				    		table.setColumnHeader(col, "Sigma_B");
+				    		break;
+					}
+				}
+			}
+			
+			//What about highlighted regions ??? Those will also need to be changed!!
+			
+			//Have to put it back in to ensure reindexing, also for virtual archives..
+			archive.put(molecule);
+		});
+		
+		log += "\n" + LogBuilder.endBlock(true);
+		archive.logln(log);
+		archive.logln("   ");
+	}
 	
 	public static void correctDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
@@ -360,10 +485,10 @@ public class ArchiveUtils {
 		archive.logln(log);
 
 		// Build maps from slice to x and slice to y for each metadataset
-		HashMap<String, HashMap<Double, Double>> metaToMapX =
-			new HashMap<String, HashMap<Double, Double>>();
-		HashMap<String, HashMap<Double, Double>> metaToMapY =
-			new HashMap<String, HashMap<Double, Double>>();
+		HashMap<String, Map<Double, Double>> metaToMapX =
+			new HashMap<String, Map<Double, Double>>();
+		HashMap<String, Map<Double, Double>> metaToMapY =
+			new HashMap<String, Map<Double, Double>>();
 
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
@@ -388,9 +513,9 @@ public class ArchiveUtils {
 				return;
 			}
 
-			HashMap<Double, Double> TtoXMap = metaToMapX.get(molecule
+			Map<Double, Double> TtoXMap = metaToMapX.get(molecule
 				.getMetadataUID());
-			HashMap<Double, Double> TtoYMap = metaToMapY.get(molecule
+			Map<Double, Double> TtoYMap = metaToMapY.get(molecule
 				.getMetadataUID());
 
 			MarsTable datatable = molecule.getTable();
@@ -442,7 +567,7 @@ public class ArchiveUtils {
 		archive.logln("  ");
 	}
 
-	private static HashMap<Double, Double> getToXDriftMap(MarsMetadata meta, final int channel) {
+	private static Map<Double, Double> getToXDriftMap(MarsMetadata meta, final int channel) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
 		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
@@ -451,7 +576,7 @@ public class ArchiveUtils {
 		return TtoColumn;
 	}
 
-	private static HashMap<Double, Double> getToYDriftMap(MarsMetadata meta, final int channel) {
+	private static Map<Double, Double> getToYDriftMap(MarsMetadata meta, final int channel) {
 		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
 
 		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)

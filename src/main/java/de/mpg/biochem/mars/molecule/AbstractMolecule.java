@@ -219,9 +219,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 						// Must not have a region name
 						tableColumnNames.add("");
 					}
-
-					MarsTable segmentTable = new MarsTable(yColumn + " vs " + xColumn +
-						" - " + region);
+					
+					String tableTitle = (region.equals("")) ? yColumn + "_vs_" + xColumn : yColumn + "_vs_" + xColumn + "_" + region;
+					MarsTable segmentTable = new MarsTable(tableTitle);
 
 					segmentTable.fromJSON(jParser);
 
@@ -297,12 +297,12 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 						tableColumnNames.add("");
 					}
 
-					MarsTable segmenttable = new MarsTable(yColumnName + " vs " +
-						xColumnName + " - " + regionName);
+					String tableTitle = (regionName.equals("")) ? yColumnName + "_vs_" + xColumnName : yColumnName + "_vs_" + xColumnName + "_" + regionName;
+					MarsTable segmentTable = new MarsTable(tableTitle);
 
-					segmenttable.fromJSON(jParser);
+					segmentTable.fromJSON(jParser);
 
-					segmentTables.put(tableColumnNames, segmenttable);
+					segmentTables.put(tableColumnNames, segmentTable);
 				}
 			}
 		});

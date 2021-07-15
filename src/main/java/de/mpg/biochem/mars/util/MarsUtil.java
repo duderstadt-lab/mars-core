@@ -120,49 +120,7 @@ public class MarsUtil {
 	        	updateJLabelTextInContainer((Container)c, searchForPrefix, newText);
 	    }
 	}
-/*
-	public static void forkJoinPoolBuilder(StatusService statusService,
-		LogService logService, Runnable updateStatus, Runnable task, int numThreads)
-	{
 
-		final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-
-		ForkJoinPool forkJoinPool = new ForkJoinPool(numThreads);
-		try {
-			Thread progressThread = new Thread() {
-
-				public synchronized void run() {
-					try {
-						while (progressUpdating.get()) {
-							Thread.sleep(100);
-							updateStatus.run();
-						}
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			};
-
-			progressThread.start();
-
-			forkJoinPool.submit(task).get();
-
-			progressUpdating.set(false);
-
-		}
-		catch (InterruptedException | ExecutionException e) {
-			// handle exceptions
-			e.printStackTrace();
-			logService.info(LogBuilder.endBlock(false));
-		}
-		finally {
-			forkJoinPool.shutdown();
-			statusService.showProgress(100, 100);
-			statusService.showStatus("Done!");
-		}
-	}
-*/
 	/**
 	 * Return Json String in pretty print format.
 	 * 

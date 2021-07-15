@@ -395,7 +395,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	private void generateDNACountTable() {
 		logService.info("Generating DNA count table..");
-		dnaCount = new MarsTable("DNA Count - " + image.getTitle());
+		dnaCount = new MarsTable("DNA_Count_" + image.getTitle());
 		DoubleColumn frameColumn = new DoubleColumn("T");
 		DoubleColumn countColumn = new DoubleColumn("DNAs");
 
@@ -417,7 +417,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		// build a table with all peaks
 		String title = "DNAs Table - " + dataset.getName();
 		dnaTable = new MarsTable(title, "T", "X1", "Y1", "X2", "Y2", "Length",
-			"Median intensity", "Intensity variance");
+			"Median_intensity", "Intensity_variance");
 
 		int row = 0;
 		for (int t : dnaStack.keySet()) {
@@ -430,9 +430,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 				dnaTable.setValue("X2", row, tDNAs.get(j).getX2());
 				dnaTable.setValue("Y2", row, tDNAs.get(j).getY2());
 				dnaTable.setValue("Length", row, tDNAs.get(j).getLength());
-				dnaTable.setValue("Median intensity", row, tDNAs.get(j)
+				dnaTable.setValue("Median_intensity", row, tDNAs.get(j)
 					.getMedianIntensity());
-				dnaTable.setValue("Intensity variance", row, tDNAs.get(j)
+				dnaTable.setValue("Intensity_variance", row, tDNAs.get(j)
 					.getVariance());
 				row++;
 			}
