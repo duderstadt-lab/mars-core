@@ -28,6 +28,7 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -449,9 +450,16 @@ public class ArchiveUtils {
 			
 			//What about highlighted regions ??? Those will also need to be changed!!
 			
-			//Have to put it back in to ensure reindexing, also for virtual archives..
+			//Have to put it back in to ensure indexing, also for virtual archives..
 			archive.put(molecule);
 		});
+		
+		try {
+			archive.rebuildIndexes();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		log += "\n" + LogBuilder.endBlock(true);
 		archive.logln(log);
