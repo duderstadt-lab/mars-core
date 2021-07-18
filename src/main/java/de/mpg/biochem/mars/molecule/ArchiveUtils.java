@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.decimal4j.util.DoubleRounder;
@@ -340,7 +341,7 @@ public class ArchiveUtils {
 			correctDrift(archive, input_x, input_y, output_x, output_y, false, 0, logService);
 		}
 	
-	public static void updateTableHeaders(MoleculeArchive<Molecule,?,?,?> archive) {
+	public static void updateTableHeaders(MoleculeArchive<Molecule,MarsMetadata,?,?> archive) {
 		LogBuilder builder = new LogBuilder();
 
 		String log = LogBuilder.buildTitleBlock("Updating table headers");
@@ -350,7 +351,7 @@ public class ArchiveUtils {
 		log += builder.buildParameterList();
 		
 		//Map of header name changes to use for updating parameters and segments tables
-		Map<String, String> oldHeaderToNewHeader = new HashMap<String, String>();
+		Map<String, String> oldHeaderToNewHeader = new ConcurrentHashMap<String, String>();
 		
 		//Check and update molecule table headers
 		archive.parallelMolecules().forEach(molecule -> {
@@ -497,10 +498,24 @@ public class ArchiveUtils {
 					position.setColumn(oldHeaderToNewHeader.get(position.getColumn()));
 			}
 			
-			//What about metadata region and positons?
-			
 			//Have to put it back in to ensure indexing, also for virtual archives..
 			archive.put(molecule);
+		});
+		
+		archive.parallelMetadata().forEach(metadata -> {
+			for (String regionName : metadata.getRegionNames()) {
+				MarsRegion region = metadata.getRegion(regionName);
+				if (oldHeaderToNewHeader.containsKey(region.getColumn()))
+					region.setColumn(oldHeaderToNewHeader.get(region.getColumn()));
+			}
+			
+			for (String positionName : metadata.getPositionNames()) {
+				MarsPosition position = metadata.getPosition(positionName);
+				if (oldHeaderToNewHeader.containsKey(position.getColumn()))
+					position.setColumn(oldHeaderToNewHeader.get(position.getColumn()));
+			}
+			
+			archive.putMetadata(metadata);
 		});
 		
 		try {
