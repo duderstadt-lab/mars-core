@@ -246,7 +246,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else load(file);
 		
 		if (Integer.valueOf(properties().getInputSchema().replace("-", "")) < 20210713)
-			ArchiveUtils.updateTableHeaders((MoleculeArchive<Molecule,?,?,?>) this); 
+			ArchiveUtils.updateTableHeaders((MoleculeArchive<Molecule,MarsMetadata,?,?>) this); 
 	}
 
 	/**
@@ -277,7 +277,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else load(file);
 		
 		if (Integer.valueOf(properties().getInputSchema().replace("-", "")) < 20210713)
-			ArchiveUtils.updateTableHeaders((MoleculeArchive<Molecule,?,?,?>) this); 
+			ArchiveUtils.updateTableHeaders((MoleculeArchive<Molecule, MarsMetadata,?,?>) this); 
 	}
 
 	/**
