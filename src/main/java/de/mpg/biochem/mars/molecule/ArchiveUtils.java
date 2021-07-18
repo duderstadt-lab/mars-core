@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.decimal4j.util.DoubleRounder;
@@ -43,6 +44,8 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEPlane;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsPosition;
+import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
 	
@@ -346,6 +349,9 @@ public class ArchiveUtils {
 		builder.addParameter("Outdated schema from", archive.properties().getInputSchema());
 		log += builder.buildParameterList();
 		
+		//Map of header name changes to use for updating parameters and segments tables
+		Map<String, String> oldHeaderToNewHeader = new HashMap<String, String>();
+		
 		//Check and update molecule table headers
 		archive.parallelMolecules().forEach(molecule -> {
 			MarsTable table = molecule.getTable();
@@ -374,6 +380,9 @@ public class ArchiveUtils {
 						table.setColumnHeader(col, header.substring(0, header.length() - 12) + "X_drift_corr");
 					else if (header.endsWith("_y_drift_corr"))
 						table.setColumnHeader(col, header.substring(0, header.length() - 12) + "Y_drift_corr");
+					
+					if (!header.equals(table.getColumnHeader(col)))
+						oldHeaderToNewHeader.put(header, table.getColumnHeader(col));
 				}
 			} else {
 				for (int col=0; col<headers.length; col++) {
@@ -416,8 +425,12 @@ public class ArchiveUtils {
 				    		table.setColumnHeader(col, "Y_drift_corr");
 				    		break;
 					}
+					
+					if (!header.equals(table.getColumnHeader(col)))
+						oldHeaderToNewHeader.put(header, table.getColumnHeader(col));
 				}
 			}
+			
 			//Check and update molecule segment table headers and table title
 			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
 				MarsTable segmentTable = molecule.getSegmentsTable(tableColumnNames);
@@ -448,7 +461,43 @@ public class ArchiveUtils {
 				}
 			}
 			
-			//What about highlighted regions ??? Those will also need to be changed!!
+			//Now we need to use oldHeaderToNewHeader to update segment table titles
+			//regions and positions... what am I forgetting??
+			
+			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
+				MarsTable segmentsTable = molecule.getSegmentsTable(tableColumnNames);
+				
+				if (oldHeaderToNewHeader.containsKey(tableColumnNames.get(0)) || 
+						oldHeaderToNewHeader.containsKey(tableColumnNames.get(1))) {
+					String xColumn = (oldHeaderToNewHeader.containsKey(tableColumnNames.get(0))) ? 
+						oldHeaderToNewHeader.get(tableColumnNames.get(0)) : tableColumnNames.get(0);
+						
+					String yColumn = (oldHeaderToNewHeader.containsKey(tableColumnNames.get(1))) ? 
+						oldHeaderToNewHeader.get(tableColumnNames.get(1)) : tableColumnNames.get(1);
+						
+					String region = tableColumnNames.get(2);
+						
+					String tableTitle = (region.equals("")) ? yColumn + "_vs_" + xColumn : yColumn + "_vs_" + xColumn + "_" + region;
+					segmentsTable.setName(tableTitle);
+						
+					molecule.removeSegmentsTable(tableColumnNames);
+					molecule.putSegmentsTable(xColumn, yColumn, region, segmentsTable);
+				}
+			}
+			
+			for (String regionName : molecule.getRegionNames()) {
+				MarsRegion region = molecule.getRegion(regionName);
+				if (oldHeaderToNewHeader.containsKey(region.getColumn()))
+					region.setColumn(oldHeaderToNewHeader.get(region.getColumn()));
+			}
+			
+			for (String positionName : molecule.getPositionNames()) {
+				MarsPosition position = molecule.getPosition(positionName);
+				if (oldHeaderToNewHeader.containsKey(position.getColumn()))
+					position.setColumn(oldHeaderToNewHeader.get(position.getColumn()));
+			}
+			
+			//What about metadata region and positons?
 			
 			//Have to put it back in to ensure indexing, also for virtual archives..
 			archive.put(molecule);
