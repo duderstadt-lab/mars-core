@@ -123,7 +123,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			final int finalImageIndex = imageIndex;
 
 			if (source.equals("from metadata (dt)")) datatable.rows().forEach(row -> row.setValue(
-				"Time (s)", metadata.getPlane(finalImageIndex, 0, molecule.getChannel(), (int) row.getValue("T"))
+				"Time_(s)", metadata.getPlane(finalImageIndex, 0, molecule.getChannel(), (int) row.getValue("T"))
 					.getDeltaTinSeconds()));
 			else molecule.getTable().rows().forEach(row -> row.setValue("Time_(s)",
 				row.getValue("T") * timeIncrement));
