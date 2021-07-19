@@ -385,6 +385,22 @@ public class ArchiveUtils {
 					if (!header.equals(table.getColumnHeader(col)))
 						oldHeaderToNewHeader.put(header, table.getColumnHeader(col));
 				}
+				
+				double x1 = molecule.getParameter("Dna_Top_x1");
+				molecule.setParameter("Dna_Top_X1", x1);
+				molecule.removeParameter("Dna_Top_x1");
+				
+				double y1 = molecule.getParameter("Dna_Top_y1");
+				molecule.setParameter("Dna_Top_Y1", y1);
+				molecule.removeParameter("Dna_Top_y1");
+				
+				double x2 = molecule.getParameter("Dna_Bottom_x2");
+				molecule.setParameter("Dna_Bottom_X2", x2);
+				molecule.removeParameter("Dna_Bottom_x2");
+				
+				double y2 = molecule.getParameter("Dna_Bottom_y2");
+				molecule.setParameter("Dna_Bottom_Y2", y2);
+				molecule.removeParameter("Dna_Bottom_y2");
 			} else {
 				for (int col=0; col<headers.length; col++) {
 					String header = headers[col];
