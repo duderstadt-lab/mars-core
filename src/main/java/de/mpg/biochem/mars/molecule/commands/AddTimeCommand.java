@@ -85,6 +85,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		double starttime = System.currentTimeMillis();
 		
 		if (archive.get(0) instanceof DnaMolecule) {
+			archive.getWindow().unlock();
 			uiService.showDialog("The Add Time command can only be run on SingleMoleculeArchives and you provided a DnaMoleculeArchive",
 					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
