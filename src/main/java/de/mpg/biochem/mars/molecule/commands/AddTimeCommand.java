@@ -38,6 +38,8 @@ import org.scijava.menu.MenuConstants;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
@@ -83,7 +85,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		double starttime = System.currentTimeMillis();
 		
 		if (archive.get(0) instanceof DnaMolecule) {
-			uiService.showDialog("The Add Time command can only be run on SingleMoleculeArchives and you provided a DnaMoleculeArchive");
+			uiService.showDialog("The Add Time command can only be run on SingleMoleculeArchives and you provided a DnaMoleculeArchive",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
 		}
 
