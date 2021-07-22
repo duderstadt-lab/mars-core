@@ -161,9 +161,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-
-	@Parameter(label = "Use ROI", persist = false)
-	private boolean useROI = true;
+	
+	@Parameter(label = "Region:",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
+			"ROI", "ROIs from manager" }, persist = false)
+	private String region = "whole image";
 	
 	/**
 	 * FINDER SETTINGS
@@ -285,6 +287,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * Map from T to peak list
 	 */
 	private ConcurrentMap<Integer, List<Peak>> peakStack;
+	
+	/**
+	 * Map from T to label peak lists
+	 */
+	private List<ConcurrentMap<Integer, List<Peak>>> peakLabelsStack;
 
 	/**
 	 * Map from T to IJ1 label metadata string
@@ -308,9 +315,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		else return;
 
 		if (image.getRoi() == null) {
-			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
-				"useROI", Boolean.class);
-			useRoifield.setValue(this, false);
+			final MutableModuleItem<String> regionField = getInfo().getMutableInput(
+				"region", String.class);
+			regionField.setValue(this, "ROI");
 		}
 		else roi = image.getRoi();
 
@@ -356,6 +363,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		logService.info(log);
 
 		peakStack = new ConcurrentHashMap<>();
+		peakLabelsStack = new ArrayList<>();
 		metaDataStack = new ConcurrentHashMap<>();
 
 		double starttime = System.currentTimeMillis();
@@ -388,6 +396,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 		
+		if (region.equals("ROIs from manager"))
+			for (int i = 0; i < roiManager.getRoisAsArray().length; i++)
+				peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+		
 		List<Integer> processTimePoints = new ArrayList<Integer>();
 		List<Runnable> tasks = new ArrayList<Runnable>();
 		for (int t=0; t<frameCount; t++) {
@@ -401,10 +413,19 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			if (processedTimePoint) {
 				processTimePoints.add(t);
 				final int theT = t;
-				tasks.add(() -> {
-					List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate);
-					if (tpeaks.size() > 0) peakStack.put(theT, tpeaks);
-				});
+				if (region.equals("ROIs from manager"))
+					tasks.add(() -> {
+						final Roi[] rois = roiManager.getRoisAsArray();
+						for (int labelIndex = 0; labelIndex < rois.length; labelIndex++) {
+							List<Peak> tPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois[labelIndex]);
+							if (tPeaks.size() > 0) peakLabelsStack.get(labelIndex).put(theT, tPeaks);
+						}
+					});
+				else 
+					tasks.add(() -> {
+						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate);
+						if (tpeaks.size() > 0) peakStack.put(theT, tpeaks);
+					});
 			}
 		}
 
@@ -437,9 +458,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
-
-		//archive.naturalOrderSortMoleculeIndex();
+		if (region.equals("ROIs from manager")) {
+			
+		} else
+			tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
@@ -477,6 +499,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean integrate)
 	{
+		Roi processingRoi = (region.equals("ROI") && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		return findPeaksInT(channel, t, useDogFilter, integrate, processingRoi);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean integrate, Roi processingRoi)
+	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
 			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
@@ -496,8 +526,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		List<Peak> peaks = new ArrayList<Peak>();
-		
-		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 		
 		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
 		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
@@ -740,8 +768,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 		else builder.addParameter("Dataset name", dataset.getName());
 
-		builder.addParameter("useROI", String.valueOf(useROI));
-		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
+		builder.addParameter("Region", region);
+		if (region.equals("ROI") && roi != null) builder.addParameter("ROI", roi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -791,12 +819,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		return image;
 	}
 
-	public void setUseROI(boolean useROI) {
-		this.useROI = useROI;
+	public void setRegionSelection(String region) {
+		this.region = region;
 	}
 
-	public boolean getUseROI() {
-		return useROI;
+	public String getRegion() {
+		return region;
 	}
 	
 	public void setRoi(Roi roi) {

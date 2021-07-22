@@ -249,7 +249,7 @@ public class PeakTracker {
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		logService.info("Building archive...");
+		logService.info("Adding molecules to archive...");
 
 		starttime = System.currentTimeMillis();
 
@@ -267,7 +267,7 @@ public class PeakTracker {
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
-			logService.error("Failed to build MoleculeArchive.. " + e.getMessage());
+			logService.error("Failed to add molecules to archive.. " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
