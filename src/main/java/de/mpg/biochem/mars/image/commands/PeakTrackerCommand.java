@@ -164,7 +164,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Region:",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
-			"ROI", "ROIs from manager" }, persist = false)
+			"ROI from image", "ROIs from manager" })
 	private String region = "whole image";
 	
 	/**
@@ -282,11 +282,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
-
-	/**
-	 * Map from T to peak list
-	 */
-	private ConcurrentMap<Integer, List<Peak>> peakStack;
 	
 	/**
 	 * Map from T to label peak lists
@@ -300,7 +295,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	private PeakTracker tracker;
 
-	private Roi roi;
+	private Roi[] rois;
+	private Roi imageRoi;
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -313,14 +309,27 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else return;
-
-		if (image.getRoi() == null) {
-			final MutableModuleItem<String> regionField = getInfo().getMutableInput(
+		
+		if (image.getRoi() != null)
+			imageRoi = image.getRoi();
+		
+		/*
+		 final MutableModuleItem<String> regionField = getInfo().getMutableInput(
 				"region", String.class);
-			regionField.setValue(this, "ROI");
-		}
-		else roi = image.getRoi();
-
+				
+				
+		if (image.getRoi() == null) {
+			System.out.println("No image Roi");
+			regionField.setValue(this, "whole image");
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		} else {
+			System.out.println("Setting region to ROI from image");
+			regionField.setValue(this, "ROI from image");
+			rois = new Roi[1];
+			rois[0] = image.getRoi();
+		} 
+*/
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -349,7 +358,20 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			dataset = convertService.convert(image, Dataset.class);
 		
 		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
-
+		
+		if (image != null && imageRoi == null && image.getRoi() != null)
+			imageRoi = image.getRoi();
+		
+		if (region.equals("ROI from image")) {
+			rois = new Roi[1];
+			rois[0] = imageRoi;
+		} else if (region.equals("ROIs from manager")) {
+			rois = roiManager.getRoisAsArray();
+		} else {
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		}
+		
 		if (image != null) {
 			image.deleteRoi();
 			image.setOverlay(null);
@@ -362,7 +384,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		peakStack = new ConcurrentHashMap<>();
 		peakLabelsStack = new ArrayList<>();
 		metaDataStack = new ConcurrentHashMap<>();
 
@@ -395,10 +416,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				excludeTimePoints = new ArrayList<int[]>();
 			}
 		}
-		
-		if (region.equals("ROIs from manager"))
-			for (int i = 0; i < roiManager.getRoisAsArray().length; i++)
-				peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+			
+		for (int i = 0; i < rois.length; i++)
+			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
 		
 		List<Integer> processTimePoints = new ArrayList<Integer>();
 		List<Runnable> tasks = new ArrayList<Runnable>();
@@ -413,23 +433,16 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			if (processedTimePoint) {
 				processTimePoints.add(t);
 				final int theT = t;
-				if (region.equals("ROIs from manager"))
-					tasks.add(() -> {
-						final Roi[] rois = roiManager.getRoisAsArray();
-						List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois);
-						for (int i = 0; i < rois.length; i++)
-							if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT, labelPeaks.get(i));
-					});
-				else 
-					tasks.add(() -> {
-						List<Peak> tpeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate);
-						if (tpeaks.size() > 0) peakStack.put(theT, tpeaks);
-					});
+				tasks.add(() -> {
+					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois);
+					for (int i = 0; i < rois.length; i++)
+						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT, labelPeaks.get(i));
+				});
 			}
 		}
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(peakStack.size(), frameCount, "Finding Peaks for " + dataset
+			.showStatus(peakLabelsStack.get(0).size(), frameCount, "Finding Peaks for " + dataset
 				.getName()), tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
@@ -457,16 +470,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		if (region.equals("ROIs from manager")) {
-			
-		} else
-			tracker.track(peakStack, archive, Integer.valueOf(channel), processTimePoints, nThreads);
+		for (int i=0; i < rois.length; i++)
+			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel), processTimePoints, nThreads);
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
 			archive.getName());
 
-		if (image != null) image.setRoi(roi);
+		if (image != null && imageRoi != null) image.setRoi(imageRoi);
 
 		try {
 			Thread.sleep(100);
@@ -492,17 +503,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			archive.logln(log);
 			archive.logln("   ");
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate)
-	{
-		Roi processingRoi = (region.equals("ROI") && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
-		Roi[] processingRois = new Roi[1];
-		processingRois[0] = processingRoi;
-		List<List<Peak>> peaks = findPeaksInT(channel, t, useDogFilter, integrate, processingRois);
-		return peaks.get(0);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -667,6 +667,18 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
+					
+					if (region.equals("ROI from image")) {
+						rois = new Roi[1];
+						imageRoi = image.getRoi();
+						rois[0] = imageRoi;
+					} else if (region.equals("ROIs from manager")) {
+						rois = roiManager.getRoisAsArray();
+					} else {
+						rois = new Roi[1];
+						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+					}
+					
 					if (image != null) {
 						image.deleteRoi();
 						image.setOverlay(null);
@@ -675,23 +687,27 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					if (swapZandT) image.setSlice(previewT + 1);
 					else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 		
-					List<Peak> peaks = findPeaksInT(Integer.valueOf(channel), previewT,
-						useDogFilter, false);
+					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(channel), previewT,
+						useDogFilter, false, rois);
 		
 					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 						"tPeakCount", String.class);
 		
-					if (!peaks.isEmpty()) {
+					//if (!peaks.isEmpty()) {
 		
+					int peakCount = 0;
+					
 						if (previewRoiType.equals("point")) {
 							Overlay overlay = new Overlay();
 							FloatPolygon poly = new FloatPolygon();
-							for (Peak p : peaks) {
-								poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
-								
-								if (Thread.currentThread().isInterrupted())
-									return;
-							}
+							for (List<Peak> labelPeaks : labelPeakLists)
+								for (Peak p : labelPeaks) {
+									poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+									peakCount++;
+									
+									if (Thread.currentThread().isInterrupted())
+										return;
+								}
 		
 							PointRoi peakRoi = new PointRoi(poly);
 		
@@ -706,33 +722,34 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 							Overlay overlay = new Overlay();
 							if (Thread.currentThread().isInterrupted())
 								return;
-							for (Peak p : peaks) {
-								// The pixel origin for OvalRois is at the upper left corner !!!!
-								// The pixel origin for PointRois is at the center !!!
-								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-									fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-										2, fitRadius * 2);
-								ovalRoi.setStrokeColor(Color.CYAN.darker());
-		
-								overlay.add(ovalRoi);
-								if (Thread.currentThread().isInterrupted())
-									return;
-							}
+							for (List<Peak> labelPeaks : labelPeakLists)
+								for (Peak p : labelPeaks) {
+									// The pixel origin for OvalRois is at the upper left corner !!!!
+									// The pixel origin for PointRois is at the center !!!
+									final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+										fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
+											2, fitRadius * 2);
+									ovalRoi.setStrokeColor(Color.CYAN.darker());
+									overlay.add(ovalRoi);
+									peakCount++;
+									if (Thread.currentThread().isInterrupted())
+										return;
+								}
 							if (Thread.currentThread().isInterrupted())
 								return;
 							
 							image.setOverlay(overlay);
 						}
 		
-						preFrameCount.setValue(this, "count: " + peaks.size());
+						preFrameCount.setValue(this, "count: " + peakCount);
 						for (Window window : Window.getWindows())
 							if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
-								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peaks.size());
+								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peakCount);
 							}
-					}
-					else {
-						preFrameCount.setValue(this, "count: 0");
-					}
+					//}
+					//else {
+					//	preFrameCount.setValue(this, "count: 0");
+					//}
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {
@@ -754,7 +771,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	public void cancel() {
 		if (image != null) {
 			image.setOverlay(null);
-			image.setRoi(roi);
+			if (imageRoi != null) image.setRoi(imageRoi);
 		}
 	}
 
@@ -776,7 +793,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		else builder.addParameter("Dataset name", dataset.getName());
 
 		builder.addParameter("Region", region);
-		if (region.equals("ROI") && roi != null) builder.addParameter("ROI", roi.toString());
+		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -834,12 +851,13 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		return region;
 	}
 	
-	public void setRoi(Roi roi) {
-		this.roi = roi;
+	public void setRois(Roi[] rois) {
+		this.rois = rois;
+		this.region = "ROIs from manager";
 	}
 	
-	public Roi getROI() {
-		return this.roi;
+	public Roi[] getROIs() {
+		return this.rois;
 	}
 
 	public void setChannel(int channel) {
