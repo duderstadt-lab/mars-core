@@ -416,10 +416,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				if (region.equals("ROIs from manager"))
 					tasks.add(() -> {
 						final Roi[] rois = roiManager.getRoisAsArray();
-						for (int labelIndex = 0; labelIndex < rois.length; labelIndex++) {
-							List<Peak> tPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois[labelIndex]);
-							if (tPeaks.size() > 0) peakLabelsStack.get(labelIndex).put(theT, tPeaks);
-						}
+						List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois);
+						for (int i = 0; i < rois.length; i++)
+							if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT, labelPeaks.get(i));
 					});
 				else 
 					tasks.add(() -> {
@@ -500,12 +499,15 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		int channel, int t, boolean useDogFilter, boolean integrate)
 	{
 		Roi processingRoi = (region.equals("ROI") && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
-		return findPeaksInT(channel, t, useDogFilter, integrate, processingRoi);
+		Roi[] processingRois = new Roi[1];
+		processingRois[0] = processingRoi;
+		List<List<Peak>> peaks = findPeaksInT(channel, t, useDogFilter, integrate, processingRois);
+		return peaks.get(0);
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<Peak> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate, Roi processingRoi)
+	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
@@ -524,30 +526,35 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			String label = stack.getSliceLabel(index);
 			metaDataStack.put(t, label);
 		}
-
-		List<Peak> peaks = new ArrayList<Peak>();
 		
-		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
-		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+		RandomAccessibleInterval<FloatType> filteredImg = null; 
+		if (useDogFilter)
+			filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
 
-		if (useDogFilter) {
-			RandomAccessibleInterval<FloatType> filteredImg = MarsImageUtils
-				.dogFilter(img, dogFilterRadius, opService);
-
-			peaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableROI, filteredImg ), t, threshold,
+		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
+		for (int i = 0; i < processingRois.length; i++) {
+			List<Peak> peaks = new ArrayList<Peak>();
+			
+			RealMask roiMask = convertService.convert( processingRois[i], RealMask.class );
+			IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+	
+			if (useDogFilter)
+				 peaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableROI, filteredImg ), t, threshold,
+					minimumDistance, findNegativePeaks);
+			else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
 				minimumDistance, findNegativePeaks);
+	
+			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
+				dogFilterRadius, findNegativePeaks, RsquaredMin);
+			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
+	
+			if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
+				integrationInnerRadius, integrationOuterRadius);
+			
+			labelPeakLists.add(peaks);
 		}
-		else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
-			minimumDistance, findNegativePeaks);
-
-		peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
-			dogFilterRadius, findNegativePeaks, RsquaredMin);
-		peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
-
-		if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
-			integrationInnerRadius, integrationOuterRadius);
-
-		return peaks;
+		
+		return labelPeakLists;
 	}
 
 	private MarsOMEMetadata buildOMEMetadata() {
