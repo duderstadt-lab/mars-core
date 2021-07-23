@@ -150,8 +150,10 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(required = false)
 	private RoiManager roiManager;
 
-	@Parameter(label = "use ROI", persist = false)
-	private boolean useROI = true;
+	@Parameter(label = "Region:",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
+			"ROI from image", "ROIs from manager" })
+	private String region = "whole image";
 
 	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
@@ -235,9 +237,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Add to RoiManger")
 	private boolean addToRoiManger;
 
-	//@Parameter(label = "Molecule Names in Manager")
-	//private boolean moleculeNames;
-
 	@Parameter(label = "Process all frames")
 	private boolean allFrames;
 	
@@ -257,7 +256,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	private ConcurrentMap<Integer, List<DNASegment>> dnaStack;
 
 	private boolean swapZandT = false;
-	private Roi roi;
+	
+	private Roi[] rois;
+	private Roi imageRoi;
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -270,13 +271,18 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		}
 		else if (dataset == null) return;
 
+		if (image.getRoi() != null)
+			imageRoi = image.getRoi();
+		
+		/*
 		if (image.getRoi() == null) {
 			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
 				"useROI", Boolean.class);
 			useRoifield.setValue(this, false);
 		}
 		else roi = image.getRoi();
-
+*/
+		
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -301,6 +307,24 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
+		if (dataset == null && image != null)
+			dataset = convertService.convert(image, Dataset.class);
+		
+		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
+		
+		if (image != null && imageRoi == null && image.getRoi() != null)
+			imageRoi = image.getRoi();
+		
+		if (region.equals("ROI from image")) {
+			rois = new Roi[1];
+			rois[0] = imageRoi;
+		} else if (region.equals("ROIs from manager")) {
+			rois = roiManager.getRoisAsArray();
+		} else {
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+		}
+		
 		if (image != null) {
 			image.deleteRoi();
 			image.setOverlay(null);
@@ -331,7 +355,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			List<Runnable> tasks = new ArrayList<Runnable>();
 			for (int t=0; t<frameCount; t++) {
 				final int theT = t;
-				tasks.add(() -> dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT)));
+				tasks.add(() -> dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois)));
 			}
 
 			MarsUtil.threadPoolBuilder(statusService, logService,
@@ -339,7 +363,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 					"Finding DNAs for " + dataset.getName()), tasks, nThreads);
 
 		}
-		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT));
+		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -350,7 +374,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 		if (addToRoiManger) addToRoiManager();
 
-		if (image != null) image.setRoi(roi);
+		if (image != null && imageRoi != null) image.setRoi(imageRoi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
@@ -359,7 +383,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<DNASegment> findDNAsInT(
-		int channel, int t)
+		int channel, int t, Roi[] processingRois)
 	{
 
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
@@ -384,13 +408,16 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		dnaFinder.setFitSecondOrder(fitSecondOrder);
 		dnaFinder.setFitRadius(fitRadius);
 		
-		//Convert from Roi to IterableInterval
-		Roi processingRoi = (useROI && roi != null) ? roi : new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
-		
-		RealMask roiMask = convertService.convert( processingRoi, RealMask.class );
-		IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+		List<DNASegment> dnas = new ArrayList<DNASegment>();
+		for (int i = 0; i < processingRois.length; i++) {
+			//Convert from Roi to IterableInterval
+			RealMask roiMask = convertService.convert( processingRois[i], RealMask.class );
+			IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+			
+			dnas.addAll(dnaFinder.findDNAs(img, iterableROI, t));
+		}
 
-		return dnaFinder.findDNAs(img, iterableROI, t);
+		return dnas;
 	}
 
 	private void generateDNACountTable() {
@@ -447,13 +474,13 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	private void addToRoiManager() {
 		logService.info(
-			"Adding Peaks to the RoiManger. This might take a while...");
+			"Adding Peaks to the RoiManager. This might take a while...");
 		int dnaNumber = 1;
 		for (int t : dnaStack.keySet()) {
 			dnaNumber = AddToManager(dnaStack.get(t), Integer.valueOf(channel), t,
 				dnaNumber);
 		}
-		statusService.showStatus("Done adding ROIs to Manger");
+		statusService.showStatus("Done adding ROIs to Manager");
 	}
 
 	private int AddToManager(List<DNASegment> segments, int channel, int t,
@@ -486,6 +513,17 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
+					if (region.equals("ROI from image")) {
+						rois = new Roi[1];
+						imageRoi = image.getRoi();
+						rois[0] = imageRoi;
+					} else if (region.equals("ROIs from manager")) {
+						rois = roiManager.getRoisAsArray();
+					} else {
+						rois = new Roi[1];
+						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+					}
+					
 					if (image != null) {
 						image.deleteRoi();
 						image.setOverlay(null);
@@ -494,7 +532,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 					if (swapZandT) image.setSlice(theT + 1);
 					else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 		
-					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT);
+					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT, rois);
 		
 					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 						"tDNACount", String.class);
@@ -559,7 +597,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public void cancel() {
 		if (image != null) {
 			image.setOverlay(null);
-			image.setRoi(roi);
+			if (imageRoi != null) image.setRoi(imageRoi);
 		}
 	}
 
@@ -582,7 +620,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		else {
 			builder.addParameter("Dataset name", dataset.getName());
 		}
-		builder.addParameter("Use ROI", String.valueOf(useROI));
+		builder.addParameter("Region", region);
+		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(
 			this.gaussSigma));
@@ -629,12 +668,13 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		return dataset;
 	}
 
-	public void setUseROI(boolean useROI) {
-		this.useROI = useROI;
+	public void setROIs(Roi[] rois) {
+		this.rois = rois;
+		this.region = "ROIs from manager";
 	}
 
-	public boolean getUseROI() {
-		return useROI;
+	public Roi[] getROIs() {
+		return rois;
 	}
 
 	public void setChannel(int channel) {
