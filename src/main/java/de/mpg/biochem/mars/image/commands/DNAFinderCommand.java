@@ -408,16 +408,15 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		dnaFinder.setFitSecondOrder(fitSecondOrder);
 		dnaFinder.setFitRadius(fitRadius);
 		
-		List<DNASegment> dnas = new ArrayList<DNASegment>();
+		List<IterableRegion< BoolType >> regionList = new ArrayList<IterableRegion< BoolType >>();
 		for (int i = 0; i < processingRois.length; i++) {
 			//Convert from Roi to IterableInterval
 			RealMask roiMask = convertService.convert( processingRois[i], RealMask.class );
 			IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
-			
-			dnas.addAll(dnaFinder.findDNAs(img, iterableROI, t));
+			regionList.add(iterableROI);
 		}
 
-		return dnas;
+		return dnaFinder.findDNAs(img, regionList, t);
 	}
 
 	private void generateDNACountTable() {
