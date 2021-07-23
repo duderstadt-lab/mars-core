@@ -667,6 +667,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public Dataset getDataset() {
 		return dataset;
 	}
+	
+	public void setRegion(String region) {
+		this.region = region;
+	}
+
+	public String getRegion() {
+		return region;
+	}
 
 	public void setROIs(Roi[] rois) {
 		this.rois = rois;

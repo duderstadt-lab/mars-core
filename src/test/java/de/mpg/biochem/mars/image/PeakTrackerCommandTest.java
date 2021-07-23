@@ -98,7 +98,7 @@ public class PeakTrackerCommandTest {
 
 		// Run the Command
 		peakTracker.setDataset(simulateDataset());
-		peakTracker.setRegionSelection("whole image");
+		peakTracker.setRegion("whole image");
 		peakTracker.setChannel(0);
 		peakTracker.setUseDogFiler(true);
 		peakTracker.setDogFilterRadius(1.8d);

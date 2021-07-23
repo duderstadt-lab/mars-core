@@ -843,7 +843,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		return image;
 	}
 
-	public void setRegionSelection(String region) {
+	public void setRegion(String region) {
 		this.region = region;
 	}
 

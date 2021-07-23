@@ -91,7 +91,7 @@ public class DNAFinderCommandTest {
 		peakFinder.setContext(context);
 
 		peakFinder.setDataset(simulateDataset());
-		peakFinder.setUseROI(false);
+		peakFinder.setRegion("whole image");
 		peakFinder.setChannel(0);
 		peakFinder.setGaussianSigma(1);
 		peakFinder.setT(0);
