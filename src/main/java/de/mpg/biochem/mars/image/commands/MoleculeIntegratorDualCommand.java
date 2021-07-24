@@ -142,10 +142,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	private ImageDisplay imageDisplay;
 
 	@Parameter(label = "Inner Radius")
-	private int innerRadius = 1;
+	private int innerRadius = 2;
 
 	@Parameter(label = "Outer Radius")
-	private int outerRadius = 3;
+	private int outerRadius = 4;
 
 	/**
 	 * ROIs

@@ -241,7 +241,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * VERBOSE
 	 */
-	@Parameter(label = "Verbose output")
+	@Parameter(label = "Verbose")
 	private boolean verbose = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
@@ -251,10 +251,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private boolean integrate = false;
 
 	@Parameter(label = "Inner radius")
-	private int integrationInnerRadius = 1;
+	private int integrationInnerRadius = 2;
 
 	@Parameter(label = "Outer radius")
-	private int integrationOuterRadius = 3;
+	private int integrationOuterRadius = 4;
 
 	@Parameter(label = "Microscope", required = false)
 	private String microscope = "unknown";
@@ -693,63 +693,56 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
 						"tPeakCount", String.class);
 		
-					//if (!peaks.isEmpty()) {
-		
 					int peakCount = 0;
-					
-						if (previewRoiType.equals("point")) {
-							Overlay overlay = new Overlay();
-							FloatPolygon poly = new FloatPolygon();
-							for (List<Peak> labelPeaks : labelPeakLists)
-								for (Peak p : labelPeaks) {
-									poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
-									peakCount++;
-									
-									if (Thread.currentThread().isInterrupted())
-										return;
-								}
-		
-							PointRoi peakRoi = new PointRoi(poly);
-		
-							overlay.add(peakRoi);
-							
-							if (Thread.currentThread().isInterrupted())
-								return;
-							
-							image.setOverlay(overlay);
-						}
-						else {
-							Overlay overlay = new Overlay();
-							if (Thread.currentThread().isInterrupted())
-								return;
-							for (List<Peak> labelPeaks : labelPeakLists)
-								for (Peak p : labelPeaks) {
-									// The pixel origin for OvalRois is at the upper left corner !!!!
-									// The pixel origin for PointRois is at the center !!!
-									final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-										fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-											2, fitRadius * 2);
-									ovalRoi.setStrokeColor(Color.CYAN.darker());
-									overlay.add(ovalRoi);
-									peakCount++;
-									if (Thread.currentThread().isInterrupted())
-										return;
-								}
-							if (Thread.currentThread().isInterrupted())
-								return;
-							
-							image.setOverlay(overlay);
-						}
-		
-						preFrameCount.setValue(this, "count: " + peakCount);
-						for (Window window : Window.getWindows())
-							if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
-								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peakCount);
+					if (previewRoiType.equals("point")) {
+						Overlay overlay = new Overlay();
+						FloatPolygon poly = new FloatPolygon();
+						for (List<Peak> labelPeaks : labelPeakLists)
+							for (Peak p : labelPeaks) {
+								poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
+								peakCount++;
+								
+								if (Thread.currentThread().isInterrupted())
+									return;
 							}
-					//}
-					//else {
-					//	preFrameCount.setValue(this, "count: 0");
-					//}
+	
+						PointRoi peakRoi = new PointRoi(poly);
+	
+						overlay.add(peakRoi);
+						
+						if (Thread.currentThread().isInterrupted())
+							return;
+						
+						image.setOverlay(overlay);
+					}
+					else {
+						Overlay overlay = new Overlay();
+						if (Thread.currentThread().isInterrupted())
+							return;
+						for (List<Peak> labelPeaks : labelPeakLists)
+							for (Peak p : labelPeaks) {
+								// The pixel origin for OvalRois is at the upper left corner !!!!
+								// The pixel origin for PointRois is at the center !!!
+								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
+										integrationInnerRadius, p.getDoublePosition(1) + 0.5 - integrationInnerRadius, integrationInnerRadius *
+										2, integrationInnerRadius * 2);
+								//ovalRoi.setStrokeColor(Color.CYAN.darker());
+								overlay.add(ovalRoi);
+								peakCount++;
+								if (Thread.currentThread().isInterrupted())
+									return;
+							}
+						if (Thread.currentThread().isInterrupted())
+							return;
+						
+						image.setOverlay(overlay);
+					}
+	
+					preFrameCount.setValue(this, "count: " + peakCount);
+					for (Window window : Window.getWindows())
+						if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
+							MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peakCount);
+						}
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {

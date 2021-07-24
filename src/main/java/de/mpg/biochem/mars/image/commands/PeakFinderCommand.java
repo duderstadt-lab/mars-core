@@ -237,15 +237,15 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	private boolean integrate = false;
 
 	@Parameter(label = "Inner radius")
-	private int integrationInnerRadius = 1;
+	private int integrationInnerRadius = 2;
 
 	@Parameter(label = "Outer radius")
-	private int integrationOuterRadius = 3;
+	private int integrationOuterRadius = 4;
 
 	/**
 	 * VERBOSE
 	 */
-	@Parameter(label = "Verbose output")
+	@Parameter(label = "Verbose")
 	private boolean verbose = true;
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
@@ -537,9 +537,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 									// The pixel origin for OvalRois is at the upper left corner !!!!
 									// The pixel origin for PointRois is at the center !!!
 									final OvalRoi roi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-										fitRadius, p.getDoublePosition(1) + 0.5 - fitRadius, fitRadius *
-											2, fitRadius * 2);
-									roi.setStrokeColor(Color.CYAN.darker());
+											integrationInnerRadius, p.getDoublePosition(1) + 0.5 - integrationInnerRadius, integrationInnerRadius *
+											2, integrationInnerRadius * 2);
+									//roi.setStrokeColor(Color.CYAN.darker());
 			
 									overlay.add(roi);
 									if (Thread.currentThread().isInterrupted())
