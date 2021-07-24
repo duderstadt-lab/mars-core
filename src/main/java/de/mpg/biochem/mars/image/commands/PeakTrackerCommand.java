@@ -495,6 +495,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				"No molecules found. Maybe there is a problem with your settings");
 			archive = null;
 			logService.info(LogBuilder.endBlock(false));
+			uiService.showDialog("No molecules found. Maybe there is a problem with your settings. "
+					+ "Make sure molecules are detected using preview. If not try lowering the "
+					+ "detection threshold.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		}
 		else {
 			logService.info(LogBuilder.endBlock(true));
