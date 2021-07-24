@@ -238,12 +238,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Minimum track length")
 	private int minTrajectoryLength = 100;
 
-	/**
-	 * VERBOSE
-	 */
-	@Parameter(label = "Verbose")
-	private boolean verbose = false;
-
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String integrationTitle = "Peak integration settings:";
 
@@ -273,6 +267,17 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * VERBOSE
+	 */
+	@Parameter(label = "Verbose")
+	private boolean verbose = false;
+	
+	@Parameter(label = "Metadata UID:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
+				"randomly generated" })
+	private String metadataUIDSource;
 
 	@Parameter
 	private UIService uiService;
@@ -313,23 +318,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (image.getRoi() != null)
 			imageRoi = image.getRoi();
 		
-		/*
-		 final MutableModuleItem<String> regionField = getInfo().getMutableInput(
-				"region", String.class);
-				
-				
-		if (image.getRoi() == null) {
-			System.out.println("No image Roi");
-			regionField.setValue(this, "whole image");
-			rois = new Roi[1];
-			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
-		} else {
-			System.out.println("Setting region to ROI from image");
-			regionField.setValue(this, "ROI from image");
-			rois = new Roi[1];
-			rois[0] = image.getRoi();
-		} 
-*/
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -618,12 +606,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			//Must be Norpix format..
 			logService.info("Reading Norpix Format");
 
-			String metaUID = generateUID(metaDataStack);
-			//omexmlMetadata.setPixelsSizeX(new PositiveInteger(image.getWidth()), 0);
-			//omexmlMetadata.setPixelsSizeY(new PositiveInteger(image.getHeight()), 0);
-			//omexmlMetadata.setPixelsSizeZ(new PositiveInteger(1), 0);
-			//omexmlMetadata.setPixelsSizeC(new PositiveInteger(1), 0);
-			//omexmlMetadata.setPixelsSizeT(new PositiveInteger(image.getStackSize()), 0);
+			String metaUID = (metadataUIDSource.equals("unique from dataset")) ? generateUID(metaDataStack) : MarsMath.getUUID58().substring(0, 10);
 			omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
 			
 			MarsOMEMetadata marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
@@ -650,7 +633,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		String metaUID;
-		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
+		if (omexmlMetadata.getUUID() != null && metadataUIDSource.equals("unique from dataset")) metaUID = MarsMath.getUUID58(
 			omexmlMetadata.getUUID()).substring(0, 10);
 		else metaUID = MarsMath.getUUID58().substring(0, 10);
 
