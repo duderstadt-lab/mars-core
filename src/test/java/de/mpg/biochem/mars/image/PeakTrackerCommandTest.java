@@ -118,6 +118,7 @@ public class PeakTrackerCommandTest {
 		peakTracker.setMicroscope("Microscope");
 		peakTracker.setPixelLength(1);
 		peakTracker.setPixelUnits("pixel");
+		peakTracker.setMetadataUIDSource("randomly generated");
 		//peakTracker.setNorpixFormat(false);
 
 		// Run the Command

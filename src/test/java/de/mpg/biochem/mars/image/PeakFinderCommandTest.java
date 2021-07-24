@@ -109,6 +109,7 @@ public class PeakFinderCommandTest {
 		peakFinder.setIntegrate(true);
 		peakFinder.setIntegrationInnerRadius(1);
 		peakFinder.setIntegrationOuterRadius(3);
+		peakFinder.setVerbose(true);
 
 		// Run the Command
 		peakFinder.run();

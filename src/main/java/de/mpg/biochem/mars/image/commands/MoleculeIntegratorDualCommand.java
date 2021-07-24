@@ -66,6 +66,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+import org.scijava.widget.ChoiceWidget;
 
 import com.fasterxml.jackson.core.JsonParseException;
 
@@ -188,6 +189,11 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	@Parameter(label = "Metadata UID:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
+				"randomly generated" })
+	private String metadataUIDSource = "unique from dataset";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String channelsTitle = "Channels:";
@@ -210,6 +216,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
+	private OMEXMLMetadata omexmlMetadata;
 
 	private List<MutableModuleItem<String>> channelColors;
 
@@ -226,7 +233,6 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
-		OMEXMLMetadata omexmlMetadata = null;
 		if (!(imp instanceof SCIFIOImgPlus)) {
 			logService.info("This image has not been opened with SCIFIO.");
 			try {
@@ -276,21 +282,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 		}
 
 		imageID = omexmlMetadata.getImageID(0);
-
-		String metaUID;
-		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
-			omexmlMetadata.getUUID()).substring(0, 10);
-		else metaUID = MarsMath.getUUID58().substring(0, 10);
-
-		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-		
-		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
-			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
-				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
-		}
 			
-		List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(
-				channel -> channel.getName()).collect(Collectors.toList());
+		List<String> channelNames = new ArrayList<String>(); 
+		for (int cIndex=0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
+			channelNames.add(omexmlMetadata.getChannelName(0, cIndex));
 			
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
@@ -312,10 +307,26 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		// If running in headless mode. Make sure metadata was initialized.
-		if (marsOMEMetadata == null) {
-			logService.info("Initializing MarsOMEMetadata...");
+		//If running headless make sure to initialize that is required for this command
+		if (omexmlMetadata == null)
 			initialize();
+		
+		String metaUID = null;
+		if (metadataUIDSource.equals("unique from dataset")) {
+			String uniqueMetadataUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
+			metaUID = uniqueMetadataUID;
+			
+			if (uniqueMetadataUID == null)
+				logService.info("Could not generate unique metadata UID from this dataset. Using randomly generated metadata UID.");
+		} 
+		
+		if (metaUID == null) metaUID = MarsMath.getUUID58().substring(0, 10);
+
+		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+		
+		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
+			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
+				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
 		}
 
 		if (peakIntegrationMaps.size() > 0) {
@@ -681,6 +692,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
 		builder.addParameter("Thread count", nThreads);
+		builder.addParameter("Metadata UID source", metadataUIDSource);
 	}
 
 	// Getters and Setters
@@ -846,5 +858,13 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	
 	public int getThreads() {
 		return this.nThreads;
+	}
+	
+	public void setMetadataUIDSource(String metadataUIDSource) {
+		this.metadataUIDSource = metadataUIDSource;
+	}
+	
+	public String getMetadataUIDSource() {
+		return this.metadataUIDSource;
 	}
 }

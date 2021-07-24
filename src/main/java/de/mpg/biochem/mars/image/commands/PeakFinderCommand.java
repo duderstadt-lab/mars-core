@@ -241,15 +241,15 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Outer radius")
 	private int integrationOuterRadius = 4;
-
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
 	/**
 	 * VERBOSE
 	 */
 	@Parameter(label = "Verbose")
-	private boolean verbose = true;
-	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
-	private int nThreads = Runtime.getRuntime().availableProcessors();
+	private boolean verbose = false;
 
 	/**
 	 * OUTPUTS
@@ -450,14 +450,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	private void addToRoiManager() {
 		logService.info(
-			"Adding Peaks to the RoiManger. This might take a while...");
+			"Adding Peaks to the RoiManager. This might take a while...");
 
 		int peakNumber = 1;
 		for (int t : peakStack.keySet())
 			peakNumber = addToRoiManager(peakStack.get(t), Integer.valueOf(channel),
 				t, peakNumber);
 
-		statusService.showStatus("Done adding ROIs to Manger");
+		statusService.showStatus("Done adding ROIs to Manager");
 	}
 
 	private int addToRoiManager(List<Peak> peaks, int channel, int t,
@@ -508,7 +508,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							"tPeakCount", String.class);
 						
 						if (!peaks.isEmpty()) {
-			
 							if (roiType.equals("point")) {
 								Overlay overlay = new Overlay();
 								FloatPolygon poly = new FloatPolygon();
@@ -626,7 +625,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			integrationInnerRadius));
 		builder.addParameter("Integration outer radius", String.valueOf(
 			integrationOuterRadius));
-		builder.addParameter("Verbose output", String.valueOf(verbose));
+		builder.addParameter("Verbose", String.valueOf(verbose));
 		builder.addParameter("Thread count", nThreads);
 	}
 	
@@ -818,11 +817,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		return integrationOuterRadius;
 	}
 
-	public void setVerboseOutput(boolean verbose) {
+	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
 	}
 
-	public boolean getVerboseOutput() {
+	public boolean getVerbose() {
 		return verbose;
 	}
 	

@@ -271,12 +271,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Minimum track length")
 	private int minTrajectoryLength = 100;
 
-	/**
-	 * VERBOSE
-	 */
-	@Parameter(label = "Verbose output")
-	private boolean verbose = false;
-
 	@Parameter(label = "Microscope", required = false)
 	private String microscope = "unknown";
 
@@ -294,6 +288,17 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * VERBOSE
+	 */
+	@Parameter(label = "Verbose output")
+	private boolean verbose = false;
+	
+	@Parameter(label = "Metadata UID:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
+				"randomly generated" })
+	private String metadataUIDSource = "unique from dataset";
 
 	@Parameter
 	private UIService uiService;
@@ -646,9 +651,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		String metaUID;
-		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
-			omexmlMetadata.getUUID()).substring(0, 10);
-		else metaUID = MarsMath.getUUID58().substring(0, 10);
+		if (metadataUIDSource.equals("unique from dataset")) {
+			metaUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
+			
+			if (metaUID == null) {
+				logService.info("Failed to generate unique metadata uid. Using random generated metadata uid.");
+			} else metaUID = MarsMath.getUUID58().substring(0, 10);
+		} else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
@@ -765,6 +774,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Exclude time points", excludeTimePointList);
 		builder.addParameter("Swap Z and T", swapZandT);
 		builder.addParameter("Thread count", nThreads);
+		builder.addParameter("Metadata UID source", metadataUIDSource);
 	}
 
 	// Getters and Setters
@@ -938,5 +948,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	
 	public int getThreads() {
 		return this.nThreads;
+	}
+	
+	public void setMetadataUIDSource(String metadataUIDSource) {
+		this.metadataUIDSource = metadataUIDSource;
+	}
+	
+	public String getMetadataUIDSource() {
+		return this.metadataUIDSource;
 	}
 }

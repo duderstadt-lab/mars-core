@@ -42,6 +42,7 @@ import net.imagej.axis.Axes;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
 import ome.units.UNITS;
@@ -125,6 +126,19 @@ public class MarsOMEUtils {
 		}
 
 		return meta;
+	}
+	
+	public static String generateMetadataUIDfromDataset(OMEXMLMetadata omexmlMetadata) {
+		if (omexmlMetadata.getUUID() != null ) return MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
+		
+		//We should retrieve any Date or time information and use that to try to generate a unique UID using a hash...
+		String uniqueDateTimeInfo = "";
+		for (int i=0; i < omexmlMetadata.getImageCount(); i++)
+			if (omexmlMetadata.getImageAcquisitionDate(i) != null)
+				uniqueDateTimeInfo += omexmlMetadata.getImageAcquisitionDate(i);
+		
+		if (!uniqueDateTimeInfo.equals("")) return MarsMath.getFNV1aBase58(uniqueDateTimeInfo);
+		return null;
 	}
 
 	// Translator from Normal Archive (SingleMoleculeArchive, ArchMoleculeArchive)

@@ -29,7 +29,6 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.util.ArrayList;
@@ -277,7 +276,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Metadata UID:",
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
 				"randomly generated" })
-	private String metadataUIDSource;
+	private String metadataUIDSource = "unique from dataset";
 
 	@Parameter
 	private UIService uiService;
@@ -633,9 +632,13 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		String metaUID;
-		if (omexmlMetadata.getUUID() != null && metadataUIDSource.equals("unique from dataset")) metaUID = MarsMath.getUUID58(
-			omexmlMetadata.getUUID()).substring(0, 10);
-		else metaUID = MarsMath.getUUID58().substring(0, 10);
+		if (metadataUIDSource.equals("unique from dataset")) {
+			metaUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
+			
+			if (metaUID == null) {
+				logService.info("Failed to generate unique metadata uid. Using random generated metadata uid.");
+			} else metaUID = MarsMath.getUUID58().substring(0, 10);
+		} else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
@@ -800,6 +803,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Exclude time points", excludeTimePointList);
 		builder.addParameter("Swap Z and T", swapZandT);
 		builder.addParameter("Thread count", nThreads);
+		builder.addParameter("Metadata UID source", metadataUIDSource);
 	}
 
 	// Getters and Setters
@@ -998,5 +1002,13 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	public int getThreads() {
 		return this.nThreads;
+	}
+	
+	public void setMetadataUIDSource(String metadataUIDSource) {
+		this.metadataUIDSource = metadataUIDSource;
+	}
+	
+	public String getMetadataUIDSource() {
+		return this.metadataUIDSource;
 	}
 }

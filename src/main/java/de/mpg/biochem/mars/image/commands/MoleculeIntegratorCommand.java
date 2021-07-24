@@ -66,6 +66,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
@@ -88,6 +89,8 @@ import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
 import ome.xml.meta.OMEXMLMetadata;
+
+import java.lang.reflect.Field;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
@@ -158,6 +161,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	@Parameter(label = "Metadata UID:",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
+				"randomly generated" })
+	private String metadataUIDSource = "unique from dataset";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String channelsTitle = "Channels:";
@@ -182,7 +190,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
-
+	private OMEXMLMetadata omexmlMetadata;
+	
 	private List<MutableModuleItem<String>> channelColors;
 
 	private List<String> channelColorOptions = new ArrayList<String>(Arrays
@@ -205,9 +214,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
-		OMEXMLMetadata omexmlMetadata = null;
 		if (!(imp instanceof SCIFIOImgPlus)) {
-			logService.info("This image has not been opened with SCIFIO.");
+			if (channelColors == null) logService.info("This image has not been opened with SCIFIO.");
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
@@ -222,8 +230,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"scifio.metadata.global");
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info(
-					"Unable to extract OME Metadata. Generating OME metadata from dimensions.");
+				if (channelColors == null) logService.info("Unable to extract OME Metadata. Generating OME metadata from dimensions.");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 						dataset);
@@ -235,7 +242,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
-			
 			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 		}
 
@@ -255,21 +261,10 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		}
 
 		imageID = omexmlMetadata.getImageID(0);
-
-		String metaUID;
-		if (omexmlMetadata.getUUID() != null) metaUID = MarsMath.getUUID58(
-			omexmlMetadata.getUUID()).substring(0, 10);
-		else metaUID = MarsMath.getUUID58().substring(0, 10);
-
-		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-		
-		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
-			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
-				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
-		}
 			
-		List<String> channelNames = marsOMEMetadata.getImage(0).channels().map(
-				channel -> channel.getName()).collect(Collectors.toList());
+		List<String> channelNames = new ArrayList<String>(); 
+		for (int cIndex=0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
+			channelNames.add(omexmlMetadata.getChannelName(0, cIndex));
 			
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
@@ -296,12 +291,28 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		// If running in headless mode. Make sure metadata was initialized.
-		if (marsOMEMetadata == null) {
-			logService.info("Initializing MarsOMEMetadata...");
+		//If running headless make sure to initialize that is required for this command
+		if (omexmlMetadata == null)
 			initialize();
-		}
+		
+		String metaUID = null;
+		if (metadataUIDSource.equals("unique from dataset")) {
+			String uniqueMetadataUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
+			metaUID = uniqueMetadataUID;
+			
+			if (uniqueMetadataUID == null)
+				logService.info("Could not generate unique metadata UID from this dataset. Using randomly generated metadata UID.");
+		} 
+		
+		if (metaUID == null) metaUID = MarsMath.getUUID58().substring(0, 10);
 
+		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
+		
+		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
+			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
+				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
+		}
+		
 		if (peakIntegrationMaps.size() > 0) {
 			logService.info("Using IntegrationMaps...");
 		}
@@ -638,6 +649,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
 		builder.addParameter("Thread count", nThreads);
+		builder.addParameter("Metadata UID source", metadataUIDSource);
 	}
 
 	// Getters and Setters
@@ -729,5 +741,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	
 	public int getThreads() {
 		return this.nThreads;
+	}
+	
+	public void setMetadataUIDSource(String metadataUIDSource) {
+		this.metadataUIDSource = metadataUIDSource;
+	}
+	
+	public String getMetadataUIDSource() {
+		return this.metadataUIDSource;
 	}
 }
