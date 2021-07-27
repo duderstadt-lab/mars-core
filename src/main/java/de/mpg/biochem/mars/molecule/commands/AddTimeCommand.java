@@ -68,15 +68,15 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	@Parameter
 	private UIService uiService;
 
-	@Parameter(label = "MoleculeArchive")
+	@Parameter(label = "MoleculeArchive", style = "group:Find")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "Source:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "from metadata (dt)",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ",group:Rest", choices = { "from metadata (dt)",
 			"constant time increment" })
 	private String source;
 
-	@Parameter(label = "Time increment (s)")
+	@Parameter(label = "Time increment (s)", style = "group:Rest")
 	private double timeIncrement = 1.00d;
 
 	@Override

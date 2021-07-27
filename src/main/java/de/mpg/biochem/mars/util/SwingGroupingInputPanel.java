@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.util;
 
+import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
@@ -97,7 +98,10 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		if (!uiGroupComponents.containsKey(group)) {
 			 SwingInputPanel panel = new SwingInputPanel();
 			 if (!group.equals("")) {
-				 SwingInputPanel labelPanel = new SwingInputPanel();
+				 if (panel.getComponent().getLayout() instanceof MigLayout)
+					 ((MigLayout) panel.getComponent().getLayout()).setLayoutConstraints("fillx, insets 0 15 0 15, gapy 0, wrap 2");
+				 
+				 JPanel labelPanel = new JPanel(new MigLayout("fillx,insets 10 15 5 15, gapy 0"));
 		         JLabel label = new JLabel("<html><strong>▼ " + group + "</strong></html>");
 		
 		           label.addMouseListener(new MouseAdapter() {
@@ -108,16 +112,6 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		                */
 		             @Override
 		               public void mouseClicked(MouseEvent e) {
-		                   if(e.getClickCount() == 2) {
-		                       panel.getComponent().setVisible(!panel.getComponent().isVisible());
-		
-		                       if(panel.getComponent().isVisible()) {
-		                           label.setText("<html><strong>▼ " + group + "</strong></html>");
-		                       } else {
-		                           label.setText("<html><strong>▶ " + group + "</strong></html>");
-		                       }
-		                       getComponent().revalidate();
-		                   }
 		               }
 		
 		               /**
@@ -126,6 +120,14 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		                */
 		             @Override
 		               public void mousePressed(MouseEvent e) {
+		            	 panel.getComponent().setVisible(!panel.getComponent().isVisible());
+		         		
+	                       if(panel.getComponent().isVisible()) {
+	                           label.setText("<html><strong>▼ " + group + "</strong></html>");
+	                       } else {
+	                           label.setText("<html><strong>▶ " + group + "</strong></html>");
+	                       }
+	                       getComponent().revalidate();
 		               }
 		
 		               /**
@@ -154,8 +156,8 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		
 		           });
 		
-		          labelPanel.getComponent().add(label);
-		          getComponent().add(labelPanel.getComponent(), "align left, wrap");
+		          labelPanel.add(label);
+		          getComponent().add(labelPanel, "align left, wrap");
 			}
 			 
 			// hidemode 3 ignores the space taken up by components when rendered
@@ -171,7 +173,7 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		if (uiComponent == null) {
 			uiComponent = new JPanel();
 			final MigLayout layout =
-					new MigLayout("align left, fillx,wrap 1");
+					new MigLayout("align left, fillx, wrap 1, insets 0");
 			uiComponent.setLayout(layout);
 		}
 		return uiComponent;
