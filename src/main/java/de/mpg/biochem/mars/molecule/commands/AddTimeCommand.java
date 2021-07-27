@@ -72,11 +72,11 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "Source:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ",group:Find", choices = { "from metadata (dt)",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "from metadata (dt)",
 			"constant time increment" })
 	private String source;
 
-	@Parameter(label = "Time increment (s)", style = "group:Find")
+	@Parameter(label = "Time increment (s)")
 	private double timeIncrement = 1.00d;
 
 	@Override
