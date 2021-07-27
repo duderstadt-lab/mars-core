@@ -33,6 +33,7 @@ import org.scijava.object.ObjectService;
 import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.module.Module;
+import org.scijava.module.ModuleCanceledException;
 import org.scijava.module.ModuleException;
 import org.scijava.module.ModuleItem;
 import org.scijava.plugin.Parameter;
@@ -41,6 +42,7 @@ import org.scijava.ui.AbstractInputHarvesterPlugin;
 import org.scijava.ui.UIService;
 import org.scijava.ui.swing.SwingDialog;
 import org.scijava.ui.swing.SwingUI;
+import org.scijava.ui.swing.widget.SwingButtonWidget;
 import org.scijava.ui.swing.widget.SwingInputHarvester;
 import org.scijava.ui.swing.widget.SwingInputPanel;
 import org.scijava.widget.*;
@@ -54,6 +56,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import java.awt.Component;
 import java.awt.event.MouseAdapter;
 
 import org.scijava.module.process.PreprocessorPlugin;
@@ -93,6 +96,30 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
 			cancel(e.getMessage());
 		}
 	}
+    
+    @Override
+    public SwingGroupingInputPanel createInputPanel() {
+    	return new SwingGroupingInputPanel();
+    }
+    
+    /**
+	 * Performs the harvesting process.
+	 * 
+	 * @param module The module whose inputs should be harvest.
+	 * @throws ModuleException If the process goes wrong, or is canceled.
+	 */
+    @Override
+	public void harvest(final Module module) throws ModuleException {
+		final SwingGroupingInputPanel inputPanel = createInputPanel();
+		buildPanel(inputPanel, module);
+		
+		if (!inputPanel.hasWidgets()) return; // no inputs left to harvest
+
+		final boolean ok = harvestInputs(inputPanel, module);
+		if (!ok) throw new ModuleCanceledException();
+
+		processResults(inputPanel, module);
+	}
 
     // -- InputHarvester methods --
     @Override
@@ -111,100 +138,38 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
         		groupName = groupName.substring(0, groupName.indexOf(","));
         	return groupName;
         }));
+		
+		for (String groupName : groups.keySet()) {
+	           // no empty groups, and skip resolved inputs, aka services
+	           if (groupName.equals("")) {
+	             for (ModuleItem<?> input : groups.get(groupName)) {
+	                   WidgetModel model = addInput(inputPanel, "", module, input);
+	                   if (model != null) models.add(model);
+	               }
+	             continue;
+	           }
 
-        for (String groupName : groups.keySet()) {
-            // no empty groups, and skip resolved inputs, aka services
-            if (groupName.equals("")) {
-            	for (ModuleItem<?> input : groups.get(groupName)) {
-                    WidgetModel model = addInput(inputPanel, module, input);
-                    if (model != null) models.add(model);
-                }
-            	continue;
-            }
+	         if (!groups.get(groupName).stream().filter(input -> !module.isInputResolved(input.getName())).findAny().isPresent())
+	           continue;
 
-        	if (!groups.get(groupName).stream().filter(input -> !module.isInputResolved(input.getName())).findAny().isPresent())
-        		continue;
+	           for (ModuleItem<?> input : groups.get(groupName)) {
+	               WidgetModel model = addInput(inputPanel, groupName, module, input);
+	               if (model != null) models.add(model);
+	           }
+	       }
 
-            SwingInputPanel panel = new SwingInputPanel();
-            SwingInputPanel labelPanel = new SwingInputPanel();
-            JLabel label = new JLabel("<html><strong>▼ " + groupName + "</strong></html>");
+	       // mark all models as initialized
+	       for (WidgetModel model : models) 
+	         model.setInitialized(true);
 
-            label.addMouseListener(new MouseAdapter() {
-                /**
-                 * Invoked when the mouse button has been clicked (pressed
-                 * and released) on a component.
-                 * @param e the event to be processed
-                 */
-            	@Override
-                public void mouseClicked(MouseEvent e) {
-                    if(e.getClickCount() == 1) {
-                    	panel.getComponent().setVisible(!panel.getComponent().isVisible());
-
-                        if(panel.getComponent().isVisible()) {
-                            label.setText("<html><strong>▼ " + groupName + "</strong></html>");
-                        } else {
-                            label.setText("<html><strong>▶ " + groupName + "</strong></html>");
-                        }
-                        inputPanel.getComponent().revalidate();
-                    }
-                }
-
-                /**
-                 * Invoked when a mouse button has been pressed on a component.
-                 * @param e the event to be processed
-                 */
-            	@Override
-                public void mousePressed(MouseEvent e) {
-                }
-
-                /**
-                 * Invoked when a mouse button has been released on a component.
-                 * @param e the event to be processed
-                 */
-            	@Override
-                public void mouseReleased(MouseEvent e) {
-                }
-
-                /**
-                 * Invoked when the mouse enters a component.
-                 * @param e the event to be processed
-                 */
-            	@Override
-                public void mouseEntered(MouseEvent e) {
-                }
-
-                /**
-                 * Invoked when the mouse exits a component.
-                 * @param e the event to be processed
-                 */
-            	@Override
-                public void mouseExited(MouseEvent e) {
-                }
-
-            });
-
-            labelPanel.getComponent().add(label);
-            inputPanel.getComponent().add(labelPanel.getComponent(), "wrap");
-            // hidemode 3 ignores the space taken up by components when rendered
-            inputPanel.getComponent().add(panel.getComponent(), "wrap,hidemode 3");
-
-            for (ModuleItem<?> input : groups.get(groupName)) {
-                WidgetModel model = addInput(panel, module, input);
-                if (model != null) models.add(model);
-            }
-        }
-
-        // mark all models as initialized
-        for (WidgetModel model : models) 
-          model.setInitialized(true);
-
-        // compute initial preview
-        module.preview();
+	       // compute initial preview
+	       module.preview();
+       
     }
 
     // -- Helper methods --
 
- 	private <T> WidgetModel addInput(final InputPanel<JPanel, JPanel> inputPanel,
+ 	private <T> WidgetModel addInput(final InputPanel<JPanel, JPanel> inputPanel, String group,
  		final Module module, final ModuleItem<T> item) throws ModuleException
  	{
  		final String name = item.getName();
@@ -223,7 +188,7 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
  		if (widget != null && widget.getComponentType() == widgetType) {
  			@SuppressWarnings("unchecked")
  			final InputWidget<?, JPanel> typedWidget = (InputWidget<?, JPanel>) widget;
- 			inputPanel.addWidget(typedWidget);
+ 			((SwingGroupingInputPanel) inputPanel).addWidget(typedWidget, group);
  			return model;
  		}
 
@@ -281,10 +246,4 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
 	protected String getUI() {
 		return SwingUI.NAME;//"legacy";
 	}
-
-	@Override
-	public InputPanel<JPanel, JPanel> createInputPanel() {
-		return new SwingInputPanel();
-	}
-
 }
