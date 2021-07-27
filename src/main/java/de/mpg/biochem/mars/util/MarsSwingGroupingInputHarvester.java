@@ -42,22 +42,13 @@ import org.scijava.ui.AbstractInputHarvesterPlugin;
 import org.scijava.ui.UIService;
 import org.scijava.ui.swing.SwingDialog;
 import org.scijava.ui.swing.SwingUI;
-import org.scijava.ui.swing.widget.SwingButtonWidget;
 import org.scijava.ui.swing.widget.SwingInputHarvester;
-import org.scijava.ui.swing.widget.SwingInputPanel;
 import org.scijava.widget.*;
-import java.awt.event.MouseEvent;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
-
-import java.awt.Component;
-import java.awt.event.MouseAdapter;
 
 import org.scijava.module.process.PreprocessorPlugin;
 
@@ -87,6 +78,11 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
 		// do not harvest if the UI is inactive!
 		//if (!uiService.isVisible(getUI())) return;
     	//Always use this, even in legacy...
+    	
+    	//Check is any inputs have group style
+    	//otherwise, return and default to normal parser
+    	if (!StreamSupport.stream(module.getInfo().inputs().spliterator(), false).anyMatch(input -> input.getWidgetStyle().contains("group:")))
+    		return;
 
 		// proceed with input harvesting
 		try {
