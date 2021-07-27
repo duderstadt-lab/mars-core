@@ -109,6 +109,8 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
 		final SwingGroupingInputPanel inputPanel = createInputPanel();
 		buildPanel(inputPanel, module);
 		
+		//buildGroupPanel would be a nice option here for the PR... With first checking if at least one in put has a group style
+		
 		if (!inputPanel.hasWidgets()) return; // no inputs left to harvest
 
 		final boolean ok = harvestInputs(inputPanel, module);
