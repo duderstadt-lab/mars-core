@@ -127,44 +127,29 @@ public class MarsSwingGroupingInputHarvester extends AbstractInputHarvesterPlugi
     {
     	final Iterable<ModuleItem<?>> inputs = module.getInfo().inputs();
 		final ArrayList<WidgetModel> models = new ArrayList<>();
-
-		Map<String, List<ModuleItem<?>>> groups = StreamSupport.stream(inputs.spliterator(), false).collect(Collectors.groupingBy( input -> {
-        	String style = input.getWidgetStyle();
-        	if (!style.contains("group:"))
-        		return "";
-
-        	String groupName = style.substring(style.indexOf("group:") + 6);
-        	if (groupName.contains(","))
-        		groupName = groupName.substring(0, groupName.indexOf(","));
-        	return groupName;
-        }));
 		
-		for (String groupName : groups.keySet()) {
-	           // no empty groups, and skip resolved inputs, aka services
-	           if (groupName.equals("")) {
-	             for (ModuleItem<?> input : groups.get(groupName)) {
-	                   WidgetModel model = addInput(inputPanel, "", module, input);
-	                   if (model != null) models.add(model);
-	               }
-	             continue;
-	           }
-
-	         if (!groups.get(groupName).stream().filter(input -> !module.isInputResolved(input.getName())).findAny().isPresent())
+		for (ModuleItem<?> input : inputs) {
+			String groupName = "";
+			String style = input.getWidgetStyle();
+        	if (style.contains("group:")) {
+        		groupName = style.substring(style.indexOf("group:") + 6);
+	        	if (groupName.contains(","))
+	        		groupName = groupName.substring(0, groupName.indexOf(","));
+        	}
+        	
+        	if (module.isInputResolved(input.getName()))
 	           continue;
-
-	           for (ModuleItem<?> input : groups.get(groupName)) {
-	               WidgetModel model = addInput(inputPanel, groupName, module, input);
-	               if (model != null) models.add(model);
-	           }
-	       }
+        	
+        	WidgetModel model = addInput(inputPanel, groupName, module, input);
+            if (model != null) models.add(model);
+	     }
 
 	       // mark all models as initialized
 	       for (WidgetModel model : models) 
 	         model.setInitialized(true);
-
+	
 	       // compute initial preview
 	       module.preview();
-       
     }
 
     // -- Helper methods --

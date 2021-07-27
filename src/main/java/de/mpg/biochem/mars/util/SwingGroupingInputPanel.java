@@ -101,7 +101,7 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 				 if (panel.getComponent().getLayout() instanceof MigLayout)
 					 ((MigLayout) panel.getComponent().getLayout()).setLayoutConstraints("fillx, insets 0 15 0 15, gapy 0, wrap 2");
 				 
-				 JPanel labelPanel = new JPanel(new MigLayout("fillx,insets 10 15 5 15, gapy 0"));
+				 JPanel labelPanel = new JPanel(new MigLayout("fillx,insets 5 15 5 15, gapy 0"));
 		         JLabel label = new JLabel("<html><strong>▼ " + group + "</strong></html>");
 		
 		           label.addMouseListener(new MouseAdapter() {
@@ -173,7 +173,7 @@ public class SwingGroupingInputPanel extends AbstractInputPanel<JPanel, JPanel> 
 		if (uiComponent == null) {
 			uiComponent = new JPanel();
 			final MigLayout layout =
-					new MigLayout("align left, fillx, wrap 1, insets 0");
+					new MigLayout("align left, fillx, wrap 1, insets 10 0 15 0");
 			uiComponent.setLayout(layout);
 		}
 		return uiComponent;
