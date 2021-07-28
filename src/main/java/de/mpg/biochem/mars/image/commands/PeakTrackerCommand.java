@@ -162,121 +162,126 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private RoiManager roiManager;
 	
 	@Parameter(label = "Region:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ",group:Input", choices = { "whole image",
 			"ROI from image", "ROIs from manager" })
 	private String region = "whole image";
 	
-	/**
-	 * FINDER SETTINGS
-	 */
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
+	@Parameter(label = "Channel", style = "group:Input", choices = { "a", "b", "c" }, persist = false)
 	private String channel = "0";
-
-	@Parameter(label = "Use DoG filter")
-	private boolean useDogFilter = true;
-
-	@Parameter(label = "DoG filter radius")
-	private double dogFilterRadius = 2;
-
-	@Parameter(label = "Detection threshold")
-	private double threshold = 50;
-
-	@Parameter(label = "Minimum distance between peaks")
-	private int minimumDistance = 4;
 	
-	@Parameter(label = "Preview timeout (s)")
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(label = "Preview timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
 
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+	@Parameter(visibility = ItemVisibility.INVISIBLE, style = "group:Preview", persist = false,
 		callback = "previewChanged")
 	private boolean preview = false;
 
 	@Parameter(label = "Preview roi:",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ",group:Preview", choices = { "circle",
 			"point" })
 	private String previewRoiType;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ",group:Preview",
 		persist = false)
 	private int previewT;
+	
+	/**
+	 * FINDER SETTINGS
+	 */
+	@Parameter(label = "Use DoG filter", style = "group:Find")
+	private boolean useDogFilter = true;
 
-	@Parameter(label = "Find negative peaks")
+	@Parameter(label = "DoG filter radius", style = "group:Find")
+	private double dogFilterRadius = 2;
+
+	@Parameter(label = "Detection threshold", style = "group:Find")
+	private double threshold = 50;
+
+	@Parameter(label = "Minimum distance between peaks", style = "group:Find")
+	private int minimumDistance = 4;
+	
+	@Parameter(label = "Find negative peaks", style = "group:Find")
 	private boolean findNegativePeaks = false;
 
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String fitterTitle = "Peak fitter settings:";
 
-	@Parameter(label = "Fit radius")
+	@Parameter(label = "Fit radius", style = "group:Fit")
 	private int fitRadius = 4;
 
-	@Parameter(label = "Minimum R-squared", style = NumberWidget.SLIDER_STYLE,
+	@Parameter(label = "Minimum R-squared", style = NumberWidget.SLIDER_STYLE + ",group:Fit",
 		min = "0.00", max = "1.00", stepSize = "0.01")
 	private double RsquaredMin = 0;
 
 	/**
 	 * TRACKER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String trackerTitle = "Peak tracker settings:";
-
-	@Parameter(label = "Max difference X")
+	@Parameter(label = "Max difference X", style = "group:Track")
 	private double maxDifferenceX = 1;
 
-	@Parameter(label = "Max difference Y")
+	@Parameter(label = "Max difference Y", style = "group:Track")
 	private double maxDifferenceY = 1;
 
-	@Parameter(label = "Max difference T")
+	@Parameter(label = "Max difference T", style = "group:Track")
 	private int maxDifferenceT = 1;
 
-	@Parameter(label = "Minimum track length")
+	@Parameter(label = "Minimum track length", style = "group:Track")
 	private int minTrajectoryLength = 100;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String integrationTitle = "Peak integration settings:";
-
-	@Parameter(label = "Integrate")
+	/**
+	 * INTEGRATION SETTINGS
+	 */
+	
+	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
 
-	@Parameter(label = "Inner radius")
+	@Parameter(label = "Inner radius", style = "group:Integrate")
 	private int integrationInnerRadius = 2;
 
-	@Parameter(label = "Outer radius")
+	@Parameter(label = "Outer radius", style = "group:Integrate")
 	private int integrationOuterRadius = 4;
 
-	@Parameter(label = "Microscope", required = false)
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	
+	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
 
-	@Parameter(label = "Pixel length")
+	@Parameter(label = "Pixel length", style = "group:Output")
 	private double pixelLength = 1;
 
-	@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm" })
+	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel", "µm", "nm" })
 	private String pixelUnits = "pixel";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
 	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, etc...)";
 	
-	@Parameter(label = "Exclude", required = false)
+	@Parameter(label = "Exclude", style = "group:Output", required = false)
 	private String excludeTimePointList = "";
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
-	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
-	/**
-	 * VERBOSE
-	 */
-	@Parameter(label = "Verbose")
+	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
 	
 	@Parameter(label = "Metadata UID:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ",group:Output", choices = { "unique from dataset",
 				"randomly generated" })
 	private String metadataUIDSource = "unique from dataset";
+	
+	/**
+	 * THREADS
+	 */
+	
+	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Parameter
 	private UIService uiService;
