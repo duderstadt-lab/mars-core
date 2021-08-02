@@ -59,8 +59,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 	protected AtomicInteger numberOfMolecules;
 	protected AtomicInteger numMetadata;
-	protected String comments; 
-	protected String inputSchema = "2020-05-01";
+	protected String comments, inputSchema;
 	
 	//Format YYYY-MM-DD
 	public static final String SCHEMA = "2021-07-13";

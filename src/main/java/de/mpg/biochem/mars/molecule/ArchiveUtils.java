@@ -457,22 +457,22 @@ public class ArchiveUtils {
 					String header = segmentHeaders[col];
 					switch (header) {
 				    	case "x1":
-				    		table.setColumnHeader(col, "X1");
+				    		segmentTable.setColumnHeader(col, "X1");
 				    		break;
 				    	case "y1":
-				    		table.setColumnHeader(col, "Y1");
+				    		segmentTable.setColumnHeader(col, "Y1");
 				    		break;
 				    	case "x2":
-				    		table.setColumnHeader(col, "X2");
+				    		segmentTable.setColumnHeader(col, "X2");
 				    		break;
 				    	case "y2":
-				    		table.setColumnHeader(col, "Y2");
+				    		segmentTable.setColumnHeader(col, "Y2");
 				    		break;
 				    	case "sigma_A":
-				    		table.setColumnHeader(col, "Sigma_A");
+				    		segmentTable.setColumnHeader(col, "Sigma_A");
 				    		break;
 				    	case "sigma_B":
-				    		table.setColumnHeader(col, "Sigma_B");
+				    		segmentTable.setColumnHeader(col, "Sigma_B");
 				    		break;
 					}
 				}
@@ -481,7 +481,18 @@ public class ArchiveUtils {
 			//Now we need to use oldHeaderToNewHeader to update segment table titles
 			//regions and positions... what am I forgetting??
 			
+			final List<ArrayList<String>> segmentsTableNames = new ArrayList<ArrayList<String>>();
+			
 			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
+				//ArrayList<String> tableColumnNamesCopy = new ArrayList<String>();
+				//for (String name : tableColumnNames)
+				//	tableColumnNamesCopy.add(name);
+				
+				//segmentsTableNames.add(tableColumnNamesCopy);
+				segmentsTableNames.add(tableColumnNames);
+			}
+
+			for (ArrayList<String> tableColumnNames : segmentsTableNames) {
 				MarsTable segmentsTable = molecule.getSegmentsTable(tableColumnNames);
 				
 				if (oldHeaderToNewHeader.containsKey(tableColumnNames.get(0)) || 
