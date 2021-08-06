@@ -164,7 +164,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.GROUP, expanded = true)
 	private String inputGroup = "Input";
 	
-	@Parameter(label = "Region:",
+	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
 			"ROI from image", "ROIs from manager" }, group = "Input")
 	private String region = "whole image";
