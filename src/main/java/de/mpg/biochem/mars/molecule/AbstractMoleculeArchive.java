@@ -245,7 +245,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (virtual) loadVirtualStore(file);
 		else load(file);
 		
-		if (Integer.valueOf(properties().getInputSchema().replace("-", "")) < 20210713)
+		if (properties().getInputSchema() == null || Integer.valueOf(properties().getInputSchema().replace("-", "")) < 20210713)
 			ArchiveUtils.updateTableHeaders((MoleculeArchive<Molecule,MarsMetadata,?,?>) this); 
 	}
 
