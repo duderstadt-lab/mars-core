@@ -65,6 +65,7 @@ import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.convert.ConvertService;
+import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
@@ -127,7 +128,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private StatusService statusService;
-
+	
 	@Parameter
 	private TranslatorService translatorService;
 
@@ -148,6 +149,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private UIService uiService;
+	
+	@Parameter
+	private DisplayService displayService;
 
 	/**
 	 * IMAGE
@@ -161,148 +168,149 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(required = false)
 	private RoiManager roiManager;
 	
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = true)
-	private String inputGroup = "Input";
-	
-	@Parameter(label = "Region",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
-			"ROI from image", "ROIs from manager" }, group = "Input")
-	private String region = "whole image";
-	
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, group = "Input", persist = false)
-	private String channel = "0";
-	
 	/**
 	 * PREVIEW SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = true)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
 	private String previewGroup = "Preview";
 	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", group = "Preview")
+			callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
 
-	@Parameter(label = "Preview roi:",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "circle",
-			"point" }, group = "Preview")
+	@Parameter(label = "Roi",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
+			"point" })
 	private String previewRoiType;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, group = "Preview")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
-		persist = false, group = "Preview")
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
 	private int previewT;
 	
-	@Parameter(label = "Preview timeout (s)", group = "Preview")
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
+	
+	/**
+	 * INPUT SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	private String inputGroup = "Input";
+	
+	@Parameter(label = "Region",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
+			"ROI from image", "ROIs from manager" })
+	private String region = "whole image";
+	
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
+	private String channel = "0";
 	
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = true)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
 	private String findGroup = "Find";
 	
-	@Parameter(label = "Use DoG filter", group = "Find")
+	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
 
-	@Parameter(label = "DoG filter radius", group = "Find")
+	@Parameter(label = "DoG radius", style = "group:Find")
 	private double dogFilterRadius = 2;
 
-	@Parameter(label = "Detection threshold", group = "Find")
+	@Parameter(label = "Threshold", style = "group:Find")
 	private double threshold = 50;
 
-	@Parameter(label = "Minimum distance between peaks", group = "Find")
+	@Parameter(label = "Peak separation", style = "group:Find")
 	private int minimumDistance = 4;
 	
-	@Parameter(label = "Find negative peaks", group = "Find")
+	@Parameter(label = "Negative peaks", style = "group:Find")
 	private boolean findNegativePeaks = false;
 
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
 	private String fitGroup = "Fit";
 
-	@Parameter(label = "Fit radius", group = "Fit")
+	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
 
-	@Parameter(label = "Minimum R-squared", style = NumberWidget.SLIDER_STYLE,
-		min = "0.00", max = "1.00", stepSize = "0.01", group = "Fit")
+	@Parameter(label = "R-squared", style = NumberWidget.SLIDER_STYLE + ", group:Fit",
+		min = "0.00", max = "1.00", stepSize = "0.01")
 	private double RsquaredMin = 0;
 
 	/**
 	 * TRACKER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
 	private String trackGroup = "Track";
 	
-	@Parameter(label = "Max difference X", group = "Track")
+	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
 
-	@Parameter(label = "Max difference Y", group = "Track")
+	@Parameter(label = "Max ΔY", style = "group:Track")
 	private double maxDifferenceY = 1;
 
-	@Parameter(label = "Max difference T", group = "Track")
+	@Parameter(label = "Max ΔT", style = "group:Track")
 	private int maxDifferenceT = 1;
 
-	@Parameter(label = "Minimum track length", group = "Track")
+	@Parameter(label = "Minimum length", style = "group:Track")
 	private int minTrajectoryLength = 100;
 
 	/**
 	 * INTEGRATION SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
 	private String integrateGroup = "Integrate";
 	
-	@Parameter(label = "Integrate", group = "Integrate")
+	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
 
-	@Parameter(label = "Inner radius", group = "Integrate")
+	@Parameter(label = "Inner radius", style = "group:Integrate")
 	private int integrationInnerRadius = 2;
 
-	@Parameter(label = "Outer radius", group = "Integrate")
+	@Parameter(label = "Outer radius", style = "group:Integrate")
 	private int integrationOuterRadius = 4;
 
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.GROUP, expanded = false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
 	private String outputGroup = "Output";
 	
-	@Parameter(label = "Microscope", group = "Output", required = false)
+	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
 
-	@Parameter(label = "Pixel length", group = "Output")
+	@Parameter(label = "Pixel length", style = "group:Output")
 	private double pixelLength = 1;
 
-	@Parameter(label = "Pixel units", group = "Output", choices = { "pixel", "µm", "nm" })
+	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel", "µm", "nm" })
 	private String pixelUnits = "pixel";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, group = "Output")
-	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, etc...)";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
+	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, ...)";
 	
-	@Parameter(label = "Exclude", group = "Output", required = false)
+	@Parameter(label = "Exclude", style = "group:Output", required = false)
 	private String excludeTimePointList = "";
 	
-	@Parameter(label = "Verbose", group = "Output")
+	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
 	
-	@Parameter(label = "Metadata UID:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
-				"randomly generated" }, group = "Output")
-	private String metadataUIDSource = "unique from dataset";
+	@Parameter(label = "Metadata UID",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
+				"random" })
+	private String metadataUIDSource = "random";
 	
 	/**
 	 * THREADS
 	 */
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
-
-	@Parameter
-	private UIService uiService;
 
 	/**
 	 * OUTPUTS
@@ -336,7 +344,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else return;
-		
+
 		if (image.getRoi() != null)
 			imageRoi = image.getRoi();
 		
@@ -752,6 +760,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					}
 	
 					preFrameCount.setValue(this, "count: " + peakCount);
+					
 					for (Window window : Window.getWindows())
 						if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
 							MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peakCount);
