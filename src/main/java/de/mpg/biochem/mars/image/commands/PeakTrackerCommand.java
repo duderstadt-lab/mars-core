@@ -169,36 +169,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private RoiManager roiManager;
 	
 	/**
-	 * PREVIEW SETTINGS
-	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
-	private String previewGroup = "Preview";
-	
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
-
-	@Parameter(label = "Roi",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
-			"point" })
-	private String previewRoiType;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tPeakCount = "count: 0";
-
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
-	private int previewT;
-	
-	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
-	
-	/**
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
 	private String inputGroup = "Input";
 	
 	@Parameter(label = "Region",
@@ -212,7 +186,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
 	private String findGroup = "Find";
 	
 	@Parameter(label = "DoG filter", style = "group:Find")
@@ -233,7 +207,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
 	private String fitGroup = "Fit";
 
 	@Parameter(label = "Radius", style = "group:Fit")
@@ -246,7 +220,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * TRACKER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
 	private String trackGroup = "Track";
 	
 	@Parameter(label = "Max ΔX", style = "group:Track")
@@ -264,7 +238,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * INTEGRATION SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
 	private String integrateGroup = "Integrate";
 	
 	@Parameter(label = "Integrate", style = "group:Integrate")
@@ -279,7 +253,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
 	private String outputGroup = "Output";
 	
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
@@ -304,13 +278,40 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "random";
-	 
+	
+	
 	/**
 	 * THREADS
 	 */
 	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
+	private String previewGroup = "Preview";
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+			callback = "previewChanged", style = "group:Preview")
+	private boolean preview = false;
+
+	@Parameter(label = "Roi",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
+			"point" })
+	private String previewRoiType;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tPeakCount = "count: 0";
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
+	private int previewT;
+	
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
 
 	/**
 	 * OUTPUTS

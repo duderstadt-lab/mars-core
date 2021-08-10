@@ -118,14 +118,6 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		final Iterable<ModuleItem<?>> inputs = module.getInfo().inputs();
 
 		final ArrayList<WidgetModel> models = new ArrayList<>();
-		
-		//load previous group visibility
-		Map<String, Boolean> widgetGroupVisible = new HashMap<String, Boolean>();
-		Map<String, String> savedMap = prefService.getMap(module.getClass(), "widgetGroupVisible");
-		for (String group : savedMap.keySet())
-			widgetGroupVisible.put(group, Boolean.valueOf(savedMap.get(group)));
-		
-		((MarsSwingInputPanel) inputPanel).setWidgetGroupVisibility(widgetGroupVisible);
 
 		for (final ModuleItem<?> item : inputs) {
 			final WidgetModel model = addInput(inputPanel, module, item);
@@ -145,6 +137,8 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		final Module module)
 	{
 		final JPanel pane = inputPanel.getComponent();
+		
+		System.out.println(pane.getComponent(0).getPreferredSize());
 
 		// display input panel in a dialog
 		final String title = module.getInfo().getTitle();
@@ -164,13 +158,6 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		dialog.setTitle(title);
 		dialog.setModal(modal);
 		final int rval = dialog.show();
-		
-		//Save group visibility
-		Map<String, Boolean> widgetGroupVisible = ((MarsSwingInputPanel) inputPanel).getWidgetGroupVisibility();
-		Map<String, String> convertedMap = new HashMap<String, String>();
-		for (String group : widgetGroupVisible.keySet())
-			convertedMap.put(group, String.valueOf(widgetGroupVisible.get(group)));
-		prefService.put(module.getClass(), "widgetGroupVisible", convertedMap);
 			
 		// verify return value of dialog
 		return rval == JOptionPane.OK_OPTION;

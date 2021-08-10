@@ -151,32 +151,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	private RoiManager roiManager;
 	
 	/**
-	 * PREVIEW SETTINGS
-	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
-	private String previewGroup = "Preview";
-	
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
-	
-	@Parameter(label = "Label",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Preview", choices = {
-				"Median intensity", "Variance intensity" })
-	private String previewLabelType;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tDNACount = "count: 0";
-
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
-	private int theT;
-	
-	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
-	
-	/**
 	 * INPUT SETTINGS
 	 */
 	
@@ -267,8 +241,34 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Process all frames", style = "group:Output")
 	private boolean allFrames;
 	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	private String previewGroup = "Preview";
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+			callback = "previewChanged", style = "group:Preview")
+	private boolean preview = false;
+	
+	@Parameter(label = "Label",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Preview", choices = {
+				"Median intensity", "Variance intensity" })
+	private String previewLabelType;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tDNACount = "count: 0";
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
+	private int theT;
+	
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
 
 	/**
 	 * OUTPUTS

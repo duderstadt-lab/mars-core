@@ -158,38 +158,12 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-
-	/**
-	 * PREVIEW SETTINGS
-	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
-	private String previewGroup = "Preview";
-	
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
-
-	@Parameter(label = "Roi",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
-			"point" })
-	private String roiType;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tPeakCount = "count: 0";
-
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
-	private int theT;
-	
-	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
 	
 	/**
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String inputGroup = "Input";
 	
 	@Parameter(label = "Region",
@@ -203,7 +177,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
 	
 	@Parameter(label = "DoG filter", style = "group:Find")
@@ -224,7 +198,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String fitGroup = "Fit";
 	
 	@Parameter(label = "Fit", style = "group:Fit")
@@ -240,7 +214,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * INTEGRATION SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String integrateGroup = "Integrate";
 	
 	@Parameter(label = "Integrate", style = "group:Integrate")
@@ -255,7 +229,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
 
 	@Parameter(label = "Generate peak count table", style = "group:Output")
@@ -273,8 +247,34 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
 	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String previewGroup = "Preview";
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+			callback = "previewChanged", style = "group:Preview")
+	private boolean preview = false;
+
+	@Parameter(label = "Roi",
+		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
+			"point" })
+	private String roiType;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tPeakCount = "count: 0";
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
+	private int theT;
+	
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
 
 	/**
 	 * OUTPUTS

@@ -37,6 +37,7 @@ import java.util.Map;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -59,8 +60,8 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 
 	private JPanel uiComponent;
 	
-	private Map<String, List<Component>> widgetGroups;
-	private Map<String, Boolean> widgetGroupVisible;
+	private JTabbedPane tabbedPane;
+	private Map<String, JPanel> tabPanels;
 
 	// -- InputPanel methods --
 
@@ -81,115 +82,60 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		}
 		final String group = groupString;
 		
-		if (widgetGroups == null)
-			widgetGroups = new HashMap<String, List<Component>>();
-		
-		if (widgetGroupVisible == null)
-			widgetGroupVisible = new HashMap<String, Boolean>();
-		
-		if (!widgetGroups.containsKey(group)) 
-			widgetGroups.put(group, new ArrayList<Component>());
-		
 		// add widget to panel
 		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) {
-			   JPanel labelPanel = new JPanel(new MigLayout("fillx,insets 5 15 5 15, gapy 0"));
-			   
-			   if (!widgetGroupVisible.containsKey(group) && style.contains("expanded:")) {
-				   String expandedStatus = style.substring(style.indexOf("expanded:") + 9);
-				   if (expandedStatus.contains(","))
-					   expandedStatus = expandedStatus.substring(0, expandedStatus.indexOf(","));
-				   
-				   widgetGroupVisible.put(group, Boolean.valueOf(expandedStatus));
-			   } else if (!widgetGroupVisible.containsKey(group))
-				   widgetGroupVisible.put(group, true);
-			   
-	           JLabel label = (widgetGroupVisible.get(group)) ? new JLabel("<html><strong>▼ " + group + "</strong></html>") :
-	        	   new JLabel("<html><strong>▶ " + group + "</strong></html>");
-
-	           label.addMouseListener(new MouseAdapter() {
-	               /**
-	                * Invoked when the mouse button has been clicked (pressed
-	                * and released) on a component.
-	                * @param e the event to be processed
-	                */
-	               @Override
-	               public void mouseClicked(MouseEvent e) {
-	               }
-
-	               /**
-	                * Invoked when a mouse button has been pressed on a component.
-	                * @param e the event to be processed
-	                */
-	               @Override
-	               public void mousePressed(MouseEvent e) {
-                       widgetGroupVisible.put(group, !widgetGroupVisible.get(group));
-            		   widgetGroups.get(group).forEach(comp -> comp.setVisible(widgetGroupVisible.get(group)));
-
-                       if(widgetGroupVisible.get(group))
-                    	   label.setText("<html><strong>▼ " + group + "</strong></html>");
-                       else
-                    	   label.setText("<html><strong>▶ " + group + "</strong></html>");
-                       
-                       getComponent().revalidate();
-	               }
-
-	               /**
-	                * Invoked when a mouse button has been released on a component.
-	                * @param e the event to be processed
-	                */
-	               @Override
-	               public void mouseReleased(MouseEvent e) {
-	               }
-
-	               /**
-	                * Invoked when the mouse enters a component.
-	                * @param e the event to be processed
-	                */
-	               @Override
-	               public void mouseEntered(MouseEvent e) {
-	               }
-
-	               /**
-	                * Invoked when the mouse exits a component.
-	                * @param e the event to be processed
-	                */
-	               @Override
-	               public void mouseExited(MouseEvent e) {
-	               }
-
-	           });
-
-	           labelPanel.add(label);
-	           getComponent().add(labelPanel, "align left, wrap");
+			addTab(group);
 		}
 		else if (widget.isLabeled()) {
 			// widget is prefixed by a label
 			final JLabel l = new JLabel(model.getWidgetLabel());
 			final String desc = model.getItem().getDescription();
 			if (desc != null && !desc.isEmpty()) l.setToolTipText(desc);
-			getComponent().add(l, "hidemode 3");
-			widgetGroups.get(group).add(l);
-			
-			getComponent().add(widgetPane, "hidemode 3");
-			widgetGroups.get(group).add(widgetPane);
+			if (tabbedPane != null && !group.equals("")) {
+				if (!tabPanels.containsKey(group))
+					addTab(group); 
+				
+				getTabPanel(group).add(l);
+				getTabPanel(group).add(widgetPane);
+			} else {
+				getComponent().add(l);
+				getComponent().add(widgetPane);
+			}
 		}
 		else {
-			// widget occupies entire row
-			getComponent().add(widgetPane, "span, hidemode 3");
-			widgetGroups.get(group).add(widgetPane);
+			if (tabbedPane != null && !group.equals("")) {
+				if (!tabPanels.containsKey(group))
+					addTab(group); 
+				
+				// widget occupies entire row
+				getTabPanel(group).add(widgetPane, "span");
+			} else {
+				// widget occupies entire row
+				getComponent().add(widgetPane, "span");
+			}
+		}
+	}
+	
+	private void addTab(String name) {
+		if (tabbedPane == null) {
+			tabbedPane = new JTabbedPane();
+			getComponent().add(tabbedPane, "growx, growy, span 2");
 		}
 		
-		//Make sure components have correct starting visibility
-		if (widgetGroups.containsKey(group) && widgetGroupVisible.containsKey(group))
-			widgetGroups.get(group).forEach(comp -> comp.setVisible(widgetGroupVisible.get(group)));
+		if (tabPanels == null)
+			tabPanels = new HashMap<String, JPanel>();
+		
+		JPanel panel = new JPanel();
+		panel.setLayout(new MigLayout("fillx,wrap 2", "[right]10[fill,grow]"));
+		tabPanels.put(name, panel);
+		tabbedPane.add(name, panel);
 	}
 	
-	public Map<String, Boolean> getWidgetGroupVisibility() {
-		return widgetGroupVisible;
-	}
-	
-	public void setWidgetGroupVisibility(Map<String, Boolean> widgetGroupVisible) {
-		this.widgetGroupVisible = widgetGroupVisible;
+	private JPanel getTabPanel(String name) {
+		if (tabPanels != null && tabPanels.containsKey(name))
+			return tabPanels.get(name);
+		else 
+			return null;
 	}
 
 	@Override
