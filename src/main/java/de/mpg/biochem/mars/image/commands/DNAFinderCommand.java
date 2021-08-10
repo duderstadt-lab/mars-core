@@ -32,6 +32,7 @@ package de.mpg.biochem.mars.image.commands;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,6 +73,7 @@ import org.scijava.convert.ConvertService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -79,6 +81,7 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
+import org.scijava.widget.Button;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
@@ -137,6 +140,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private ConvertService convertService;
+	
+	@Parameter
+	private PlatformService platformService;
 
 	/**
 	 * IMAGE
@@ -269,6 +275,11 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
+	
+	@Parameter(label = "Help",
+			description="View a web page detailing DNA Finder options",
+			callback="openWebPage", persist = false)
+	private Button openWebPage;
 
 	/**
 	 * OUTPUTS
@@ -610,6 +621,17 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 				cancel();
 			}
 			es.shutdownNow();
+		}
+	}
+	
+	protected void openWebPage() {
+		try {
+			String urlString =
+					"https://duderstadt-lab.github.io/mars-docs/docs/image/DNA_finder/";
+			URL url = new URL(urlString);
+			platformService.open(url);
+		} catch (Exception e) {
+			// do nothing
 		}
 	}
 

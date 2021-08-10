@@ -157,10 +157,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private UIService uiService;
 	
 	@Parameter
-	private PlatformService platformService;
+	private DisplayService displayService;
 	
 	@Parameter
-	private DisplayService displayService;
+	private PlatformService platformService;
 
 	/**
 	 * IMAGE
@@ -209,11 +209,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Negative peaks", style = "group:Find")
 	private boolean findNegativePeaks = false;
-
-	@Parameter(label = "Help",
-			description="View a web page detailing PeakTracker settings",
-			callback="openWebPage", persist = false)
-	private Button openWebPage;
 	
 	/**
 	 * FITTER SETTINGS
@@ -322,6 +317,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
+	
+	@Parameter(label = "Help",
+			description="View a web page detailing Peak Tracker options",
+			callback="openWebPage", persist = false)
+	private Button openWebPage;
 
 	/**
 	 * OUTPUTS

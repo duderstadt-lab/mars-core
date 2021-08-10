@@ -30,6 +30,7 @@
 package de.mpg.biochem.mars.image.commands;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -62,10 +63,12 @@ import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.DefaultMutableModuleItem;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+import org.scijava.widget.Button;
 import org.scijava.widget.ChoiceWidget;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -135,6 +138,9 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
+	
+	@Parameter
+	private PlatformService platformService;
 
 	/**
 	 * IMAGE
@@ -203,6 +209,11 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "unique from dataset";
+	
+	@Parameter(label = "Help",
+			description="View a web page detailing Peak Tracker options",
+			callback="openWebPage", persist = false)
+	private Button openWebPage;
 
 	/**
 	 * OUTPUTS
@@ -657,6 +668,17 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 
 		peakIntegrationMaps.add(new IntegrationMap(name, c, interval,
 			integrationMap));
+	}
+	
+	protected void openWebPage() {
+		try {
+			String urlString =
+					"https://duderstadt-lab.github.io/mars-docs/docs/image/MoleculeIntegrator/";
+			URL url = new URL(urlString);
+			platformService.open(url);
+		} catch (Exception e) {
+			// do nothing
+		}
 	}
 
 	public int getNumberOfIntegrationMaps() {
