@@ -304,7 +304,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "random";
-	
+	 
 	/**
 	 * THREADS
 	 */
@@ -688,10 +688,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
+					if (imageRoi == null && image.getRoi() != null)
+						imageRoi = image.getRoi();
 					
 					if (region.equals("ROI from image")) {
 						rois = new Roi[1];
-						imageRoi = image.getRoi();
 						rois[0] = imageRoi;
 					} else if (region.equals("ROIs from manager")) {
 						rois = roiManager.getRoisAsArray();

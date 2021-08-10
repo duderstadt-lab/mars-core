@@ -161,13 +161,13 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		persist = false)
 	private int theT;
 
-	@Parameter(label = "Use DoG filter")
+	@Parameter(label = "DoG filter")
 	private boolean useDogFilter = true;
 
-	@Parameter(label = "DoG filter radius")
+	@Parameter(label = "DoG radius")
 	private double dogFilterRadius = 2;
 
-	@Parameter(label = "Detection threshold")
+	@Parameter(label = "Threshold")
 	private double threshold = 50;
 
 	@Parameter(label = "Colocalize search radius")

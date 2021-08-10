@@ -91,7 +91,6 @@ public class PeakFinderCommandTest {
 		peakFinder.setContext(context);
 
 		peakFinder.setDataset(simulateDataset());
-		peakFinder.setUseRoi(false);
 		peakFinder.setChannel(0);
 		peakFinder.setT(0);
 		peakFinder.setUseDogFiler(true);

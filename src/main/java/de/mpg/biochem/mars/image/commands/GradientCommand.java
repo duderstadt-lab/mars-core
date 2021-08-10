@@ -137,7 +137,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 			"Top to bottom", "Left to right" })
 	private String gradientDirection = "Top to bottom";
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Parameter(label = "Gradient image", type = ItemIO.OUTPUT)

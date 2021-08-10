@@ -149,98 +149,125 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
+	
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	private String previewGroup = "Preview";
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+			callback = "previewChanged", style = "group:Preview")
+	private boolean preview = false;
+	
+	@Parameter(label = "Label",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Preview", choices = {
+				"Median intensity", "Variance intensity" })
+	private String previewLabelType;
 
-	@Parameter(label = "Region:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "whole image",
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tDNACount = "count: 0";
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
+	private int theT;
+	
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
+	
+	/**
+	 * INPUT SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	private String inputGroup = "Input";
+
+	@Parameter(label = "Region",
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
 			"ROI from image", "ROIs from manager" })
 	private String region = "whole image";
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
 	private String channel = "0";
 
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(label = "Gaussian Smoothing Sigma")
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	private String findGroup = "Find";
+	
+	@Parameter(label = "Gaussian Smoothing Sigma", style = "group:Find")
 	private double gaussSigma = 2;
 
-	@Parameter(label = "Use DoG filter")
+	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
 
-	@Parameter(label = "DoG filter radius")
+	@Parameter(label = "DoG radius", style = "group:Find")
 	private double dogFilterRadius = 2;
 
-	@Parameter(label = "Detection threshold")
+	@Parameter(label = "Threshold", style = "group:Find")
 	private double threshold = 50;
 
-	@Parameter(label = "Minimum distance between edges (in pixels)")
+	@Parameter(label = "DNA separation (pixels)", style = "group:Find")
 	private int minimumDistance = 6;
 
-	@Parameter(label = "Optimal DNA length (in pixels)")
+	@Parameter(label = "DNA length (pixels)", style = "group:Find")
 	private int optimalDNALength = 38;
 
-	@Parameter(label = "DNA end search Y (in pixels)")
+	@Parameter(label = "DNA end search Y (pixels)", style = "group:Find")
 	private int yDNAEndSearchRadius = 6;
 
-	@Parameter(label = "DNA end search X (in pixels)")
+	@Parameter(label = "DNA end search X (pixels)", style = "group:Find")
 	private int xDNAEndSearchRadius = 5;
 
-	@Parameter(label = "Filter by median intensity")
+	@Parameter(label = "Filter by median intensity", style = "group:Find")
 	private boolean medianIntensityFilter = false;
 
-	@Parameter(label = "Median DNA intensity lower bound")
+	@Parameter(label = "Median DNA intensity lower bound", style = "group:Find")
 	private int medianIntensityLowerBound = 0;
 
-	@Parameter(label = "Filter by intensity variance")
+	@Parameter(label = "Filter by intensity variance", style = "group:Find")
 	private boolean varianceFilter = false;
 
-	@Parameter(label = "DNA intensity variance upper bound")
+	@Parameter(label = "DNA intensity variance upper bound", style = "group:Find")
 	private int varianceUpperBound = 1_000_000;
+	
+	/**
+	 * FITTER SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	private String fitGroup = "Fit";
 
-	@Parameter(label = "Fit ends (subpixel localization)")
+	@Parameter(label = "Fit ends", style = "group:Fit")
 	private boolean fit = false;
 
-	@Parameter(label = "Fit 2nd order")
+	@Parameter(label = "2nd order", style = "group:Fit")
 	private boolean fitSecondOrder = false;
 
-	@Parameter(label = "Fit Radius")
+	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
 
-	@Parameter(label = "Preview label type:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
-			"Median intensity", "Variance intensity" })
-	private String previewLabelType;
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	private String outputGroup = "Output";
 
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String tDNACount = "count: 0";
-
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
-		persist = false)
-	private int theT;
-	
-	@Parameter(label = "Preview timeout (s)")
-	private int previewTimeout = 10;
-
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-		callback = "previewChanged")
-	private boolean preview = false;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String outputMessage = "Output:";
-
-	@Parameter(label = "Generate DNA count table")
+	@Parameter(label = "Generate DNA count table", style = "group:Output")
 	private boolean generateDNACountTable;
 
-	@Parameter(label = "Generate DNA table")
+	@Parameter(label = "Generate DNA table", style = "group:Output")
 	private boolean generateDNATable;
 
-	@Parameter(label = "Add to RoiManger")
+	@Parameter(label = "Add to RoiManger", style = "group:Output")
 	private boolean addToRoiManger;
 
-	@Parameter(label = "Process all frames")
+	@Parameter(label = "Process all frames", style = "group:Output")
 	private boolean allFrames;
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	/**
@@ -273,15 +300,6 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 		if (image.getRoi() != null)
 			imageRoi = image.getRoi();
-		
-		/*
-		if (image.getRoi() == null) {
-			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
-				"useROI", Boolean.class);
-			useRoifield.setValue(this, false);
-		}
-		else roi = image.getRoi();
-*/
 		
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
@@ -512,9 +530,12 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
+					
+					if (imageRoi == null && image.getRoi() != null)
+						imageRoi = image.getRoi();
+					
 					if (region.equals("ROI from image")) {
 						rois = new Roi[1];
-						imageRoi = image.getRoi();
 						rois[0] = imageRoi;
 					} else if (region.equals("ROIs from manager")) {
 						rois = roiManager.getRoisAsArray();

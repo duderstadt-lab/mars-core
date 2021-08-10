@@ -129,7 +129,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	@Parameter(label = "Merged image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	// A map from slice to new transformed image
