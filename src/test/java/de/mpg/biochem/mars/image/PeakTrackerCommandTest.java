@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
@@ -72,7 +73,7 @@ public class PeakTrackerCommandTest {
 		return new Context(DatasetService.class, StatusService.class,
 			OpService.class, MoleculeArchiveService.class, TranslatorService.class,
 			OMEXMLService.class, FormatService.class, MarsTableService.class,
-			DatasetIOService.class);
+			DatasetIOService.class, PlatformService.class);
 	}
 
 	@BeforeEach

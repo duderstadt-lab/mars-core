@@ -29,8 +29,10 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import org.scijava.widget.Button;
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,6 +71,7 @@ import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -154,6 +157,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private UIService uiService;
 	
 	@Parameter
+	private PlatformService platformService;
+	
+	@Parameter
 	private DisplayService displayService;
 
 	/**
@@ -204,6 +210,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Negative peaks", style = "group:Find")
 	private boolean findNegativePeaks = false;
 
+	@Parameter(label = "Help",
+			description="View a web page detailing PeakTracker settings",
+			callback="openWebPage", persist = false)
+	private Button openWebPage;
+	
 	/**
 	 * FITTER SETTINGS
 	 */
@@ -278,7 +289,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "random";
-	
 	
 	/**
 	 * THREADS
@@ -781,6 +791,17 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				cancel();
 			}
 			es.shutdownNow();
+		}
+	}
+	
+	protected void openWebPage() {
+		try {
+			String urlString =
+					"https://duderstadt-lab.github.io/mars-docs/docs/image/PeakTracker/";
+			URL url = new URL(urlString);
+			platformService.open(url);
+		} catch (Exception e) {
+			// do nothing
 		}
 	}
 

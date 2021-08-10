@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.image.commands.PeakFinderCommand;
@@ -66,7 +67,7 @@ public class PeakFinderCommandTest {
 
 	protected Context createContext() {
 		return new Context(DatasetService.class, StatusService.class,
-			OpService.class, MarsTableService.class);
+			OpService.class, MarsTableService.class, PlatformService.class);
 	}
 
 	@BeforeEach
