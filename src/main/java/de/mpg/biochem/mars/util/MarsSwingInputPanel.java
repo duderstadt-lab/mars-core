@@ -30,6 +30,7 @@
 package de.mpg.biochem.mars.util;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,8 +86,20 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		// add widget to panel
 		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) {
 			addTab(group);
-		}
-		else if (widget.isLabeled()) {
+			
+			//dialogSize:[200 200]
+			
+			if (style.contains("tabbedPaneWidth:")) {
+				String widthString = style.substring(style.indexOf("tabbedPaneWidth:") + 16);
+	        	if (widthString.contains(","))
+	        		widthString = widthString.substring(0, widthString.indexOf(","));
+
+	        	int width = Integer.valueOf(widthString);
+	        	
+	        	tabbedPane.setPreferredSize(new Dimension(width, tabbedPane.getPreferredSize().height));
+			}
+			
+		} else if (widget.isLabeled()) {
 			// widget is prefixed by a label
 			final JLabel l = new JLabel(model.getWidgetLabel());
 			final String desc = model.getItem().getDescription();

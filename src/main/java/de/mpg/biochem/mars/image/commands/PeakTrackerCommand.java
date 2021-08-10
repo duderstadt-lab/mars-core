@@ -172,7 +172,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
 	private String inputGroup = "Input";
 	
 	@Parameter(label = "Region",
@@ -186,7 +186,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
 	
 	@Parameter(label = "DoG filter", style = "group:Find")
@@ -207,7 +207,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String fitGroup = "Fit";
 
 	@Parameter(label = "Radius", style = "group:Fit")
@@ -220,7 +220,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * TRACKER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String trackGroup = "Track";
 	
 	@Parameter(label = "Max ΔX", style = "group:Track")
@@ -238,7 +238,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * INTEGRATION SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String integrateGroup = "Integrate";
 	
 	@Parameter(label = "Integrate", style = "group:Integrate")
@@ -253,7 +253,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
 	
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
@@ -291,7 +291,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * PREVIEW SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPane, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
 	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,

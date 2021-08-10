@@ -154,7 +154,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String inputGroup = "Input";
 
 	@Parameter(label = "Region",
@@ -169,7 +169,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
 	
 	@Parameter(label = "Gaussian Smoothing Sigma", style = "group:Find")
@@ -211,7 +211,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String fitGroup = "Fit";
 
 	@Parameter(label = "Fit ends", style = "group:Fit")
@@ -226,7 +226,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:false")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
 
 	@Parameter(label = "Generate DNA count table", style = "group:Output")
@@ -248,7 +248,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 * PREVIEW SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, expanded:true")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
 	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
@@ -645,8 +645,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(
 			this.gaussSigma));
-		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
-		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
+		builder.addParameter("DoG filter", String.valueOf(useDogFilter));
+		builder.addParameter("DoG radius", String.valueOf(dogFilterRadius));
 		builder.addParameter("Threshold", String.valueOf(threshold));
 		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("Optimal DNA length", String.valueOf(

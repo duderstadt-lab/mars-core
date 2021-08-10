@@ -30,10 +30,8 @@
 package de.mpg.biochem.mars.util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
@@ -137,8 +135,6 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		final Module module)
 	{
 		final JPanel pane = inputPanel.getComponent();
-		
-		System.out.println(pane.getComponent(0).getPreferredSize());
 
 		// display input panel in a dialog
 		final String title = module.getInfo().getTitle();
