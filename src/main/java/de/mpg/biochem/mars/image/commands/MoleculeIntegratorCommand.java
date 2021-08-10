@@ -140,35 +140,38 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-	
-	@Parameter(label = "Use ROI", persist = false)
-	private boolean useROI = true;
 
 	/**
 	 * IMAGE
 	 */
 	@Parameter(label = "Image for integration")
 	private ImageDisplay imageDisplay;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private final String integrateGroup = "Integrate";
+	
+	@Parameter(label = "Use ROI", style = "group:Integrate", persist = false)
+	private boolean useROI = true;
 
-	@Parameter(label = "Inner radius")
+	@Parameter(label = "Inner radius", style = "group:Integrate")
 	private int innerRadius = 2;
 
-	@Parameter(label = "Outer radius")
+	@Parameter(label = "Outer radius", style = "group:Integrate")
 	private int outerRadius = 4;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String outputGroup = "Output";
 
-	@Parameter(label = "Microscope")
+	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 	
 	@Parameter(label = "Metadata UID:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
-				"randomly generated" })
-	private String metadataUIDSource = "unique from dataset";
-
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String channelsTitle = "Channels:";
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
+				"random" })
+	private String metadataUIDSource = "random";
 
 	/**
 	 * OUTPUTS
@@ -273,6 +276,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			channelChoice.setChoices(channelColorOptions);
 			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
+			channelChoice.setWidgetStyle("group:Integrate");
 			getInfo().addInput(channelChoice);
 		});
 	}

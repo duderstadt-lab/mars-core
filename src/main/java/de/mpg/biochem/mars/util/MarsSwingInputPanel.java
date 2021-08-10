@@ -71,7 +71,7 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		super.addWidget(widget);
 		final JPanel widgetPane = widget.getComponent();
 		final WidgetModel model = widget.get();
-		final String style = model.getItem().getWidgetStyle();
+		final String style = (model.getItem().getWidgetStyle() == null) ? "" : model.getItem().getWidgetStyle();
 		
 		String groupString = "";
 		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) 
