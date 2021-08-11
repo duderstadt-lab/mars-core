@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -50,6 +52,8 @@ import org.scijava.widget.WidgetModel;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * Swing implementation of {@link InputPanel}.
@@ -99,6 +103,23 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 	        	tabbedPane.setPreferredSize(new Dimension(width, tabbedPane.getPreferredSize().height));
 			}
 			
+		} else if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("image")) {
+			try {
+				BufferedImage wPic = ImageIO.read(this.getClass().getResource((String) model.getValue()));
+				JLabel wIcon = new JLabel(new ImageIcon(wPic));
+				if (tabbedPane != null && !group.equals("")) {
+					if (!tabPanels.containsKey(group))
+						addTab(group); 
+					
+					// widget occupies entire row
+					getTabPanel(group).add(wIcon, "center, span");
+				} else {
+					// widget occupies entire row
+					getComponent().add(wIcon, "center, span");
+				}
+			} catch (IOException e) {
+				// Fail silently...
+			}
 		} else if (widget.isLabeled()) {
 			// widget is prefixed by a label
 			final JLabel l = new JLabel(model.getWidgetLabel());
