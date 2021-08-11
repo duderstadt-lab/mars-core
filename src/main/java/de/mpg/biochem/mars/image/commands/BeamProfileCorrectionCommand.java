@@ -139,7 +139,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	@Parameter(label = "Electronic offset")
 	private double electronicOffset = 0;
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = 1;
 
 	// For the progress thread

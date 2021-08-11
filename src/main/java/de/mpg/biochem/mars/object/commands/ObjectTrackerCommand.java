@@ -190,6 +190,9 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	
 	@Parameter
 	private EventService eventService;
+	
+	@Parameter
+	private UIService uiService;
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
@@ -205,103 +208,124 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
+	
+	/**
+	 * INPUT SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+	private String inputGroup = "Input";
 
-	@Parameter(label = "Use ROI", persist = false)
+	@Parameter(label = "Use ROI", style = "group:Input",persist = false)
 	private boolean useROI = true;
+	
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
+	private String channel = "0";
 	
 	/**
 	 * FINDER SETTINGS
 	 */
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
-	private String channel = "0";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String findGroup = "Find";
 	
-	@Parameter(label = "Use local otsu")
+	@Parameter(label = "Use local otsu", style = "group:Find")
 	private boolean useLocalOstu = true;
 
-	@Parameter(label = "Local otsu radius")
+	@Parameter(label = "Otsu radius", style = "group:Find")
 	private long otsuRadius = 50;
 
-	@Parameter(label = "Minimum distance between object centers")
+	@Parameter(label = "Minimum object center separation", style = "group:Find")
 	private int minimumDistance = 4;
 	
-	@Parameter(label = "Preview timeout (s)")
-	private int previewTimeout = 10;
+	@Parameter(label = "Use area filter", style = "group:Find")
+	private boolean useAreaFilter = true;
 	
-	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-		callback = "previewChanged")
-	private boolean preview = false;
-
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String tObjectCount = "count: 0";
-
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
-		persist = false)
-	private int previewT;
+	@Parameter(label = "Minimum area", style = "group:Find")
+	private double minArea = 1;
 
 	/**
 	 * FITTER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String fitterTitle = "Contour Settings:";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String contourGroup = "Contour";
 
-	@Parameter(label = "Linear interpolation factor")
+	@Parameter(label = "Linear interpolation factor", style = "group:Contour")
 	private double interpolationFactor = 1;
-	
-	@Parameter(label = "Use area filter")
-	private boolean useAreaFilter = true;
-	
-	@Parameter(label = "Minimum area")
-	private double minArea = 1;
 
 	/**
 	 * TRACKER SETTINGS
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String trackerTitle = "Object tracker settings:";
-
-	@Parameter(label = "Max difference x")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String trackGroup = "Track";
+	
+	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
 
-	@Parameter(label = "Max difference y")
+	@Parameter(label = "Max ΔY", style = "group:Track")
 	private double maxDifferenceY = 1;
 
-	@Parameter(label = "Max difference T")
+	@Parameter(label = "Max ΔT", style = "group:Track")
 	private int maxDifferenceT = 1;
 
-	@Parameter(label = "Minimum track length")
+	@Parameter(label = "Minimum length", style = "group:Track")
 	private int minTrajectoryLength = 100;
-
-	@Parameter(label = "Microscope", required = false)
+	
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String outputGroup = "Output";
+	
+	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
 
-	@Parameter(label = "Pixel length")
+	@Parameter(label = "Pixel length", style = "group:Output")
 	private double pixelLength = 1;
 
-	@Parameter(label = "Pixel units", choices = { "pixel", "µm", "nm" })
+	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel", "µm", "nm" })
 	private String pixelUnits = "pixel";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, etc...)";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
+	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, ...)";
 	
-	@Parameter(label = "Exclude", required = false)
+	@Parameter(label = "Exclude", style = "group:Output", required = false)
 	private String excludeTimePointList = "";
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Verbose", style = "group:Output")
+	private boolean verbose = false;
+	
+	@Parameter(label = "Metadata UID",
+			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
+				"random" })
+	private String metadataUIDSource = "random";
+	
+	/**
+	 * THREADS
+	 */
+	
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 	
 	/**
-	 * VERBOSE
+	 * PREVIEW SETTINGS
 	 */
-	@Parameter(label = "Verbose output")
-	private boolean verbose = false;
 	
-	@Parameter(label = "Metadata UID:",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "unique from dataset",
-				"randomly generated" })
-	private String metadataUIDSource = "unique from dataset";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String previewGroup = "Preview";
+	
+	@Parameter(label = "Timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
+	
+	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
+		callback = "previewChanged", style = "group:Preview")
+	private boolean preview = false;
 
-	@Parameter
-	private UIService uiService;
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tObjectCount = "count: 0";
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+		persist = false)
+	private int previewT;
 
 	/**
 	 * OUTPUTS
