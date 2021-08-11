@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.util;
+package de.mpg.biochem.mars.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

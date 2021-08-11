@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.util;
+package de.mpg.biochem.mars.ui;
 
 import java.util.ArrayList;
 import java.util.HashSet;
