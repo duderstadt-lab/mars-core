@@ -215,6 +215,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String fitGroup = "Fit";
+	
+	//@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Fit")
+	//private String groupFigure = "curve.png";
 
 	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
