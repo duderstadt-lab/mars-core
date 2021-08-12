@@ -195,6 +195,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
 	
+	//@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Find")
+	//private String groupFigure = "DogFilter.png";
+	
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
 
@@ -215,9 +218,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String fitGroup = "Fit";
-	
-	//@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Fit")
-	//private String groupFigure = "curve.png";
 
 	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
