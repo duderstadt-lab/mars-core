@@ -208,7 +208,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	@Parameter(label = "Metadata UID:",
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
-	private String metadataUIDSource = "unique from dataset";
+	private String metadataUIDSource = "random";
 	
 	@Parameter(label = "Help",
 			description="View a web page detailing Peak Tracker options",
