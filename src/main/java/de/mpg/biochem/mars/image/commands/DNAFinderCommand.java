@@ -241,7 +241,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Generate DNA table", style = "group:Output")
 	private boolean generateDNATable;
 
-	@Parameter(label = "Add to RoiManger", style = "group:Output")
+	@Parameter(label = "Add to ROI Manager", style = "group:Output")
 	private boolean addToRoiManger;
 
 	@Parameter(label = "Process all frames", style = "group:Output")
@@ -686,7 +686,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			varianceUpperBound));
 		builder.addParameter("Generate peak table", String.valueOf(
 			generateDNATable));
-		builder.addParameter("Add to RoiManger", String.valueOf(addToRoiManger));
+		builder.addParameter("Add to ROI Manager", String.valueOf(addToRoiManger));
 		builder.addParameter("Process all frames", String.valueOf(allFrames));
 		builder.addParameter("Fit peaks", String.valueOf(fit));
 		builder.addParameter("Fit radius", String.valueOf(fitRadius));
