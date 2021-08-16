@@ -254,6 +254,14 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements
 		// TODO Auto-generated method stub
 
 	}
+	
+	/**
+	 * Remove all {@link MarsBdvSource}s.
+	 */
+	@Override
+	public void removeAllBdvSources() {
+		bdvSources.clear();
+	}
 
 	@Override
 	public boolean hasBdvSource(String name) {

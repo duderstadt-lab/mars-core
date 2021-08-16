@@ -176,6 +176,11 @@ public interface MarsMetadata extends JsonConvertibleRecord, MarsRecord {
 	 * @param name Name of the MarsBdvSource to remove.
 	 */
 	void removeBdvSource(String name);
+	
+	/**
+	 * Remove all {@link MarsBdvSource}s.
+	 */
+	void removeAllBdvSources();
 
 	/**
 	 * Get the Collection of BigDataViewer sources with each in

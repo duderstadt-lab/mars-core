@@ -282,6 +282,14 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	public void removeBdvSource(String name) {
 		bdvSources.remove(name);
 	}
+	
+	/**
+	 * Remove all {@link MarsBdvSource}s.
+	 */
+	@Override
+	public void removeAllBdvSources() {
+		bdvSources.clear();
+	}
 
 	/**
 	 * Get the Collection of BigDataViewer sources with each in
