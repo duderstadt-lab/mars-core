@@ -31,6 +31,11 @@ package de.mpg.biochem.mars.ui;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +58,10 @@ import org.scijava.widget.WidgetModel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URL;
 
 /**
  * Swing implementation of {@link InputPanel}.
@@ -91,8 +99,6 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) {
 			addTab(group);
 			
-			//dialogSize:[200 200]
-			
 			if (style.contains("tabbedPaneWidth:")) {
 				String widthString = style.substring(style.indexOf("tabbedPaneWidth:") + 16);
 	        	if (widthString.contains(","))
@@ -105,8 +111,8 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			
 		} else if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("image")) {
 			try {
-				BufferedImage wPic = ImageIO.read(this.getClass().getResource((String) model.getValue()));
-				JLabel wIcon = new JLabel(new ImageIcon(wPic));
+				BufferedImage wPic = (isRetina()) ? ImageIO.read(getClass().getResource("/2x/" + (String) model.getValue())) : ImageIO.read(getClass().getResource("/1x/" + (String) model.getValue()));
+				JLabel wIcon = new JLabel(new RetinaImageIcon(wPic));
 				if (tabbedPane != null && !group.equals("")) {
 					if (!tabPanels.containsKey(group))
 						addTab(group); 
@@ -193,6 +199,87 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 	@Override
 	public Class<JPanel> getComponentType() {
 		return JPanel.class;
+	}
+	
+	private static boolean isRetina() {
+
+		boolean isRetina = false;
+		GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
+		try {
+		        Field field = graphicsDevice.getClass().getDeclaredField("scale");
+		        if (field != null) {
+		            field.setAccessible(true);
+		            Object scale = field.get(graphicsDevice);
+		            if(scale instanceof Integer && ((Integer) scale).intValue() == 2) {
+		                isRetina = true;
+		            }
+		        }
+		    } 
+		    catch (Exception e) {
+		    }
+		    return isRetina;
+	}
+	
+	private class RetinaImageIcon extends ImageIcon {
+		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		RetinaImageIcon(BufferedImage image) {
+			super(image);
+		}
+		
+		@Override
+		public int getIconWidth()
+		{
+		    if(isRetina())
+		    {
+		        return super.getIconWidth()/2;
+		    }
+		    return super.getIconWidth();
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+		    if(isRetina())
+		    {
+		        return super.getIconHeight()/2;
+		    }
+		    return super.getIconHeight();
+		}
+		
+		@Override
+		public synchronized void paintIcon(Component c, Graphics g, int x, int y) 
+		{
+		    ImageObserver observer = getImageObserver();
+
+		    if (observer == null) 
+		    {
+		        observer = c;
+		    }
+
+		    Image image = getImage();
+		    int width = image.getWidth(observer);
+		    int height = image.getHeight(observer);
+		    final Graphics2D g2d = (Graphics2D)g.create(x, y, width, height);
+
+		    if(isRetina())
+		    {
+		        g2d.scale(0.5, 0.5);
+		    }
+		    else
+		    {
+
+		    }
+		    g2d.drawImage(image, 0, 0, observer);
+		    g2d.scale(1, 1);
+		    g2d.dispose();
+		}
+		
 	}
 
 }

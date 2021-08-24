@@ -181,6 +181,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
 	private String inputGroup = "Input";
 	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	private String inputFigure = "ImageInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	private String imageName = "name";
+	
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
 			"ROI from image", "ROIs from manager" })
@@ -194,9 +200,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
-	
-	//@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Find")
-	//private String groupFigure = "DogFilter.png";
 	
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
@@ -264,6 +267,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
+	private String groupFigure = "MoleculeArchive.png";
 	
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
@@ -361,6 +367,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		if (image.getRoi() != null)
 			imageRoi = image.getRoi();
+		
+		if (dataset != null) {
+			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
+					"imageName", String.class);
+			imageNameItem.setValue(this, dataset.getName());
+		}
 		
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
