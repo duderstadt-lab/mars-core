@@ -53,8 +53,8 @@ import de.mpg.biochem.mars.util.LogBuilder;
 		weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-				label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-					label = "Build Archive from Table", weight = 10, mnemonic = 'b') })
+				label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
+					label = "Build Archive from Table", weight = 3, mnemonic = 'b') })
 public class BuildArchiveFromTableCommand extends DynamicCommand {
 
 	@Parameter

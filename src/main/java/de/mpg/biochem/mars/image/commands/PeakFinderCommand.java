@@ -117,7 +117,7 @@ import ij.process.FloatPolygon;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'i'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
 				label = "Peak Finder", weight = 1, mnemonic = 'p') })
 public class PeakFinderCommand extends DynamicCommand implements Command,
 	Initializable, Previewable
@@ -171,6 +171,12 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String inputGroup = "Input";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	private String inputFigure = "ImageInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	private String imageName = "name";
 	
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
@@ -318,6 +324,12 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 		if (image.getRoi() != null)
 			imageRoi = image.getRoi();
+		
+		if (dataset != null) {
+			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
+					"imageName", String.class);
+			imageNameItem.setValue(this, dataset.getName());
+		}
 		
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);

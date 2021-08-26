@@ -52,11 +52,12 @@ import ij.text.TextPanel;
 import ij.text.TextWindow;
 
 @Plugin(type = Command.class, label = "Import IJ1 ResultsTable", menu = { @Menu(
-	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Import", weight = 10, mnemonic = 't'), @Menu(
-				label = "Import IJ1 Table", weight = 1, mnemonic = 'i') })
+		label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+				label = "Table", weight = 3, mnemonic = 't'), @Menu(
+						label = "Import", weight = 4, mnemonic = 'i'), @Menu(
+				label = "IJ1 Table", weight = 5, mnemonic = 'i') })
 public class IJ1ResultsTableConversionCommand extends DynamicCommand implements
 	Initializable
 {

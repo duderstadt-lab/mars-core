@@ -70,9 +70,10 @@ import ij.WindowManager;
 @Plugin(type = Command.class, label = "Overlay Channels", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Overlay Channels", weight = 60, mnemonic = 'o') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
+					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
+				label = "Overlay Channels", weight = 10, mnemonic = 'o') })
 public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 	/**

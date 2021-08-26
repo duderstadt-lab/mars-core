@@ -65,8 +65,8 @@ import ij.plugin.frame.RoiManager;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Molecule", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Build DNA Archive", weight = 1, mnemonic = 'b') })
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
+				label = "Build DNA Archive", weight = 4, mnemonic = 'b') })
 public class BuildDnaArchiveCommand extends DynamicCommand implements Command, Initializable {
 
 	// GENERAL SERVICES NEEDED

@@ -104,9 +104,9 @@ import java.lang.reflect.Field;
 @Plugin(type = Command.class, label = "Molecule Integrator", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Molecule Integrator", weight = 30, mnemonic = 'm') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
+				label = "Molecule Integrator", weight = 5, mnemonic = 'm') })
 public class MoleculeIntegratorCommand extends DynamicCommand implements
 	Command, Initializable
 {

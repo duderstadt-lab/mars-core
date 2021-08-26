@@ -70,9 +70,9 @@ import de.mpg.biochem.mars.util.MarsPosition;
 	label = "Single Change Point Finder", menu = { @Menu(
 		label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-				label = "KCP", weight = 40, mnemonic = 'k'), @Menu(
-					label = "Single Change Point Finder", weight = 1, mnemonic = 's') })
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+				label = "KCP", weight = 4, mnemonic = 'k'), @Menu(
+					label = "Single Change Point Finder", weight = 2, mnemonic = 's') })
 public class SingleChangePointFinder extends DynamicCommand implements Command,
 	Initializable
 {

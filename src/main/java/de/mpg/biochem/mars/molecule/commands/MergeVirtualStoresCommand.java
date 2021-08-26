@@ -68,8 +68,8 @@ import de.mpg.biochem.mars.util.LogBuilder;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-				label = "Merge Virtual Stores", weight = 100, mnemonic = 'm') })
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
+				label = "Merge Virtual Stores", weight = 6, mnemonic = 'm') })
 public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter

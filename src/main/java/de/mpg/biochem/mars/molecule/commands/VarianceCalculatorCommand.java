@@ -56,9 +56,10 @@ import de.mpg.biochem.mars.util.LogBuilder;
 @Plugin(type = Command.class, label = "Variance Calculator", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-				label = "Variance Calculator", weight = 70, mnemonic = 'm') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
+					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
+				label = "Variance Calculator", weight = 11, mnemonic = 'm') })
 public class VarianceCalculatorCommand extends DynamicCommand implements
 	Command, Initializable
 {

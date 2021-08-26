@@ -57,9 +57,10 @@ import de.mpg.biochem.mars.util.LogBuilder;
 @Plugin(type = Command.class, label = "Drift Corrector", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
-				label = "Drift Corrector", weight = 60, mnemonic = 'd') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
+					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
+				label = "Drift Corrector", weight = 9, mnemonic = 'd') })
 public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter

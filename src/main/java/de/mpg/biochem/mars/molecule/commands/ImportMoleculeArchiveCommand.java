@@ -47,8 +47,8 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 @Plugin(type = Command.class, label = "Open Archive", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 1, mnemonic = 'm'), @Menu(
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
 				label = "Open Archive", weight = 1, mnemonic = 'o') })
 public class ImportMoleculeArchiveCommand extends DynamicCommand {
 

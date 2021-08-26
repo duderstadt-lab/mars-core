@@ -84,8 +84,8 @@ import ij.plugin.frame.RoiManager;
 @Plugin(type = Command.class, label = "Transform ROIs", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(label = "ROI",
-			weight = 30, mnemonic = 'r'), @Menu(label = "Transform ROIs", weight = 30,
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(label = "ROI",
+			weight = 4, mnemonic = 'r'), @Menu(label = "Transform ROIs", weight = 1,
 				mnemonic = 't') })
 public class TransformROIsCommand extends DynamicCommand implements Command,
 	Initializable, Previewable

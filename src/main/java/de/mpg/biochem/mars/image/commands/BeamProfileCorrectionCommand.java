@@ -99,9 +99,10 @@ import io.scif.services.TranslatorService;
 @Plugin(type = Command.class, label = "Beam Profile Correction", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Beam Profile Corrector", weight = 20, mnemonic = 'b') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
+					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
+				label = "Beam Profile Corrector", weight = 8, mnemonic = 'b') })
 public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	Command
 {

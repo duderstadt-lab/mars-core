@@ -48,11 +48,12 @@ import org.scijava.table.TableDisplay;
 import de.mpg.biochem.mars.table.MarsTable;
 
 @Plugin(type = Command.class, label = "Import TableDisplay", menu = { @Menu(
-	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
-	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Import", weight = 10, mnemonic = 't'), @Menu(
-				label = "Import TableDisplay", weight = 1, mnemonic = 'i') })
+		label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
+		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+				label = "Table", weight = 3, mnemonic = 't'), @Menu(
+						label = "Import", weight = 7, mnemonic = 'i'), @Menu(
+				label = "TableDisplay", weight = 6, mnemonic = 'i') })
 public class ScijavaTableConversionCommand extends DynamicCommand implements
 	Initializable
 {

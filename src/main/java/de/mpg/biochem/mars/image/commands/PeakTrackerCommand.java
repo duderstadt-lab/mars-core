@@ -117,9 +117,9 @@ import ome.xml.model.primitives.PositiveInteger;
 @Plugin(type = Command.class, label = "Peak Tracker", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'm'), @Menu(
-				label = "Peak Tracker", weight = 10, mnemonic = 'p') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
+				label = "Peak Tracker", weight = 3, mnemonic = 'p') })
 public class PeakTrackerCommand extends DynamicCommand implements Command,
 	Initializable
 {

@@ -71,8 +71,8 @@ import de.mpg.biochem.mars.util.LogBuilder;
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,
 		weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-				label = "KCP", weight = 40, mnemonic = 'k'), @Menu(
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+				label = "KCP", weight = 4, mnemonic = 'k'), @Menu(
 					label = "Change Point Finder", weight = 1, mnemonic = 'c') })
 public class KCPCommand extends DynamicCommand implements Command,
 	Initializable

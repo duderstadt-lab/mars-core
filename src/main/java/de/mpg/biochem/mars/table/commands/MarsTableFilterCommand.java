@@ -52,8 +52,8 @@ import de.mpg.biochem.mars.table.MarsTableService;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Filter",
-				weight = 30, mnemonic = 'f') })
+			label = "Table", weight = 3, mnemonic = 't'), @Menu(label = "Filter",
+				weight = 3, mnemonic = 'f') })
 public class MarsTableFilterCommand extends DynamicCommand implements
 	Initializable
 {

@@ -49,8 +49,8 @@ import de.mpg.biochem.mars.table.MarsTableService;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Table", weight = 10, mnemonic = 't'), @Menu(label = "Sort",
-				weight = 20, mnemonic = 's') })
+			label = "Table", weight = 3, mnemonic = 't'), @Menu(label = "Sort",
+				weight = 2, mnemonic = 's') })
 public class MarsTableSorterCommand extends DynamicCommand implements
 	Initializable
 {

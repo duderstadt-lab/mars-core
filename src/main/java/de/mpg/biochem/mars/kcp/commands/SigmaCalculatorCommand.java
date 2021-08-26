@@ -58,9 +58,9 @@ import de.mpg.biochem.mars.util.MarsRegion;
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,
 		weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-				label = "KCP", weight = 30, mnemonic = 'k'), @Menu(
-					label = "Sigma Calculator", weight = 20, mnemonic = 's') })
+			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+				label = "KCP", weight = 4, mnemonic = 'k'), @Menu(
+					label = "Sigma Calculator", weight = 3, mnemonic = 's') })
 public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 	Initializable
 {

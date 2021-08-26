@@ -99,9 +99,10 @@ import de.mpg.biochem.mars.util.MarsUtil;
 @Plugin(type = Command.class, label = "Gradient Calculator", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
-		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Image", weight = 20, mnemonic = 'i'), @Menu(
-				label = "Gradient Calculator", weight = 50, mnemonic = 'g') })
+		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
+					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
+				label = "Gradient Calculator", weight = 9, mnemonic = 'g') })
 public class GradientCommand extends DynamicCommand implements Command {
 
 	/**
