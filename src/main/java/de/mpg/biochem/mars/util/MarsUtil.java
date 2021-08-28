@@ -111,7 +111,7 @@ public class MarsUtil {
 	public static void updateJLabelTextInContainer(Container parent, String searchForPrefix, String newText) {
 	    for (Component c : parent.getComponents())
 	    {
-	        if (c instanceof JLabel) {
+	        if (c instanceof JLabel && ((JLabel) c) != null && ((JLabel) c).getText() != null) {
 	        	if(((JLabel) c).getText().startsWith(searchForPrefix))
 	        		((JLabel) c).setText(newText);
 	        }
