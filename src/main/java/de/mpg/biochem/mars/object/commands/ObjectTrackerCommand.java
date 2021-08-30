@@ -744,7 +744,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 						return;
 		
 					int labelCount = 0;
-					
 					Overlay overlay = new Overlay();
 					for (List<Peak> objectLabels : objectLabelLists) {
 						for (Peak p : objectLabels) {
@@ -754,7 +753,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 				        		xs[i] = (float) (p.getShape().x[i] + 0.5);
 				        		ys[i] = (float) (p.getShape().y[i] + 0.5);
 				        	}
-							
 							PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
 							overlay.add(r);
 							
@@ -767,13 +765,15 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 					
 					final String countString = "count: " + labelCount;
 					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-							"tDNACount", String.class);
+							"tObjectCount", String.class);
 					preFrameCount.setValue(this, countString);
-					
+
 					SwingUtilities.invokeLater( () -> {
+						System.out.println("invoking");
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
+							System.out.println("set overlay");
 							
 							for (Window window : Window.getWindows())
 								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
