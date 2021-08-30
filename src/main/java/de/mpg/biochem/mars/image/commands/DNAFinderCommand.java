@@ -45,6 +45,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
 
 import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -550,10 +551,12 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
+			if (swapZandT) image.setSlice(theT + 1);
+			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+			
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-					
 					if (imageRoi == null && image.getRoi() != null)
 						imageRoi = image.getRoi();
 					
@@ -566,21 +569,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 						rois = new Roi[1];
 						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 					}
-					
-					if (image != null) {
-						image.deleteRoi();
-						image.setOverlay(null);
-					}
-		
-					if (swapZandT) image.setSlice(theT + 1);
-					else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-		
+
 					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT, rois);
 		
-					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-						"tDNACount", String.class);
+					if (Thread.currentThread().isInterrupted())
+						return;
+					
+					Overlay overlay = new Overlay();
 					if (segments.size() > 0) {
-						Overlay overlay = new Overlay();
 						for (DNASegment segment : segments) {
 							Line line = new Line(segment.getX1(), segment.getY1(), segment
 								.getX2(), segment.getY2());
@@ -605,20 +601,23 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 						overlay.drawLabels(true);
 						overlay.drawNames(true);
 						overlay.setLabelColor(new Color(255, 255, 255));
-						
-						if (Thread.currentThread().isInterrupted())
-							return;
-						
-						image.setOverlay(overlay);
-						preFrameCount.setValue(this, "count: " + segments.size());
-						for (Window window : Window.getWindows())
-							if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
-								MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + segments.size());
-							}
 					}
-					else {
-						preFrameCount.setValue(this, "count: 0");
-					}
+					
+					final String countString = "count: " + segments.size();
+					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
+							"tDNACount", String.class);
+					preFrameCount.setValue(this, countString);
+					
+					SwingUtilities.invokeLater( () -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(overlay);
+							
+							for (Window window : Window.getWindows())
+								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
+									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", countString);
+						}
+					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {
