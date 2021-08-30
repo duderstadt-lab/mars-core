@@ -579,6 +579,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(channel), theT,
 							useDogFilter, fitPeaks, false, rois);
 					
+					if (Thread.currentThread().isInterrupted())
+						return;
+					
 					int peakCount = 0;
 					Overlay overlay = new Overlay();
 					if (roiType.equals("point")) {
@@ -597,8 +600,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 						overlay.add(peakRoi);
 					}
 					else {
-						if (Thread.currentThread().isInterrupted())
-							return;
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
 								// The pixel origin for OvalRois is at the upper left corner !!!!
