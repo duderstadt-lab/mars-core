@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -711,6 +712,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Override
 	public void preview() {
 		if (preview) {
+			if (swapZandT) image.setSlice(previewT + 1);
+			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
@@ -726,24 +730,16 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 						rois = new Roi[1];
 						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 					}
-					
-					if (image != null) {
-						image.deleteRoi();
-						image.setOverlay(null);
-					}
-		
-					if (swapZandT) image.setSlice(previewT + 1);
-					else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
 		
 					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(channel), previewT,
 						useDogFilter, false, rois);
-		
-					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-						"tPeakCount", String.class);
+					
+					if (Thread.currentThread().isInterrupted())
+						return;
 		
 					int peakCount = 0;
+					Overlay overlay = new Overlay();
 					if (previewRoiType.equals("point")) {
-						Overlay overlay = new Overlay();
 						FloatPolygon poly = new FloatPolygon();
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
@@ -757,16 +753,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 						PointRoi peakRoi = new PointRoi(poly);
 	
 						overlay.add(peakRoi);
-						
-						if (Thread.currentThread().isInterrupted())
-							return;
-						
-						image.setOverlay(overlay);
 					}
 					else {
-						Overlay overlay = new Overlay();
-						if (Thread.currentThread().isInterrupted())
-							return;
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
 								// The pixel origin for OvalRois is at the upper left corner !!!!
@@ -780,18 +768,25 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 								if (Thread.currentThread().isInterrupted())
 									return;
 							}
-						if (Thread.currentThread().isInterrupted())
-							return;
-						
-						image.setOverlay(overlay);
 					}
+					if (Thread.currentThread().isInterrupted())
+						return;
 	
-					preFrameCount.setValue(this, "count: " + peakCount);
+					final String countString = "count: " + peakCount;
+					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
+							"tPeakCount", String.class);
+					preFrameCount.setValue(this, countString);
 					
-					for (Window window : Window.getWindows())
-						if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel())) {
-							MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", "count: " + peakCount);
+					SwingUtilities.invokeLater( () -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(overlay);
+							
+							for (Window window : Window.getWindows())
+								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
+									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", countString);
 						}
+					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {
