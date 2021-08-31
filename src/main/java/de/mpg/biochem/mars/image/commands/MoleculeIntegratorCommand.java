@@ -136,43 +136,77 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private MoleculeArchiveService moleculeArchiveService;
 	
 	/**
+	 * IMAGE
+	 */
+	@Parameter(label = "Image for integration")
+	private ImageDisplay imageDisplay;
+	
+	/**
 	 * ROIs
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
 
 	/**
-	 * IMAGE
+	 * INPUT SETTINGS
 	 */
-	@Parameter(label = "Image for integration")
-	private ImageDisplay imageDisplay;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+	private String inputGroup = "Input";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	private String inputFigure = "MoleculeIntegratorInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	private String imageName = "name";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	private String roiCount = "No ROIs found in manager!";
+	
+	@Parameter(label = "Use integration boundary", style = "group:Input", persist = false)
+	private boolean useROI = true;
+	
+	/**
+	 * INTEGRATION SETTINGS
+	 */
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integrate";
-	
-	@Parameter(label = "Use ROI", style = "group:Integrate", persist = false)
-	private boolean useROI = true;
+	private final String integrateGroup = "Integration";
 
-	@Parameter(label = "Inner radius", style = "group:Integrate")
+	@Parameter(label = "Inner radius", style = "group:Integration")
 	private int innerRadius = 2;
 
-	@Parameter(label = "Outer radius", style = "group:Integrate")
+	@Parameter(label = "Outer radius", style = "group:Integration")
 	private int outerRadius = 4;
+	
+	/**
+	 * OUTPUT SETTINGS
+	 */
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
+	private String outputFigure = "SingleMoleculeArchive.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
 	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
-	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
-	@Parameter(label = "Metadata UID:",
+	@Parameter(label = "Metadata UID",
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "random";
 
+	/**
+	 * THREADS
+	 */
+	
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
+	private int nThreads = Runtime.getRuntime().availableProcessors();
+	
 	/**
 	 * OUTPUTS
 	 */
@@ -214,6 +248,18 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			useRoifield.setValue(this, false);
 		}
 		else roi = image.getRoi();
+		
+		if (dataset != null) {
+			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
+					"imageName", String.class);
+			imageNameItem.setValue(this, dataset.getName());
+		}
+		
+		if (roiManager != null) {
+			final MutableModuleItem<String> roiCountItem = getInfo().getMutableInput(
+					"roiCount", String.class);
+			roiCountItem.setValue(this, roiManager.getRoisAsArray().length + " molecules found in manager for integration.");
+		}
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -276,7 +322,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			channelChoice.setChoices(channelColorOptions);
 			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
-			channelChoice.setWidgetStyle("group:Integrate");
+			channelChoice.setWidgetStyle("group:Integration");
 			getInfo().addInput(channelChoice);
 		});
 	}

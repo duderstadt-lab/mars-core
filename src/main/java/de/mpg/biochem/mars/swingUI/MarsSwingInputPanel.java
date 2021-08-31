@@ -27,7 +27,7 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.ui;
+package de.mpg.biochem.mars.swingUI;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -88,11 +88,8 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		String groupString = "";
 		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) 
 			groupString = (String) model.getValue();
-		else if (style.contains("group:")) {
-			groupString = style.substring(style.indexOf("group:") + 6);
-        	if (groupString.contains(","))
-        		groupString = groupString.substring(0, groupString.indexOf(","));
-		}
+		else if (style.contains("group:")) 
+			groupString = styleFieldValue(style, "group");
 		final String group = groupString;
 		
 		// add widget to panel
@@ -100,12 +97,7 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			addTab(group);
 			
 			if (style.contains("tabbedPaneWidth:")) {
-				String widthString = style.substring(style.indexOf("tabbedPaneWidth:") + 16);
-	        	if (widthString.contains(","))
-	        		widthString = widthString.substring(0, widthString.indexOf(","));
-
-	        	int width = Integer.valueOf(widthString);
-	        	
+	        	int width = Integer.valueOf(styleFieldValue(style, "tabbedPaneWidth"));
 	        	tabbedPane.setPreferredSize(new Dimension(width, tabbedPane.getPreferredSize().height));
 			}
 			
@@ -143,15 +135,16 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			}
 		}
 		else {
+			String alignent = (style.contains("align:")) ? this.styleFieldValue(style, "align") + ", " : "";
 			if (tabbedPane != null && !group.equals("")) {
 				if (!tabPanels.containsKey(group))
 					addTab(group); 
 				
 				// widget occupies entire row
-				getTabPanel(group).add(widgetPane, "span");
+				getTabPanel(group).add(widgetPane, alignent + "span");
 			} else {
 				// widget occupies entire row
-				getComponent().add(widgetPane, "span");
+				getComponent().add(widgetPane, alignent + "span");
 			}
 		}
 	}
@@ -181,6 +174,16 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 	@Override
 	public Class<JPanel> getWidgetComponentType() {
 		return JPanel.class;
+	}
+	
+	private String styleFieldValue(String style, String field) {
+		String valueString = "";
+		if (style.contains(field + ":")) {
+			valueString = style.substring(style.indexOf(field + ":") + field.length() + 1);
+        	if (valueString.contains(","))
+        		valueString = valueString.substring(0, valueString.indexOf(","));
+		}
+		return valueString;
 	}
 
 	// -- UIComponent methods --

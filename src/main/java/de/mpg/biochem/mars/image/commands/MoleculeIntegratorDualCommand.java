@@ -148,50 +148,86 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	@Parameter(label = "Image for Integration")
 	private ImageDisplay imageDisplay;
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integrate";
-
-	@Parameter(label = "Inner Radius", style = "group:Integrate")
-	private int innerRadius = 2;
-
-	@Parameter(label = "Outer Radius", style = "group:Integrate")
-	private int outerRadius = 4;
-
 	/**
 	 * ROIs
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
 	
+	/**
+	 * INPUT SETTINGS
+	 */
+	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String regionGroup = "Regions";
+	private String inputGroup = "Input";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	private String inputFigure = "MoleculeIntegratorDualInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	private String imageName = "name";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	private String roiCount = "No ROIs found in manager!";
 
-	@Parameter(label = "LONG X0", style = "group:Regions")
+	/**
+	 * BOUNDARY SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String regionGroup = "Boundaries";
+
+	@Parameter(label = "LONG X0", style = "group:Boundaries")
 	private int LONGx0 = 0;
 
-	@Parameter(label = "LONG Y0", style = "group:Regions")
+	@Parameter(label = "LONG Y0", style = "group:Boundaries")
 	private int LONGy0 = 0;
 
-	@Parameter(label = "LONG width", style = "group:Regions")
+	@Parameter(label = "LONG width", style = "group:Boundaries")
 	private int LONGwidth = 1024;
 
-	@Parameter(label = "LONG height", style = "group:Regions")
+	@Parameter(label = "LONG height", style = "group:Boundaries")
 	private int LONGheight = 500;
 
-	@Parameter(label = "SHORT X0", style = "group:Regions")
+	@Parameter(label = "SHORT X0", style = "group:Boundaries")
 	private int SHORTx0 = 0;
 
-	@Parameter(label = "SHORT Y0", style = "group:Regions")
+	@Parameter(label = "SHORT Y0", style = "group:Boundaries")
 	private int SHORTy0 = 524;
 
-	@Parameter(label = "SHORT width", style = "group:Regions")
+	@Parameter(label = "SHORT width", style = "group:Boundaries")
 	private int SHORTwidth = 1024;
 
-	@Parameter(label = "SHORT height", style = "group:Regions")
+	@Parameter(label = "SHORT height", style = "group:Boundaries")
 	private int SHORTheight = 500;
+	
+	//Preview ??
+	
+	/**
+	 * INTEGRATION SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private final String integrateGroup = "Integration";
+
+	@Parameter(label = "Inner Radius", style = "group:Integration")
+	private int innerRadius = 2;
+
+	@Parameter(label = "Outer Radius", style = "group:Integration")
+	private int outerRadius = 4;
+	
+	/**
+	 * OUTPUT SETTINGS
+	 */
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
+	private String outputFigure = "SingleMoleculeArchive.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
@@ -202,10 +238,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	@Parameter(label = "FRET long wavelength name", style = "group:Output")
 	private String fretLongName = "Red";
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120", style = "group:Output")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 	
-	@Parameter(label = "Metadata UID:",
+	@Parameter(label = "Metadata UID",
 			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
 				"random" })
 	private String metadataUIDSource = "random";
@@ -247,6 +283,29 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
+		
+		if (dataset != null) {
+			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
+					"imageName", String.class);
+			imageNameItem.setValue(this, dataset.getName());
+		}
+		
+		if (roiManager != null) {
+			final MutableModuleItem<String> roiCountItem = getInfo().getMutableInput(
+					"roiCount", String.class);
+			
+			Roi[] roiArray = roiManager.getRoisAsArray();
+			int longCount = 0;
+			int shortCount = 0;
+			for (Roi item : roiArray) {
+				if (item.getName().endsWith("_LONG"))
+					longCount++;
+				else if (item.getName().endsWith("_SHORT"))
+					shortCount++;
+			}
+			
+			roiCountItem.setValue(this, longCount + " LONG and " + shortCount + " SHORT ROIs for integration.");
+		}
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
@@ -311,7 +370,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			channelChoice.setChoices(channelColorOptions);
 			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
-			channelChoice.setWidgetStyle("group:Integrate");
+			channelChoice.setWidgetStyle("group:Integration");
 			getInfo().addInput(channelChoice);
 		});
 	}

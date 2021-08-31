@@ -185,7 +185,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
 	private String imageName = "name";
 	
 	@Parameter(label = "Region",
@@ -270,7 +270,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private String outputGroup = "Output";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private String groupFigure = "MoleculeArchive.png";
+	private String outputFigure = "SingleMoleculeArchive.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 	
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
