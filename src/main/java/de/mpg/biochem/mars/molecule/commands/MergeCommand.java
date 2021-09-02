@@ -54,6 +54,7 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
+import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -89,6 +90,9 @@ public class MergeCommand extends DynamicCommand {
 
 	@Parameter
 	private UIService uiService;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
+	private String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;

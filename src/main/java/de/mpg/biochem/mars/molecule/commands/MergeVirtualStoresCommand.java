@@ -49,6 +49,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -83,11 +84,14 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter
 	private UIService uiService;
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
+	private String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;
 	
-	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
+	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
 	@Override

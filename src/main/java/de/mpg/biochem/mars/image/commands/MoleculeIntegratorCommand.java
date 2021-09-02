@@ -161,7 +161,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private String imageName = "name";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
-	private String roiCount = "No ROIs found in manager!";
+	private String roiCount = "No ROIs in manager!";
 	
 	@Parameter(label = "Use integration boundary", style = "group:Input", persist = false)
 	private boolean useROI = true;

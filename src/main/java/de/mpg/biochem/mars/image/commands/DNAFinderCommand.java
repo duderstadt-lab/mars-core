@@ -165,7 +165,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	private String inputGroup = "Input";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
-	private String inputFigure = "ImageInput.png";
+	private String inputFigure = "DNAImageInput.png";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
 	private String imageName = "name";

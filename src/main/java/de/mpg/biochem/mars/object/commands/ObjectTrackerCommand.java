@@ -220,7 +220,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
 	private String imageName = "name";
 
 	@Parameter(label = "Region",
@@ -284,6 +284,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
+	private String outputFigure = "ObjectArchive.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+	private String outputArchiveType = "type: ObjectArchive";
 	
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";

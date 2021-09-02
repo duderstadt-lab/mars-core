@@ -39,6 +39,7 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.ItemIO;
+import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -87,36 +88,67 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 	
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
-
-	@Parameter(label = "Search radius around DNA")
-	private double radius;
-
-	@Parameter(label = "DNA length in bps")
-	private int DNALength = 21236;
-
-	@Parameter(label = "X column")
-	private String xColumn = "X_drift_corr";
-
-	@Parameter(label = "Y column")
-	private String yColumn = "Y_drift_corr";
 	
-	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" })
+	/**
+	 * INPUT SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+	private String inputGroup = "Input";
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	private String inputFigure = "BuildDNAArchiveInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	private String roiCount = "No ROIs in manager!";
+	
+	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" }, style = "group:Input")
 	private String archive1InputName;
 
-	@Parameter(label = "SingleMoleculeArchive 1 Name")
+	@Parameter(label = "SingleMoleculeArchive 1 Name", style = "group:Input")
 	private String archive1Name = "mol1";
 
-	@Parameter(label = "SingleMoleculeArchive 2", choices = { "a", "b", "c" })
+	@Parameter(label = "SingleMoleculeArchive 2", choices = { "a", "b", "c" }, style = "group:Input")
 	private String archive2InputName;
 
-	@Parameter(label = "SingleMoleculeArchive 2 Name")
+	@Parameter(label = "SingleMoleculeArchive 2 Name", style = "group:Input")
 	private String archive2Name = "mol2";
 	
-	@Parameter(label = "SingleMoleculeArchive 3", choices = { "a", "b", "c" })
+	@Parameter(label = "SingleMoleculeArchive 3", choices = { "a", "b", "c" }, style = "group:Input")
 	private String archive3InputName;
 
-	@Parameter(label = "SingleMoleculeArchive 3 Name")
+	@Parameter(label = "SingleMoleculeArchive 3 Name", style = "group:Input")
 	private String archive3Name = "mol3";
+	
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String mergeGroup = "Search Parameters";
+	
+	@Parameter(label = "Search radius around DNA", style = "group:Search Parameters")
+	private double radius;
+
+	@Parameter(label = "DNA length in bps", style = "group:Search Parameters")
+	private int DNALength = 21236;
+
+	@Parameter(label = "Input Archive X column", style = "group:Search Parameters")
+	private String xColumn = "X";
+
+	@Parameter(label = "Input Archive Y column", style = "group:Search Parameters")
+	private String yColumn = "Y";
+	
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
+	private String outputFigure = "DnaMoleculeArchive.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+	private String outputArchiveType = "type: DnaMoleculeArchive";
 
 	// OUTPUT PARAMETERS
 	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)
@@ -126,6 +158,12 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 	
 	@Override
 	public void initialize() {
+		if (roiManager != null) {
+			final MutableModuleItem<String> roiCountItem = getInfo().getMutableInput(
+					"roiCount", String.class);
+			roiCountItem.setValue(this, roiManager.getRoisAsArray().length + " molecules found in manager for integration.");
+		}
+		
 		ArrayList<String> archiveNames = new ArrayList<String>();
 		archiveNames.add("None");
 		
