@@ -164,10 +164,13 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String inputGroup = "Input";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	private String inputDetails = "Images with Y-axis aligned DNA molecules";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "DNAImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String imageName = "name";
 
 	@Parameter(label = "Region",
