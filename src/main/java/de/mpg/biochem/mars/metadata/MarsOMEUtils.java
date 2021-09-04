@@ -480,6 +480,27 @@ public class MarsOMEUtils {
 		return marsOME;
 	}
 	
+	public static Map<Integer, Map<Integer, Double>> buildChannelToTtoDtMap(MarsMetadata marsOMEMetadata) {
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
+				new HashMap<Integer, Map<Integer, Double>>();
+
+			// Let's build some maps from t to dt for each color...
+			for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
+				.getSizeC(); channelIndex++)
+			{
+				HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
+
+				final int finalChannelIndex = channelIndex;
+				marsOMEMetadata.getImage(0).planes().filter(plane -> plane
+					.getC() == finalChannelIndex).forEach(plane -> tToDtMap.put(plane
+						.getT(), plane.getDeltaTinSeconds()));
+
+				channelToTtoDtMap.put(channelIndex, tToDtMap);
+			}
+
+			return channelToTtoDtMap;
+		}
+	
 	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
 			Map<Integer, String> metaDataStack)
 		{

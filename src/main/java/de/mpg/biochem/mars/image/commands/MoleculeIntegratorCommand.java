@@ -403,8 +403,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		archive = new SingleMoleculeArchive("archive.yama");
 		archive.putMetadata(marsOMEMetadata);
 
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
-			buildChannelToTtoDtMap();
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils.buildChannelToTtoDtMap(marsOMEMetadata);
 
 		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
 
@@ -486,27 +485,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				interval, createColorIntegrationList(channel.getName(),
 					integrationList));
 		}
-	}
-
-	private Map<Integer, Map<Integer, Double>> buildChannelToTtoDtMap() {
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
-			new HashMap<Integer, Map<Integer, Double>>();
-
-		// Let's build some maps from t to dt for each color...
-		for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
-			.getSizeC(); channelIndex++)
-		{
-			HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
-
-			final int finalChannelIndex = channelIndex;
-			marsOMEMetadata.getImage(0).planes().filter(plane -> plane
-				.getC() == finalChannelIndex).forEach(plane -> tToDtMap.put(plane
-					.getT(), plane.getDeltaTinSeconds()));
-
-			channelToTtoDtMap.put(channelIndex, tToDtMap);
-		}
-
-		return channelToTtoDtMap;
 	}
 
 	@SuppressWarnings("unchecked")
