@@ -30,6 +30,7 @@
 package de.mpg.biochem.mars.roi.commands;
 
 import java.awt.Color;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +38,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -74,6 +78,7 @@ import org.scijava.widget.NumberWidget;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
+import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
@@ -424,11 +429,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-						if (image != null) {
-							image.deleteRoi();
-							image.setOverlay(null);
-						}
-
 						if (swapZandT) image.setSlice(theT + 1);
 						else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
 			
@@ -483,7 +483,12 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 							}
 						}
 			
-						image.setOverlay(overlay);
+						SwingUtilities.invokeLater( () -> {
+							if (image != null) {
+								image.deleteRoi();
+								image.setOverlay(overlay);
+							}
+						});
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {
