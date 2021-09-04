@@ -151,19 +151,19 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel", persist = false)
 	private String inputGroup = "Input";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "MoleculeIntegratorInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
-	private String imageName = "name";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+	private String imageName = "?";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String roiCount = "No ROIs in manager!";
 	
-	@Parameter(label = "Use integration boundary", style = "group:Input", persist = false)
+	@Parameter(label = "Use integration boundary", style = "group:Input")
 	private boolean useROI = true;
 	
 	/**

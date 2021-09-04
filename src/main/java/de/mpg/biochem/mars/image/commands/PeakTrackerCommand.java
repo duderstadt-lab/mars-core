@@ -179,14 +179,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450", persist = false)
 	private String inputGroup = "Input";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
-	private String imageName = "name";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+	private String imageName = "?";
 	
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",

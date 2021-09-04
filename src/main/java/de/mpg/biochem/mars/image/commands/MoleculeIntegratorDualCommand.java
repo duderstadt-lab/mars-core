@@ -158,16 +158,16 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel", persist = false)
 	private String inputGroup = "Input";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "MoleculeIntegratorDualInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
-	private String imageName = "name";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+	private String imageName = "?";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String roiCount = "No ROIs in manager!";
 
 	/**

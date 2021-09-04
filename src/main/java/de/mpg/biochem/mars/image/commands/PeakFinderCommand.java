@@ -171,14 +171,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * INPUT SETTINGS
 	 */
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel", persist = false)
 	private String inputGroup = "Input";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
-	private String imageName = "name";
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input", persist = false)
+	private String imageName = "?";
 	
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
