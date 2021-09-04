@@ -372,6 +372,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 			newRoi.setLocation(target[0], target[1]);
 			newRoi.setName(baseRoiName + "_" + newPosition);
+			newRoi.setStrokeColor(Color.CYAN.darker());
 			transformedROIs.add(newRoi);
 		}
 	}
@@ -441,7 +442,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 								final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
 									.getFloatBounds().y, roi.getFloatBounds().width, roi
 										.getFloatBounds().height);
-								ovalRoi.setStrokeColor(Color.CYAN.darker());
 								originalROIs.add(ovalRoi);
 							}
 							else {
