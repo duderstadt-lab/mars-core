@@ -94,8 +94,6 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	/**
 	 * SERVICES
 	 */
-	@Parameter
-	private RoiManager roiManager;
 
 	@Parameter
 	private UIService uiService;
@@ -122,69 +120,109 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	private ImageDisplay imageDisplay;
 
 	/**
-	 * AFFINE2D Matrix
+	 * ROI
 	 */
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String affineTitle = "Affine2D Transformation Matrix:";
+	@Parameter
+	private RoiManager roiManager;
+	
+	/**
+	 * INPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String inputGroup = "Input";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
+	private String inputFigure = "TransformROIsInput.png";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	private String imageName = "name";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:left", persist = false)
+	private final String affineTitle = "Affine2D Transformation Matrix";
 
-	@Parameter(label = "m00")
+	@Parameter(label = "m00", style = "group:Input")
 	private double m00;
 
-	@Parameter(label = "m01")
+	@Parameter(label = "m01", style = "group:Input")
 	private double m01;
 
-	@Parameter(label = "m02")
+	@Parameter(label = "m02", style = "group:Input")
 	private double m02;
 
-	@Parameter(label = "m10")
+	@Parameter(label = "m10", style = "group:Input")
 	private double m10;
 
-	@Parameter(label = "m11")
+	@Parameter(label = "m11", style = "group:Input")
 	private double m11;
 
-	@Parameter(label = "m12")
+	@Parameter(label = "m12", style = "group:Input")
 	private double m12;
+	
+	/**
+	 * COLOCALIZE SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String colocalizeGroup = "Colocalize";
 
-	@Parameter(label = "Transformation Direction", choices = {
-		"Long Wavelength to Short Wavelength",
-		"Short Wavelength to Long Wavelength" })
-	private String transformationDirection =
-		"Long Wavelength to Short Wavelength";
-
-	@Parameter(label = "Colocalize")
+	@Parameter(label = "Colocalize", style = "group:Colocalize")
 	private boolean colocalize = false;
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, persist = false)
+	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Colocalize", persist = false)
 	private String channel = "0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE,
-		persist = false)
-	private int theT;
-
-	@Parameter(label = "DoG filter")
+	@Parameter(label = "DoG filter", style = "group:Colocalize")
 	private boolean useDogFilter = true;
 
-	@Parameter(label = "DoG radius")
+	@Parameter(label = "DoG radius", style = "group:Colocalize")
 	private double dogFilterRadius = 2;
 
-	@Parameter(label = "Threshold")
+	@Parameter(label = "Threshold", style = "group:Colocalize")
 	private double threshold = 50;
 
-	@Parameter(label = "Colocalize search radius")
+	@Parameter(label = "Search radius", style = "group:Colocalize")
 	private int colocalizeRadius = 0;
 	
-	@Parameter(label = "Filter Original ROIs")
+	@Parameter(label = "Filter original ROIs", style = "group:Colocalize")
 	private boolean filterOriginalRois = true;
 	
-	@Parameter(label = "Remove colocalizing ROIs")
+	@Parameter(label = "Remove colocalizing ROIs", style = "group:Colocalize")
 	private boolean filterColocalizingRois = false;
 	
-	@Parameter(label = "Preview timeout (s)")
-	private int previewTimeout = 10;
-
+	/**
+	 * OUTPUT SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String outputGroup = "Output";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output", persist = false)
+	private String outputFigure = "TransformROIsOutput.png";
+	
+	@Parameter(label = "Transformation direction", choices = {
+			"Long Wavelength to Short Wavelength",
+			"Short Wavelength to Long Wavelength" }, style = "group:Output")
+		private String transformationDirection =
+			"Long Wavelength to Short Wavelength";
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:left")
+	private final String roiNamingInfo = "Transformation direction determines output ROI names";
+	
+	/**
+	 * PREVIEW SETTINGS
+	 */
+	
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String previewGroup = "Preview";
+	
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-		callback = "previewChanged")
+			callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
+	
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
+			persist = false)
+		private int theT;
+	
+	@Parameter(label = "Preview timeout (s)", style = "group:Preview")
+	private int previewTimeout = 10;
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -197,6 +235,12 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
+		
+		if (dataset != null) {
+			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
+					"imageName", String.class);
+			imageNameItem.setValue(this, dataset.getName());
+		}
 
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
