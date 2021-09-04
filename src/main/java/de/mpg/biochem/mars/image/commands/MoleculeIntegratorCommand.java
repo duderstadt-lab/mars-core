@@ -579,7 +579,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					.get(t).containsKey(UID))
 				{
 					Peak peak = integrationMap.getMap().get(t).get(UID);
-					table.setValue(name, row, channelToTtoDtMap.get(integrationMap.getC())
+					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
 					table.setValue(name, row, peak.getIntensity());
 					table.setValue(name + "_Background", row, peak.getMedianBackground());
