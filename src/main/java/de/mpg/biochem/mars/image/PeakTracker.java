@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -47,6 +48,7 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.object.ObjectArchive;
@@ -255,6 +257,8 @@ public class PeakTracker {
 
 		// I think we need to reinitialize this pool since I shut it down above.
 		forkJoinPool = new ForkJoinPool(nThreads);
+		
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils.buildChannelToTtoDtMap(archive.getMetadata(0));
 
 		// Now we build a MoleculeArchive in a multithreaded manner in which
 		// each molecule is build by a different thread just following the
@@ -263,7 +267,7 @@ public class PeakTracker {
 		try {
 			forkJoinPool.submit(() -> trackFirstT.parallelStream().forEach(
 				startingPeak -> buildMolecule(startingPeak, trackLengths, archive,
-					channel))).get();
+					channel, channelToTtoDtMap))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
@@ -349,7 +353,7 @@ public class PeakTracker {
 	@SuppressWarnings("unchecked")
 	private <M extends Molecule> void buildMolecule(Peak startingPeak,
 		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<M, ?, ?, ?> archive,
-		int channel)
+		int channel, Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
 	{
 		// don't add the molecule if the trajectory length is below
 		// minTrajectoryLength
@@ -376,6 +380,7 @@ public class PeakTracker {
 			table.setValue(Peak.T, row, (double)peak.getT());
 			table.setValue(Peak.X, row, peak.getX());
 			table.setValue(Peak.Y, row, peak.getY());
+			table.setValue("Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
 			if (verbose) {
 				for (String name : peak.getProperties().keySet())
 					table.setValue(name, row, peak.getProperties().get(name));
