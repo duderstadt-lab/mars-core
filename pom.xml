@@ -80,8 +80,8 @@
 		<url>https://github.com/duderstadt-lab/mars-core/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.com/duderstadt-lab/mars-core</url>
+		<system>GitHub Actions</system>
+		<url>https://github.com/duderstadt-lab/mars-core/actions</url>
 	</ciManagement>
 
 	<properties>
