@@ -90,7 +90,7 @@
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
-		<releaseProfiles>deploy-to-scijava</releaseProfiles>
+		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
 		<jackson.version>2.11.2</jackson.version>
 		<jackson-core.version>${jackson.version}</jackson-core.version>
