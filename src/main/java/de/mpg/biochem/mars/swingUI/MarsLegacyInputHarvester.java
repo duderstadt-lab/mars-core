@@ -59,8 +59,8 @@ import org.scijava.widget.WidgetService;
 import net.imagej.legacy.ui.LegacyUI;
 
 /**
- * Trivial Legacy extension of the {@link SwingInputHarvester}. Just need to
- * link it to the {@link LegacyUI}.
+ * Trivial Legacy extension of the {@link org.scijava.ui.swing.widget.SwingInputHarvester}. Just need to
+ * link it to the {@link net.imagej.legacy.ui.LegacyUI}.
  */
 @Plugin(type = PreprocessorPlugin.class, priority = InputHarvester.PRIORITY)
 public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPanel, JPanel>
