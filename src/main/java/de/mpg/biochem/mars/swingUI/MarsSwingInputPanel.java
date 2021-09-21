@@ -1,8 +1,8 @@
 /*
  * #%L
- * SciJava UI components for Java Swing.
+ * Molecule Archive Suite (Mars) - core data storage and processing algorithms.
  * %%
- * Copyright (C) 2010 - 2020 SciJava developers.
+ * Copyright (C) 2018 - 2021 Fiji developers
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
