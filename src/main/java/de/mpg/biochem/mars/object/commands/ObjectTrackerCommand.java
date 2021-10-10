@@ -237,6 +237,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
 	
+	@Parameter(label = "Use median filter", style = "group:Find")
+	private boolean useMedianFilter = false;
+
+	@Parameter(label = "Median filter radius", style = "group:Find")
+	private long medianFilterRadius = 2;
+	
 	@Parameter(label = "Use local otsu", style = "group:Find")
 	private boolean useLocalOstu = true;
 
@@ -554,10 +560,17 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findObjectsInT(
 		int channel, int t, Roi[] processingRois)
 	{
-		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
+		RandomAccessibleInterval<T> rawImg = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
 			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
 				channel, t);
+			
+		RandomAccessibleInterval<T> img;
+		if (useMedianFilter) {
+			img = (RandomAccessibleInterval<T>) opService.run("create.img", rawImg);
+			opService.filter().median((IterableInterval<T>) img, rawImg, new HyperSphereShape(medianFilterRadius));
+		} else
+			img = rawImg;
 			
         List<List<Peak>> objectLabelLists = new ArrayList<List<Peak>>();
 		for (int roiIndex = 0; roiIndex < processingRois.length; roiIndex++) {
@@ -647,7 +660,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	        poly2.addPoint((poly.xpoints[iMinus] + poly.xpoints[iPlus] + poly.xpoints[i])/3,
 	                (poly.ypoints[iMinus] + poly.ypoints[iPlus] + poly.ypoints[i])/3);
 	    }
-//				return new PolygonRoi(poly2, r.getType());
 	    return new PolygonRoi(poly2, Roi.POLYGON);
 	}
 
@@ -831,6 +843,9 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Region", region);
 		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
+		builder.addParameter("Use median filter", String.valueOf(useMedianFilter));
+		builder.addParameter("Median filter radius", String.valueOf(medianFilterRadius));
+		builder.addParameter("Use local otsu", String.valueOf(useLocalOstu));
 		builder.addParameter("Local otsu radius", String.valueOf(otsuRadius));
 		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
 		builder.addParameter("Interpolation factor", String.valueOf(interpolationFactor));
