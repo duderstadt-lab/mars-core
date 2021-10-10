@@ -217,10 +217,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
 	private String inputGroup = "Input";
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist=false)
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist=false)
 	private String imageName = "name";
 
 	@Parameter(label = "Region",
