@@ -787,11 +787,9 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 					preFrameCount.setValue(this, countString);
 
 					SwingUtilities.invokeLater( () -> {
-						System.out.println("invoking");
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
-							System.out.println("set overlay");
 							
 							for (Window window : Window.getWindows())
 								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
