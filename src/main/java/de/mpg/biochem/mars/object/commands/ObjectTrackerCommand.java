@@ -629,7 +629,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	        	
 	        	Peak peak = PeakShape.createPeak(xs, ys);
 	        	final double area = peak.getShape().area();
-	        	peak.setProperty("area", area);
+	        	peak.setProperty(Peak.AREA, area);
 	        	
 	        	
 	        	if (useAreaFilter) { 
