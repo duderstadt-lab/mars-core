@@ -631,6 +631,11 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	        	final double area = peak.getShape().area();
 	        	peak.setProperty(Peak.AREA, area);
 	        	
+	        	final double perimeter = peak.getShape().perimeter();
+	        	peak.setProperty(Peak.PERIMETER, perimeter);
+	        	
+	        	final double circularity = peak.getShape().circularity();
+	        	peak.setProperty(Peak.CIRCULARITY, circularity);
 	        	
 	        	if (useAreaFilter) { 
 	        		if (area > minArea) 

@@ -74,7 +74,8 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	
 	
 	/*
-	 * Utility methods from  SpotRoi from trackmate with small modifications for integration into Mars.
+	 * Utility methods from  SpotRoi from trackmate with small modifications for integration into Mars. Use of these 
+	 * features is covered under the GPL 3.0 license.
 	 * 
 	 * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
 	 * 
@@ -154,6 +155,31 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	public double area()
 	{
 		return Math.abs( signedArea( x, y ) );
+	}
+	
+	public double circularity() {
+		double perimeter = perimeter();
+		return 4. * Math.PI * ( area() / ( perimeter * perimeter ) );
+	}
+	
+	public double perimeter() {
+		final int npoints = x.length;
+		if ( npoints < 2 )
+			return 0;
+
+		double length = 0;
+		for ( int i = 0; i < npoints - 1; i++ )
+		{
+			final double dx = x[ i + 1 ] - x[ i ];
+			final double dy = y[ i + 1 ] - y[ i ];
+			length += Math.sqrt( dx * dx + dy * dy );
+		}
+
+		final double dx0 = x[ 0 ] - x[ npoints - 1 ];
+		final double dy0 = y[ 0 ] - y[ npoints - 1 ];
+		length += Math.sqrt( dx0 * dx0 + dy0 * dy0 );
+
+		return length;
 	}
 
 	public void scale( final double alpha )

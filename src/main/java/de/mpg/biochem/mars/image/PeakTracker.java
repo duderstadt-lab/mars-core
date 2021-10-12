@@ -387,8 +387,11 @@ public class PeakTracker {
 			} else {
 				if (peak.getProperties().containsKey(Peak.INTENSITY))
 					table.setValue(Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
-				if (archive instanceof ObjectArchive)
+				if (archive instanceof ObjectArchive) {
 					table.setValue(Peak.AREA, row, peak.getProperties().get(Peak.AREA));
+					table.setValue(Peak.PERIMETER, row, peak.getProperties().get(Peak.PERIMETER));
+					table.setValue(Peak.CIRCULARITY, row, peak.getProperties().get(Peak.CIRCULARITY));
+				}
 			}
 			
 			if (archive instanceof ObjectArchive)
