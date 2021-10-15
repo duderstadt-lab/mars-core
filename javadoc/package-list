@@ -8,6 +8,7 @@ de.mpg.biochem.mars.molecule.commands
 de.mpg.biochem.mars.object
 de.mpg.biochem.mars.object.commands
 de.mpg.biochem.mars.roi.commands
+de.mpg.biochem.mars.swingUI
 de.mpg.biochem.mars.table
 de.mpg.biochem.mars.table.commands
 de.mpg.biochem.mars.table.event
