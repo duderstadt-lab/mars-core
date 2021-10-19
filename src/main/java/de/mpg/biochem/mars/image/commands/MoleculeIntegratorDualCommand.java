@@ -361,7 +361,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			
 		List<String> channelNames = new ArrayList<String>(); 
 		for (int cIndex=0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
-			channelNames.add(omexmlMetadata.getChannelName(0, cIndex));
+			if (omexmlMetadata.getChannelName(0, cIndex) != null)
+				channelNames.add(omexmlMetadata.getChannelName(0, cIndex));
+			else
+				channelNames.add(String.valueOf(cIndex));
 			
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
