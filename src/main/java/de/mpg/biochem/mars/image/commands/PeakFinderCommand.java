@@ -177,7 +177,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "ImageInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input", persist = false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String imageName = "?";
 	
 	@Parameter(label = "Region",

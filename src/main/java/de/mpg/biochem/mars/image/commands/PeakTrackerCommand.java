@@ -321,7 +321,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			"point" })
 	private String previewRoiType;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview", persist=false)
 	private String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
@@ -363,7 +363,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void initialize() {
-		if (imageDisplay != null) {
+		if (dataset == null && imageDisplay != null) {
 			dataset = (Dataset) imageDisplay.getActiveView().getData();
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}

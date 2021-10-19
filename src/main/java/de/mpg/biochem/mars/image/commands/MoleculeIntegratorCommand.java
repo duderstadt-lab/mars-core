@@ -189,7 +189,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
 	private String outputFigure = "SingleMoleculeArchive.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
 	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
