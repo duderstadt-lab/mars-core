@@ -163,9 +163,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String roiCount = "No ROIs in manager!";
 	
-	@Parameter(label = "Use integration boundary", style = "group:Input")
-	private boolean useROI = true;
-	
 	/**
 	 * INTEGRATION SETTINGS
 	 */
@@ -221,8 +218,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
-	
-	private Roi roi;
 
 	private final AtomicInteger progressInteger = new AtomicInteger(0);
 
@@ -241,13 +236,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
-		
-		if (image.getRoi() == null) {
-			final MutableModuleItem<Boolean> useRoifield = getInfo().getMutableInput(
-				"useROI", Boolean.class);
-			useRoifield.setValue(this, false);
-		}
-		else roi = image.getRoi();
 		
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
@@ -426,7 +414,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"Adding molecules to archive..."), tasks ,
 			nThreads);
 		
-		if (image != null) image.setRoi(roi);
+		//if (image != null) image.setRoi(roi);
 
 		// FINISH UP
 		statusService.clearStatus();
@@ -448,8 +436,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 
 	private void buildIntegrationLists() {
-		Interval interval = (useROI) ? Intervals.createMinMax(roi.getBounds().x, roi.getBounds().y, roi.getBounds().x + roi.getBounds().width - 1,
-				roi.getBounds().y + roi.getBounds().height - 1) : dataset;
+		Interval interval = dataset;
 		
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
@@ -471,12 +458,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i]
 				.getFloatBounds().height / 2;
 
-			Peak peak = new Peak(x, y);
-
-			if (useROI && roi.contains((int)x, (int)y))
-				integrationList.put(UID, peak);
-			else if (!useROI)
-				integrationList.put(UID, peak);
+			integrationList.put(UID, new Peak(x, y));
 		}
 
 		// Build integration lists for all T for all colors.
@@ -667,12 +649,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					.getOriginalFileInfo().directory);
 			}
 		}
-		else {
-			builder.addParameter("Dataset name", dataset.getName());
-		}
-		builder.addParameter("Use ROI", String.valueOf(useROI));
-		if (useROI && roi != null) builder.addParameter("ROI", roi.toString());
-
+		else builder.addParameter("Dataset name", dataset.getName());
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
@@ -702,22 +679,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	public Dataset getDataset() {
 		return dataset;
-	}
-	
-	public void setUseRoi(boolean useROI) {
-		this.useROI = useROI;
-	}
-
-	public boolean getUseRoi() {
-		return useROI;
-	}
-	
-	public void setRoi(Roi roi) {
-		this.roi = roi;
-	}
-	
-	public Roi getROI() {
-		return this.roi;
 	}
 
 	public void setMicroscope(String microscope) {
