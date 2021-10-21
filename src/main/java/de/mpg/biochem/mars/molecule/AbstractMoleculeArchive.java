@@ -611,9 +611,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}, jParser -> archiveProperties.fromJSON(jParser));
 
 		setJsonField("metadata", jGenerator -> {
-			if (metadataMap.size() > 0) {
+			if (getNumberOfMetadatas() > 0) {
 				jGenerator.writeArrayFieldStart("metadata");
-				Iterator<String> iter = metadataMap.keySet().iterator();
+				Iterator<String> iter = (virtual) ? archiveIndex.getMetadataUIDSet().iterator() : metadataMap.keySet().iterator();
 				while (iter.hasNext())
 					getMetadata(iter.next()).toJSON(jGenerator);
 				jGenerator.writeEndArray();
@@ -624,9 +624,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		});
 
 		setJsonField("molecules", jGenerator -> {
-			if (moleculeMap.size() > 0) {
+			if (getNumberOfMolecules() > 0) {
 				jGenerator.writeArrayFieldStart("molecules");
-				Iterator<String> iterator = moleculeMap.keySet().iterator();
+				Iterator<String> iterator = (virtual) ? archiveIndex.getMoleculeUIDSet().iterator() : moleculeMap.keySet().iterator();
 				while (iterator.hasNext())
 					get(iterator.next()).toJSON(jGenerator);
 				jGenerator.writeEndArray();
@@ -1611,7 +1611,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<M> molecules() {
-		return this.moleculeMap.keySet().stream().map(UID -> get(UID));
+		if (virtual)
+			return archiveIndex.getMoleculeUIDSet().stream().map(UID -> get(UID));
+		else
+			return moleculeMap.keySet().stream().map(UID -> get(UID));
 	}
 
 	/**
@@ -1637,14 +1640,17 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
-	 * Convenience method to retrieve a multithreated Molecule stream. Can be used
+	 * Convenience method to retrieve a multithreaded Molecule stream. Can be used
 	 * to iterate over all molecules using forEach in a multithreaded manner.
 	 * 
 	 * @return Molecule stream.
 	 */
 	@Override
 	public Stream<M> parallelMolecules() {
-		return this.moleculeMap.keySet().parallelStream().map(UID -> get(UID));
+		if (virtual)
+			return archiveIndex.getMoleculeUIDSet().parallelStream().map(UID -> get(UID));
+		else
+			return moleculeMap.keySet().parallelStream().map(UID -> get(UID));
 	}
 
 	/**
