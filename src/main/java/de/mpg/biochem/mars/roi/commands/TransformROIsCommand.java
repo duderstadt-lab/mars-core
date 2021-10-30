@@ -163,6 +163,9 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(label = "m12", style = "group:Input")
 	private double m12;
 	
+	@Parameter(label = "Apply inverse transformation", style = "group:Input")
+	private boolean inverseTransform = false;
+	
 	/**
 	 * COLOCALIZE SETTINGS
 	 */
@@ -368,7 +371,12 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			roi.setName(baseRoiName + "_" + currentPosition);
 
 			Roi newRoi = (Roi) roi.clone();
-			transform.apply(source, target);
+			if (this.inverseTransform) {
+				//This one transforms target to source...
+				//same input order as apply but operates on second input and result is in first...
+				transform.applyInverse(target, source);
+			} else
+				transform.apply(source, target);
 
 			newRoi.setLocation(target[0], target[1]);
 			newRoi.setName(baseRoiName + "_" + newPosition);
@@ -523,6 +531,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		builder.addParameter("Affine2D m10", String.valueOf(m10));
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
+		builder.addParameter("Apply inverse transformation", String.valueOf(inverseTransform));
 		builder.addParameter("Transformation Direction", transformationDirection);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -564,6 +573,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 	public void setM12(double m12) {
 		this.m12 = m12;
+	}
+	
+	public void setApplyInverseTransformation(boolean inverseTransform) {
+		this.inverseTransform = inverseTransform;
+	}
+	
+	public boolean getApplyInverseTransformation() {
+		return inverseTransform;
 	}
 
 	public void setDataset(Dataset dataset) {
