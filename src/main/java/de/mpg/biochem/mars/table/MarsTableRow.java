@@ -111,7 +111,16 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 	}
 
 	public void setValue(String columnName, double value) {
-		doubleColumnMap.get(columnName).setValue(rowNumber, value);
+		if (!table.hasColumn(columnName)) {
+			DoubleColumn col = new DoubleColumn(columnName);
+			for (int i = 0; i < table.getRowCount(); i++) {
+				if (i == rowNumber) col.add(value);
+				else col.add(Double.NaN);
+			}
+			table.add(col);
+			doubleColumnMap.put(col.getHeader(), col);
+		} else 
+			doubleColumnMap.get(columnName).setValue(rowNumber, value);
 	}
 
 	public void setStringValue(int columnIndex, String value) {
@@ -119,7 +128,16 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 	}
 
 	public void setStringValue(String columnName, String value) {
-		genericColumnMap.get(columnName).set(rowNumber, value);
+		if (!table.hasColumn(columnName)) {
+			GenericColumn col = new GenericColumn(columnName);
+			for (int i = 0; i < table.getRowCount(); i++) {
+				if (i == rowNumber) col.add(value);
+				else col.add("");
+			}
+			table.add(col);
+			genericColumnMap.put(col.getHeader(), col);
+		} else
+			genericColumnMap.get(columnName).set(rowNumber, value);
 	}
 
 	public void at(int rowNumber) {
