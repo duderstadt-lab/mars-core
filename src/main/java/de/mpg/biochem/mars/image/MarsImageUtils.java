@@ -659,7 +659,7 @@ public class MarsImageUtils {
 		}
 		return finalPeaks;
 	}
-
+	
 	/**
 	 * This method integrates the intensity of peaks in the 2D image provided. The
 	 * interval given is mirrored at the edges for pixel values that lie outside
@@ -679,6 +679,30 @@ public class MarsImageUtils {
 	public static <T extends RealType<T> & NativeType<T>> void integratePeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks,
 		int innerRadius, int outerRadius)
+	{
+		integratePeaks(img, interval, peaks, innerRadius, outerRadius, false);
+	}
+
+	/**
+	 * This method integrates the intensity of peaks in the 2D image provided. The
+	 * interval given is mirrored at the edges for pixel values that lie outside
+	 * the boundaries. The values of all pixels within the region defined by the
+	 * innerRadius are summed. The median value of the pixels between innerRadius
+	 * and outerRadius is subtracted from each pixel in the sum to yield the
+	 * background corrected total intensity.
+	 * 
+	 * @param <T> Image type.
+	 * @param img 2D image containing peaks.
+	 * @param interval The interval to mirror at the edges during integration.
+	 * @param peaks The Peaks to integrate.
+	 * @param innerRadius The region to integrate.
+	 * @param outerRadius The outer radius of the region used to calculate the
+	 *          background.
+	 * @param verbose Whether to include all values.
+	 */
+	public static <T extends RealType<T> & NativeType<T>> void integratePeaks(
+		RandomAccessible<T> img, Interval interval, List<Peak> peaks,
+		int innerRadius, int outerRadius, boolean verbose)
 	{
 		RandomAccessibleInterval<T> view = Views.interval(img, interval);
 		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
@@ -701,7 +725,7 @@ public class MarsImageUtils {
 			}
 			else {
 				double intensity = 0;
-				ArrayList<Double> outerPixelValues = new ArrayList<Double>();
+				List<Double> outerPixelValues = new ArrayList<Double>();
 
 				for (int i = 0; i < innerOffsets.size(); i++) {
 					int[] circleOffset = innerOffsets.get(i);
@@ -724,11 +748,18 @@ public class MarsImageUtils {
 						(double) outerPixelValues.get(outerPixelValues.size() / 2 - 1)) / 2;
 				else outerMedian = (double) outerPixelValues.get(outerPixelValues
 					.size() / 2);
+				
+				if (verbose) {
+					peak.setProperty(Peak.UNCORRECTED_INTENSITY, intensity);
+					peak.setProperty(Peak.MEAN_BACKGROUND, outerPixelValues.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN) * innerOffsets.size());
+				}
 
-				intensity -= outerMedian * innerOffsets.size();
+				double medianBackground = outerMedian * innerOffsets.size();
+
+				intensity -= medianBackground;
 
 				peak.setIntensity(intensity);
-				peak.setMedianBackground(outerMedian);
+				peak.setMedianBackground(medianBackground);
 			}
 		}
 	}

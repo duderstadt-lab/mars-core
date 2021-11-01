@@ -135,13 +135,13 @@ public class MarsImageUtilsTest {
 			.dimension(0) - 1, img.dimension(1) - 1), peaks, 2, 4);
 
 		assertEquals(peaks.get(0).getIntensity(), 24223.5);
-		assertEquals(peaks.get(0).getMedianBackground(), 3522.5);
+		assertEquals(peaks.get(0).getMedianBackground(), 73972.5);
 
 		assertEquals(peaks.get(1).getIntensity(), 23817.5);
-		assertEquals(peaks.get(1).getMedianBackground(), 3523.5);
+		assertEquals(peaks.get(1).getMedianBackground(), 73993.5);
 
 		assertEquals(peaks.get(2).getIntensity(), 23849.0);
-		assertEquals(peaks.get(2).getMedianBackground(), 3515.0);
+		assertEquals(peaks.get(2).getMedianBackground(), 73815.0);
 	}
 
 	@Test
@@ -156,7 +156,7 @@ public class MarsImageUtilsTest {
 			peaks, 2, 10);
 
 		assertEquals(peaks.get(0).getIntensity(), 22743.0);
-		assertEquals(peaks.get(0).getMedianBackground(), 3593.0);
+		assertEquals(peaks.get(0).getMedianBackground(), 75453.0);
 	}
 
 	public Img<UnsignedShortType> simulateImage() {
