@@ -246,6 +246,9 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 				"random" })
 	private String metadataUIDSource = "random";
 	
+	@Parameter(label = "Verbose", style = "group:Output")
+	private boolean verbose = false;
+	
 	@Parameter(label = "Help",
 			description="View a web page detailing Peak Tracker options",
 			callback="openWebPage", persist = false)
@@ -564,7 +567,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			if (integrationMap.getC() == c) MarsImageUtils.integratePeaks(img,
 				integrationMap.getInterval(), new ArrayList<Peak>(integrationMap
-					.getMap().get(t).values()), innerRadius, outerRadius);
+					.getMap().get(t).values()), innerRadius, outerRadius, verbose);
 	}
 
 	private Map<Integer, Map<String, Peak>> createColorIntegrationList(
@@ -608,6 +611,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			columns.add(new DoubleColumn(name + "_Y"));
 			columns.add(new DoubleColumn(name));
 			columns.add(new DoubleColumn(name + "_Background"));
+			if (verbose) {
+				table.add(new DoubleColumn(name + "_Uncorrected"));
+				table.add(new DoubleColumn(name + "_Mean_Background"));
+			}
 		}
 
 		for (DoubleColumn column : columns)
@@ -628,6 +635,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 						.get(t));
 					table.setValue(name, row, peak.getIntensity());
 					table.setValue(name + "_Background", row, peak.getMedianBackground());
+					if (verbose) {
+						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(Peak.UNCORRECTED_INTENSITY));
+						table.setValue(name + "_Mean_Background", row, peak.getProperties().get(Peak.MEAN_BACKGROUND));
+					}
 					table.setValue(name + "_X", row, peak.getX());
 					table.setValue(name + "_Y", row, peak.getY());
 				}
@@ -635,6 +646,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 					table.setValue(name + "_Time_(s)", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
 					table.setValue(name + "_Background", row, Double.NaN);
+					if (verbose) {
+						table.setValue(name + "_Uncorrected", row, Double.NaN);
+						table.setValue(name + "_Mean_Background", row, Double.NaN);
+					}
 					table.setValue(name + "_X", row, Double.NaN);
 					table.setValue(name + "_Y", row, Double.NaN);
 				}
@@ -762,6 +777,7 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 		builder.addParameter("ImageID", imageID);
 		builder.addParameter("Thread count", nThreads);
 		builder.addParameter("Metadata UID source", metadataUIDSource);
+		builder.addParameter("Verbose", String.valueOf(verbose));
 	}
 
 	// Getters and Setters
@@ -927,6 +943,14 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	
 	public int getThreads() {
 		return this.nThreads;
+	}
+	
+	public void setVerbose(boolean verbose) {
+		this.verbose = verbose;
+	}
+	
+	public boolean getVerbose() {
+		return verbose;
 	}
 	
 	public void setMetadataUIDSource(String metadataUIDSource) {
