@@ -83,6 +83,8 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public static final String AREA = "Area";
 	public static final String PERIMETER = "Perimeter";
 	public static final String CIRCULARITY = "Circularity";
+	public static final String UNCORRECTED_INTENSITY = "Uncorrected_intensity";
+	public static final String MEAN_BACKGROUND = "Mean_background";
 	
 	private final Map< String, Double > properties = new ConcurrentHashMap<>();
 	
@@ -329,7 +331,10 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 
 	public double getIntensity() {
-		return this.properties.get(INTENSITY).doubleValue();
+		if (this.properties.containsKey(INTENSITY))
+			return this.properties.get(INTENSITY).doubleValue();
+		else
+			return Double.NaN;
 	}
 
 	public void setMedianBackground(double medianBackground) {
@@ -337,7 +342,10 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 
 	public double getMedianBackground() {
-		return this.properties.get(MEDIAN_BACKGROUND).doubleValue();
+		if (this.properties.containsKey(MEDIAN_BACKGROUND))
+			return this.properties.get("Median_background").doubleValue();
+		else
+			return Double.NaN;
 	}
 
 	public void setRsquared(double R2value) {
