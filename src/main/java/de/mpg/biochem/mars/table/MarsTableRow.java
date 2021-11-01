@@ -119,15 +119,20 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 			}
 			table.add(col);
 			doubleColumnMap.put(col.getHeader(), col);
-		} else 
+		}
+		else if (doubleColumnMap.containsKey(columnName)) 
 			doubleColumnMap.get(columnName).setValue(rowNumber, value);
+		else if (genericColumnMap.containsKey(columnName)) {
+			String str = String.valueOf(value);	
+			genericColumnMap.get(columnName).setValue(rowNumber, str);
+		}
 	}
 
-	public void setStringValue(int columnIndex, String value) {
-		setStringValue(columnNames[columnIndex], value);
+	public void setValue(int columnIndex, String value) {
+		setValue(columnNames[columnIndex], value);
 	}
 
-	public void setStringValue(String columnName, String value) {
+	public void setValue(String columnName, String value) {
 		if (!table.hasColumn(columnName)) {
 			GenericColumn col = new GenericColumn(columnName);
 			for (int i = 0; i < table.getRowCount(); i++) {
@@ -136,8 +141,19 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 			}
 			table.add(col);
 			genericColumnMap.put(col.getHeader(), col);
-		} else
+		} 
+		else if (genericColumnMap.containsKey(columnName))
 			genericColumnMap.get(columnName).set(rowNumber, value);
+		else if (doubleColumnMap.containsKey(columnName)) {
+			double num = Double.NaN;
+			try {
+				num = Double.valueOf(value);
+			}
+			catch (NumberFormatException e) {
+				// Do nothing.. set NaN as value...
+			}
+			doubleColumnMap.get(columnName).setValue(rowNumber, num);
+		}
 	}
 
 	public void at(int rowNumber) {
