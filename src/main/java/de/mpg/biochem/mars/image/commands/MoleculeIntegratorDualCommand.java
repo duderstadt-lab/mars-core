@@ -547,10 +547,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 				i, longInterval, createColorIntegrationList(channel.getName(),
 					longIntegrationList));
 			else if (colorOption.equals("Both")) {
-				addIntegrationMap(channel.getName() + " " + fretShortName, i,
+				addIntegrationMap(channel.getName() + "_" + fretShortName, i,
 					shortInterval, createColorIntegrationList(channel.getName(),
 						shortIntegrationList));
-				addIntegrationMap(channel.getName() + " " + fretLongName, i,
+				addIntegrationMap(channel.getName() + "_" + fretLongName, i,
 					longInterval, createColorIntegrationList(channel.getName(),
 						longIntegrationList));
 			}
