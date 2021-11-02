@@ -347,6 +347,17 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		else
 			return Double.NaN;
 	}
+	
+	public void setMeanBackground(double meanBackground) {
+		this.properties.put(MEAN_BACKGROUND, meanBackground);
+	}
+
+	public double getMeanBackground() {
+		if (this.properties.containsKey(MEAN_BACKGROUND))
+			return this.properties.get("Mean_background").doubleValue();
+		else
+			return Double.NaN;
+	}
 
 	public void setRsquared(double R2value) {
 		this.properties.put(R2, R2value);
