@@ -600,25 +600,19 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 	{
 		MarsTable table = new MarsTable();
 
-		// Build columns
-		List<DoubleColumn> columns = new ArrayList<DoubleColumn>();
-		columns.add(new DoubleColumn("T"));
-
+		table.add(new DoubleColumn("T"));
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
-			columns.add(new DoubleColumn(name + "_Time_(s)"));
-			columns.add(new DoubleColumn(name + "_X"));
-			columns.add(new DoubleColumn(name + "_Y"));
-			columns.add(new DoubleColumn(name));
-			columns.add(new DoubleColumn(name + "_Background"));
+			table.add(new DoubleColumn(name + "_Time_(s)"));
+			table.add(new DoubleColumn(name + "_X"));
+			table.add(new DoubleColumn(name + "_Y"));
+			table.add(new DoubleColumn(name));
+			table.add(new DoubleColumn(name + "_Background"));
 			if (verbose) {
 				table.add(new DoubleColumn(name + "_Uncorrected"));
 				table.add(new DoubleColumn(name + "_Mean_Background"));
 			}
 		}
-
-		for (DoubleColumn column : columns)
-			table.add(column);
 
 		for (int t = 0; t < marsOMEMetadata.getImage(0).getSizeT(); t++) {
 			table.appendRow();
@@ -633,25 +627,25 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 					Peak peak = integrationMap.getMap().get(t).get(UID);
 					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
+					table.setValue(name + "_X", row, peak.getX());
+					table.setValue(name + "_Y", row, peak.getY());
 					table.setValue(name, row, peak.getIntensity());
 					table.setValue(name + "_Background", row, peak.getMedianBackground());
 					if (verbose) {
 						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(Peak.UNCORRECTED_INTENSITY));
 						table.setValue(name + "_Mean_Background", row, peak.getProperties().get(Peak.MEAN_BACKGROUND));
 					}
-					table.setValue(name + "_X", row, peak.getX());
-					table.setValue(name + "_Y", row, peak.getY());
 				}
 				else {
 					table.setValue(name + "_Time_(s)", row, Double.NaN);
+					table.setValue(name + "_X", row, Double.NaN);
+					table.setValue(name + "_Y", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
 					table.setValue(name + "_Background", row, Double.NaN);
 					if (verbose) {
 						table.setValue(name + "_Uncorrected", row, Double.NaN);
 						table.setValue(name + "_Mean_Background", row, Double.NaN);
 					}
-					table.setValue(name + "_X", row, Double.NaN);
-					table.setValue(name + "_Y", row, Double.NaN);
 				}
 			}
 		}
