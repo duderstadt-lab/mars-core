@@ -551,25 +551,25 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					Peak peak = integrationMap.getMap().get(t).get(UID);
 					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(integrationMap.getC())
 						.get(t));
-					table.setValue(name, row, peak.getIntensity());
-					table.setValue(name + "_Background", row, peak.getMedianBackground());
-					if (verbose) {
-						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(Peak.UNCORRECTED_INTENSITY));
-						table.setValue(name + "_Mean_Background", row, peak.getProperties().get(Peak.MEAN_BACKGROUND));
-					}
 					table.setValue(name + "_X", row, peak.getX());
 					table.setValue(name + "_Y", row, peak.getY());
+					table.setValue(name, row, peak.getIntensity());
+					table.setValue(name + "_Median_Background", row, peak.getMedianBackground());
+					if (verbose) {
+						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(Peak.UNCORRECTED_INTENSITY));
+						table.setValue(name + "_Mean_Background", row, peak.getMeanBackground());
+					}
 				}
 				else {
 					table.setValue(name + "_Time_(s)", row, Double.NaN);
+					table.setValue(name + "_X", row, Double.NaN);
+					table.setValue(name + "_Y", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
-					table.setValue(name + "_Background", row, Double.NaN);
+					table.setValue(name + "_Median_Background", row, Double.NaN);
 					if (verbose) {
 						table.setValue(name + "_Uncorrected", row, Double.NaN);
 						table.setValue(name + "_Mean_Background", row, Double.NaN);
 					}
-					table.setValue(name + "_X", row, Double.NaN);
-					table.setValue(name + "_Y", row, Double.NaN);
 				}
 			}
 		}
