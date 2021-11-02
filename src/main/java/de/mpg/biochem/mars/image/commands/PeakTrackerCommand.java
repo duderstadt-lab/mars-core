@@ -389,7 +389,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		final MutableModuleItem<Integer> preFrame = getInfo().getMutableInput(
 			"previewT", Integer.class);
-		if (image.getNFrames() < 2) {
+		if (image.getNFrames() < 2 && image.getZ() > 1) {
 			preFrame.setValue(this, image.getSlice() - 1);
 			preFrame.setMaximumValue(image.getStackSize() - 1);
 			swapZandT = true;
