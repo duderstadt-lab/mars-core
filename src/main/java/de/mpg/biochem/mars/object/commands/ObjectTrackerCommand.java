@@ -357,7 +357,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	/**
 	 * Maps from T to object labels for each Roi
 	 */
-	private List<ConcurrentMap<Integer, List<Peak>>> objectLabelsStack;
+	private ConcurrentMap<Integer, ConcurrentMap<Integer, List<Peak>>> objectLabelsStack;
 
 	private PeakTracker tracker;
 
@@ -437,10 +437,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		objectLabelsStack = new ArrayList<>();
+		objectLabelsStack = new ConcurrentHashMap<Integer, ConcurrentMap<Integer, List<Peak>>>();
 
 		double starttime = System.currentTimeMillis();
-		logService.info("Finding and Fitting Peaks...");
+		logService.info("Finding and Fitting Objects...");
 
 		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
 		int zSize = (int) dataset.getImgPlus().dimension(zDim);
@@ -469,7 +469,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		}
 		
 		for (int i = 0; i < rois.length; i++)
-			objectLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+			objectLabelsStack.put(i, new ConcurrentHashMap<Integer, List<Peak>>());
 		
 		List<Integer> processTimePoints = new ArrayList<Integer>();
 		List<Runnable> tasks = new ArrayList<Runnable>();
