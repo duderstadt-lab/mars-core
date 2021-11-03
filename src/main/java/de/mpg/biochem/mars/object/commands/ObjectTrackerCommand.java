@@ -492,8 +492,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
  
+		final int excludedFrameCount = excludeTimePoints.size();
+		
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(objectLabelsStack.get(0).size(), frameCount, "Finding objects for " + dataset
+			.showStatus(objectLabelsStack.get(0).size(), frameCount - excludedFrameCount, "Finding objects for " + dataset
 				.getName()), tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
