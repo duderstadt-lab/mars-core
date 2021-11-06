@@ -539,11 +539,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			// The pixel origin for PointRois is at the center !!!
 			Roi peakRoi = (roiType.equals("point")) ? new PointRoi(peak
 				.getDoublePosition(0), peak.getDoublePosition(1)) : new OvalRoi(peak
-					.getDoublePosition(0) + 0.5 - fitRadius, peak.getDoublePosition(1) +
-						0.5 - fitRadius, fitRadius * 2, fitRadius * 2);
+					.getDoublePosition(0) + 0.5 - integrationInnerRadius, peak.getDoublePosition(1) +
+						0.5 - integrationInnerRadius, integrationInnerRadius * 2, integrationInnerRadius * 2);
 
-			//if (moleculeNames) peakRoi.setName("Molecule" + pCount);
-			//else 
 			peakRoi.setName(MarsMath.getUUID58());
 
 			if (swapZandT) peakRoi.setPosition(channel + 1, t + 1, 1);
