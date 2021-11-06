@@ -165,7 +165,9 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-
+		progressUpdating.set(true);
+		numFinished.set(0);
+		
 		// Build log message
 		LogBuilder builder = new LogBuilder();
 
