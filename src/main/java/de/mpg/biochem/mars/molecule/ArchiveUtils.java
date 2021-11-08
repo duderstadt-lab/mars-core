@@ -51,14 +51,14 @@ import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
 	
-	public static File yamaFileExtensionFixer(File file) {
+	public static final File yamaFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 		
 		if(!file.getAbsolutePath().endsWith(".yama")) return new File(file.getAbsolutePath() + ".yama");
 		else return file;
 	}
 	
-	public static File jsonFileExtensionFixer(File file) {
+	public static final File jsonFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 		
 		if (file.getAbsolutePath().endsWith(".yama.json")) return file;
@@ -66,13 +66,15 @@ public class ArchiveUtils {
 		else return new File(file.getAbsolutePath() + ".yama.json");
 	}
 	
-	public static File storeFileExtensionFixer(File file) {
+	public static final File storeFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 		
 		if (file.getAbsolutePath().endsWith(".yama.store")) return file;
 		else if (file.getAbsolutePath().endsWith(".yama")) return new File(file.getAbsolutePath() + ".store");
 		else if (file.getAbsolutePath().endsWith(".json")) 
 			return new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().length() - 5) +".yama.store");
+		else if (file.getAbsolutePath().endsWith(".yama.json")) 
+			return new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().length() - 10) +".yama.store");
 		else return new File(file.getAbsolutePath() + ".yama.store");
 	}
 	
