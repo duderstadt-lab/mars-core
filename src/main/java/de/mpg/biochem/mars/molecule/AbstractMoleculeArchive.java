@@ -579,7 +579,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 	@Override
 	public File saveAsJson(File file) throws IOException {
-		file = ArchiveUtils.storeFileExtensionFixer(file);
+		file = ArchiveUtils.jsonFileExtensionFixer(file);
 
 		MarsUtil.writeJsonRecord(this, file, new JsonFactory());
 
