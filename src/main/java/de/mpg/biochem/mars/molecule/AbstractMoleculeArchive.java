@@ -570,10 +570,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public File saveAs(File file) throws IOException {
-		String filePath = file.getAbsolutePath();
-		if (!filePath.endsWith(".yama")) {
-			file = new File(filePath + ".yama");
-		}
+		file = ArchiveUtils.yamaFileExtensionFixer(file);
 
 		MarsUtil.writeJsonRecord(this, file, new SmileFactory());
 
@@ -582,20 +579,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 	@Override
 	public File saveAsJson(File file) throws IOException {
-		String filePath = file.getAbsolutePath();
-		if (filePath.endsWith(".yama.json")) {
-			// Great! Do nothing.
-		}
-		else if (filePath.endsWith(".yama")) {
-			file = new File(filePath + ".json");
-		}
-		else if (filePath.endsWith(".json")) {
-			file = new File(filePath.substring(0, filePath.length() - 5) +
-				".yama.json");
-		}
-		else {
-			file = new File(filePath + ".yama.json");
-		}
+		file = ArchiveUtils.storeFileExtensionFixer(file);
 
 		MarsUtil.writeJsonRecord(this, file, new JsonFactory());
 

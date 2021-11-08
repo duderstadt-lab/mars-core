@@ -28,6 +28,7 @@
  */
 package de.mpg.biochem.mars.molecule;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +50,31 @@ import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
+	
+	public static File yamaFileExtensionFixer(File file) {
+		if (file == null) file = new File(System.getProperty("user.home"));
+		
+		if(!file.getAbsolutePath().endsWith(".yama")) return new File(file.getAbsolutePath() + ".yama");
+		else return file;
+	}
+	
+	public static File jsonFileExtensionFixer(File file) {
+		if (file == null) file = new File(System.getProperty("user.home"));
+		
+		if (file.getAbsolutePath().endsWith(".yama.json")) return file;
+		else if (file.getAbsolutePath().endsWith(".yama")) return new File(file.getAbsolutePath() + ".json");
+		else return new File(file.getAbsolutePath() + ".yama.json");
+	}
+	
+	public static File storeFileExtensionFixer(File file) {
+		if (file == null) file = new File(System.getProperty("user.home"));
+		
+		if (file.getAbsolutePath().endsWith(".yama.store")) return file;
+		else if (file.getAbsolutePath().endsWith(".yama")) return new File(file.getAbsolutePath() + ".store");
+		else if (file.getAbsolutePath().endsWith(".json")) 
+			return new File(file.getAbsolutePath().substring(0, file.getAbsolutePath().length() - 5) +".yama.store");
+		else return new File(file.getAbsolutePath() + ".yama.store");
+	}
 	
 	public static void calculateDrift(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
