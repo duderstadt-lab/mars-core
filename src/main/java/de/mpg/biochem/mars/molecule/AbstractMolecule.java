@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
@@ -684,5 +685,50 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public Set<ArrayList<String>> getSegmentsTableNames() {
 		return segmentTables.keySet();
+	}
+	
+	/**
+	 * Used to merge another molecule record into this one.
+	 * 
+	 * @param molecule Molecule to merge into this one.
+	 */
+	@Override
+	public void merge(Molecule molecule) {
+		super.merge(molecule);
+
+ 		Set<Double> tNumbers = new HashSet<Double>();
+ 		
+ 		//First add all current T to set
+ 		for (int row=0;row<table.getRowCount();row++) {
+    		tNumbers.add(table.getValue("T", row));
+    	}
+        
+    	MarsTable nextDataTable = molecule.getTable();
+    	
+    	for (int row=0;row<nextDataTable.getRowCount();row++) {
+    		if (!tNumbers.contains(nextDataTable.getValue("T", row))) {
+    			table.appendRow();
+    			int mergeLastRow = table.getRowCount() - 1;
+    			
+    			for (int col=0;col<table.getColumnCount();col++) {
+    				String column = table.getColumnHeader(col);
+    				table.setValue(column, mergeLastRow, nextDataTable.getValue(column, row));
+            	}
+    			
+    			tNumbers.add(nextDataTable.getValue("T", row));
+    		}
+    	}
+        
+        //sort by T
+        table.sort(true, "T");
+        
+        String previousNotes = "";
+        if (getNotes() != null)
+        	previousNotes = getNotes() + "\n";
+        
+        setNotes(previousNotes + "merged " + molecule.getUID());
+        
+        //For now we ignore channel, image, metadataUID, and all segmentTables
+        //KCP should be rerun after merging. Combining the segmentTables would not give the same result.
 	}
 }

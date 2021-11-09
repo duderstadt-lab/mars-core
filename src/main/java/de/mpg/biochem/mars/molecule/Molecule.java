@@ -245,4 +245,11 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 *         at index positions 0, 1 and 2, respectively.
 	 */
 	Set<ArrayList<String>> getSegmentsTableNames();
+	
+	/**
+	 * Used to merge another molecule record into this one.
+	 * 
+	 * @param molecule Molecule to merge into this one.
+	 */
+	void merge(Molecule molecule);
 }
