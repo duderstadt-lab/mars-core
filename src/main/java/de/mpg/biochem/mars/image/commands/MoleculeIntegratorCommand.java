@@ -528,7 +528,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			columns.add(new DoubleColumn(name + "_X"));
 			columns.add(new DoubleColumn(name + "_Y"));
 			columns.add(new DoubleColumn(name));
-			columns.add(new DoubleColumn(name + "_Background"));
+			columns.add(new DoubleColumn(name + "_Median_Background"));
 			if (verbose) {
 				table.add(new DoubleColumn(name + "_Uncorrected"));
 				table.add(new DoubleColumn(name + "_Mean_Background"));
