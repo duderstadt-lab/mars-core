@@ -607,10 +607,10 @@ public class MoleculeIntegratorDualCommand extends DynamicCommand implements
 			table.add(new DoubleColumn(name + "_X"));
 			table.add(new DoubleColumn(name + "_Y"));
 			table.add(new DoubleColumn(name));
-			table.add(new DoubleColumn(name + "_Mean_Background"));
+			table.add(new DoubleColumn(name + "_Median_Background"));
 			if (verbose) {
 				table.add(new DoubleColumn(name + "_Uncorrected"));
-				table.add(new DoubleColumn(name + "_Median_Background"));
+				table.add(new DoubleColumn(name + "_Mean_Background"));
 			}
 		}
 
