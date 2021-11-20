@@ -68,6 +68,8 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.*;
 import com.google.common.collect.ImmutableList;
 
+import org.scijava.Context;
+import org.scijava.app.StatusService;
 import org.scijava.table.*;
 
 import de.mpg.biochem.mars.image.commands.*;
@@ -83,6 +85,7 @@ import de.mpg.biochem.mars.table.GroupIndices;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.*;
+import ij.IJ;
 
 /**
  * Abstract superclass for the primary storage structure of Mars datasets.
@@ -616,8 +619,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
-			while (jParser.nextToken() != JsonToken.END_ARRAY)
+			StatusService statusService = null;
+			try {
+				Context context = ( Context ) IJ.runPlugIn( "org.scijava.Context", "" );
+				statusService = (StatusService) context.getService(StatusService.class);
+			} catch (Exception e) {}
+			final int numberMolecules = properties().getNumberOfMolecules();
+			int count = 0;
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				put(createMolecule(jParser));
+				if (statusService != null) {
+					count++;
+					statusService.showStatus(count, numberMolecules, "Loading " + getName());
+				}
+			}
+			if (statusService != null) statusService.showStatus(1, 1, "Done!");
 		});
 
 		/*
