@@ -64,6 +64,29 @@ import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 public class MarsUtil {
 	
+	public static JsonFactory jfactory;
+	
+	public static synchronized JsonFactory getJFactory() {
+		if (jfactory == null) 
+			jfactory = new JsonFactory();
+		
+		return jfactory;
+	}
+	
+	public static void readJsonObject(JsonParser jParser, JsonConvertibleRecord record, String... objects) throws IOException {
+	   DefaultJsonConverter defaultParser = new DefaultJsonConverter();
+       defaultParser.setShowWarnings(false);
+       if (objects.length == 1)
+    	   defaultParser.setJsonField(objects[0], null, parser -> record.fromJSON(parser));
+       else {
+    	   String[] remainingObjects = new String[objects.length - 1];
+    	   for (int i = 0; i < objects.length - 1; i++)
+    		   remainingObjects[i] = objects[i + 1];
+    	   defaultParser.setJsonField(objects[0], null, parser -> readJsonObject(parser, record, remainingObjects));
+       }
+ 	   defaultParser.fromJSON(jParser);
+	}
+	
 	public static void threadPoolBuilder(StatusService statusService,
 			LogService logService, Runnable updateStatus, List<Runnable> tasks, int numThreads)
 		{
