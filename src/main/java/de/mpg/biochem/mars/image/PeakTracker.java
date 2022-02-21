@@ -380,7 +380,8 @@ public class PeakTracker {
 			table.setValue(Peak.T, row, (double)peak.getT());
 			table.setValue(Peak.X, row, peak.getX());
 			table.setValue(Peak.Y, row, peak.getY());
-			table.setValue("Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
+			if (channelToTtoDtMap.get(channel).get(peak.getT()) != -1)
+				table.setValue("Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
 			if (verbose) {
 				for (String name : peak.getProperties().keySet())
 					table.setValue(name, row, peak.getProperties().get(name));
