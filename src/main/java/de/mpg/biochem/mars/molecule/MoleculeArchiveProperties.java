@@ -369,8 +369,12 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * should be generated uniquely from the image or code
 	 * that rendered the image.
 	 * 
+	 * The imageData should include everything needed in the src. This
+	 * includes 'data:image/png;base64, ' to ensure it is always opened
+	 * as the correct type.
+	 * 
 	 * @param id Unique image id.
-	 * @param imageData Base64 encoded image string.
+	 * @param imageData The complete src string for an img.
 	 */
 	void putDocumentImage(String id, String imageData);
 	
@@ -378,7 +382,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * Get the document image with the provided id.
 	 * 
 	 * @param id the unique id for the image.
-	 * @return The string base64 encoded image.
+	 * @return The complete src string for an img.
 	 */
 	String getDocumentImage(String id);
 	
