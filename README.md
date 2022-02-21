@@ -4,7 +4,7 @@
 
 **Mars** - Molecule Archive Suite - A framework for storage and reproducible processing of single-molecule datasets.
 
-###How to install this project in your local Fiji
+### How to install this project in your local Fiji
 An ImageJ update site has been created to help with maintenance and distribution of Mars and all necessary dependencies. Follow the directions below to install Mars in your local copy of Fiji:
 1. If you haven't already, download and install Fiji from https://imagej.net/Fiji/Downloads.
 2. Open Fiji and make sure you are up-to-date by running Help>Update. Click accept changes to update to the newest versions of all components. After the update, restart Fiji.
