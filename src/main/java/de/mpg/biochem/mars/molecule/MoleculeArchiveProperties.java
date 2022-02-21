@@ -32,6 +32,7 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -327,6 +328,78 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * @param comments The comments to set.
 	 */
 	void setComments(String comments);
+	
+	/**
+	 * Add additional comments or reports as documents.
+	 * 
+	 * @param name Document name.
+	 * @param content Document content.
+	 */
+	void putDocument(String name, String content);
+	
+	
+	/**
+	 * Retrieve document.
+	 * 
+	 * @param name Document name.
+	 */
+	String getDocument(String name);
+	
+	/**
+	 * Remove document.
+	 * 
+	 * @param name Document name.
+	 */
+	void removeDocument(String name);
+	
+	/**
+	 * Remove all documents. The default comments for an archive are not removed.
+	 */
+	void removeAllDocuments();
+
+	/**
+	 * Get the names of all documents.
+	 * 
+	 * @return Set of document names.
+	 */
+	Set<String> getDocumentNames();
+	
+	/**
+	 * Save document images as base64 encoded strings. The id
+	 * should be generated uniquely from the image or code
+	 * that rendered the image.
+	 * 
+	 * @param name Unique image id.
+	 * @param content Document content.
+	 */
+	void putDocumentImage(String id, String imageData);
+	
+	/**
+	 * Get the document image with the provided id.
+	 * 
+	 * @param id the unique id for the image.
+	 * @return The string base64 encoded image.
+	 */
+	String getDocumentImage(String id);
+	
+	/**
+	 * Remove the document image with the provided id.
+	 * 
+	 * @param id the unique id for the image.
+	 */
+	void removeDocumentImage(String id);
+	
+	/**
+	 * Remove all document images.
+	 */
+	void removeAllDocumentImages();
+
+	/**
+	 * Get the set of document image ids.
+	 * 
+	 * @return Set of document image ids.
+	 */
+	Set<String> getDocumentImageIDs();
 
 	/**
 	 * Used to during merge MoleculeArchive merge events to merge the properties

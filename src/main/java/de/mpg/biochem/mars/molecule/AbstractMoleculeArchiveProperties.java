@@ -32,7 +32,11 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +46,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**
@@ -61,8 +66,11 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected AtomicInteger numMetadata;
 	protected String comments, inputSchema;
 	
+	//Additional documents
+	protected Map<String, String> documents, documentImages;
+	
 	//Format YYYY-MM-DD
-	public static final String SCHEMA = "2021-07-13";
+	public static final String SCHEMA = "2022-02-21";
 
 	// Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -83,7 +91,11 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		numberOfMolecules = new AtomicInteger(0);
 		numMetadata = new AtomicInteger(0);
 		comments = "";
-
+		
+		//Additional documents
+		documents = new LinkedHashMap<String, String>();
+		documentImages = new LinkedHashMap<String, String>();
+		
 		tagSet = ConcurrentHashMap.newKeySet();
 		positionSet = ConcurrentHashMap.newKeySet();
 		regionSet = ConcurrentHashMap.newKeySet();
@@ -256,6 +268,38 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (!comments.equals("")) jGenerator.writeStringField("comments",
 				comments);
 		}, jParser -> comments = jParser.getText());
+		
+		setJsonField("documents", jGenerator -> {
+			if (documents.size() > 0) {
+				jGenerator.writeObjectFieldStart("documents");
+				for (String name : documents.keySet()) {
+					jGenerator.writeStringField(name, documents.get(name));
+				}
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String name = jParser.getCurrentName();
+				jParser.nextToken();
+				documents.put(name, jParser.getValueAsString());
+			}
+		});
+		
+		setJsonField("documentImages", jGenerator -> {
+			if (documentImages.size() > 0) {
+				jGenerator.writeObjectFieldStart("documentImages");
+				for (String name : documentImages.keySet()) {
+					jGenerator.writeStringField(name, documentImages.get(name));
+				}
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String name = jParser.getCurrentName();
+				jParser.nextToken();
+				documentImages.put(name, jParser.getValueAsString());
+			}
+		});
 
 		/*
 		 * 
@@ -635,6 +679,50 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		synchronized (this.comments) {
 			this.comments = comments;
 		}
+	}
+	
+	public void putDocument(String name, String content) {
+		synchronized (documents) {
+			documents.put(name, content);
+		}
+	}
+	
+	public String getDocument(String name) {
+		return documents.get(name);
+	}
+	
+	public void removeDocument(String name) {
+		documents.remove(name);
+	}
+	
+	public void removeAllDocuments() {
+		documents.clear();
+	}
+
+	public Set<String> getDocumentNames() {
+		return documents.keySet();
+	}
+	
+	public void putDocumentImage(String id, String imageData) {
+		synchronized (documentImages) {
+			documentImages.put(id, imageData);
+		}
+	}
+	
+	public String getDocumentImage(String id) {
+		return documentImages.get(id);
+	}
+	
+	public void removeDocumentImage(String id) {
+		documentImages.remove(id);
+	}
+	
+	public void removeAllDocumentImages() {
+		documentImages.clear();
+	}
+
+	public Set<String> getDocumentImageIDs() {
+		return documentImages.keySet();
 	}
 
 	public void save(File directory, JsonFactory jfactory, String fileExtension)
