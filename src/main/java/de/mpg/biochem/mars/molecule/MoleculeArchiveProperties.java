@@ -32,7 +32,6 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -342,6 +341,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * Retrieve document.
 	 * 
 	 * @param name Document name.
+	 * @return Document contents.
 	 */
 	String getDocument(String name);
 	
@@ -369,8 +369,8 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * should be generated uniquely from the image or code
 	 * that rendered the image.
 	 * 
-	 * @param name Unique image id.
-	 * @param content Document content.
+	 * @param id Unique image id.
+	 * @param imageData Base64 encoded image string.
 	 */
 	void putDocumentImage(String id, String imageData);
 	
