@@ -64,13 +64,14 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 	protected AtomicInteger numberOfMolecules;
 	protected AtomicInteger numMetadata;
-	protected String comments, inputSchema;
+	protected String inputSchema;
 	
 	//Additional documents
 	protected Map<String, String> documents, documentImages;
 	
 	//Format YYYY-MM-DD
 	public static final String SCHEMA = "2022-02-21";
+	private static final String COMMENTS = "Comments";
 
 	// Sets containing global indexes for various molecule properties.
 	protected Set<String> tagSet;
@@ -90,10 +91,13 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		super();
 		numberOfMolecules = new AtomicInteger(0);
 		numMetadata = new AtomicInteger(0);
-		comments = "";
 		
 		//Additional documents
 		documents = new LinkedHashMap<String, String>();
+		
+		//Initialize default Comments
+		documents.put(COMMENTS, "");
+		
 		documentImages = new LinkedHashMap<String, String>();
 		
 		tagSet = ConcurrentHashMap.newKeySet();
@@ -265,9 +269,9 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		});
 
 		setJsonField("comments", jGenerator -> {
-			if (!comments.equals("")) jGenerator.writeStringField("comments",
-				comments);
-		}, jParser -> comments = jParser.getText());
+			if (documents.containsKey(COMMENTS) && !documents.get(COMMENTS).equals("")) jGenerator.writeStringField("comments",
+				documents.get(COMMENTS));
+		}, jParser -> documents.put(COMMENTS, jParser.getText()));
 		
 		setJsonField("documents", jGenerator -> {
 			if (documents.size() > 0) {
@@ -368,7 +372,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			}
 		});
 
-		setJsonField("Comments", null, jParser -> comments = jParser.getText());
+		setJsonField("Comments", null, jParser -> documents.put(COMMENTS, jParser.getText()));
 
 	}
 
@@ -660,15 +664,16 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Get archive comments.
 	 */
 	public String getComments() {
-		return comments;
+		return (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS) : "";
 	}
 
 	/**
 	 * Add to archive comments.
 	 */
 	public void addComment(String comment) {
-		synchronized (this.comments) {
-			this.comments += comment;
+		synchronized (this.documents) {
+			String str = (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS) : "";
+			documents.put(COMMENTS, str + comment);
 		}
 	}
 
@@ -676,8 +681,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Overwrite archive comments with new set of comments.
 	 */
 	public void setComments(String comments) {
-		synchronized (this.comments) {
-			this.comments = comments;
+		synchronized (this.documents) {
+			documents.put(COMMENTS, comments);
 		}
 	}
 	
