@@ -46,6 +46,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.util.MarsDocument;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsUtil;
 
@@ -67,7 +68,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected String inputSchema;
 	
 	//Additional documents
-	protected Map<String, String> documents, documentImages;
+	protected Map<String, MarsDocument> documents;
 	
 	//Format YYYY-MM-DD
 	public static final String SCHEMA = "2022-02-21";
@@ -93,12 +94,10 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		numMetadata = new AtomicInteger(0);
 		
 		//Additional documents
-		documents = new LinkedHashMap<String, String>();
+		documents = new LinkedHashMap<String, MarsDocument>();
 		
 		//Initialize default Comments
-		documents.put(COMMENTS, "");
-		
-		documentImages = new LinkedHashMap<String, String>();
+		documents.put(COMMENTS, new MarsDocument(COMMENTS));
 		
 		tagSet = ConcurrentHashMap.newKeySet();
 		positionSet = ConcurrentHashMap.newKeySet();
@@ -268,40 +267,20 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 				positionSet.add(jParser.getText());
 		});
 
-		setJsonField("comments", jGenerator -> {
-			if (documents.containsKey(COMMENTS) && !documents.get(COMMENTS).equals("")) jGenerator.writeStringField("comments",
-				documents.get(COMMENTS));
-		}, jParser -> documents.put(COMMENTS, jParser.getText()));
+		setJsonField("comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
 		
 		setJsonField("documents", jGenerator -> {
 			if (documents.size() > 0) {
-				jGenerator.writeObjectFieldStart("documents");
-				for (String name : documents.keySet()) {
-					jGenerator.writeStringField(name, documents.get(name));
-				}
-				jGenerator.writeEndObject();
+				jGenerator.writeArrayFieldStart("documents");
+				for (String name : documents.keySet())
+					documents.get(name).toJSON(jGenerator);
+				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String name = jParser.getCurrentName();
-				jParser.nextToken();
-				documents.put(name, jParser.getValueAsString());
-			}
-		});
-		
-		setJsonField("documentImages", jGenerator -> {
-			if (documentImages.size() > 0) {
-				jGenerator.writeObjectFieldStart("documentImages");
-				for (String name : documentImages.keySet()) {
-					jGenerator.writeStringField(name, documentImages.get(name));
-				}
-				jGenerator.writeEndObject();
-			}
-		}, jParser -> {
-			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String name = jParser.getCurrentName();
-				jParser.nextToken();
-				documentImages.put(name, jParser.getValueAsString());
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				MarsDocument document = new MarsDocument(jParser);
+				documents.put(document.getName(),
+					document);
 			}
 		});
 
@@ -372,7 +351,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			}
 		});
 
-		setJsonField("Comments", null, jParser -> documents.put(COMMENTS, jParser.getText()));
+		setJsonField("Comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
 
 	}
 
@@ -664,7 +643,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Get archive comments.
 	 */
 	public String getComments() {
-		return (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS) : "";
+		return (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS).getContent() : "";
 	}
 
 	/**
@@ -672,8 +651,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 */
 	public void addComment(String comment) {
 		synchronized (this.documents) {
-			String str = (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS) : "";
-			documents.put(COMMENTS, str + comment);
+			String str = (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS).getContent() : "";
+			documents.get(COMMENTS).setContent(str + comment);
 		}
 	}
 
@@ -682,17 +661,23 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 */
 	public void setComments(String comments) {
 		synchronized (this.documents) {
-			documents.put(COMMENTS, comments);
+			documents.put(COMMENTS, new MarsDocument(COMMENTS, comments));
 		}
 	}
 	
 	public void putDocument(String name, String content) {
 		synchronized (documents) {
-			documents.put(name, content);
+			documents.put(name, new MarsDocument(name, content));
 		}
 	}
 	
-	public String getDocument(String name) {
+	public void putDocument(MarsDocument document) {
+		synchronized (documents) {
+			documents.put(document.getName(), document);
+		}
+	}
+	
+	public MarsDocument getDocument(String name) {
 		return documents.get(name);
 	}
 	
@@ -706,28 +691,6 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 	public Set<String> getDocumentNames() {
 		return documents.keySet();
-	}
-	
-	public void putDocumentImage(String id, String imageData) {
-		synchronized (documentImages) {
-			documentImages.put(id, imageData);
-		}
-	}
-	
-	public String getDocumentImage(String id) {
-		return documentImages.get(id);
-	}
-	
-	public void removeDocumentImage(String id) {
-		documentImages.remove(id);
-	}
-	
-	public void removeAllDocumentImages() {
-		documentImages.clear();
-	}
-
-	public Set<String> getDocumentImageIDs() {
-		return documentImages.keySet();
 	}
 
 	public void save(File directory, JsonFactory jfactory, String fileExtension)

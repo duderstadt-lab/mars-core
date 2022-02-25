@@ -37,6 +37,7 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonFactory;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.util.MarsDocument;
 
 /**
  * Global properties of Molecule Archives are stored in
@@ -341,9 +342,9 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * Retrieve document.
 	 * 
 	 * @param name Document name.
-	 * @return Document contents.
+	 * @return MarsDocument.
 	 */
-	String getDocument(String name);
+	MarsDocument getDocument(String name);
 	
 	/**
 	 * Remove document.
@@ -364,46 +365,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 */
 	Set<String> getDocumentNames();
 	
-	/**
-	 * Save document images as base64 encoded strings. The id
-	 * should be generated uniquely from the image or code
-	 * that rendered the image.
-	 * 
-	 * The imageData should include everything needed in the src. This
-	 * includes 'data:image/png;base64, ' to ensure it is always opened
-	 * as the correct type.
-	 * 
-	 * @param id Unique image id.
-	 * @param imageData The complete src string for an img.
-	 */
-	void putDocumentImage(String id, String imageData);
-	
-	/**
-	 * Get the document image with the provided id.
-	 * 
-	 * @param id the unique id for the image.
-	 * @return The complete src string for an img.
-	 */
-	String getDocumentImage(String id);
-	
-	/**
-	 * Remove the document image with the provided id.
-	 * 
-	 * @param id the unique id for the image.
-	 */
-	void removeDocumentImage(String id);
-	
-	/**
-	 * Remove all document images.
-	 */
-	void removeAllDocumentImages();
-
-	/**
-	 * Get the set of document image ids.
-	 * 
-	 * @return Set of document image ids.
-	 */
-	Set<String> getDocumentImageIDs();
+	void putDocument(MarsDocument document);
 
 	/**
 	 * Used to during merge MoleculeArchive merge events to merge the properties
