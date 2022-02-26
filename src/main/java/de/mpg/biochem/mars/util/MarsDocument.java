@@ -77,9 +77,8 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 		setJsonField("media", jGenerator -> {
 			if (media.size() > 0) {
 				jGenerator.writeObjectFieldStart("media");
-				for (String id : media.keySet()) {
-					jGenerator.writeStringField(id, media.get(name));
-				}
+				for (String id : media.keySet())
+					jGenerator.writeStringField(id, media.get(id));
 				jGenerator.writeEndObject();
 			}
 		}, jParser -> {
