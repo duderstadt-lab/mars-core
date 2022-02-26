@@ -337,12 +337,18 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 */
 	void putDocument(String name, String content);
 	
+	/**
+	 * Add additional comments or reports as documents.
+	 * 
+	 * @param Document.
+	 */
+	void putDocument(MarsDocument document);
 	
 	/**
 	 * Retrieve document.
 	 * 
 	 * @param name Document name.
-	 * @return MarsDocument.
+	 * @return Document.
 	 */
 	MarsDocument getDocument(String name);
 	
@@ -364,8 +370,6 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * @return Set of document names.
 	 */
 	Set<String> getDocumentNames();
-	
-	void putDocument(MarsDocument document);
 
 	/**
 	 * Used to during merge MoleculeArchive merge events to merge the properties
