@@ -44,21 +44,16 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 {
 
 	private String name;
-	private String content;
-	private Map<String, String> media;
+	private String content = "";
+	private Map<String, String> media = new LinkedHashMap<>();
 	
 	public MarsDocument(String name) {
 		this.name = name;
-		this.content = "";
-		
-		media = new LinkedHashMap<String, String>();
 	}
 	
 	public MarsDocument(String name, String content) {
 		this.name = name;
 		this.content = content;
-		
-		media = new LinkedHashMap<String, String>();
 	}
 	
 	public MarsDocument(JsonParser jParser) throws IOException {
@@ -68,11 +63,11 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	@Override
 	protected void createIOMaps() {
 	
-		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
-			name), jParser -> name = jParser.getText());
+		setJsonField("name", jGenerator -> jGenerator.writeStringField("name", name),
+				jParser -> name = jParser.getText());
 		
-		setJsonField("content", jGenerator -> jGenerator.writeStringField("content",
-				content), jParser -> content = jParser.getText());
+		setJsonField("content", jGenerator -> jGenerator.writeStringField("content", content),
+				jParser -> content = jParser.getText());
 	
 		setJsonField("media", jGenerator -> {
 			if (media.size() > 0) {

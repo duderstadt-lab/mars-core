@@ -61,26 +61,22 @@ public abstract class AbstractJsonConvertibleRecord implements
 	JsonConvertibleRecord
 {
 
-	private LinkedHashMap<String, Predicate<JsonGenerator>> outputMap;
-	private HashMap<String, Predicate<JsonParser>> inputMap;
+	private final LinkedHashMap<String, Predicate<JsonGenerator>> outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
+	private final HashMap<String, Predicate<JsonParser>> inputMap = new HashMap<String, Predicate<JsonParser>>();
 
 	/**
 	 * IOMaps are created during the first call to toJSON or fromJSON lazily This
 	 * ensures subclasses overriding createIOMaps have been fully initialized
 	 * before the first call. If false this field triggers initialization.
 	 */
-	private boolean IOMapsInitialized;
+	private boolean IOMapsInitialized = false;
 	
 	private boolean showWarnings = true;
 
 	/**
 	 * Constructor for creating a JsonConvertiableRecord.
 	 */
-	public AbstractJsonConvertibleRecord() {
-		outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
-		inputMap = new HashMap<String, Predicate<JsonParser>>();
-		IOMapsInitialized = false;
-	}
+	public AbstractJsonConvertibleRecord() {}
 
 	/**
 	 * Stream a record to JSON. Stream a record from to a file using the

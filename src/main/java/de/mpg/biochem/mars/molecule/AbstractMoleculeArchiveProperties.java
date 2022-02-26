@@ -266,8 +266,6 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			while (jParser.nextToken() != JsonToken.END_ARRAY)
 				positionSet.add(jParser.getText());
 		});
-
-		setJsonField("comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
 		
 		setJsonField("documents", jGenerator -> {
 			if (documents.size() > 0) {
@@ -350,9 +348,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 				moleculeSegmentTableNames.add(segemntTableName);
 			}
 		});
-
+		setJsonField("comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
 		setJsonField("Comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
-
 	}
 
 	/**
