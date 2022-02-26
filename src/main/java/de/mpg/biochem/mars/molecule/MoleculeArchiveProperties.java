@@ -340,7 +340,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	/**
 	 * Add additional comments or reports as documents.
 	 * 
-	 * @param Document.
+	 * @param document Document.
 	 */
 	void putDocument(MarsDocument document);
 	
