@@ -72,15 +72,15 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 		setJsonField("media", jGenerator -> {
 			if (media.size() > 0) {
 				jGenerator.writeObjectFieldStart("media");
-				for (String id : media.keySet())
-					jGenerator.writeStringField(id, media.get(id));
+				for (String id : getMediaIDs())
+					jGenerator.writeStringField(id, getMedia(id));
 				jGenerator.writeEndObject();
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
 				String id = jParser.getCurrentName();
 				jParser.nextToken();
-				media.put(id, jParser.getValueAsString());
+				putMedia(id, jParser.getValueAsString());
 			}
 		});
 	}
@@ -122,6 +122,10 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	
 	public Set<String> getMediaIDs() {
 		return media.keySet();
+	}
+	
+	public void removeMedia(String id) {
+		media.remove(id);
 	}
 	
 	public void removeAllMedia() {
