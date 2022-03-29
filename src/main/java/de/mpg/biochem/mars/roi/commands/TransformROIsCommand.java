@@ -236,10 +236,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	//True when two regions already exist in the Roi manager based on _ suffixes existing.
 	private boolean subRegionMode = false;
 	
-	final MutableModuleItem<String> fromRegionName =
-			new DefaultMutableModuleItem<String>(this, "Transform from region", String.class);
-	final MutableModuleItem<String> toRegionName =
-			new DefaultMutableModuleItem<String>(this, "Transform to region", String.class);
+	MutableModuleItem<String> fromRegionName, toRegionName;
 	
 	private String transformFrom, transformTo;
 
@@ -266,6 +263,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 		
+		fromRegionName = new DefaultMutableModuleItem<String>(this, "Transform from region", String.class);
 		fromRegionName.setWidgetStyle("group:Output");
 		
 		subRegionMode = roisHaveSuffixes();
@@ -276,6 +274,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		}
 		getInfo().addInput(fromRegionName);
 
+		toRegionName = new DefaultMutableModuleItem<String>(this, "Transform to region", String.class);
 		toRegionName.setWidgetStyle("group:Output");
 		toRegionName.setDefaultValue("SHORT");
 		getInfo().addInput(toRegionName);
@@ -406,10 +405,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 			double[] target = new double[2];
 
-			String baseRoiName = roi.getName();
+			String originalRoiName = roi.getName();
 
 			if (!subRegionMode)
-				roi.setName(baseRoiName + "_" + transformFrom);
+				roi.setName(originalRoiName + "_" + transformFrom);
 
 			Roi newRoi = (Roi) roi.clone();
 			if (this.inverseTransform) {
@@ -418,9 +417,9 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 				transform.applyInverse(target, source);
 			} else
 				transform.apply(source, target);
-
+			
 			newRoi.setLocation(target[0], target[1]);
-			newRoi.setName(baseRoiName + "_" + transformTo);
+			newRoi.setName(originalRoiName.substring(0, originalRoiName.indexOf("_")) + "_" + transformTo);
 			newRoi.setStrokeColor(Color.CYAN.darker());
 			transformedROIs.add(newRoi);
 		}
