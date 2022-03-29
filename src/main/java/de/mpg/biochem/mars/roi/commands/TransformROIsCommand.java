@@ -397,7 +397,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
-
+		
 		for (Roi roi : originalROIs) {
 			double[] source = new double[2];
 			source[0] = roi.getFloatBounds().x;
@@ -418,8 +418,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			} else
 				transform.apply(source, target);
 			
+			String baseRoiName = (subRegionMode) ? originalRoiName.substring(0, originalRoiName.indexOf("_")) : originalRoiName;
+			
 			newRoi.setLocation(target[0], target[1]);
-			newRoi.setName(originalRoiName.substring(0, originalRoiName.indexOf("_")) + "_" + transformTo);
+			newRoi.setName(baseRoiName + "_" + transformTo);
 			newRoi.setStrokeColor(Color.CYAN.darker());
 			transformedROIs.add(newRoi);
 		}
@@ -495,11 +497,13 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 								final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
 									.getFloatBounds().y, roi.getFloatBounds().width, roi
 										.getFloatBounds().height);
+								ovalRoi.setName(roi.getName());
 								originalROIs.add(ovalRoi);
 							}
 							else {
 								final PointRoi pointRoi = new PointRoi(roi.getFloatBounds().x, roi
 									.getFloatBounds().y);
+								pointRoi.setName(roi.getName());
 								originalROIs.add(pointRoi);
 							}
 						}
