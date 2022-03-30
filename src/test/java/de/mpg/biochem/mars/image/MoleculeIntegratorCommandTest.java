@@ -49,7 +49,7 @@ import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 
-import de.mpg.biochem.mars.image.commands.MoleculeIntegratorDualCommand;
+import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
@@ -98,8 +98,8 @@ public class MoleculeIntegratorCommandTest {
 
 	@Test
 	void findPeaksCommand() {
-		final MoleculeIntegratorDualCommand moleculeIntegrator =
-			new MoleculeIntegratorDualCommand();
+		final MoleculeIntegratorMultiViewCommand moleculeIntegrator =
+			new MoleculeIntegratorMultiViewCommand();
 
 		moleculeIntegrator.setContext(context);
 

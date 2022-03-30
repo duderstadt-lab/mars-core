@@ -111,7 +111,7 @@ import ome.xml.meta.OMEXMLMetadata;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
 				label = "Molecule Integrator (dualview)", weight = 6, mnemonic = 'm') })
-public class MoleculeIntegratorDualCommand extends DynamicCommand implements
+public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implements
 	Command, Initializable
 {
 
