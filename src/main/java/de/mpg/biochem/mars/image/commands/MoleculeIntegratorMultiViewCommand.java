@@ -98,19 +98,20 @@ import ome.xml.meta.OMEXMLMetadata;
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
  * peaks for integration can be provided as OvalRois or PointRois in the
- * RoiManger with the format UID_LONG or UID_SHORT for long and short
- * wavelengths. The positions given are integrated for all T for all colors
+ * RoiManger with the format UID_REGION1, UID_REGION2, etc. for peaks in
+ * different subregions of a multiview representing different wavelengths. 
+ * The positions given are integrated for all T for all channels
  * specified to generate a SingleMoleculeArchive in which all molecule record
  * tables have columns for all integrated colors.
  * 
  * @author Karl Duderstadt
  */
-@Plugin(type = Command.class, label = "Molecule Integrator (dualview)", menu = { @Menu(
+@Plugin(type = Command.class, label = "Molecule Integrator (multiview)", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
-				label = "Molecule Integrator (dualview)", weight = 6, mnemonic = 'm') })
+				label = "Molecule Integrator (multiview)", weight = 6, mnemonic = 'm') })
 public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implements
 	Command, Initializable
 {
@@ -176,32 +177,6 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String regionGroup = "Boundaries";
-
-	@Parameter(label = "LONG X0", style = "group:Boundaries")
-	private int LONGx0 = 0;
-
-	@Parameter(label = "LONG Y0", style = "group:Boundaries")
-	private int LONGy0 = 0;
-
-	@Parameter(label = "LONG width", style = "group:Boundaries")
-	private int LONGwidth = 1024;
-
-	@Parameter(label = "LONG height", style = "group:Boundaries")
-	private int LONGheight = 500;
-
-	@Parameter(label = "SHORT X0", style = "group:Boundaries")
-	private int SHORTx0 = 0;
-
-	@Parameter(label = "SHORT Y0", style = "group:Boundaries")
-	private int SHORTy0 = 524;
-
-	@Parameter(label = "SHORT width", style = "group:Boundaries")
-	private int SHORTwidth = 1024;
-
-	@Parameter(label = "SHORT height", style = "group:Boundaries")
-	private int SHORTheight = 500;
-	
-	//Preview ??
 	
 	/**
 	 * INTEGRATION SETTINGS
@@ -231,12 +206,6 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
-
-	@Parameter(label = "FRET short wavelength name", style = "group:Output")
-	private String fretShortName = "Green";
-
-	@Parameter(label = "FRET long wavelength name", style = "group:Output")
-	private String fretLongName = "Red";
 	
 	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
@@ -250,7 +219,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	private boolean verbose = false;
 	
 	@Parameter(label = "Help",
-			description="View a web page detailing Peak Tracker options",
+			description="View a web page detailing Molecule Integrator MutliView options",
 			callback="openWebPage", persist = false)
 	private Button openWebPage;
 
@@ -275,9 +244,9 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	private OMEXMLMetadata omexmlMetadata;
 
 	private List<MutableModuleItem<String>> channelColors;
-
-	private List<String> channelColorOptions = new ArrayList<String>(Arrays
-		.asList("Do not integrate", "Both", "Short", "Long"));
+	private List<String> regionNames;
+	private Map<String, MutableModuleItem<Integer>> regionBoundaryInputItems = new HashMap<String, MutableModuleItem<Integer>>();
+	private Map<String, Interval> regionIntervals = new HashMap<String, Interval>();
 
 	@Override
 	public void initialize() {
@@ -298,16 +267,31 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 					"roiCount", String.class);
 			
 			Roi[] roiArray = roiManager.getRoisAsArray();
-			int longCount = 0;
-			int shortCount = 0;
-			for (Roi item : roiArray) {
-				if (item.getName().endsWith("_LONG"))
-					longCount++;
-				else if (item.getName().endsWith("_SHORT"))
-					shortCount++;
+			regionNames = getSubRegionNames();
+			
+			Map<String, Integer> roiCountMap = new HashMap<String, Integer>();
+			regionNames.forEach(name -> roiCountMap.put(name, 0));
+			for (Roi roi : roiArray) {
+				regionNames.forEach(name -> {
+					if (roi.getName().endsWith(name)) roiCountMap.put(name, roiCountMap.get(name) + 1);
+				});
 			}
 			
-			roiCountItem.setValue(this, longCount + " LONG and " + shortCount + " SHORT ROIs for integration.");
+			String regionInfo = "Discovered " + regionNames.size() + " ROI sets for integration: ";
+			for (String name : regionNames)  regionInfo += roiCountMap.get(name) + " " + name;
+			roiCountItem.setValue(this, regionInfo);
+			
+			//Add all boundary regions...
+			List<String> boundaryNames = new ArrayList<String>(Arrays.asList(" X0", " Y0", " width", " height"));
+			regionNames.forEach(region -> {
+				boundaryNames.forEach(boundaryName -> {
+					String regionBoundaryName = region + boundaryName;
+					MutableModuleItem<Integer> regionBoundary = new DefaultMutableModuleItem<Integer>(this, regionBoundaryName, Integer.class);
+					regionBoundary.setWidgetStyle("group:Boundaries");
+					regionBoundaryInputItems.put(regionBoundaryName, regionBoundary);
+					getInfo().addInput(regionBoundary);
+				});
+			});
 		}
 
 		ImgPlus<?> imp = dataset.getImgPlus();
@@ -369,30 +353,36 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 			else
 				channelNames.add(String.valueOf(cIndex));
 			
-		channelColors = new ArrayList<MutableModuleItem<String>>();
-		channelNames.forEach(name -> {
-			final MutableModuleItem<String> channelChoice =
-				new DefaultMutableModuleItem<String>(this, name, String.class);
-			channelChoice.setChoices(channelColorOptions);
-			channelChoice.setValue(this, "Do not integrate");
-			channelColors.add(channelChoice);
-			channelChoice.setWidgetStyle("group:Integration");
-			getInfo().addInput(channelChoice);
-		});
+		//Don't build channel inputs when running in a script
+		if (peakIntegrationMaps.size() == 0) {
+			List<String> channelRegionOptions = new ArrayList<String>(Arrays.asList("Do not integrate", "All"));
+			channelRegionOptions.addAll(regionNames);
+			
+			channelColors = new ArrayList<MutableModuleItem<String>>();
+			channelNames.forEach(name -> {
+				final MutableModuleItem<String> channelChoice =
+					new DefaultMutableModuleItem<String>(this, name, String.class);
+				channelChoice.setChoices(channelRegionOptions);
+				channelChoice.setValue(this, "Do not integrate");
+				channelColors.add(channelChoice);
+				channelChoice.setWidgetStyle("group:Integration");
+				getInfo().addInput(channelChoice);
+			});
+		}
 	}
 
 	@Override
 	public void run() {
-		// BUILD LOG
-		LogBuilder builder = new LogBuilder();
-		String log = LogBuilder.buildTitleBlock("Molecule Integrator (dualview)");
-		addInputParameterLog(builder);
-		log += builder.buildParameterList();
-		logService.info(log);
-
 		//If running headless make sure to initialize that is required for this command
 		if (omexmlMetadata == null)
 			initialize();
+		
+		// BUILD LOG
+		LogBuilder builder = new LogBuilder();
+		String log = LogBuilder.buildTitleBlock("Molecule Integrator (multiview)");
+		addInputParameterLog(builder);
+		log += builder.buildParameterList();
+		logService.info(log);
 		
 		String metaUID = null;
 		if (metadataUIDSource.equals("unique from dataset")) {
@@ -425,6 +415,14 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 			.getCount() > 0)
 		{
 			logService.info("Building integration lists from ROIs in RoiManager");
+			//Build regionIntervals map using regionBoundaryInputItems provided in the dialog
+			for (String region : regionNames) {
+				int x0 = regionBoundaryInputItems.get(region + " X0").getValue(this);
+				int y0 = regionBoundaryInputItems.get(region + " Y0").getValue(this);
+				int width = regionBoundaryInputItems.get(region + " width").getValue(this);
+				int height = regionBoundaryInputItems.get(region + " height").getValue(this);
+				this.setRegionBoundaries(region, x0, y0, width, height);
+			}
 			buildIntegrationLists();
 		}
 
@@ -490,23 +488,33 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 			archive.logln("   ");
 		}
 	}
+	
+	private List<String> getSubRegionNames() {
+		Set<String> uniqueSuffixes = new HashSet<String>();
+		
+		int roiNum = roiManager.getCount();
+		for (int i = 0; i < roiNum; i++) {
+			String name = roiManager.getRoi(i).getName();
+			if (name.contains("_")) uniqueSuffixes.add(name.substring(name.indexOf("_") + 1));
+		}
+		return new ArrayList<String>(uniqueSuffixes);
+	}
 
 	private void buildIntegrationLists() {
-		final Interval longInterval = getLONGInterval();
-		final Interval shortInterval = getSHORTInterval();
-
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
 
-		Map<String, Peak> shortIntegrationList = new HashMap<String, Peak>();
-		Map<String, Peak> longIntegrationList = new HashMap<String, Peak>();
-
-		// Build single T integration lists for short and long wavelengths.
+		Map<String, Map<String, Peak>> integrationListsMap = new HashMap<String, Map<String, Peak>>();
+		for (String region : regionIntervals.keySet()) integrationListsMap.put(region, new HashMap<String, Peak>());
+		
+		// Build single T integration lists for all regions.
 		for (int i = 0; i < rois.length; i++) {
-			// split UID from LONG or SHORT
-			String[] subStrings = rois[i].getName().split("_");
-			String UID = subStrings[0];
+			if (!rois[i].getName().contains("_"))
+				continue;
+			
+			String UID = rois[i].getName().substring(0, rois[i].getName().indexOf("_"));
+			String region = rois[i].getName().substring(rois[i].getName().indexOf("_") + 1);
 
 			// The pixel origin for OvalRois is at the upper left corner !!
 			// The pixel origin for PointRois is at the center !!
@@ -518,41 +526,23 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i]
 				.getFloatBounds().height / 2;
 
-			Peak peak = new Peak(x, y);
-
-			if (subStrings.length > 1) {
-				if (subStrings[1].equals("LONG") && MarsImageUtils.intervalContains(
-					longInterval, x, y)) longIntegrationList.put(UID, peak);
-				else if (subStrings[1].equals("SHORT") && MarsImageUtils
-					.intervalContains(shortInterval, x, y)) shortIntegrationList.put(UID,
-						peak);
-			}
-			else {
-				if (MarsImageUtils.intervalContains(longInterval, x, y))
-					longIntegrationList.put(UID, peak);
-				else if (MarsImageUtils.intervalContains(shortInterval, x, y))
-					shortIntegrationList.put(UID, peak);
-			}
+			if (MarsImageUtils.intervalContains(regionIntervals.get(region), x, y)) integrationListsMap.get(region).put(UID, new Peak(x, y));
 		}
 
 		// Build integration lists for all T for all colors.
 		for (int i = 0; i < channelColors.size(); i++) {
 			MutableModuleItem<String> channel = channelColors.get(i);
-			String colorOption = channel.getValue(this);
+			String regionOption = channel.getValue(this);
 
-			if (colorOption.equals("Short")) addIntegrationMap(channel.getName(), i,
-				shortInterval, createColorIntegrationList(channel.getName(),
-					shortIntegrationList));
-			else if (colorOption.equals("Long")) addIntegrationMap(channel.getName(),
-				i, longInterval, createColorIntegrationList(channel.getName(),
-					longIntegrationList));
-			else if (colorOption.equals("Both")) {
-				addIntegrationMap(channel.getName() + "_" + fretShortName, i,
-					shortInterval, createColorIntegrationList(channel.getName(),
-						shortIntegrationList));
-				addIntegrationMap(channel.getName() + "_" + fretLongName, i,
-					longInterval, createColorIntegrationList(channel.getName(),
-						longIntegrationList));
+			if (regionOption.equals("All")) {
+				for (String region : regionIntervals.keySet()) 
+					addIntegrationMap(channel.getName() + "_" + region, i,
+						regionIntervals.get(region), createColorIntegrationList(channel.getName(),
+							integrationListsMap.get(region)));
+			} else if (regionIntervals.containsKey(regionOption)) {
+				addIntegrationMap(channel.getName() + "_" + regionOption, i,
+						regionIntervals.get(regionOption), createColorIntegrationList(channel.getName(),
+							integrationListsMap.get(regionOption)));
 			}
 		}
 	}
@@ -756,16 +746,18 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
-		builder.addParameter("LONG x0", String.valueOf(LONGx0));
-		builder.addParameter("LONG y0", String.valueOf(LONGy0));
-		builder.addParameter("LONG width", String.valueOf(LONGwidth));
-		builder.addParameter("LONG height", String.valueOf(LONGheight));
-		builder.addParameter("SHORT x0", String.valueOf(SHORTx0));
-		builder.addParameter("SHORT y0", String.valueOf(SHORTy0));
-		builder.addParameter("SHORT width", String.valueOf(SHORTwidth));
-		builder.addParameter("SHORT height", String.valueOf(SHORTheight));
-		builder.addParameter("FRET short wavelength name", fretShortName);
-		builder.addParameter("FRET short wavelength name", fretLongName);
+		for (String region : regionIntervals.keySet()) {
+			String interval = "[" + regionIntervals.get(region).min(0) + " "
+					 + regionIntervals.get(region).max(0) + " "
+					 + regionIntervals.get(region).min(1) + " "
+					 + regionIntervals.get(region).min(1) + "]";
+			builder.addParameter(region + " interval", interval);
+		}	
+		if (channelColors != null)
+			for (int i = 0; i < channelColors.size(); i++) {
+				MutableModuleItem<String> channel = channelColors.get(i);
+				builder.addParameter(channel.getName() + " integration regions", channel.getValue(this));
+			}
 		if (marsOMEMetadata != null) channelColors.forEach(channel -> builder
 			.addParameter(channel.getName(), channel.getValue(this)));
 		builder.addParameter("ImageID", imageID);
@@ -818,100 +810,27 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	public int getOuterRadius() {
 		return outerRadius;
 	}
-
-	public void setLONGx0(int LONGx0) {
-		this.LONGx0 = LONGx0;
-	}
-
-	public int getLONGx0() {
-		return LONGx0;
-	}
-
-	public void setLONGy0(int LONGy0) {
-		this.LONGy0 = LONGy0;
-	}
-
-	public int getLONGy0() {
-		return LONGy0;
-	}
-
-	public void setLONGWidth(int LONGwidth) {
-		this.LONGwidth = LONGwidth;
-	}
-
-	public int getLONGWidth() {
-		return LONGwidth;
-	}
-
-	public void setLONGHeight(int LONGheight) {
-		this.LONGheight = LONGheight;
-	}
-
-	public int getLONGHeight() {
-		return LONGheight;
-	}
-
-	public Interval getLONGInterval() {
-		return Intervals.createMinMax(LONGx0, LONGy0, LONGx0 + LONGwidth - 1,
-			LONGy0 + LONGheight - 1);
-	}
-
-	public void setSHORTx0(int SHORTx0) {
-		this.SHORTx0 = SHORTx0;
-	}
-
-	public int getSHORTx0() {
-		return SHORTx0;
-	}
-
-	public void setSHORTy0(int SHORTy0) {
-		this.SHORTy0 = SHORTy0;
-	}
-
-	public int getSHORTy0() {
-		return SHORTy0;
-	}
-
-	public void setSHORTWidth(int SHORTwidth) {
-		this.SHORTwidth = SHORTwidth;
-	}
-
-	public int getSHORTWidth() {
-		return SHORTwidth;
-	}
-
-	public void setSHORTHeight(int SHORTheight) {
-		this.SHORTheight = SHORTheight;
-	}
-
-	public int getSHORTHeight() {
-		return SHORTheight;
-	}
-
-	public Interval getSHORTInterval() {
-		return Intervals.createMinMax(SHORTx0, SHORTy0, SHORTx0 + SHORTwidth - 1,
-			SHORTy0 + SHORTheight - 1);
+	
+	public void setRegionBoundaries(String name, int x0, int y0, int width, int height) {
+		regionIntervals.put(name, Intervals.createMinMax(x0, y0, x0 + width - 1,
+				y0 + height - 1));
 	}
 	
-	public void setFretShortName(String fretShortName) {
-		this.fretShortName = fretShortName;
+	public void setRegionInterval(String name, Interval interval) {
+		regionIntervals.put(name, interval);
 	}
 	
-	public String getFretShortName() {
-		return fretShortName;
+	public Map<String, Interval> getIntervals() {
+		return regionIntervals;
 	}
-	
-	public void setFretLongName(String fretLongName) {
-		this.fretLongName = fretLongName;
+
+	public Interval getInterval(String name) {
+		return regionIntervals.get(name);
 	}
-	
-	public String getFretLongName() {
-		return fretLongName;
-	}
-	
+
 	/**
 	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * Integration types are "Do not integrate", "All", or region to integrate
 	 * 
 	 * @param channel Index of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
@@ -922,7 +841,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	
 	/**
 	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * Integration types are "Do not integrate", "All", or region to integrate
 	 * 
 	 * @param channelName Name of the channel to integrate.
 	 * @param integrationType The type of integration to perform.

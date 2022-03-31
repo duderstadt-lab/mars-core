@@ -108,14 +108,8 @@ public class MoleculeIntegratorCommandTest {
 
 		moleculeIntegrator.setInnerRadius(2);
 		moleculeIntegrator.setOuterRadius(7);
-		moleculeIntegrator.setLONGx0(0);
-		moleculeIntegrator.setLONGy0(0);
-		moleculeIntegrator.setLONGWidth(50);
-		moleculeIntegrator.setLONGHeight(25);
-		moleculeIntegrator.setSHORTx0(0);
-		moleculeIntegrator.setSHORTy0(25);
-		moleculeIntegrator.setSHORTWidth(50);
-		moleculeIntegrator.setSHORTHeight(25);
+		moleculeIntegrator.setRegionBoundaries("LONG", 0, 0, 50, 25);
+		moleculeIntegrator.setRegionBoundaries("SHORT", 0, 25, 50, 25);
 		moleculeIntegrator.setMicroscope("simulated");
 
 		Map<Integer, Map<String, Peak>> longIntegrationMap = new HashMap<>();
@@ -127,7 +121,7 @@ public class MoleculeIntegratorCommandTest {
 			longIntegrationMap.put(t, peaks);
 		}
 		moleculeIntegrator.addIntegrationMap("FRET Red", 0, moleculeIntegrator
-			.getLONGInterval(), longIntegrationMap);
+				.getInterval("LONG"), longIntegrationMap);
 
 		Map<Integer, Map<String, Peak>> longIntegrationMap2 = new HashMap<>();
 		for (int t = 0; t < 50; t++) {
@@ -138,7 +132,7 @@ public class MoleculeIntegratorCommandTest {
 			longIntegrationMap2.put(t, peaks);
 		}
 		moleculeIntegrator.addIntegrationMap("Red", 2, moleculeIntegrator
-			.getLONGInterval(), longIntegrationMap2);
+			.getInterval("LONG"), longIntegrationMap2);
 
 		Map<Integer, Map<String, Peak>> shortIntegrationMap = new HashMap<>();
 		for (int t = 0; t < 50; t++) {
@@ -149,7 +143,7 @@ public class MoleculeIntegratorCommandTest {
 			shortIntegrationMap.put(t, peaks);
 		}
 		moleculeIntegrator.addIntegrationMap("FRET Green", 0, moleculeIntegrator
-			.getSHORTInterval(), shortIntegrationMap);
+			.getInterval("SHORT"), shortIntegrationMap);
 
 		Map<Integer, Map<String, Peak>> shortIntegrationMap2 = new HashMap<>();
 		for (int t = 0; t < 50; t++) {
@@ -160,7 +154,7 @@ public class MoleculeIntegratorCommandTest {
 			shortIntegrationMap2.put(t, peaks);
 		}
 		moleculeIntegrator.addIntegrationMap("Blue", 1, moleculeIntegrator
-			.getSHORTInterval(), shortIntegrationMap2);
+			.getInterval("SHORT"), shortIntegrationMap2);
 
 		// Run the Command
 		moleculeIntegrator.run();
