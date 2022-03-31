@@ -29,7 +29,6 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -71,8 +69,6 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.widget.Button;
 import org.scijava.widget.ChoiceWidget;
 
-import com.fasterxml.jackson.core.JsonParseException;
-
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
@@ -96,10 +92,10 @@ import loci.common.services.ServiceException;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
- * Command for integrating the fluorescence signal from peaks. Input - A list of
+ * Command for integrating the fluorescence signal from spot. A list of
  * peaks for integration can be provided as OvalRois or PointRois in the
  * RoiManger with the format UID_REGION1, UID_REGION2, etc. for peaks in
- * different subregions of a multiview representing different wavelengths. 
+ * different subregions of a multiview image representing different wavelengths. 
  * The positions given are integrated for all T for all channels
  * specified to generate a SingleMoleculeArchive in which all molecule record
  * tables have columns for all integrated colors.
@@ -277,8 +273,8 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 				});
 			}
 			
-			String regionInfo = "Discovered " + regionNames.size() + " ROI sets for integration: ";
-			for (String name : regionNames)  regionInfo += roiCountMap.get(name) + " " + name;
+			String regionInfo = "Discovered " + regionNames.size() + " ROI sets for integration:";
+			for (String name : regionNames)  regionInfo += " " + roiCountMap.get(name) + " " + name;
 			roiCountItem.setValue(this, regionInfo);
 			
 			//Add all boundary regions...
@@ -770,14 +766,6 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
-	
-	public void setRoiManager(RoiManager roiManager) {
-		this.roiManager = roiManager;
-	}
-	
-	public RoiManager getRoiManager() {
-		return roiManager;
-	}
 
 	public void setDataset(Dataset dataset) {
 		this.dataset = dataset;
@@ -826,28 +814,6 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand implement
 
 	public Interval getInterval(String name) {
 		return regionIntervals.get(name);
-	}
-
-	/**
-	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "All", or region to integrate
-	 * 
-	 * @param channel Index of the channel to integrate.
-	 * @param integrationType The type of integration to perform.
-	 */
-	public void setIntegrationChannel(int channel, String integrationType) {
-		channelColors.get(channel).setValue(this, integrationType);
-	}
-	
-	/**
-	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "All", or region to integrate
-	 * 
-	 * @param channelName Name of the channel to integrate.
-	 * @param integrationType The type of integration to perform.
-	 */
-	public void setIntegrationChannel(String channelName, String integrationType) {
-		channelColors.stream().filter(channelInput -> channelInput.getName().equals(channelName)).findAny().get().setValue(this, integrationType);
 	}
 	
 	public void setThreads(int nThreads) {
