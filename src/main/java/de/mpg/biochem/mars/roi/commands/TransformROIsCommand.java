@@ -145,7 +145,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
 	private String inputFigure = "TransformROIsInput.png";
 	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center")
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
 	private String imageName = "name";
 	
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:left", persist = false)
