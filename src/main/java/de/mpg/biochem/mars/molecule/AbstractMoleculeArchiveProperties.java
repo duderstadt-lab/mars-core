@@ -71,7 +71,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected Map<String, MarsDocument> documents;
 	
 	//Format YYYY-MM-DD
-	public static final String SCHEMA = "2022-02-21";
+	public static final String SCHEMA = "2022-04-11";
 	private static final String COMMENTS = "Comments";
 
 	// Sets containing global indexes for various molecule properties.

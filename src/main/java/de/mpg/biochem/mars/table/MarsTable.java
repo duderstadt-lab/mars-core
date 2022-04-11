@@ -32,6 +32,9 @@ package de.mpg.biochem.mars.table;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,6 +42,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,11 +70,18 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import com.fasterxml.jackson.dataformat.smile.SmileGenerator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.table.*;
@@ -548,26 +560,70 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			}
 			jGenerator.writeEndArray();
 			jGenerator.writeEndObject();
-
+			
+			//writeDataAsRowObjectArray(jGenerator);
+			
 			// Actual table data
-			jGenerator.writeArrayFieldStart("data");
-			for (int row = 0; row < getRowCount(); row++) {
-				jGenerator.writeStartObject();
-				for (int col = 0; col < getColumnCount(); col++) {
-					if (get(col) instanceof GenericColumn) jGenerator.writeStringField(
-						getColumnHeader(col), (String) get(col, row));
-					else if (get(col) instanceof DoubleColumn &&
-						decimalPlacePrecision != -1) jGenerator.writeNumberField(
-							getColumnHeader(col), MarsMath.round((double) get(col, row),
-								decimalPlacePrecision));
-					else if (get(col) instanceof DoubleColumn) jGenerator
-						.writeNumberField(getColumnHeader(col), (double) get(col, row));
-				}
-				jGenerator.writeEndObject();
-			}
-			jGenerator.writeEndArray();
+			if (jGenerator instanceof SmileGenerator) writeDataAsGzippedBlocks(jGenerator);
+			else writeDataAsRowObjectArray(jGenerator);
 		}
 		jGenerator.writeEndObject();
+	}
+	
+	private void writeDataAsGzippedBlocks(JsonGenerator jGenerator) throws IOException {
+		jGenerator.writeObjectFieldStart("data");
+		String blockName = "DoubleBlock,GZIP,dims=[" + stream().filter(c -> c instanceof DoubleColumn).count() + "," + getRowCount() + "]";
+		jGenerator.writeBinaryField(blockName, buildDataBlock());
+		
+		//Write GenericColumns as arrays of Strings
+		for (int i=0; i<getColumnCount(); i++)
+			if (get(i) instanceof GenericColumn) {
+				System.out.println("writting GenericColumn " + get(i).getHeader());
+				jGenerator.writeArrayFieldStart(getColumnHeader(i));
+				GenericColumn col = (GenericColumn) get(i);
+				for (int row = 0; row<getRowCount(); row++)
+					jGenerator.writeString((String) col.getValue(row));
+				jGenerator.writeEndArray();
+			}
+		jGenerator.writeEndObject();
+	}
+	
+	private byte[] buildDataBlock() throws IOException {
+		long colCount = stream().filter(c -> c instanceof DoubleColumn).count();
+		ByteBuffer byteBuffer = ByteBuffer.allocate((int)colCount*getRowCount() * 8);
+		
+		DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+		for (int i=0; i<getColumnCount(); i++)
+			if (get(i) instanceof DoubleColumn)
+				doubleBuffer.put(((DoubleColumn) get(i)).getArray(), 0, getRowCount());
+		
+		ByteArrayOutputStream out = new ByteArrayOutputStream(); 
+		GzipParameters parameters = new GzipParameters();
+		parameters.setCompressionLevel(Deflater.DEFAULT_COMPRESSION);
+		GzipCompressorOutputStream deflater = new GzipCompressorOutputStream(out, parameters);
+		deflater.write(byteBuffer.array());
+		deflater.close();
+		
+		return out.toByteArray();
+	}
+	
+	private void writeDataAsRowObjectArray(JsonGenerator jGenerator) throws IOException {
+		jGenerator.writeArrayFieldStart("data");
+		for (int row = 0; row < getRowCount(); row++) {
+			jGenerator.writeStartObject();
+			for (int col = 0; col < getColumnCount(); col++) {
+				if (get(col) instanceof GenericColumn) jGenerator.writeStringField(
+					getColumnHeader(col), (String) get(col, row));
+				else if (get(col) instanceof DoubleColumn &&
+					decimalPlacePrecision != -1) jGenerator.writeNumberField(
+						getColumnHeader(col), MarsMath.round((double) get(col, row),
+							decimalPlacePrecision));
+				else if (get(col) instanceof DoubleColumn) jGenerator
+					.writeNumberField(getColumnHeader(col), (double) get(col, row));
+			}
+			jGenerator.writeEndObject();
+		}
+		jGenerator.writeEndArray();
 	}
 
 	/**
@@ -616,48 +672,94 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 									}
 								}
 							}
-
 						}
 					}
 				}
 			}
 
 			if ("data".equals(fieldname_L1)) {
-				// First we move past array start
 				jParser.nextToken();
+				
+				if (jParser.currentToken() == JsonToken.START_ARRAY) readDataAsRowObjectArray(jParser);
+				else if (jParser.currentToken() == JsonToken.START_OBJECT) readDataBlockAndStringArrays(jParser);
+			}
+		}
+	}
+	
+	private void readDataAsRowObjectArray(JsonParser jParser) throws IOException {
+		while (jParser.nextToken() != JsonToken.END_ARRAY) {
+			appendRow();
+			int rowIndex = getRowCount() - 1;
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String colname = jParser.getCurrentName();
 
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					appendRow();
-					int rowIndex = getRowCount() - 1;
-					while (jParser.nextToken() != JsonToken.END_OBJECT) {
-						String colname = jParser.getCurrentName();
-
-						// move to value token
-						jParser.nextToken();
-						if (get(colname) instanceof DoubleColumn) {
-							if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
-								String str = jParser.getValueAsString();
-								if (Objects.equals(str, new String("Infinity"))) {
-									setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
-								}
-								else if (Objects.equals(str, new String("-Infinity"))) {
-									setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
-								}
-								else if (Objects.equals(str, new String("NaN"))) {
-									setValue(colname, rowIndex, Double.NaN);
-								}
-							}
-							else {
-								setValue(colname, rowIndex, jParser.getDoubleValue());
-							}
+				// move to value token
+				jParser.nextToken();
+				if (get(colname) instanceof DoubleColumn) {
+					if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
+						String str = jParser.getValueAsString();
+						if (Objects.equals(str, new String("Infinity"))) {
+							setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
 						}
-						else if (get(colname) instanceof GenericColumn) {
-							setValue(colname, rowIndex, jParser.getValueAsString());
+						else if (Objects.equals(str, new String("-Infinity"))) {
+							setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
+						}
+						else if (Objects.equals(str, new String("NaN"))) {
+							setValue(colname, rowIndex, Double.NaN);
 						}
 					}
+					else {
+						setValue(colname, rowIndex, jParser.getDoubleValue());
+					}
+				}
+				else if (get(colname) instanceof GenericColumn) {
+					setValue(colname, rowIndex, jParser.getValueAsString());
 				}
 			}
 		}
+	}
+	
+	private void readDataBlockAndStringArrays(JsonParser jParser) throws IOException {
+		int rows = -1;
+		while (jParser.nextToken() != JsonToken.END_OBJECT) {
+			String fieldname = jParser.getCurrentName();
+			
+			if (fieldname.startsWith("DoubleBlock,GZIP,dims=[")) {
+				String dimensions = fieldname.substring(23, fieldname.length() - 1);
+				int cols = Integer.valueOf(dimensions.substring(0, dimensions.indexOf(",")));
+				rows = Integer.valueOf(dimensions.substring(dimensions.indexOf(",") + 1, dimensions.length()));
+				
+				jParser.nextToken();
+				byte[] binaryDataBlock = jParser.getBinaryValue();
+				ByteArrayInputStream input = new ByteArrayInputStream(binaryDataBlock);
+				GzipCompressorInputStream inflater = new GzipCompressorInputStream(input);
+				DataInputStream dis = new DataInputStream(inflater);
+
+				ByteBuffer buffer = ByteBuffer.allocate(cols * rows * 8);
+				dis.readFully(buffer.array());
+				DoubleBuffer dubBuf = buffer.asDoubleBuffer();
+				List<DoubleColumn> doubleColumnList = new ArrayList<DoubleColumn>();
+				stream().filter(c -> c instanceof DoubleColumn).forEach(col -> doubleColumnList.add((DoubleColumn) col));
+				for (int col=0; col<cols; col++) {
+					double[] colData = new double[rows];
+					dubBuf.get(colData);
+					doubleColumnList.get(col).fill(colData);
+				}
+				dis.close();
+			} 
+			
+			if (hasColumn(fieldname)) {
+				GenericColumn column = (GenericColumn) get(fieldname);
+				int rowNum = 0;
+				while (jParser.nextToken() != JsonToken.END_ARRAY) {
+					column.add(jParser.getText());
+					rowNum++;
+				}
+				if (rows == -1)
+					rows = rowNum;
+			}
+		}
+		setRowCount(rows);
 	}
 
 	/**
