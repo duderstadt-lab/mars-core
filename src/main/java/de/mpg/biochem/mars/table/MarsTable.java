@@ -578,7 +578,6 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		//Write GenericColumns as arrays of Strings
 		for (int i=0; i<getColumnCount(); i++)
 			if (get(i) instanceof GenericColumn) {
-				System.out.println("writting GenericColumn " + get(i).getHeader());
 				jGenerator.writeArrayFieldStart(getColumnHeader(i));
 				GenericColumn col = (GenericColumn) get(i);
 				for (int row = 0; row<getRowCount(); row++)
