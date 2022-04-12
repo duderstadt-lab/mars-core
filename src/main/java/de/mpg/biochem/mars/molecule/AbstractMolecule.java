@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -85,7 +86,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * Segments tables resulting from change point fitting: xColumn is at index 0
 	 * yColumn is at index 1 region is at index 2
 	 */
-	private LinkedHashMap<ArrayList<String>, MarsTable> segmentTables =
+	private LinkedHashMap<List<String>, MarsTable> segmentTables =
 		new LinkedHashMap<>();
 
 	/**
@@ -157,7 +158,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 		setJsonField("segmentTables", jGenerator -> {
 			if (segmentTables.size() > 0) {
 				jGenerator.writeArrayFieldStart("segmentTables");
-				for (ArrayList<String> tableColumnNames : segmentTables.keySet()) {
+				for (List<String> tableColumnNames : segmentTables.keySet()) {
 					if (segmentTables.get(tableColumnNames).size() > 0) {
 						jGenerator.writeStartObject();
 
@@ -617,14 +618,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 
 	/**
 	 * Retrieve a segments table ({@link MarsTable}) generated using x column, y
-	 * column and region names provided in index positions 0, 1 and 2 of an
-	 * ArrayList, respectively.
+	 * column and region names provided in index positions 0, 1 and 2 of a
+	 * List, respectively.
 	 * 
 	 * @param tableColumnNames The list of x column, y column and region names.
 	 * @return The MarsTable generated using the columns specified.
 	 */
 	@Override
-	public MarsTable getSegmentsTable(ArrayList<String> tableColumnNames) {
+	public MarsTable getSegmentsTable(List<String> tableColumnNames) {
 		if (tableColumnNames.size() < 3) tableColumnNames.add("");
 		return segmentTables.get(tableColumnNames);
 	}
@@ -637,7 +638,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 *          the segment table to remove.
 	 */
 	@Override
-	public void removeSegmentsTable(ArrayList<String> tableColumnNames) {
+	public void removeSegmentsTable(List<String> tableColumnNames) {
 		segmentTables.remove(tableColumnNames);
 	}
 
@@ -679,11 +680,14 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	/**
 	 * Get the set of segment table names as lists of x and y column names.
 	 * 
-	 * @return The set of ArrayLists holding the x and y column and region names
+	 * @return The set of Lists holding the x and y column and region names
 	 *         at index positions 0, 1 and 2, respectively.
 	 */
 	@Override
-	public Set<ArrayList<String>> getSegmentsTableNames() {
+	public Set<List<String>> getSegmentsTableNames() {
+		
+		
+		
 		return segmentTables.keySet();
 	}
 	

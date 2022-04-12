@@ -477,7 +477,7 @@ public class ArchiveUtils {
 			}
 			
 			//Check and update molecule segment table headers and table title
-			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
+			for (List<String> tableColumnNames : molecule.getSegmentsTableNames()) {
 				MarsTable segmentTable = molecule.getSegmentsTable(tableColumnNames);
 				String[] segmentHeaders = segmentTable.getColumnHeadings();
 				
@@ -509,18 +509,12 @@ public class ArchiveUtils {
 			//Now we need to use oldHeaderToNewHeader to update segment table titles
 			//regions and positions... what am I forgetting??
 			
-			final List<ArrayList<String>> segmentsTableNames = new ArrayList<ArrayList<String>>();
+			final List<List<String>> segmentsTableNames = new ArrayList<List<String>>();
 			
-			for (ArrayList<String> tableColumnNames : molecule.getSegmentsTableNames()) {
-				//ArrayList<String> tableColumnNamesCopy = new ArrayList<String>();
-				//for (String name : tableColumnNames)
-				//	tableColumnNamesCopy.add(name);
-				
-				//segmentsTableNames.add(tableColumnNamesCopy);
+			for (List<String> tableColumnNames : molecule.getSegmentsTableNames()) 
 				segmentsTableNames.add(tableColumnNames);
-			}
 
-			for (ArrayList<String> tableColumnNames : segmentsTableNames) {
+			for (List<String> tableColumnNames : segmentsTableNames) {
 				MarsTable segmentsTable = molecule.getSegmentsTable(tableColumnNames);
 				
 				if (oldHeaderToNewHeader.containsKey(tableColumnNames.get(0)) || 

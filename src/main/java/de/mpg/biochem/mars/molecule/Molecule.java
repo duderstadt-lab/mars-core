@@ -29,7 +29,7 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
@@ -202,13 +202,13 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 
 	/**
 	 * Retrieve a segments table ({@link MarsTable}) generated using x column, y
-	 * column and region names provided in index positions 0, 1 and 2 of an
-	 * ArrayList, respectively.
+	 * column and region names provided in index positions 0, 1 and 2 of a
+	 * List, respectively.
 	 * 
 	 * @param tableColumnNames The list of x column, y column and region names.
 	 * @return The MarsTable generated using the columns specified.
 	 */
-	MarsTable getSegmentsTable(ArrayList<String> tableColumnNames);
+	MarsTable getSegmentsTable(List<String> tableColumnNames);
 
 	/**
 	 * Remove the segments table ({@link MarsTable}) generated using x column, y
@@ -217,7 +217,7 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 * @param tableColumnNames List of xColumn, yColumn, and Region of the segment
 	 *          table to remove.
 	 */
-	void removeSegmentsTable(ArrayList<String> tableColumnNames);
+	void removeSegmentsTable(List<String> tableColumnNames);
 
 	/**
 	 * Remove the segments table ({@link MarsTable}) generated using xColumn and y
@@ -241,10 +241,10 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	/**
 	 * /** Get the set of segment table names as lists of x and y column names.
 	 * 
-	 * @return The set of ArrayLists holding the x and y column and region names
+	 * @return The set of Lists holding the x and y column and region names
 	 *         at index positions 0, 1 and 2, respectively.
 	 */
-	Set<ArrayList<String>> getSegmentsTableNames();
+	Set<List<String>> getSegmentsTableNames();
 	
 	/**
 	 * Used to merge another molecule record into this one.
