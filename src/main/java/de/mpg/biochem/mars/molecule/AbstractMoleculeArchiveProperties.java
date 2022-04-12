@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -81,7 +82,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected Set<String> parameterSet;
 	protected Set<String> moleculeDataTableColumnSet;
 	protected Set<Integer> channelSet;
-	protected Set<ArrayList<String>> moleculeSegmentTableNames;
+	protected Set<List<String>> moleculeSegmentTableNames;
 
 	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>> parent;
 
@@ -165,12 +166,12 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (moleculeSegmentTableNames.size() > 0) {
 				jGenerator.writeFieldName("moleculeSegmentTableNames");
 				jGenerator.writeStartArray();
-				Iterator<ArrayList<String>> iterator = moleculeSegmentTableNames
+				Iterator<List<String>> iterator = moleculeSegmentTableNames
 					.iterator();
 				while (iterator.hasNext()) {
 					jGenerator.writeStartObject();
 
-					ArrayList<String> SegmentTableName = iterator.next();
+					List<String> SegmentTableName = iterator.next();
 
 					jGenerator.writeStringField("yColumnName", SegmentTableName.get(0));
 					jGenerator.writeStringField("xColumnName", SegmentTableName.get(1));
@@ -181,7 +182,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				ArrayList<String> segemntTableName = new ArrayList<String>();
+				List<String> segemntTableName = new ArrayList<String>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					// Then move past field Name - yColumnName...
 					jParser.nextToken();
@@ -299,7 +300,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 		setJsonField("MoleculeSegmentTableNames", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				ArrayList<String> segemntTableName = new ArrayList<String>();
+				List<String> segemntTableName = new ArrayList<String>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					// Then move past field Name - yColumnName...
 					jParser.nextToken();
@@ -333,7 +334,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 		setJsonField("moleculeSegmentTableNames", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				ArrayList<String> segemntTableName = new ArrayList<String>();
+				List<String> segemntTableName = new ArrayList<String>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					// Then move past field Name - yColumnName...
 					jParser.nextToken();
@@ -584,7 +585,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Add column names to the unique set of column names in use in molecule
 	 * DataTables.
 	 */
-	public void addAllColumns(ArrayList<String> columns) {
+	public void addAllColumns(List<String> columns) {
 		this.moleculeDataTableColumnSet.addAll(columns);
 	}
 
@@ -606,7 +607,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Add a segment table name to the unique set of segment table names found in
 	 * molecule records.
 	 */
-	public void addSegmentsTableName(ArrayList<String> segmentTableName) {
+	public void addSegmentsTableNames(List<String> segmentTableName) {
 		this.moleculeSegmentTableNames.add(segmentTableName);
 	}
 
@@ -615,7 +616,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * molecule records.
 	 */
 	public void addAllSegmentsTableNames(
-		Set<ArrayList<String>> segmentTableNames)
+		Set<List<String>> segmentTableNames)
 	{
 		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
@@ -624,7 +625,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Redefine the unique set of segment table names found in molecule records.
 	 */
 	public void setSegmentsTableNames(
-		Set<ArrayList<String>> moleculeSegmentTableNames)
+		Set<List<String>> moleculeSegmentTableNames)
 	{
 		this.moleculeSegmentTableNames = moleculeSegmentTableNames;
 	}
@@ -632,7 +633,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	/**
 	 * Get the unique set of segment table names found in molecule records.
 	 */
-	public Set<ArrayList<String>> getSegmentsTableNames() {
+	public Set<List<String>> getSegmentsTableNames() {
 		return moleculeSegmentTableNames;
 	}
 

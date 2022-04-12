@@ -31,7 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -262,7 +262,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * 
 	 * @param columns The list of column names to add.
 	 */
-	void addAllColumns(ArrayList<String> columns);
+	void addAllColumns(List<String> columns);
 
 	/**
 	 * Redefine the unique set of column names in use in molecule Tables.
@@ -284,7 +284,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * 
 	 * @param segmentTableName The segment table names.
 	 */
-	void addSegmentsTableName(ArrayList<String> segmentTableName);
+	void addSegmentsTableNames(List<String> segmentTableName);
 
 	/**
 	 * Add segment table names to the unique set of segment table names found in
@@ -292,21 +292,21 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * 
 	 * @param segmentTableNames The segment Table names.
 	 */
-	void addAllSegmentsTableNames(Set<ArrayList<String>> segmentTableNames);
+	void addAllSegmentsTableNames(Set<List<String>> segmentTableNames);
 
 	/**
 	 * Redefine the unique set of segment table names found in molecule records.
 	 * 
 	 * @param moleculeSegmentTableNames The molecule segment table names.
 	 */
-	void setSegmentsTableNames(Set<ArrayList<String>> moleculeSegmentTableNames);
+	void setSegmentsTableNames(Set<List<String>> moleculeSegmentTableNames);
 
 	/**
 	 * Get the unique set of segment table names found in molecule records.
 	 * 
 	 * @return The set of lists of segment table names.
 	 */
-	Set<ArrayList<String>> getSegmentsTableNames();
+	Set<List<String>> getSegmentsTableNames();
 
 	/**
 	 * Get archive comments.
