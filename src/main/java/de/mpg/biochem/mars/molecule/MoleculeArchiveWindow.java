@@ -46,13 +46,6 @@ package de.mpg.biochem.mars.molecule;
 public interface MoleculeArchiveWindow {
 
 	/**
-	 * Force the window to refresh its components. Deprecated - lock/unlock could
-	 * also be used to force a reset or type casting if needed.
-	 */
-	@Deprecated
-	public void update();
-
-	/**
 	 * This is used to report the progress for a long running task working on the
 	 * archive when its locked. This should be a value between 0 and 1 with 1
 	 * representing completion.
@@ -67,17 +60,6 @@ public interface MoleculeArchiveWindow {
 	 * @param message Message presented on the lock screen.
 	 */
 	public void updateLockMessage(String message);
-
-	/**
-	 * Add a message to the log that is presented in the background of the lock
-	 * screen. All log messages sent to the method
-	 * {@link MoleculeArchive#logln(String message) logln(String message)} are
-	 * printed to the lock screen background using this method.
-	 * 
-	 * @param message String message to add to the lock screen log background.
-	 */
-	@Deprecated
-	public void addLogMessage(String message);
 
 	/**
 	 * Add a message to the log that is presented in the background of the lock
@@ -119,11 +101,4 @@ public interface MoleculeArchiveWindow {
 	 * Unlock the MoleculeArchive window once processing is complete.
 	 */
 	public void unlock();
-
-	/**
-	 * Close the archive window. Deprecated - archive windows should be closed
-	 * directly. If this is required typecasting could be used.
-	 */
-	@Deprecated
-	public void close();
 }
