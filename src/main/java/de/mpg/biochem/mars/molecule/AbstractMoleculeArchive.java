@@ -593,11 +593,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected void createIOMaps() {
 
 		setJsonField("properties", jGenerator -> {
+			if (getWindow() != null) getWindow().logln("Saving archive properties...");
 			jGenerator.writeFieldName("properties");
 			archiveProperties.toJSON(jGenerator);
 		}, jParser -> archiveProperties.fromJSON(jParser));
 
 		setJsonField("metadata", jGenerator -> {
+			if (getWindow() != null) getWindow().logln("Saving " + getNumberOfMetadatas() + " metadata records...");
 			if (getNumberOfMetadatas() > 0) {
 				jGenerator.writeArrayFieldStart("metadata");
 				Iterator<String> iter = (virtual) ? archiveIndex.getMetadataUIDSet().iterator() : metadataMap.keySet().iterator();
@@ -611,11 +613,18 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		});
 
 		setJsonField("molecules", jGenerator -> {
+			if (getWindow() != null) getWindow().logln("Saving " + getNumberOfMolecules() + " molecule records...");
 			if (getNumberOfMolecules() > 0) {
 				jGenerator.writeArrayFieldStart("molecules");
 				Iterator<String> iterator = (virtual) ? archiveIndex.getMoleculeUIDSet().iterator() : moleculeMap.keySet().iterator();
-				while (iterator.hasNext())
-					get(iterator.next()).toJSON(jGenerator);
+				double count = 0;
+				double moleculeNumber = getNumberOfMolecules();
+				while (iterator.hasNext()) {
+					Molecule molecule = get(iterator.next());
+					molecule.toJSON(jGenerator);
+					count++;
+					if (getWindow() != null) getWindow().setProgress(count/moleculeNumber);
+				}
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
