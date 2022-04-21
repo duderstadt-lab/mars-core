@@ -750,6 +750,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			if (hasColumn(fieldname)) {
 				GenericColumn column = (GenericColumn) get(fieldname);
 				int rowNum = 0;
+				jParser.nextToken();
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
 					column.add(jParser.getText());
 					rowNum++;
