@@ -46,14 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -66,9 +58,19 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.UIService;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 @Plugin(type = Command.class, label = "Merge Archives", menu = { @Menu(

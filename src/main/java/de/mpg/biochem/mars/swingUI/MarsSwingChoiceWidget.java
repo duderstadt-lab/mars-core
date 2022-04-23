@@ -38,7 +38,8 @@ import javax.swing.JPanel;
 
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.swing.widget.*;
+import org.scijava.ui.swing.widget.SwingChoiceWidget;
+import org.scijava.ui.swing.widget.SwingInputWidget;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.InputWidget;
 import org.scijava.widget.WidgetModel;

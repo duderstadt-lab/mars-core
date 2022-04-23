@@ -39,7 +39,6 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.image.PeakShape;
 import de.mpg.biochem.mars.molecule.AbstractMolecule;
-import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.table.MarsTable;
 
 public class MartianObject extends AbstractMolecule {

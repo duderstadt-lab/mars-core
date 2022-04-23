@@ -35,9 +35,11 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.metadata.*;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
-import de.mpg.biochem.mars.molecule.commands.*;
+import de.mpg.biochem.mars.metadata.MarsOMEUtils;
+import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
+import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
 import de.mpg.biochem.mars.table.MarsTable;
 
 /**

@@ -30,7 +30,6 @@
 package de.mpg.biochem.mars.roi.commands;
 
 import java.awt.Color;
-import java.awt.Window;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -41,11 +40,36 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
-import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
+import org.scijava.ItemVisibility;
+import org.scijava.app.StatusService;
+import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
+import org.scijava.command.Previewable;
+import org.scijava.convert.ConvertService;
+import org.scijava.log.LogService;
+import org.scijava.menu.MenuConstants;
+import org.scijava.module.DefaultMutableModuleItem;
+import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.ui.DialogPrompt.MessageType;
+import org.scijava.ui.DialogPrompt.OptionType;
+import org.scijava.ui.UIService;
+import org.scijava.widget.NumberWidget;
+
+import de.mpg.biochem.mars.image.MarsImageUtils;
+import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.util.LogBuilder;
+import ij.ImagePlus;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
@@ -61,36 +85,6 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-
-import org.scijava.ItemVisibility;
-import org.scijava.app.StatusService;
-import org.scijava.command.Command;
-import org.scijava.command.DynamicCommand;
-import org.scijava.command.Previewable;
-import org.scijava.convert.ConvertService;
-import org.scijava.log.LogService;
-import org.scijava.menu.MenuConstants;
-import org.scijava.module.DefaultMutableModuleItem;
-import org.scijava.module.ModuleItem;
-import org.scijava.module.MutableModuleItem;
-import org.scijava.plugin.Menu;
-import org.scijava.plugin.Parameter;
-import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.ui.DialogPrompt.OptionType;
-import org.scijava.widget.NumberWidget;
-
-import de.mpg.biochem.mars.image.MarsImageUtils;
-import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.util.LogBuilder;
-import de.mpg.biochem.mars.util.MarsUtil;
-import ij.ImagePlus;
-import ij.gui.OvalRoi;
-import ij.gui.Overlay;
-import ij.gui.PointRoi;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
 
 @Plugin(type = Command.class, label = "Transform ROIs", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

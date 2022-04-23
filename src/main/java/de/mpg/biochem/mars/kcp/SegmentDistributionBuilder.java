@@ -42,7 +42,6 @@ import java.util.stream.IntStream;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
-import org.scijava.table.*;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.molecule.Molecule;

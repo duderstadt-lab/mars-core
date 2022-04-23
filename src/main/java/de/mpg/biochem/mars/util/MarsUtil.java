@@ -38,17 +38,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import javax.swing.JLabel;
+
+import org.scijava.app.StatusService;
+import org.scijava.log.LogService;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -56,11 +55,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
-
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 public class MarsUtil {
 	

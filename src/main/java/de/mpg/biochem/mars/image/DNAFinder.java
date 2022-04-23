@@ -32,9 +32,12 @@ package de.mpg.biochem.mars.image;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.table.DoubleColumn;
+
+import de.mpg.biochem.mars.table.MarsTable;
 import net.imagej.ops.OpService;
 import net.imglib2.Cursor;
-import net.imglib2.IterableInterval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -48,11 +51,6 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
-
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.scijava.table.DoubleColumn;
-
-import de.mpg.biochem.mars.table.MarsTable;
 
 public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 

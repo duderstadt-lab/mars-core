@@ -29,7 +29,6 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,17 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -73,8 +61,11 @@ import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsOMEChannel;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
-import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.table.*;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
@@ -88,9 +79,15 @@ import io.scif.ome.OMEMetadata;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import ome.xml.meta.OMEXMLMetadata;
-
-import java.lang.reflect.Field;
 
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of

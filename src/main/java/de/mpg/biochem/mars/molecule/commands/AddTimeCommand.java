@@ -44,7 +44,14 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.DnaMolecule;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 

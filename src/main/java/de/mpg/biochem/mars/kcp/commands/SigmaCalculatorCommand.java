@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import net.imagej.ops.Initializable;
-
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -49,10 +47,15 @@ import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.Molecule;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsRegion;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,

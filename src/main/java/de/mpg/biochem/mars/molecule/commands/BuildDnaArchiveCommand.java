@@ -31,12 +31,6 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.KDTree;
-import net.imglib2.RealLocalizable;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -51,9 +45,14 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
 
-import de.mpg.biochem.mars.image.*;
-import de.mpg.biochem.mars.metadata.*;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.image.Peak;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.molecule.DnaMolecule;
+import de.mpg.biochem.mars.molecule.DnaMoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMolecule;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -61,6 +60,11 @@ import de.mpg.biochem.mars.util.MarsMath;
 import ij.gui.Line;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.KDTree;
+import net.imglib2.RealLocalizable;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 @Plugin(type = Command.class, label = "Build DNA Archive", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

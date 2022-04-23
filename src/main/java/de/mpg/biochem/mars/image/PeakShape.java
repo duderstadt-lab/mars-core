@@ -29,7 +29,6 @@
 package de.mpg.biochem.mars.image;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;

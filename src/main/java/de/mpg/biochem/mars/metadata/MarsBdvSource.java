@@ -39,7 +39,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import net.imglib2.realtransform.AffineTransform3D;
-import ome.xml.model.primitives.NonNegativeInteger;
 
 public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	JsonConvertibleRecord

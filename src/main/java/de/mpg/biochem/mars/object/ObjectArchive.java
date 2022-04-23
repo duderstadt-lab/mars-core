@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.metadata.*;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 

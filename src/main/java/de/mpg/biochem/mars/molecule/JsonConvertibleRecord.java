@@ -35,7 +35,6 @@ import java.util.function.Predicate;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 
-import de.mpg.biochem.mars.util.MarsUtil;
 import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 
 /**

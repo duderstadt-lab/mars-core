@@ -63,10 +63,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.display.ImageDisplay;
-
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -85,6 +81,9 @@ import ij.WindowManager;
 import ij.process.ImageProcessor;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.display.ImageDisplay;
 
 /**
  * This command corrects images that have a beam profile. The command requires

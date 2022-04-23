@@ -31,7 +31,7 @@ package de.mpg.biochem.mars.kcp;
 
 import java.util.ArrayList;
 
-import de.mpg.biochem.mars.table.*;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LevenbergMarquardt;
 
 public class KCP {

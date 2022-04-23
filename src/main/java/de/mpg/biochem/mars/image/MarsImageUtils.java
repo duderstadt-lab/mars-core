@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.mpg.biochem.mars.util.Gaussian2D;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.ops.OpService;
@@ -47,27 +48,22 @@ import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealInterval;
-import net.imglib2.RealRandomAccess;
-import net.imglib2.img.Img;
-import net.imglib2.img.ImgFactory;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.img.Img;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.Masks;
 import net.imglib2.roi.RealMask;
 import net.imglib2.roi.RealMaskRealInterval;
 import net.imglib2.roi.Regions;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.RandomAccessibleOnRealRandomAccessible;
-
-import de.mpg.biochem.mars.util.Gaussian2D;
+import net.imglib2.view.Views;
 
 /**
  * Common utility functions for DoG filtering, peak finding, peak fitting and

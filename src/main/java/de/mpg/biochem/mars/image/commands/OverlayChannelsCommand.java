@@ -35,18 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.IntStream;
 
-import net.imagej.DatasetService;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.realtransform.*;
-import net.imglib2.realtransform.AffineTransform2D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.view.*;
-
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -66,6 +54,17 @@ import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import net.imagej.DatasetService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 @Plugin(type = Command.class, label = "Overlay Channels", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

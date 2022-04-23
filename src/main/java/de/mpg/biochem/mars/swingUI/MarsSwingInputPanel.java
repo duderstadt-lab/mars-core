@@ -36,9 +36,11 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.util.ArrayList;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -47,21 +49,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.scijava.ItemVisibility;
 import org.scijava.widget.AbstractInputPanel;
 import org.scijava.widget.InputPanel;
 import org.scijava.widget.InputWidget;
 import org.scijava.widget.WidgetModel;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.net.URL;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Swing implementation of {@link InputPanel}.

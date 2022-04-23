@@ -39,16 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
-import net.imagej.ImageJService;
-
 import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
@@ -61,7 +51,16 @@ import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
 import de.mpg.biochem.mars.metadata.MarsMetadata;
+import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)

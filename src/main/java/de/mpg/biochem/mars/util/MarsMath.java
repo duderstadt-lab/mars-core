@@ -32,10 +32,10 @@ package de.mpg.biochem.mars.util;
 import java.math.BigInteger;
 import java.util.UUID;
 
+import org.decimal4j.util.DoubleRounder;
+
 import com.chrylis.codec.base58.Base58Codec;
 import com.chrylis.codec.base58.Base58UUID;
-
-import org.decimal4j.util.DoubleRounder;
 
 //A collection of useful utility math functions used multiple times throughout MARS.
 public class MarsMath {

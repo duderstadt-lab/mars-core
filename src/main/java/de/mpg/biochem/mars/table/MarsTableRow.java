@@ -34,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.scijava.table.*;
+import org.scijava.table.Column;
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 
 public class MarsTableRow implements Iterator<MarsTableRow> {
 

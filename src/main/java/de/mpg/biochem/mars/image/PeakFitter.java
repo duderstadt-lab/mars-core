@@ -59,12 +59,11 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.mpg.biochem.mars.util.LevenbergMarquardt;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-
-import de.mpg.biochem.mars.util.LevenbergMarquardt;
 
 /**
  * The PeakFitter determines the subpixel location of peaks with a symmetric

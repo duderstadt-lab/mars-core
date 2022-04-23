@@ -31,8 +31,6 @@ package de.mpg.biochem.mars.table.commands;
 
 import java.util.stream.Collectors;
 
-import net.imagej.ops.Initializable;
-
 import org.scijava.ItemIO;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -46,6 +44,7 @@ import org.scijava.table.Table;
 import org.scijava.table.TableDisplay;
 
 import de.mpg.biochem.mars.table.MarsTable;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Import TableDisplay", menu = { @Menu(
 		label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

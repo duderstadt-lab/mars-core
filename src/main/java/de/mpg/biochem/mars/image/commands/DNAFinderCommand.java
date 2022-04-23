@@ -42,26 +42,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.IntStream;
 
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
-
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.roi.IterableRegion;
-import net.imglib2.roi.RealMask;
-import net.imglib2.roi.Regions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BoolType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -86,7 +69,9 @@ import org.scijava.widget.Button;
 import org.scijava.widget.ChoiceWidget;
 import org.scijava.widget.NumberWidget;
 
-import de.mpg.biochem.mars.image.*;
+import de.mpg.biochem.mars.image.DNAFinder;
+import de.mpg.biochem.mars.image.DNASegment;
+import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.LogBuilder;
@@ -97,6 +82,18 @@ import ij.gui.Line;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
 
 /**
  * Finds the location of vertically aligned DNA molecules within the specified

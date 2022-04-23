@@ -44,10 +44,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
 import org.apache.commons.io.FileUtils;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -61,8 +57,15 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.UIService;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.util.LogBuilder;
 
 @Plugin(type = Command.class, label = "Merge Virtual Stores", menu = { @Menu(

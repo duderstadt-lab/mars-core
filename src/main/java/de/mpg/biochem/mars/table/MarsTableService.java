@@ -29,14 +29,10 @@
 
 package de.mpg.biochem.mars.table;
 
-import java.nio.charset.*;
-import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import net.imagej.ImageJService;
 
 import org.scijava.display.DisplayService;
 import org.scijava.event.EventService;
@@ -46,12 +42,12 @@ import org.scijava.plugin.AbstractPTService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
-import org.scijava.service.*;
 import org.scijava.service.Service;
-import org.scijava.table.*;
+import org.scijava.table.DoubleColumn;
 import org.scijava.ui.UIService;
 
 import ij.measure.ResultsTable;
+import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)

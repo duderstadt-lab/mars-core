@@ -31,8 +31,6 @@ package de.mpg.biochem.mars.table.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
-
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -44,6 +42,7 @@ import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Sort", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

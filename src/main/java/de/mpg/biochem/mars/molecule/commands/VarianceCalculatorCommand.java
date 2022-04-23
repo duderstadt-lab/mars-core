@@ -31,8 +31,6 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
-
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -52,6 +50,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.util.LogBuilder;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Variance Calculator", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

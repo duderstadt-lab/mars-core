@@ -37,14 +37,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import net.imagej.Dataset;
-import net.imagej.axis.Axes;
-
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
+import net.imagej.Dataset;
+import net.imagej.axis.Axes;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;

@@ -29,9 +29,6 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import java.util.HashMap;
-
-import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -51,8 +48,6 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.*;
-import de.mpg.biochem.mars.util.LogBuilder;
 
 @Plugin(type = Command.class, label = "Drift Corrector", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

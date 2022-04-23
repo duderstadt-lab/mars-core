@@ -32,12 +32,10 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +46,6 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.util.MarsDocument;
-import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsUtil;
 
 /**

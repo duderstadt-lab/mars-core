@@ -29,16 +29,10 @@
 
 package de.mpg.biochem.mars.image.commands;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,32 +42,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.IntStream;
 
-import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
-
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.roi.IterableRegion;
-import net.imglib2.roi.RealMask;
-import net.imglib2.roi.Regions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BoolType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -107,13 +78,27 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsUtil;
 import ij.ImagePlus;
-import ij.WindowManager;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatPolygon;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.roi.Regions;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 @Plugin(type = Command.class, label = "Peak Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

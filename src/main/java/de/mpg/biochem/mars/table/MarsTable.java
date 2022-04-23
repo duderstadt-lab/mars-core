@@ -60,6 +60,23 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.Deflater;
+
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.app.StatusService;
+import org.scijava.plugin.Parameter;
+import org.scijava.table.AbstractTable;
+import org.scijava.table.Column;
+import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
+import org.scijava.table.GenericTable;
+import org.scijava.table.Table;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -71,20 +88,6 @@ import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileGenerator;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipParameters;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
-import org.scijava.app.StatusService;
-import org.scijava.plugin.Parameter;
-import org.scijava.table.*;
 
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 import de.mpg.biochem.mars.util.MarsMath;

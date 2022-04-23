@@ -31,8 +31,6 @@ package de.mpg.biochem.mars.table.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
-
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
@@ -47,6 +45,7 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Filter", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

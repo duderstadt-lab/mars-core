@@ -55,8 +55,11 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import org.scijava.Context;
+import org.scijava.app.StatusService;
+import org.scijava.table.DoubleColumn;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -65,14 +68,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.*;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.google.common.collect.ImmutableList;
 
-import org.scijava.Context;
-import org.scijava.app.StatusService;
-import org.scijava.table.*;
-
-import de.mpg.biochem.mars.image.commands.*;
+import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
+import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
@@ -84,7 +84,8 @@ import de.mpg.biochem.mars.molecule.commands.VarianceCalculatorCommand;
 import de.mpg.biochem.mars.table.GroupIndices;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.util.*;
+import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
 import ij.IJ;
 
 /**

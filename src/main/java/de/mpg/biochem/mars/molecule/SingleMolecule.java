@@ -34,8 +34,8 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
-import de.mpg.biochem.mars.metadata.*;
-import de.mpg.biochem.mars.table.*;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.table.MarsTable;
 
 /**
  * SingleMolecule records act as the storage location for an array of molecule

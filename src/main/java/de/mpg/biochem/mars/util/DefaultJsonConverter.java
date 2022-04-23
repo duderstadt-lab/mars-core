@@ -28,7 +28,7 @@
  */
 package de.mpg.biochem.mars.util;
 
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 
 public class DefaultJsonConverter extends AbstractJsonConvertibleRecord {
 	

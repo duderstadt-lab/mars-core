@@ -60,20 +60,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.ops.OpService;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
-
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -89,6 +75,19 @@ import org.scijava.widget.ChoiceWidget;
 import de.mpg.biochem.mars.image.MarsImageUtils;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsUtil;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 /**
  * This is a convenience command that calculates the gradient of an image.

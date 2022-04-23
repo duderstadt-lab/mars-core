@@ -36,6 +36,7 @@ import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
 import org.scijava.io.IOPlugin;
+import org.scijava.io.location.Location;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
 import org.scijava.options.OptionsService;
@@ -45,10 +46,8 @@ import org.scijava.script.ScriptService;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
-import org.scijava.io.location.Location;
 
 import de.mpg.biochem.mars.util.LogBuilder;
-import net.imagej.Dataset;
 
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)

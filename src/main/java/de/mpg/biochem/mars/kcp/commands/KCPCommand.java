@@ -39,8 +39,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.imagej.ops.Initializable;
-
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -51,7 +49,7 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.table.*;
+import org.scijava.table.DoubleColumn;
 import org.scijava.ui.UIService;
 import org.scijava.widget.ChoiceWidget;
 
@@ -64,8 +62,9 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIndex;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.table.*;
+import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Change Point Finder",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,

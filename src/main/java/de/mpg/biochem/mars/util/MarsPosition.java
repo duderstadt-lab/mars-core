@@ -34,7 +34,9 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.molecule.*;
+import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import de.mpg.biochem.mars.molecule.Molecule;
 
 /**
  * This class provides a simple position definition. Usually this is a position

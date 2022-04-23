@@ -42,19 +42,18 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
-import net.imglib2.KDTree;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.object.ObjectArchive;
 import de.mpg.biochem.mars.object.MartianObject;
+import de.mpg.biochem.mars.object.ObjectArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
+import net.imglib2.KDTree;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 /**
  * PeakTracker tracks the relative position of peaks over time based on peak

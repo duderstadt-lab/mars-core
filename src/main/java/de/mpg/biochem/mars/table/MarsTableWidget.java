@@ -38,7 +38,7 @@ import javax.swing.JPanel;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.swing.widget.SwingInputWidget;
-import org.scijava.widget.*;
+import org.scijava.widget.InputWidget;
 import org.scijava.widget.WidgetModel;
 
 /**

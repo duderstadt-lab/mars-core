@@ -44,8 +44,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.FileUtils;
 
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-
 @SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
 public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {

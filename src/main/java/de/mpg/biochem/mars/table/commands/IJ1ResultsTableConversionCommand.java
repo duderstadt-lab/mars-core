@@ -32,8 +32,6 @@ package de.mpg.biochem.mars.table.commands;
 import java.awt.Frame;
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
-
 import org.scijava.ItemIO;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -50,6 +48,7 @@ import ij.WindowManager;
 import ij.measure.ResultsTable;
 import ij.text.TextPanel;
 import ij.text.TextWindow;
+import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, label = "Import IJ1 ResultsTable", menu = { @Menu(
 		label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
