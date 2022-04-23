@@ -328,7 +328,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * @return ArrayList containing the column headers.
 	 */
 	public List<String> getColumnHeadingList() {
-		ArrayList<String> columns = new ArrayList<String>();
+		List<String> columns = new ArrayList<>();
 
 		for (int i = 0; i < getColumnCount(); i++) {
 			if (!columns.contains(getColumnHeader(i))) columns.add(getColumnHeader(
@@ -372,9 +372,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			DoubleColumn dCol = (DoubleColumn) get(column);
 			return dCol.copyArray();
 		}
-		else {
-			return new double[0];
-		}
+		return new double[0];
 	}
 
 	/**
@@ -386,7 +384,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 */
 	public double[] getColumnAsDoublesNoNaNs(String column) {
 		if (hasColumn(column) && get(column) instanceof DoubleColumn) {
-			ArrayList<Double> values = new ArrayList<Double>();
+			ArrayList<Double> values = new ArrayList<>();
 			DoubleColumn dCol = (DoubleColumn) get(column);
 			double[] backingArray = dCol.getArray();
 
@@ -1073,7 +1071,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		catch (ClassCastException e1) {
 			if (get(col) instanceof GenericColumn) return Double.valueOf((String) get(
 				col).get(row));
-			else return Double.NaN;
+			return Double.NaN;
 		}
 	}
 
@@ -1094,7 +1092,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		catch (ClassCastException e1) {
 			if (get(column) instanceof GenericColumn) return Double.valueOf(
 				(String) get(column).get(row));
-			else return Double.NaN;
+			return Double.NaN;
 		}
 	}
 
@@ -1113,7 +1111,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		catch (ClassCastException e1) {
 			if (get(column) instanceof DoubleColumn) return String.valueOf(get(column)
 				.get(row));
-			else return null;
+			return null;
 		}
 	}
 
@@ -1132,7 +1130,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		catch (ClassCastException e1) {
 			if (get(col) instanceof DoubleColumn) return String.valueOf(get(col,
 				row));
-			else return null;
+			return null;
 		}
 	}
 
@@ -1164,7 +1162,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			if (max < value) max = value;
 		}
 		if (max == Double.MIN_VALUE) return Double.NaN;
-		else return max;
+		return max;
 	}
 
 	/**
@@ -1194,7 +1192,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 					row)) max = getValue(maxColumn, row);
 		}
 		if (max == Double.MIN_VALUE) return Double.NaN;
-		else return max;
+		return max;
 	}
 
 	/**
@@ -1212,7 +1210,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			if (min > value) min = value;
 		}
 		if (min == Double.MAX_VALUE) return Double.NaN;
-		else return min;
+		return min;
 	}
 
 	/**
@@ -1242,7 +1240,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 					row)) min = getValue(minColumn, row);
 		}
 		if (min == Double.MAX_VALUE) return Double.NaN;
-		else return min;
+		return min;
 	}
 
 	/**
@@ -1318,7 +1316,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 */
 	public double median(String column) {
 		if (!hasColumn(column)) return Double.NaN;
-		ArrayList<Double> values = new ArrayList<Double>();
+		List<Double> values = new ArrayList<>();
 		for (int i = 0; i < getRowCount(); i++) {
 			if (Double.isNaN(getValue(column, i))) continue;
 			values.add(getValue(column, i));
@@ -1353,7 +1351,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	{
 		if (!hasColumn(medianColumn) || !hasColumn(rowSelectionColumn))
 			return Double.NaN;
-		ArrayList<Double> values = new ArrayList<Double>();
+		List<Double> values = new ArrayList<>();
 		for (int row = 0; row < getRowCount(); row++) {
 			if (Double.isNaN(getValue(medianColumn, row))) continue;
 
@@ -1418,7 +1416,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		if (!hasColumn(column)) return Double.NaN;
 		double median = median(column);
 
-		ArrayList<Double> medianDevs = new ArrayList<Double>();
+		List<Double> medianDevs = new ArrayList<>();
 
 		for (int row = 0; row < getRowCount(); row++) {
 			if (Double.isNaN(getValue(column, row))) continue;
@@ -1463,7 +1461,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		double median = median(madColumn, rowSelectionColumn, lowerBound,
 			upperBound);
 
-		ArrayList<Double> medianDevs = new ArrayList<Double>();
+		ArrayList<Double> medianDevs = new ArrayList<>();
 		for (int row = 0; row < getRowCount(); row++) {
 			if (Double.isNaN(getValue(madColumn, row))) continue;
 
@@ -1873,6 +1871,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * 
 	 * @return A copy of the MarsTable.
 	 */
+	@Override
 	public MarsTable clone() {
 		MarsTable table = new MarsTable(this.getName());
 		for (int col = 0; col < getColumnCount(); col++) {
