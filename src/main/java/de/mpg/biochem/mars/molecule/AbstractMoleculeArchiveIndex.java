@@ -102,8 +102,8 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		metadataUIDtoTagList = new ConcurrentHashMap<>();
 		moleculeUIDtoMetadataUID = new ConcurrentHashMap<>();
 
-		moleculeUIDs = new ConcurrentSkipListSet<String>();//ConcurrentHashMap.newKeySet();
-		metadataUIDs = new ConcurrentSkipListSet<String>();//ConcurrentHashMap.newKeySet();
+		moleculeUIDs = new ConcurrentSkipListSet<String>();// ConcurrentHashMap.newKeySet();
+		metadataUIDs = new ConcurrentSkipListSet<String>();// ConcurrentHashMap.newKeySet();
 	}
 
 	@Override

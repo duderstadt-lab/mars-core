@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.util;
 
 import java.io.IOException;
@@ -46,29 +47,29 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	private String name;
 	private String content = "";
 	private Map<String, String> media = new LinkedHashMap<>();
-	
+
 	public MarsDocument(String name) {
 		this.name = name;
 	}
-	
+
 	public MarsDocument(String name, String content) {
 		this.name = name;
 		this.content = content;
 	}
-	
+
 	public MarsDocument(JsonParser jParser) throws IOException {
 		fromJSON(jParser);
 	}
-	
+
 	@Override
 	protected void createIOMaps() {
-	
-		setJsonField("name", jGenerator -> jGenerator.writeStringField("name", name),
-				jParser -> name = jParser.getText());
-		
-		setJsonField("content", jGenerator -> jGenerator.writeStringField("content", content),
-				jParser -> content = jParser.getText());
-	
+
+		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
+			name), jParser -> name = jParser.getText());
+
+		setJsonField("content", jGenerator -> jGenerator.writeStringField("content",
+			content), jParser -> content = jParser.getText());
+
 		setJsonField("media", jGenerator -> {
 			if (media.size() > 0) {
 				jGenerator.writeObjectFieldStart("media");
@@ -84,7 +85,7 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 			}
 		});
 	}
-	
+
 	// Getters and Setters
 	/**
 	 * Get position name.
@@ -94,7 +95,7 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Set position name.
 	 * 
@@ -103,33 +104,32 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public String getContent() {
 		return content;
 	}
-	
+
 	public void setContent(String content) {
 		this.content = content;
 	}
-	
+
 	public void putMedia(String id, String mediaData) {
 		media.put(id, mediaData);
 	}
-	
+
 	public String getMedia(String id) {
 		return media.get(id);
 	}
-	
+
 	public Set<String> getMediaIDs() {
 		return media.keySet();
 	}
-	
+
 	public void removeMedia(String id) {
 		media.remove(id);
 	}
-	
+
 	public void removeAllMedia() {
 		media.clear();
 	}
 }
-

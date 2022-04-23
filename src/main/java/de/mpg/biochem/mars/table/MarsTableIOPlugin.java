@@ -70,7 +70,7 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 		final String ext = FileUtils.getExtension(source).toLowerCase();
 		return ext.equals("yamt");
 	}
-	
+
 	@Override
 	public boolean supportsOpen(final Location source) {
 		return supportsOpen(source.getURI().getPath());
@@ -80,7 +80,7 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
 	}
-	
+
 	@Override
 	public boolean supportsSave(final Location destination) {
 		return supportsOpen(destination);
@@ -100,7 +100,7 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 
 		return table;
 	}
-	
+
 	@Override
 	public MarsTable open(final Location source) throws IOException {
 		return open(source.getURI().getPath());
@@ -112,10 +112,10 @@ public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 	{
 		table.saveAsYAMT(destination);
 	}
-	
+
 	@Override
 	public void save(final MarsTable table, final Location destination)
-			throws IOException
+		throws IOException
 	{
 		save(table, destination.getURI().getPath());
 	}

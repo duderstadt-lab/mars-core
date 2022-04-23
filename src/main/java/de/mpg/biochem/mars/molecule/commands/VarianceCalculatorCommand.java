@@ -56,9 +56,9 @@ import net.imagej.ops.Initializable;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-				label = "Variance Calculator", weight = 11, mnemonic = 'm') })
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Variance Calculator",
+					weight = 11, mnemonic = 'm') })
 public class VarianceCalculatorCommand extends DynamicCommand implements
 	Command, Initializable
 {

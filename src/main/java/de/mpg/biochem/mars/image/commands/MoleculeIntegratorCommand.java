@@ -92,9 +92,9 @@ import ome.xml.meta.OMEXMLMetadata;
 /**
  * Command for integrating the fluorescence signal from peaks. Input - A list of
  * peaks for integration can be provided as OvalRois or PointRois in the
- * RoiManger. Names should be UIDs. The positions given are integrated for all T 
- * for all colors specified to generate a SingleMoleculeArchive in which all molecule record
- * tables have columns for all integrated colors.
+ * RoiManger. Names should be UIDs. The positions given are integrated for all T
+ * for all colors specified to generate a SingleMoleculeArchive in which all
+ * molecule record tables have columns for all integrated colors.
  * 
  * @author Karl Duderstadt
  */
@@ -131,13 +131,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
-	
+
 	/**
 	 * IMAGE
 	 */
 	@Parameter(label = "Image for integration")
 	private ImageDisplay imageDisplay;
-	
+
 	/**
 	 * ROIs
 	 */
@@ -147,23 +147,27 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	/**
 	 * INPUT SETTINGS
 	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
+		persist = false)
 	private String inputGroup = "Input";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
+		persist = false)
 	private String inputFigure = "MoleculeIntegratorInput.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String imageName = "?";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String roiCount = "No ROIs in manager!";
-	
+
 	/**
 	 * INTEGRATION SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private final String integrateGroup = "Integration";
 
@@ -172,38 +176,40 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(label = "Outer radius", style = "group:Integration")
 	private int outerRadius = 4;
-	
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
 	private String outputFigure = "SingleMoleculeArchive.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Output, align:center")
 	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
-	
+
 	@Parameter(label = "Metadata UID",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
-				"random" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output",
+		choices = { "unique from dataset", "random" })
 	private String metadataUIDSource = "random";
 
 	/**
 	 * THREADS
 	 */
-	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
+
+	@Parameter(label = "Threads", required = false, min = "1", max = "120",
+		style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
+
 	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
-	
+
 	/**
 	 * OUTPUTS
 	 */
@@ -223,7 +229,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	private MarsOMEMetadata marsOMEMetadata;
 	private OMEXMLMetadata omexmlMetadata;
-	
+
 	private List<MutableModuleItem<String>> channelColors;
 
 	private List<String> channelColorOptions = new ArrayList<String>(Arrays
@@ -236,23 +242,25 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
-		
+
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
-					"imageName", String.class);
+				"imageName", String.class);
 			imageNameItem.setValue(this, dataset.getName());
 		}
-		
+
 		if (roiManager != null) {
 			final MutableModuleItem<String> roiCountItem = getInfo().getMutableInput(
-					"roiCount", String.class);
-			roiCountItem.setValue(this, roiManager.getRoisAsArray().length + " molecules found in manager for integration.");
+				"roiCount", String.class);
+			roiCountItem.setValue(this, roiManager.getRoisAsArray().length +
+				" molecules found in manager for integration.");
 		}
 
 		ImgPlus<?> imp = dataset.getImgPlus();
 
 		if (!(imp instanceof SCIFIOImgPlus)) {
-			if (channelColors == null) logService.info("This image has not been opened with SCIFIO.");
+			if (channelColors == null) logService.info(
+				"This image has not been opened with SCIFIO.");
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
@@ -267,7 +275,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"scifio.metadata.global");
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				if (channelColors == null) logService.info("Unable to extract OME Metadata. Generating OME metadata from dimensions.");
+				if (channelColors == null) logService.info(
+					"Unable to extract OME Metadata. Generating OME metadata from dimensions.");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 						dataset);
@@ -298,14 +307,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		}
 
 		imageID = omexmlMetadata.getImageID(0);
-			
-		List<String> channelNames = new ArrayList<String>(); 
-		for (int cIndex=0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
-			if (omexmlMetadata.getChannelName(0, cIndex) != null)
-				channelNames.add(omexmlMetadata.getChannelName(0, cIndex));
-			else
-				channelNames.add(String.valueOf(cIndex));
-			
+
+		List<String> channelNames = new ArrayList<String>();
+		for (int cIndex = 0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
+			if (omexmlMetadata.getChannelName(0, cIndex) != null) channelNames.add(
+				omexmlMetadata.getChannelName(0, cIndex));
+			else channelNames.add(String.valueOf(cIndex));
+
 		channelColors = new ArrayList<MutableModuleItem<String>>();
 		channelNames.forEach(name -> {
 			final MutableModuleItem<String> channelChoice =
@@ -324,7 +332,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			image.deleteRoi();
 			image.setOverlay(null);
 		}
-		
+
 		// BUILD LOG
 		LogBuilder builder = new LogBuilder();
 		String log = LogBuilder.buildTitleBlock("Molecule Integrator");
@@ -332,28 +340,32 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		//If running headless make sure to initialize that is required for this command
-		if (omexmlMetadata == null)
-			initialize();
-		
+		// If running headless make sure to initialize that is required for this
+		// command
+		if (omexmlMetadata == null) initialize();
+
 		String metaUID = null;
 		if (metadataUIDSource.equals("unique from dataset")) {
-			String uniqueMetadataUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
+			String uniqueMetadataUID = MarsOMEUtils.generateMetadataUIDfromDataset(
+				omexmlMetadata);
 			metaUID = uniqueMetadataUID;
-			
-			if (uniqueMetadataUID == null)
-				logService.info("Could not generate unique metadata UID from this dataset. Using randomly generated metadata UID.");
-		} 
-		
+
+			if (uniqueMetadataUID == null) logService.info(
+				"Could not generate unique metadata UID from this dataset. Using randomly generated metadata UID.");
+		}
+
 		if (metaUID == null) metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-		
-		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0).getSizeC() ; cIndex++) {
+
+		for (int cIndex = 0; cIndex < marsOMEMetadata.getImage(0)
+			.getSizeC(); cIndex++)
+		{
 			if (marsOMEMetadata.getImage(0).getChannel(cIndex).getName() == null)
-				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(cIndex));
+				marsOMEMetadata.getImage(0).getChannel(cIndex).setName(String.valueOf(
+					cIndex));
 		}
-		
+
 		if (peakIntegrationMaps.size() > 0) {
 			logService.info("Using IntegrationMaps...");
 		}
@@ -372,7 +384,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
-		
+
 		List<Runnable> tasks = new ArrayList<Runnable>();
 		marsOMEMetadata.getImage(0).planes().forEach(plane -> {
 			tasks.add(() -> {
@@ -394,7 +406,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		archive = new SingleMoleculeArchive("archive.yama");
 		archive.putMetadata(marsOMEMetadata);
 
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils.buildChannelToTtoDtMap(marsOMEMetadata);
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils
+			.buildChannelToTtoDtMap(marsOMEMetadata);
 
 		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
 
@@ -402,7 +415,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			for (int t : integrationMap.getMap().keySet())
 				UIDs.addAll(integrationMap.getMap().get(t).keySet());
-		
+
 		tasks.clear();
 		for (String uid : UIDs) {
 			tasks.add(() -> buildMolecule(uid, imageIndex, channelToTtoDtMap));
@@ -411,10 +424,9 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		progressInteger.set(0);
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(progressInteger.get(), UIDs.size(),
-				"Adding molecules to archive..."), tasks ,
-			nThreads);
-		
-		//if (image != null) image.setRoi(roi);
+				"Adding molecules to archive..."), tasks, nThreads);
+
+		// if (image != null) image.setRoi(roi);
 
 		// FINISH UP
 		statusService.clearStatus();
@@ -437,7 +449,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	private void buildIntegrationLists() {
 		Interval interval = dataset;
-		
+
 		// These are assumed to be OvalRois or PointRois
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
@@ -466,8 +478,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			MutableModuleItem<String> channel = channelColors.get(i);
 			String colorOption = channel.getValue(this);
 
-			if (colorOption.equals("Integrate")) addIntegrationMap(channel.getName(), i,
-				interval, createColorIntegrationList(channel.getName(),
+			if (colorOption.equals("Integrate")) addIntegrationMap(channel.getName(),
+				i, interval, createColorIntegrationList(channel.getName(),
 					integrationList));
 		}
 	}
@@ -546,15 +558,18 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					.get(t).containsKey(UID))
 				{
 					Peak peak = integrationMap.getMap().get(t).get(UID);
-					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(integrationMap.getC())
-						.get(t));
+					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(
+						integrationMap.getC()).get(t));
 					table.setValue(name + "_X", row, peak.getX());
 					table.setValue(name + "_Y", row, peak.getY());
 					table.setValue(name, row, peak.getIntensity());
-					table.setValue(name + "_Median_Background", row, peak.getMedianBackground());
+					table.setValue(name + "_Median_Background", row, peak
+						.getMedianBackground());
 					if (verbose) {
-						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(Peak.UNCORRECTED_INTENSITY));
-						table.setValue(name + "_Mean_Background", row, peak.getMeanBackground());
+						table.setValue(name + "_Uncorrected", row, peak.getProperties().get(
+							Peak.UNCORRECTED_INTENSITY));
+						table.setValue(name + "_Mean_Background", row, peak
+							.getMeanBackground());
 					}
 				}
 				else {
@@ -677,11 +692,11 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public SingleMoleculeArchive getArchive() {
 		return archive;
 	}
-	
+
 	public void setRoiManager(RoiManager roiManager) {
 		this.roiManager = roiManager;
 	}
-	
+
 	public RoiManager getRoiManager() {
 		return roiManager;
 	}
@@ -717,7 +732,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public int getOuterRadius() {
 		return outerRadius;
 	}
-	
+
 	/**
 	 * Method used to set the channels that will be integrated in a script.
 	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
@@ -728,7 +743,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	public void setIntegrationChannel(int channel, String integrationType) {
 		channelColors.get(channel).setValue(this, integrationType);
 	}
-	
+
 	/**
 	 * Method used to set the channels that will be integrated in a script.
 	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
@@ -736,30 +751,33 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * @param channelName Name of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
 	 */
-	public void setIntegrationChannel(String channelName, String integrationType) {
-		channelColors.stream().filter(channelInput -> channelInput.getName().equals(channelName)).findAny().get().setValue(this, integrationType);
+	public void setIntegrationChannel(String channelName,
+		String integrationType)
+	{
+		channelColors.stream().filter(channelInput -> channelInput.getName().equals(
+			channelName)).findAny().get().setValue(this, integrationType);
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}
-	
+
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
 	}
-	
+
 	public boolean getVerbose() {
 		return verbose;
 	}
-	
+
 	public void setMetadataUIDSource(String metadataUIDSource) {
 		this.metadataUIDSource = metadataUIDSource;
 	}
-	
+
 	public String getMetadataUIDSource() {
 		return this.metadataUIDSource;
 	}

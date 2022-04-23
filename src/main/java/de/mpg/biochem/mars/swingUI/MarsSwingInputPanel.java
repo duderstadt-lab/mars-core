@@ -66,7 +66,7 @@ import net.miginfocom.swing.MigLayout;
 public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 
 	private JPanel uiComponent;
-	
+
 	private JTabbedPane tabbedPane;
 	private Map<String, JPanel> tabPanels;
 
@@ -77,105 +77,116 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		super.addWidget(widget);
 		final JPanel widgetPane = widget.getComponent();
 		final WidgetModel model = widget.get();
-		final String style = (model.getItem().getWidgetStyle() == null) ? "" : model.getItem().getWidgetStyle();
-		
+		final String style = (model.getItem().getWidgetStyle() == null) ? "" : model
+			.getItem().getWidgetStyle();
+
 		String groupString = "";
-		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) 
-			groupString = (String) model.getValue();
-		else if (style.contains("group:")) 
-			groupString = styleFieldValue(style, "group");
+		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style
+			.contains("groupLabel")) groupString = (String) model.getValue();
+		else if (style.contains("group:")) groupString = styleFieldValue(style,
+			"group");
 		final String group = groupString;
-		
+
 		// add widget to panel
-		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("groupLabel")) {
+		if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style
+			.contains("groupLabel"))
+		{
 			addTab(group);
-			
+
 			if (style.contains("tabbedPaneWidth:")) {
-	        	int width = Integer.valueOf(styleFieldValue(style, "tabbedPaneWidth"));
-	        	tabbedPane.setPreferredSize(new Dimension(width, tabbedPane.getPreferredSize().height));
+				int width = Integer.valueOf(styleFieldValue(style, "tabbedPaneWidth"));
+				tabbedPane.setPreferredSize(new Dimension(width, tabbedPane
+					.getPreferredSize().height));
 			}
-			
-		} else if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style.contains("image")) {
+
+		}
+		else if (model.getItem().getVisibility() == ItemVisibility.MESSAGE && style
+			.contains("image"))
+		{
 			try {
-				BufferedImage wPic = (isRetina()) ? ImageIO.read(getClass().getResource("/2x/" + (String) model.getValue())) : ImageIO.read(getClass().getResource("/1x/" + (String) model.getValue()));
+				BufferedImage wPic = (isRetina()) ? ImageIO.read(getClass().getResource(
+					"/2x/" + (String) model.getValue())) : ImageIO.read(getClass()
+						.getResource("/1x/" + (String) model.getValue()));
 				JLabel wIcon = new JLabel(new RetinaImageIcon(wPic));
 				if (tabbedPane != null && !group.equals("")) {
-					if (!tabPanels.containsKey(group))
-						addTab(group); 
-					
+					if (!tabPanels.containsKey(group)) addTab(group);
+
 					// widget occupies entire row
 					getTabPanel(group).add(wIcon, "center, span");
-				} else {
+				}
+				else {
 					// widget occupies entire row
 					getComponent().add(wIcon, "center, span");
 				}
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				// Fail silently...
 			}
-		} else if (widget.isLabeled()) {
+		}
+		else if (widget.isLabeled()) {
 			// widget is prefixed by a label
 			final JLabel l = new JLabel(model.getWidgetLabel());
 			final String desc = model.getItem().getDescription();
 			if (desc != null && !desc.isEmpty()) l.setToolTipText(desc);
 			if (tabbedPane != null && !group.equals("")) {
-				if (!tabPanels.containsKey(group))
-					addTab(group); 
-				
+				if (!tabPanels.containsKey(group)) addTab(group);
+
 				getTabPanel(group).add(l);
 				getTabPanel(group).add(widgetPane);
-			} else {
+			}
+			else {
 				getComponent().add(l);
 				getComponent().add(widgetPane);
 			}
 		}
 		else {
-			String alignent = (style.contains("align:")) ? this.styleFieldValue(style, "align") + ", " : "";
+			String alignent = (style.contains("align:")) ? this.styleFieldValue(style,
+				"align") + ", " : "";
 			if (tabbedPane != null && !group.equals("")) {
-				if (!tabPanels.containsKey(group))
-					addTab(group); 
-				
+				if (!tabPanels.containsKey(group)) addTab(group);
+
 				// widget occupies entire row
 				getTabPanel(group).add(widgetPane, alignent + "span");
-			} else {
+			}
+			else {
 				// widget occupies entire row
 				getComponent().add(widgetPane, alignent + "span");
 			}
 		}
 	}
-	
+
 	private void addTab(String name) {
 		if (tabbedPane == null) {
 			tabbedPane = new JTabbedPane();
 			getComponent().add(tabbedPane, "growx, growy, span 2");
 		}
-		
-		if (tabPanels == null)
-			tabPanels = new HashMap<String, JPanel>();
-		
+
+		if (tabPanels == null) tabPanels = new HashMap<String, JPanel>();
+
 		JPanel panel = new JPanel();
 		panel.setLayout(new MigLayout("fillx,wrap 2", "[right]10[fill,grow]"));
 		tabPanels.put(name, panel);
 		tabbedPane.add(name, panel);
 	}
-	
+
 	private JPanel getTabPanel(String name) {
-		if (tabPanels != null && tabPanels.containsKey(name))
-			return tabPanels.get(name);
-		else 
-			return null;
+		if (tabPanels != null && tabPanels.containsKey(name)) return tabPanels.get(
+			name);
+		else return null;
 	}
 
 	@Override
 	public Class<JPanel> getWidgetComponentType() {
 		return JPanel.class;
 	}
-	
+
 	private String styleFieldValue(String style, String field) {
 		String valueString = "";
 		if (style.contains(field + ":")) {
-			valueString = style.substring(style.indexOf(field + ":") + field.length() + 1);
-        	if (valueString.contains(","))
-        		valueString = valueString.substring(0, valueString.indexOf(","));
+			valueString = style.substring(style.indexOf(field + ":") + field
+				.length() + 1);
+			if (valueString.contains(",")) valueString = valueString.substring(0,
+				valueString.indexOf(","));
 		}
 		return valueString;
 	}
@@ -186,8 +197,8 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 	public JPanel getComponent() {
 		if (uiComponent == null) {
 			uiComponent = new JPanel();
-			final MigLayout layout =
-					new MigLayout("fillx,wrap 2", "[right]10[fill,grow]");
+			final MigLayout layout = new MigLayout("fillx,wrap 2",
+				"[right]10[fill,grow]");
 			uiComponent.setLayout(layout);
 		}
 		return uiComponent;
@@ -197,29 +208,29 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 	public Class<JPanel> getComponentType() {
 		return JPanel.class;
 	}
-	
+
 	private static boolean isRetina() {
 
 		boolean isRetina = false;
-		GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		GraphicsDevice graphicsDevice = GraphicsEnvironment
+			.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 
 		try {
-		        Field field = graphicsDevice.getClass().getDeclaredField("scale");
-		        if (field != null) {
-		            field.setAccessible(true);
-		            Object scale = field.get(graphicsDevice);
-		            if(scale instanceof Integer && ((Integer) scale).intValue() == 2) {
-		                isRetina = true;
-		            }
-		        }
-		    } 
-		    catch (Exception e) {
-		    }
-		    return isRetina;
+			Field field = graphicsDevice.getClass().getDeclaredField("scale");
+			if (field != null) {
+				field.setAccessible(true);
+				Object scale = field.get(graphicsDevice);
+				if (scale instanceof Integer && ((Integer) scale).intValue() == 2) {
+					isRetina = true;
+				}
+			}
+		}
+		catch (Exception e) {}
+		return isRetina;
 	}
-	
+
 	private class RetinaImageIcon extends ImageIcon {
-		
+
 		/**
 		 * 
 		 */
@@ -228,56 +239,47 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		RetinaImageIcon(BufferedImage image) {
 			super(image);
 		}
-		
+
 		@Override
-		public int getIconWidth()
-		{
-		    if(isRetina())
-		    {
-		        return super.getIconWidth()/2;
-		    }
-		    return super.getIconWidth();
+		public int getIconWidth() {
+			if (isRetina()) {
+				return super.getIconWidth() / 2;
+			}
+			return super.getIconWidth();
 		}
 
 		@Override
-		public int getIconHeight()
-		{
-		    if(isRetina())
-		    {
-		        return super.getIconHeight()/2;
-		    }
-		    return super.getIconHeight();
+		public int getIconHeight() {
+			if (isRetina()) {
+				return super.getIconHeight() / 2;
+			}
+			return super.getIconHeight();
 		}
-		
+
 		@Override
-		public synchronized void paintIcon(Component c, Graphics g, int x, int y) 
-		{
-		    ImageObserver observer = getImageObserver();
+		public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
+			ImageObserver observer = getImageObserver();
 
-		    if (observer == null) 
-		    {
-		        observer = c;
-		    }
+			if (observer == null) {
+				observer = c;
+			}
 
-		    Image image = getImage();
-		    int width = image.getWidth(observer);
-		    int height = image.getHeight(observer);
-		    final Graphics2D g2d = (Graphics2D)g.create(x, y, width, height);
+			Image image = getImage();
+			int width = image.getWidth(observer);
+			int height = image.getHeight(observer);
+			final Graphics2D g2d = (Graphics2D) g.create(x, y, width, height);
 
-		    if(isRetina())
-		    {
-		        g2d.scale(0.5, 0.5);
-		    }
-		    else
-		    {
+			if (isRetina()) {
+				g2d.scale(0.5, 0.5);
+			}
+			else {
 
-		    }
-		    g2d.drawImage(image, 0, 0, observer);
-		    g2d.scale(1, 1);
-		    g2d.dispose();
+			}
+			g2d.drawImage(image, 0, 0, observer);
+			g2d.scale(1, 1);
+			g2d.dispose();
 		}
-		
+
 	}
 
 }
-

@@ -159,23 +159,24 @@ public class MarsImageUtils {
 
 		return outerOffsetCache.get(radii);
 	}
-	
+
 	/**
 	 * This method converts from a RealMaskRealInterval to an IterablRegion
 	 * 
-	 * @param roi A RealMaskRealInterval represent the region of interest to convert.
+	 * @param roi A RealMaskRealInterval represent the region of interest to
+	 *          convert.
 	 * @return An IterableRegion.
 	 */
-	public static IterableRegion< BoolType > toIterableRegion(
- 			RealMaskRealInterval roi)
- 	{
- 		RealRandomAccessible< BoolType > rra = Masks.toRealRandomAccessible(roi);
- 		RandomAccessibleOnRealRandomAccessible< BoolType > ra = Views.raster(rra);
- 		Interval interval = Intervals.largestContainedInterval(roi);
- 		IntervalView< BoolType > rai = Views.interval(ra, interval);
- 		return Regions.iterable(rai);
- 	}
-	
+	public static IterableRegion<BoolType> toIterableRegion(
+		RealMaskRealInterval roi)
+	{
+		RealRandomAccessible<BoolType> rra = Masks.toRealRandomAccessible(roi);
+		RandomAccessibleOnRealRandomAccessible<BoolType> ra = Views.raster(rra);
+		Interval interval = Intervals.largestContainedInterval(roi);
+		IntervalView<BoolType> rai = Views.interval(ra, interval);
+		return Regions.iterable(rai);
+	}
+
 	/**
 	 * This method converts from a RealMask to an IterablRegion
 	 * 
@@ -183,24 +184,28 @@ public class MarsImageUtils {
 	 * @param image The Interval of the image.
 	 * @return An IterableRegion.
 	 */
-	public static IterableRegion< BoolType > toIterableRegion( RealMask mask, Interval image )
+	public static IterableRegion<BoolType> toIterableRegion(RealMask mask,
+		Interval image)
 	{
-		final RandomAccessible<BoolType > discreteROI = Views.raster( Masks.toRealRandomAccessible(mask) );
-		final IntervalView<BoolType> boundedDiscreteROI = Views.interval(discreteROI, image);
+		final RandomAccessible<BoolType> discreteROI = Views.raster(Masks
+			.toRealRandomAccessible(mask));
+		final IntervalView<BoolType> boundedDiscreteROI = Views.interval(
+			discreteROI, image);
 		return Regions.iterable(boundedDiscreteROI);
 	}
-	
+
 	/**
 	 * This method returned a list of peaks in the 2D image within the interval
-	 * and iterable interval specified that are above the pixel value threshold 
-	 * specified. The local maximum within the minimum distance is always chosen. 
-	 * The point in time provided is set for all peaks returned. Negative peaks 
-	 * can be located if desired. The peak search will only be performed in the 
+	 * and iterable interval specified that are above the pixel value threshold
+	 * specified. The local maximum within the minimum distance is always chosen.
+	 * The point in time provided is set for all peaks returned. Negative peaks
+	 * can be located if desired. The peak search will only be performed in the
 	 * iterable interval provided.
 	 * 
 	 * @param <T> Image type.
 	 * @param img 2D image containing peaks.
-	 * @param iterableInterval The IterableInterval to search for peaks in the image.
+	 * @param iterableInterval The IterableInterval to search for peaks in the
+	 *          image.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
 	 * @param minimumDistance The minimum allowed distance between peaks.
@@ -208,13 +213,14 @@ public class MarsImageUtils {
 	 * @return The list of peaks found.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
-		RandomAccessible<T> img, IterableInterval<T> iterableInterval, int t, double threshold,
-		int minimumDistance, boolean findNegativePeaks)
+		RandomAccessible<T> img, IterableInterval<T> iterableInterval, int t,
+		double threshold, int minimumDistance, boolean findNegativePeaks)
 	{
 		Cursor<T> cursor = iterableInterval.cursor();
-		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance, findNegativePeaks);
+		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance,
+			findNegativePeaks);
 	}
-	
+
 	/**
 	 * This method returned a list of peaks in the 2D image within the interval
 	 * specified that are above the pixel value threshold specified. The local
@@ -236,7 +242,8 @@ public class MarsImageUtils {
 		int minimumDistance, boolean findNegativePeaks)
 	{
 		Cursor<T> cursor = Views.interval(img, interval).cursor();
-		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance, findNegativePeaks);
+		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance,
+			findNegativePeaks);
 	}
 
 	/**
@@ -312,8 +319,8 @@ public class MarsImageUtils {
 		List<PeakPixel> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
 
 		// Allows for fast search of nearest peaks...
-		KDTree<PeakPixel> possiblePeakTree = new KDTree<PeakPixel>(KDTreePossiblePeaks,
-			KDTreePossiblePeaks);
+		KDTree<PeakPixel> possiblePeakTree = new KDTree<PeakPixel>(
+			KDTreePossiblePeaks, KDTreePossiblePeaks);
 
 		RadiusNeighborSearchOnKDTree<PeakPixel> radiusSearch =
 			new RadiusNeighborSearchOnKDTree<PeakPixel>(possiblePeakTree);
@@ -330,9 +337,8 @@ public class MarsImageUtils {
 		// That means if we setNotValid in one it is changing the same object in
 		// another that is required for the stuff below to work.
 		for (int i = possiblePeaks.size() - 1; i >= 0; i--) {
-			if (Thread.currentThread().isInterrupted())
-				break;
-			
+			if (Thread.currentThread().isInterrupted()) break;
+
 			PeakPixel peakPixel = possiblePeaks.get(i);
 			if (peakPixel.valid) {
 				finalPeaks.add(new Peak(peakPixel.x, peakPixel.y, t));
@@ -346,10 +352,10 @@ public class MarsImageUtils {
 				}
 			}
 		}
-		
+
 		possiblePeaks.clear();
 		KDTreePossiblePeaks.clear();
-			
+
 		return finalPeaks;
 	}
 
@@ -394,13 +400,13 @@ public class MarsImageUtils {
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param radius The radius of the square region of pixels to use for
-	 *          fitting.
+	 * @param radius The radius of the square region of pixels to use for fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
 	 * @param RsquaredMin The mininmum allowed R-squared value below which fits
 	 *          are rejected.
-	 * @return The list of peaks after fitting with those having rejected fits removed.
+	 * @return The list of peaks after fitting with those having rejected fits
+	 *         removed.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -418,9 +424,8 @@ public class MarsImageUtils {
 		RandomAccess<T> ra = rae.randomAccess();
 
 		for (Peak peak : peaks) {
-			
-			if (Thread.currentThread().isInterrupted())
-				break;
+
+			if (Thread.currentThread().isInterrupted()) break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
 				(int) (peak.getY() - radius), fitWidth, fitWidth);
@@ -473,12 +478,12 @@ public class MarsImageUtils {
 	 * @param img 2D image containing peaks.
 	 * @param interval The interval to use for peak fitting.
 	 * @param peaks The list of Peaks to fit with subpixel accuracy.
-	 * @param radius The radius of the square region of pixels to use for
-	 *          fitting.
+	 * @param radius The radius of the square region of pixels to use for fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param fitRegionThreshold The threshold pixel value for the region to fit.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
-	 * @return The list of peaks after fitting with those having rejected fits removed.
+	 * @return The list of peaks after fitting with those having rejected fits
+	 *         removed.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> fitPeaks(
 		RandomAccessible<T> img, Interval interval, List<Peak> peaks, int radius,
@@ -495,9 +500,8 @@ public class MarsImageUtils {
 			interval));
 
 		for (Peak peak : peaks) {
-			
-			if (Thread.currentThread().isInterrupted())
-				break;
+
+			if (Thread.currentThread().isInterrupted()) break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
 				(int) (peak.getY() - radius), fitWidth, fitWidth);
@@ -555,10 +559,11 @@ public class MarsImageUtils {
 		int x2 = (int) (gauss.x + radius);
 		int y1 = (int) (gauss.y - radius);
 		int y2 = (int) (gauss.y + radius);
-		
-		//Very very bad fits can go to the max integer value in which case we return 0..
-		if (x1 == Integer.MAX_VALUE || x2 == Integer.MAX_VALUE || y1 == Integer.MAX_VALUE || y2 == Integer.MAX_VALUE)
-			return 0;
+
+		// Very very bad fits can go to the max integer value in which case we
+		// return 0..
+		if (x1 == Integer.MAX_VALUE || x2 == Integer.MAX_VALUE ||
+			y1 == Integer.MAX_VALUE || y2 == Integer.MAX_VALUE) return 0;
 
 		for (int y = y1; y <= y2; y++) {
 			for (int x = x1; x <= x2; x++) {
@@ -637,9 +642,8 @@ public class MarsImageUtils {
 		// That means if we setNotValid in one it is changing the same object in
 		// another that is required for the stuff below to work.
 		for (int i = 0; i < peaks.size(); i++) {
-			if (Thread.currentThread().isInterrupted())
-				break;
-			
+			if (Thread.currentThread().isInterrupted()) break;
+
 			Peak peak = peaks.get(i);
 			if (peak.isValid()) {
 				finalPeaks.add(peak);
@@ -655,7 +659,7 @@ public class MarsImageUtils {
 		}
 		return finalPeaks;
 	}
-	
+
 	/**
 	 * This method integrates the intensity of peaks in the 2D image provided. The
 	 * interval given is mirrored at the edges for pixel values that lie outside
@@ -707,9 +711,8 @@ public class MarsImageUtils {
 		List<int[]> outerOffsets = outerOffets(innerRadius, outerRadius);
 
 		for (Peak peak : peaks) {
-			if (Thread.currentThread().isInterrupted())
-				break;
-			
+			if (Thread.currentThread().isInterrupted()) break;
+
 			// Type casting from double to int rounds down always, so we have to add
 			// 0.5 offset to be correct.
 			int x = (int) (peak.getX() + 0.5);
@@ -744,10 +747,12 @@ public class MarsImageUtils {
 						(double) outerPixelValues.get(outerPixelValues.size() / 2 - 1)) / 2;
 				else outerMedian = (double) outerPixelValues.get(outerPixelValues
 					.size() / 2);
-				
+
 				if (verbose) {
 					peak.setProperty(Peak.UNCORRECTED_INTENSITY, intensity);
-					peak.setProperty(Peak.MEAN_BACKGROUND, outerPixelValues.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN) * innerOffsets.size());
+					peak.setProperty(Peak.MEAN_BACKGROUND, outerPixelValues.stream()
+						.mapToDouble(Double::doubleValue).average().orElse(Double.NaN) *
+						innerOffsets.size());
 				}
 
 				double medianBackground = outerMedian * innerOffsets.size();

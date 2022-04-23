@@ -58,85 +58,91 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
 
 public class MarsUtil {
-	
+
 	public static JsonFactory jfactory;
-	
+
 	public static synchronized JsonFactory getJFactory() {
-		if (jfactory == null) 
-			jfactory = new JsonFactory();
-		
+		if (jfactory == null) jfactory = new JsonFactory();
+
 		return jfactory;
 	}
-	
-	public static void readJsonObject(JsonParser jParser, JsonConvertibleRecord record, String... objects) throws IOException {
-	   DefaultJsonConverter defaultParser = new DefaultJsonConverter();
-       defaultParser.setShowWarnings(false);
-       if (objects.length == 1)
-    	   defaultParser.setJsonField(objects[0], null, parser -> record.fromJSON(parser));
-       else {
-    	   String[] remainingObjects = new String[objects.length - 1];
-    	   for (int i = 0; i < objects.length - 1; i++)
-    		   remainingObjects[i] = objects[i + 1];
-    	   defaultParser.setJsonField(objects[0], null, parser -> readJsonObject(parser, record, remainingObjects));
-       }
- 	   defaultParser.fromJSON(jParser);
+
+	public static void readJsonObject(JsonParser jParser,
+		JsonConvertibleRecord record, String... objects) throws IOException
+	{
+		DefaultJsonConverter defaultParser = new DefaultJsonConverter();
+		defaultParser.setShowWarnings(false);
+		if (objects.length == 1) defaultParser.setJsonField(objects[0], null,
+			parser -> record.fromJSON(parser));
+		else {
+			String[] remainingObjects = new String[objects.length - 1];
+			for (int i = 0; i < objects.length - 1; i++)
+				remainingObjects[i] = objects[i + 1];
+			defaultParser.setJsonField(objects[0], null, parser -> readJsonObject(
+				parser, record, remainingObjects));
+		}
+		defaultParser.fromJSON(jParser);
 	}
-	
+
 	public static void threadPoolBuilder(StatusService statusService,
-			LogService logService, Runnable updateStatus, List<Runnable> tasks, int numThreads)
-		{
+		LogService logService, Runnable updateStatus, List<Runnable> tasks,
+		int numThreads)
+	{
 
-			final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-			
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+		final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 
-			try {
-				Thread progressThread = new Thread() {
+		ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
 
-					public synchronized void run() {
-						try {
-							while (progressUpdating.get()) {
-								Thread.sleep(100);
-								updateStatus.run();
-							}
-						}
-						catch (Exception e) {
-							e.printStackTrace();
+		try {
+			Thread progressThread = new Thread() {
+
+				public synchronized void run() {
+					try {
+						while (progressUpdating.get()) {
+							Thread.sleep(100);
+							updateStatus.run();
 						}
 					}
-				};
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
 
-				progressThread.start();
-				
-				tasks.forEach(task -> threadPool.submit(task));
-				threadPool.shutdown();
-				threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			progressThread.start();
 
-				progressUpdating.set(false);
+			tasks.forEach(task -> threadPool.submit(task));
+			threadPool.shutdown();
+			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
-			}
-			catch (InterruptedException e) {
-				// handle exceptions
-				e.printStackTrace();
-				logService.info(LogBuilder.endBlock(false));
-			}
-			finally {
-				statusService.showProgress(100, 100);
-				statusService.showStatus("Done!");
-			}
+			progressUpdating.set(false);
+
 		}
-	
-	public static void updateJLabelTextInContainer(Container parent, String searchForPrefix, String newText) {
-	    for (Component c : parent.getComponents())
-	    {
-	        if (c instanceof JLabel && ((JLabel) c) != null && ((JLabel) c).getText() != null) {
-	        	if(((JLabel) c).getText().startsWith(searchForPrefix))
-	        		((JLabel) c).setText(newText);
-	        }
+		catch (InterruptedException e) {
+			// handle exceptions
+			e.printStackTrace();
+			logService.info(LogBuilder.endBlock(false));
+		}
+		finally {
+			statusService.showProgress(100, 100);
+			statusService.showStatus("Done!");
+		}
+	}
 
-	        if (c instanceof Container)
-	        	updateJLabelTextInContainer((Container)c, searchForPrefix, newText);
-	    }
+	public static void updateJLabelTextInContainer(Container parent,
+		String searchForPrefix, String newText)
+	{
+		for (Component c : parent.getComponents()) {
+			if (c instanceof JLabel && ((JLabel) c) != null && ((JLabel) c)
+				.getText() != null)
+			{
+				if (((JLabel) c).getText().startsWith(searchForPrefix)) ((JLabel) c)
+					.setText(newText);
+			}
+
+			if (c instanceof Container) updateJLabelTextInContainer((Container) c,
+				searchForPrefix, newText);
+		}
 	}
 
 	/**

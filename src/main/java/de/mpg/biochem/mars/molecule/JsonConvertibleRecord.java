@@ -60,7 +60,7 @@ public interface JsonConvertibleRecord {
 	 * @throws IOException Thrown if unable to read from JsonParser.
 	 */
 	void fromJSON(JsonParser jParser) throws IOException;
-	
+
 	public void setShowWarnings(boolean showWarnings);
 
 	public void setJsonField(String field,

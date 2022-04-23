@@ -202,8 +202,8 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 
 	/**
 	 * Retrieve a segments table ({@link MarsTable}) generated using x column, y
-	 * column and region names provided in index positions 0, 1 and 2 of a
-	 * List, respectively.
+	 * column and region names provided in index positions 0, 1 and 2 of a List,
+	 * respectively.
 	 * 
 	 * @param tableColumnNames The list of x column, y column and region names.
 	 * @return The MarsTable generated using the columns specified.
@@ -241,11 +241,11 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	/**
 	 * /** Get the set of segment table names as lists of x and y column names.
 	 * 
-	 * @return The set of Lists holding the x and y column and region names
-	 *         at index positions 0, 1 and 2, respectively.
+	 * @return The set of Lists holding the x and y column and region names at
+	 *         index positions 0, 1 and 2, respectively.
 	 */
 	Set<List<String>> getSegmentsTableNames();
-	
+
 	/**
 	 * Used to merge another molecule record into this one.
 	 * 

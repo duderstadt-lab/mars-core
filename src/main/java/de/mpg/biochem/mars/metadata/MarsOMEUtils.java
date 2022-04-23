@@ -126,17 +126,22 @@ public class MarsOMEUtils {
 
 		return meta;
 	}
-	
-	public static String generateMetadataUIDfromDataset(OMEXMLMetadata omexmlMetadata) {
-		if (omexmlMetadata.getUUID() != null ) return MarsMath.getUUID58(omexmlMetadata.getUUID()).substring(0, 10);
-		
-		//We should retrieve any Date or time information and use that to try to generate a unique UID using a hash...
+
+	public static String generateMetadataUIDfromDataset(
+		OMEXMLMetadata omexmlMetadata)
+	{
+		if (omexmlMetadata.getUUID() != null) return MarsMath.getUUID58(
+			omexmlMetadata.getUUID()).substring(0, 10);
+
+		// We should retrieve any Date or time information and use that to try to
+		// generate a unique UID using a hash...
 		String uniqueDateTimeInfo = "";
-		for (int i=0; i < omexmlMetadata.getImageCount(); i++)
+		for (int i = 0; i < omexmlMetadata.getImageCount(); i++)
 			if (omexmlMetadata.getImageAcquisitionDate(i) != null)
 				uniqueDateTimeInfo += omexmlMetadata.getImageAcquisitionDate(i);
-		
-		if (!uniqueDateTimeInfo.equals("")) return MarsMath.getFNV1aBase58(uniqueDateTimeInfo);
+
+		if (!uniqueDateTimeInfo.equals("")) return MarsMath.getFNV1aBase58(
+			uniqueDateTimeInfo);
 		return null;
 	}
 
@@ -150,7 +155,8 @@ public class MarsOMEUtils {
 		marsOME.setNotes(oldMetadata.getNotes());
 		marsOME.log(oldMetadata.getLog());
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
-		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters().put(name, oldMetadata.getParameters().get(name)));
+		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters()
+			.put(name, oldMetadata.getParameters().get(name)));
 		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
 		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
 			bdvSource));
@@ -348,7 +354,8 @@ public class MarsOMEUtils {
 		marsOME.setNotes(oldMetadata.getNotes());
 		marsOME.log(oldMetadata.getLog());
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
-		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters().put(name, oldMetadata.getParameters().get(name)));
+		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters()
+			.put(name, oldMetadata.getParameters().get(name)));
 		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
 		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
 			bdvSource));
@@ -478,70 +485,74 @@ public class MarsOMEUtils {
 
 		return marsOME;
 	}
-	
-	public static Map<Integer, Map<Integer, Double>> buildChannelToTtoDtMap(MarsMetadata marsOMEMetadata) {
+
+	public static Map<Integer, Map<Integer, Double>> buildChannelToTtoDtMap(
+		MarsMetadata marsOMEMetadata)
+	{
 		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
-				new HashMap<Integer, Map<Integer, Double>>();
+			new HashMap<Integer, Map<Integer, Double>>();
 
-			// Let's build some maps from t to dt for each color...
-			for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
-				.getSizeC(); channelIndex++)
-			{
-				HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
-
-				final int finalChannelIndex = channelIndex;
-				marsOMEMetadata.getImage(0).planes().filter(plane -> plane
-					.getC() == finalChannelIndex).forEach(plane -> tToDtMap.put(plane
-						.getT(), plane.getDeltaTinSeconds()));
-
-				channelToTtoDtMap.put(channelIndex, tToDtMap);
-			}
-
-			return channelToTtoDtMap;
-		}
-	
-	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
-			Map<Integer, String> metaDataStack)
+		// Let's build some maps from t to dt for each color...
+		for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
+			.getSizeC(); channelIndex++)
 		{
-			try {
-				// Set Global Collection Date for the dataset
-				int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
-				String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 +
-					10);
-				marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(
-					DateTimeString1));
+			HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
 
-				final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+			final int finalChannelIndex = channelIndex;
+			marsOMEMetadata.getImage(0).planes().filter(plane -> plane
+				.getC() == finalChannelIndex).forEach(plane -> tToDtMap.put(plane
+					.getT(), plane.getDeltaTinSeconds()));
 
-				// Extract the exact time of collection of all frames..
-				final long t0 = getNorPixMillisecondTime(DateTimeString1);
-
-				marsMetadata.getImage(0).planes().forEach(plane -> {
-					if (metaDataStack.containsKey(plane.getT())) {
-						int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
-							"DateTime: ");
-						String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
-							dateTimeIndex2 + 10);
-						Time dt = null;
-						try {
-							double millisecondsDt = ((double) getNorPixMillisecondTime(
-								DateTimeString2) - t0) / 1000;
-							dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
-								(UnitsTime) timehandler.getEnumeration("s")));
-						}
-						catch (ParseException | EnumerationException e) {
-							e.printStackTrace();
-						}
-						plane.setDeltaT(dt);
-					}
-				});
-			}
-			catch (ParseException e1) {
-				// e1.printStackTrace();
-			}
+			channelToTtoDtMap.put(channelIndex, tToDtMap);
 		}
-	
-	private static long getNorPixMillisecondTime(String strTime) throws ParseException {
+
+		return channelToTtoDtMap;
+	}
+
+	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
+		Map<Integer, String> metaDataStack)
+	{
+		try {
+			// Set Global Collection Date for the dataset
+			int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
+			String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 +
+				10);
+			marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(
+				DateTimeString1));
+
+			final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+
+			// Extract the exact time of collection of all frames..
+			final long t0 = getNorPixMillisecondTime(DateTimeString1);
+
+			marsMetadata.getImage(0).planes().forEach(plane -> {
+				if (metaDataStack.containsKey(plane.getT())) {
+					int dateTimeIndex2 = metaDataStack.get(plane.getT()).indexOf(
+						"DateTime: ");
+					String DateTimeString2 = metaDataStack.get(plane.getT()).substring(
+						dateTimeIndex2 + 10);
+					Time dt = null;
+					try {
+						double millisecondsDt = ((double) getNorPixMillisecondTime(
+							DateTimeString2) - t0) / 1000;
+						dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
+							(UnitsTime) timehandler.getEnumeration("s")));
+					}
+					catch (ParseException | EnumerationException e) {
+						e.printStackTrace();
+					}
+					plane.setDeltaT(dt);
+				}
+			});
+		}
+		catch (ParseException e1) {
+			// e1.printStackTrace();
+		}
+	}
+
+	private static long getNorPixMillisecondTime(String strTime)
+		throws ParseException
+	{
 		SimpleDateFormat formatter = new SimpleDateFormat("yyMMdd HHmmssSSS");
 		Date convertedDate = formatter.parse(strTime.substring(0, strTime.length() -
 			4));

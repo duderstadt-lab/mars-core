@@ -87,13 +87,13 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 
 	@Parameter
 	private UIService uiService;
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
 	private String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;
-	
+
 	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
@@ -474,11 +474,11 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 	public File getDirectory() {
 		return directory;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}

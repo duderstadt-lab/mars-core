@@ -35,7 +35,7 @@ public class KCPSegment {
 
 	public double x1, y1, x2, y2, a, sigma_a, b, sigma_b;
 	public String UID;
-	
+
 	public static final String X1 = "X1";
 	public static final String X2 = "X2";
 	public static final String Y1 = "Y1";
@@ -82,7 +82,7 @@ public class KCPSegment {
 	}
 
 	public KCPSegment(double x1, double y1, double x2, double y2, double a,
-			double sigma_a, double b, double sigma_b, String UID)
+		double sigma_a, double b, double sigma_b, String UID)
 	{
 		this.x1 = x1;
 		this.y1 = y1;

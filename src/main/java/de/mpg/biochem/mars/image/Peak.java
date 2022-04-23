@@ -50,18 +50,20 @@ import net.imglib2.RealLocalizable;
  * 
  * @author Karl Duderstadt
  */
-public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizable {
-	
-	public static AtomicLong idGenerator = new AtomicLong( -1 );
-	
+public class Peak extends AbstractJsonConvertibleRecord implements
+	RealLocalizable
+{
+
+	public static AtomicLong idGenerator = new AtomicLong(-1);
+
 	private long id;
-	private long forwardLinkID = -1; 
+	private long forwardLinkID = -1;
 	private long backwardLinkID = -1;
 
 	private String trackUID, colorName;
 	private Peak forwardLink, backwardLink;
 	private double x, y;
-	//private double pixelValue;
+	// private double pixelValue;
 	private int c = -1;
 	private int t = -1;
 	private boolean valid = true;
@@ -85,9 +87,9 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public static final String CIRCULARITY = "Circularity";
 	public static final String UNCORRECTED_INTENSITY = "Uncorrected_intensity";
 	public static final String MEAN_BACKGROUND = "Mean_background";
-	
-	private final Map< String, Double > properties = new ConcurrentHashMap<>();
-	
+
+	private final Map<String, Double> properties = new ConcurrentHashMap<>();
+
 	public Peak(JsonParser jParser) throws IOException {
 		super();
 		fromJSON(jParser);
@@ -95,7 +97,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 
 	public Peak(double[] values) {
 		this.id = idGenerator.incrementAndGet();
-		
+
 		setProperty(BASELINE, values[0]);
 		setProperty(HEIGHT, values[1]);
 		x = values[2];
@@ -107,7 +109,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 		int t)
 	{
 		this.id = idGenerator.incrementAndGet();
-		
+
 		this.x = x;
 		this.y = y;
 		setProperty(BASELINE, baseline);
@@ -118,27 +120,27 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 
 	public Peak(double x, double y, int t) {
 		this.id = idGenerator.incrementAndGet();
-		
+
 		this.x = x;
 		this.y = y;
 		this.t = t;
 	}
-	
+
 	public Peak(String trackUID, double x, double y) {
 		this.id = idGenerator.incrementAndGet();
-		
+
 		this.trackUID = trackUID;
 		this.x = x;
 		this.y = y;
 	}
-	
+
 	public Peak(double x, double y) {
 		this.id = idGenerator.incrementAndGet();
-		
+
 		this.x = x;
 		this.y = y;
 	}
-	
+
 	public Peak(Peak peak) {
 		this.x = peak.getX();
 		this.y = peak.getY();
@@ -151,31 +153,31 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 
 		this.backwardLinkID = peak.backwardLinkID;
 		this.forwardLinkID = peak.forwardLinkID;
-		
+
 		this.forwardLink = peak.forwardLink;
 		this.backwardLink = peak.backwardLink;
-		
+
 		this.peakShape = peak.peakShape;
 
 		for (String key : peak.getProperties().keySet())
-		    this.properties.put(key, peak.getProperties().get(key));
+			this.properties.put(key, peak.getProperties().get(key));
 	}
-	
+
 	public void reset() {
 		reset(0, 0, -1);
 	}
-	
+
 	public void reset(double x, double y, int t) {
 		this.id = idGenerator.incrementAndGet();
-		this.forwardLinkID = -1; 
+		this.forwardLinkID = -1;
 		this.backwardLinkID = -1;
 
-		this.trackUID = null; 
+		this.trackUID = null;
 		this.colorName = null;
 		this.forwardLink = null;
 		this.backwardLink = null;
-		this.x = x; 
-		this.y = y; 
+		this.x = x;
+		this.y = y;
 		this.c = -1;
 		this.t = t;
 		this.valid = true;
@@ -212,23 +214,23 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public double getSigma() {
 		return this.properties.get(SIGMA).doubleValue();
 	}
-	
+
 	public PeakShape getShape() {
 		return peakShape;
 	}
-	
+
 	public void setShape(PeakShape peakShape) {
 		this.peakShape = peakShape;
 	}
-	
+
 	public boolean isValid() {
 		return valid;
 	}
-	
+
 	public void setValid(boolean valid) {
 		this.valid = valid;
 	}
-	
+
 	public void setID(long id) {
 		this.id = id;
 	}
@@ -236,7 +238,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public long getID() {
 		return id;
 	}
-	
+
 	public void setTrackUID(String trackUID) {
 		this.trackUID = trackUID;
 	}
@@ -268,8 +270,8 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public String getColorName() {
 		return colorName;
 	}
-	
-	public Map< String, Double > getProperties() {
+
+	public Map<String, Double> getProperties() {
 		return properties;
 	}
 
@@ -277,7 +279,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public void setProperty(String name, Double value) {
 		properties.put(name, value);
 	}
-	
+
 	public void setValues(double[] values) {
 		this.properties.put(BASELINE, values[0]);
 		this.properties.put(HEIGHT, values[1]);
@@ -295,7 +297,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public Peak getForwardLink() {
 		return forwardLink;
 	}
-	
+
 	// Sets the ID to the next peak in the trajectory
 	public void setForwardLinkID(long forwardLinkID) {
 		this.forwardLinkID = forwardLinkID;
@@ -315,7 +317,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	public Peak getBackwardLink() {
 		return backwardLink;
 	}
-	
+
 	// Sets the ID to the previous peak in the trajectory
 	public void setBackwardLinkID(long backwardLinkID) {
 		this.backwardLinkID = backwardLinkID;
@@ -331,10 +333,9 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 
 	public double getIntensity() {
-		if (this.properties.containsKey(INTENSITY))
-			return this.properties.get(INTENSITY).doubleValue();
-		else
-			return Double.NaN;
+		if (this.properties.containsKey(INTENSITY)) return this.properties.get(
+			INTENSITY).doubleValue();
+		else return Double.NaN;
 	}
 
 	public void setMedianBackground(double medianBackground) {
@@ -342,21 +343,19 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 
 	public double getMedianBackground() {
-		if (this.properties.containsKey(MEDIAN_BACKGROUND))
-			return this.properties.get("Median_background").doubleValue();
-		else
-			return Double.NaN;
+		if (this.properties.containsKey(MEDIAN_BACKGROUND)) return this.properties
+			.get("Median_background").doubleValue();
+		else return Double.NaN;
 	}
-	
+
 	public void setMeanBackground(double meanBackground) {
 		this.properties.put(MEAN_BACKGROUND, meanBackground);
 	}
 
 	public double getMeanBackground() {
-		if (this.properties.containsKey(MEAN_BACKGROUND))
-			return this.properties.get(MEAN_BACKGROUND).doubleValue();
-		else
-			return Double.NaN;
+		if (this.properties.containsKey(MEAN_BACKGROUND)) return this.properties
+			.get(MEAN_BACKGROUND).doubleValue();
+		else return Double.NaN;
 	}
 
 	public void setRsquared(double R2value) {
@@ -364,10 +363,9 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	}
 
 	public double getRSquared() {
-		if (properties.containsKey(R2))
-			return this.properties.get(R2).doubleValue();
-		else
-			return 0;
+		if (properties.containsKey(R2)) return this.properties.get(R2)
+			.doubleValue();
+		else return 0;
 	}
 
 	// Override from RealLocalizable interface. So peaks can be passed to KDTree
@@ -419,53 +417,44 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 	@Override
 	protected void createIOMaps() {
 		setJsonField("id", jGenerator -> jGenerator.writeNumberField("id", id),
-				jParser -> id = jParser.getLongValue());
-		
+			jParser -> id = jParser.getLongValue());
+
 		setJsonField("trackUID", jGenerator -> {
-					if (trackUID != null)
-						jGenerator.writeStringField("trackUID", trackUID);
-				},
-				jParser -> trackUID = jParser.getText());
-		
+			if (trackUID != null) jGenerator.writeStringField("trackUID", trackUID);
+		}, jParser -> trackUID = jParser.getText());
+
 		setJsonField("colorName", jGenerator -> {
-					if (colorName != null)
-						jGenerator.writeStringField("colorName", colorName);
-				},
-				jParser -> colorName = jParser.getText());
-		
-		setJsonField("x", jGenerator -> jGenerator.writeNumberField("x",
-				x), jParser -> x = jParser.getDoubleValue());
-		
-		setJsonField("y", jGenerator -> jGenerator.writeNumberField("y",
-				y), jParser -> y = jParser.getDoubleValue());
-		
+			if (colorName != null) jGenerator.writeStringField("colorName",
+				colorName);
+		}, jParser -> colorName = jParser.getText());
+
+		setJsonField("x", jGenerator -> jGenerator.writeNumberField("x", x),
+			jParser -> x = jParser.getDoubleValue());
+
+		setJsonField("y", jGenerator -> jGenerator.writeNumberField("y", y),
+			jParser -> y = jParser.getDoubleValue());
+
 		setJsonField("c", jGenerator -> {
-					if (c != -1)
-						jGenerator.writeNumberField("c",c);
-				},
-				jParser -> c = jParser.getIntValue());
-		
+			if (c != -1) jGenerator.writeNumberField("c", c);
+		}, jParser -> c = jParser.getIntValue());
+
 		setJsonField("t", jGenerator -> {
-					if (t != -1)
-						jGenerator.writeNumberField("t", t);
-				},
-		 		jParser -> t = jParser.getIntValue());
-		
+			if (t != -1) jGenerator.writeNumberField("t", t);
+		}, jParser -> t = jParser.getIntValue());
+
 		setJsonField("valid", jGenerator -> jGenerator.writeBooleanField("valid",
-				valid), jParser -> valid = jParser.getBooleanValue());
-		
+			valid), jParser -> valid = jParser.getBooleanValue());
+
 		setJsonField("forwardLinkID", jGenerator -> {
-					if (forwardLinkID != -1)
-						jGenerator.writeNumberField("forwardLinkID", forwardLinkID);
-				},
-				jParser -> forwardLinkID = jParser.getLongValue());
-		
+			if (forwardLinkID != -1) jGenerator.writeNumberField("forwardLinkID",
+				forwardLinkID);
+		}, jParser -> forwardLinkID = jParser.getLongValue());
+
 		setJsonField("backwardLinkID", jGenerator -> {
-					if (backwardLinkID != -1)
-						jGenerator.writeNumberField("backwardLinkID", backwardLinkID);
-				},
-				jParser -> backwardLinkID = jParser.getLongValue());
-		
+			if (backwardLinkID != -1) jGenerator.writeNumberField("backwardLinkID",
+				backwardLinkID);
+		}, jParser -> backwardLinkID = jParser.getLongValue());
+
 		setJsonField("properties", jGenerator -> {
 			if (properties.size() > 0) {
 				jGenerator.writeFieldName("properties");
@@ -481,7 +470,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements RealLocalizab
 				properties.put(field, jParser.getDoubleValue());
 			}
 		});
-		
-		//TODO Add PeakShape
+
+		// TODO Add PeakShape
 	}
 }

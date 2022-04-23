@@ -55,16 +55,16 @@ public class PeakLink {
 		this.t = t;
 		this.tDifference = tDifference;
 	}
-	
+
 	public PeakLink(long fromID, long toID, double distanceSq, int t,
-			int tDifference)
-		{
-			this.fromID = fromID;
-			this.toID = toID;
-			this.distanceSq = distanceSq;
-			this.t = t;
-			this.tDifference = tDifference;
-		}
+		int tDifference)
+	{
+		this.fromID = fromID;
+		this.toID = toID;
+		this.distanceSq = distanceSq;
+		this.t = t;
+		this.tDifference = tDifference;
+	}
 
 	public void reset(Peak from, Peak to, double distanceSq, int t,
 		int tDifference)
@@ -75,7 +75,7 @@ public class PeakLink {
 		this.t = t;
 		this.tDifference = tDifference;
 	}
-	
+
 	public void reset(long fromID, long toID, double distanceSq, int t,
 		int tDifference)
 	{
@@ -113,7 +113,7 @@ public class PeakLink {
 	public Peak getFrom() {
 		return from;
 	}
-	
+
 	public long getFromID() {
 		return fromID;
 	}
@@ -121,7 +121,7 @@ public class PeakLink {
 	public Peak getTo() {
 		return to;
 	}
-	
+
 	public long getToID() {
 		return toID;
 	}

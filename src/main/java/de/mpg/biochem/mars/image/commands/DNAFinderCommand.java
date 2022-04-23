@@ -126,7 +126,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private OpService opService;
-	
+
 	@Parameter
 	private UIService uiService;
 
@@ -138,7 +138,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private ConvertService convertService;
-	
+
 	@Parameter
 	private PlatformService platformService;
 
@@ -153,38 +153,43 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-	
+
 	/**
 	 * INPUT SETTINGS
 	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
+		persist = false)
 	private String inputGroup = "Input";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String inputDetails = "Images with Y-axis aligned DNA molecules";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
+		persist = false)
 	private String inputFigure = "DNAImageInput.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String imageName = "name";
 
 	@Parameter(label = "Region",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
-			"ROI from image", "ROIs from manager" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
+		choices = { "whole image", "ROI from image", "ROIs from manager" })
 	private String region = "whole image";
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
+	@Parameter(label = "Channel", choices = { "a", "b", "c" },
+		style = "group:Input", persist = false)
 	private String channel = "0";
 
 	/**
 	 * FINDER SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
-	
+
 	@Parameter(label = "Gaussian Smoothing Sigma", style = "group:Find")
 	private double gaussSigma = 2;
 
@@ -220,7 +225,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "DNA intensity variance upper bound", style = "group:Find")
 	private int varianceUpperBound = 1_000_000;
-	
+
 	/**
 	 * FITTER SETTINGS
 	 */
@@ -253,39 +258,39 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Process all frames", style = "group:Output")
 	private boolean allFrames;
-	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
+
+	@Parameter(label = "Threads", required = false, min = "1", max = "120",
+		style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
+
 	/**
 	 * PREVIEW SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
-	
+
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
+		callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
-	
-	@Parameter(label = "Label",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Preview", choices = {
-				"Median intensity", "Variance intensity" })
+
+	@Parameter(label = "Label", style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE +
+		", group:Preview", choices = { "Median intensity", "Variance intensity" })
 	private String previewLabelType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
 	private String tDNACount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
+		", group:Preview", persist = false)
 	private int theT;
-	
+
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
-	
+
 	@Parameter(label = "Help",
-			description="View a web page detailing DNA Finder options",
-			callback="openWebPage", persist = false)
+		description = "View a web page detailing DNA Finder options",
+		callback = "openWebPage", persist = false)
 	private Button openWebPage;
 
 	/**
@@ -301,7 +306,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	private ConcurrentMap<Integer, List<DNASegment>> dnaStack;
 
 	private boolean swapZandT = false;
-	
+
 	private Roi[] rois;
 	private Roi imageRoi;
 
@@ -316,15 +321,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		}
 		else if (dataset == null) return;
 
-		if (image.getRoi() != null)
-			imageRoi = image.getRoi();
-		
+		if (image.getRoi() != null) imageRoi = image.getRoi();
+
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
-					"imageName", String.class);
+				"imageName", String.class);
 			imageNameItem.setValue(this, dataset.getName());
 		}
-		
+
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -349,24 +353,28 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		if (dataset == null && image != null)
-			dataset = convertService.convert(image, Dataset.class);
-		
-		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
-		
-		if (image != null && imageRoi == null && image.getRoi() != null)
-			imageRoi = image.getRoi();
-		
+		if (dataset == null && image != null) dataset = convertService.convert(
+			image, Dataset.class);
+
+		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT =
+			true;
+
+		if (image != null && imageRoi == null && image.getRoi() != null) imageRoi =
+			image.getRoi();
+
 		if (region.equals("ROI from image")) {
 			rois = new Roi[1];
 			rois[0] = imageRoi;
-		} else if (region.equals("ROIs from manager")) {
-			rois = roiManager.getRoisAsArray();
-		} else {
-			rois = new Roi[1];
-			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 		}
-		
+		else if (region.equals("ROIs from manager")) {
+			rois = roiManager.getRoisAsArray();
+		}
+		else {
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+				(int) dataset.dimension(1)));
+		}
+
 		if (image != null) {
 			image.deleteRoi();
 			image.setOverlay(null);
@@ -393,16 +401,17 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			int tSize = (int) dataset.getImgPlus().dimension(tDim);
 
 			final int frameCount = (swapZandT) ? zSize : tSize;
-			
+
 			List<Runnable> tasks = new ArrayList<Runnable>();
-			for (int t=0; t<frameCount; t++) {
+			for (int t = 0; t < frameCount; t++) {
 				final int theT = t;
-				tasks.add(() -> dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois)));
+				tasks.add(() -> dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel),
+					theT, rois)));
 			}
 
-			MarsUtil.threadPoolBuilder(statusService, logService,
-				() -> statusService.showStatus(dnaStack.size(), frameCount,
-					"Finding DNAs for " + dataset.getName()), tasks, nThreads);
+			MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
+				.showStatus(dnaStack.size(), frameCount, "Finding DNAs for " + dataset
+					.getName()), tasks, nThreads);
 
 		}
 		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois));
@@ -449,12 +458,15 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		dnaFinder.setFit(fit);
 		dnaFinder.setFitSecondOrder(fitSecondOrder);
 		dnaFinder.setFitRadius(fitRadius);
-		
-		List<IterableRegion< BoolType >> regionList = new ArrayList<IterableRegion< BoolType >>();
+
+		List<IterableRegion<BoolType>> regionList =
+			new ArrayList<IterableRegion<BoolType>>();
 		for (int i = 0; i < processingRois.length; i++) {
-			//Convert from Roi to IterableInterval
-			RealMask roiMask = convertService.convert( processingRois[i], RealMask.class );
-			IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
+			// Convert from Roi to IterableInterval
+			RealMask roiMask = convertService.convert(processingRois[i],
+				RealMask.class);
+			IterableRegion<BoolType> iterableROI = MarsImageUtils.toIterableRegion(
+				roiMask, img);
 			regionList.add(iterableROI);
 		}
 
@@ -533,9 +545,9 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			for (DNASegment segment : segments) {
 				Line line = new Line(segment.getX1(), segment.getY1(), segment.getX2(),
 					segment.getY2());
-				//if (moleculeNames) line.setName("Molecule" + dnaCount);
-				//else 
-				
+				// if (moleculeNames) line.setName("Molecule" + dnaCount);
+				// else
+
 				line.setName(MarsMath.getUUID58());
 
 				if (swapZandT) line.setPosition(channel, t + 1, 1);
@@ -553,69 +565,73 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		if (preview) {
 			if (swapZandT) image.setSlice(theT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-			
+
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-					if (imageRoi == null && image.getRoi() != null)
-						imageRoi = image.getRoi();
-					
+					if (imageRoi == null && image.getRoi() != null) imageRoi = image
+						.getRoi();
+
 					if (region.equals("ROI from image")) {
 						rois = new Roi[1];
 						rois[0] = imageRoi;
-					} else if (region.equals("ROIs from manager")) {
+					}
+					else if (region.equals("ROIs from manager")) {
 						rois = roiManager.getRoisAsArray();
-					} else {
+					}
+					else {
 						rois = new Roi[1];
-						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+						rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+							(int) dataset.dimension(1)));
 					}
 
-					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel), theT, rois);
-		
-					if (Thread.currentThread().isInterrupted())
-						return;
-					
+					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel),
+						theT, rois);
+
+					if (Thread.currentThread().isInterrupted()) return;
+
 					Overlay overlay = new Overlay();
 					if (segments.size() > 0) {
 						for (DNASegment segment : segments) {
 							Line line = new Line(segment.getX1(), segment.getY1(), segment
 								.getX2(), segment.getY2());
-		
+
 							double value = Double.NaN;
 							if (previewLabelType.equals("Variance intensity")) value = segment
 								.getVariance();
-							else if (previewLabelType.equals("Median intensity")) value = segment
-								.getMedianIntensity();
-		
+							else if (previewLabelType.equals("Median intensity")) value =
+								segment.getMedianIntensity();
+
 							if (Double.isNaN(value)) line.setName("");
 							if (value > 1_000_000) line.setName(DoubleRounder.round(value /
 								1_000_000, 2) + " m");
-							else if (value > 1000) line.setName(DoubleRounder.round(value / 1000,
-								2) + " k");
+							else if (value > 1000) line.setName(DoubleRounder.round(value /
+								1000, 2) + " k");
 							else line.setName((int) value + "");
-		
+
 							overlay.add(line);
-							if (Thread.currentThread().isInterrupted())
-								return;
+							if (Thread.currentThread().isInterrupted()) return;
 						}
 						overlay.drawLabels(true);
 						overlay.drawNames(true);
 						overlay.setLabelColor(new Color(255, 255, 255));
 					}
-					
+
 					final String countString = "count: " + segments.size();
-					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-							"tDNACount", String.class);
+					final MutableModuleItem<String> preFrameCount = getInfo()
+						.getMutableInput("tDNACount", String.class);
 					preFrameCount.setValue(this, countString);
-					
-					SwingUtilities.invokeLater( () -> {
+
+					SwingUtilities.invokeLater(() -> {
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
-							
+
 							for (Window window : Window.getWindows())
-								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
-									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", countString);
+								if (window instanceof JDialog && ((JDialog) window).getTitle()
+									.equals(getInfo().getLabel())) MarsUtil
+										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+											countString);
 						}
 					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
@@ -623,8 +639,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			catch (TimeoutException e1) {
 				es.shutdownNow();
 				uiService.showDialog(
-						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
-						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+					"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
 			catch (InterruptedException | ExecutionException e2) {
@@ -634,14 +650,15 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			es.shutdownNow();
 		}
 	}
-	
+
 	protected void openWebPage() {
 		try {
 			String urlString =
-					"https://duderstadt-lab.github.io/mars-docs/docs/image/DNA_finder/";
+				"https://duderstadt-lab.github.io/mars-docs/docs/image/DNA_finder/";
 			URL url = new URL(urlString);
 			platformService.open(url);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// do nothing
 		}
 	}
@@ -674,7 +691,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			builder.addParameter("Dataset name", dataset.getName());
 		}
 		builder.addParameter("Region", region);
-		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
+		if (region.equals("ROI from image") && imageRoi != null) builder
+			.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Gaussian smoothing sigma", String.valueOf(
 			this.gaussSigma));
@@ -720,7 +738,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public Dataset getDataset() {
 		return dataset;
 	}
-	
+
 	public void setRegion(String region) {
 		this.region = region;
 	}
@@ -897,11 +915,11 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	public int getFitRadius() {
 		return fitRadius;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}

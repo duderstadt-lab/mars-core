@@ -124,6 +124,7 @@ import ome.xml.model.primitives.PositiveInteger;
 public class PeakTrackerCommand extends DynamicCommand implements Command,
 	Initializable
 {
+
 	/**
 	 * SERVICES
 	 */
@@ -132,7 +133,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private StatusService statusService;
-	
+
 	@Parameter
 	private TranslatorService translatorService;
 
@@ -153,13 +154,13 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
-	
+
 	@Parameter
 	private UIService uiService;
-	
+
 	@Parameter
 	private DisplayService displayService;
-	
+
 	@Parameter
 	private PlatformService platformService;
 
@@ -174,34 +175,38 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-	
+
 	/**
 	 * INPUT SETTINGS
 	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "groupLabel, tabbedPaneWidth:450", persist = false)
 	private String inputGroup = "Input";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
+		persist = false)
 	private String inputFigure = "ImageInput.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String imageName = "?";
-	
+
 	@Parameter(label = "Region",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
-			"ROI from image", "ROIs from manager" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
+		choices = { "whole image", "ROI from image", "ROIs from manager" })
 	private String region = "whole image";
-	
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
+
+	@Parameter(label = "Channel", choices = { "a", "b", "c" },
+		style = "group:Input", persist = false)
 	private String channel = "0";
-	
+
 	/**
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
-	
+
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
 
@@ -213,10 +218,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Peak separation", style = "group:Find")
 	private int minimumDistance = 4;
-	
+
 	@Parameter(label = "Negative peaks", style = "group:Find")
 	private boolean findNegativePeaks = false;
-	
+
 	/**
 	 * FITTER SETTINGS
 	 */
@@ -226,8 +231,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
 
-	@Parameter(label = "R-squared", style = NumberWidget.SLIDER_STYLE + ", group:Fit",
-		min = "0.00", max = "1.00", stepSize = "0.01")
+	@Parameter(label = "R-squared", style = NumberWidget.SLIDER_STYLE +
+		", group:Fit", min = "0.00", max = "1.00", stepSize = "0.01")
 	private double RsquaredMin = 0;
 
 	/**
@@ -235,7 +240,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String trackGroup = "Track";
-	
+
 	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
 
@@ -253,7 +258,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String integrateGroup = "Integrate";
-	
+
 	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
 
@@ -268,72 +273,76 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
 	private String outputFigure = "SingleMoleculeArchive.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Output, align:center")
 	private String outputArchiveType = "type: SingleMoleculeArchive";
-	
+
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
 
 	@Parameter(label = "Pixel length", style = "group:Output")
 	private double pixelLength = 1;
 
-	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel", "µm", "nm" })
+	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel",
+		"µm", "nm" })
 	private String pixelUnits = "pixel";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
-	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, ...)";
-	
+	private final String excludeTitle =
+		"List of time points to exclude (T0, T1-T2, ...)";
+
 	@Parameter(label = "Exclude", style = "group:Output", required = false)
 	private String excludeTimePointList = "";
-	
+
 	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
-	
+
 	@Parameter(label = "Metadata UID",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
-				"random" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output",
+		choices = { "unique from dataset", "random" })
 	private String metadataUIDSource = "random";
-	
+
 	/**
 	 * THREADS
 	 */
-	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
+
+	@Parameter(label = "Threads", required = false, min = "1", max = "120",
+		style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
+
 	/**
 	 * PREVIEW SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
-	
+
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
+		callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
 
-	@Parameter(label = "Roi",
-		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE + ", group:Preview", choices = { "circle",
-			"point" })
+	@Parameter(label = "Roi", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE +
+		", group:Preview", choices = { "circle", "point" })
 	private String previewRoiType;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview", persist=false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview",
+		persist = false)
 	private String tPeakCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
+		", group:Preview", persist = false)
 	private int previewT;
-	
+
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
-	
+
 	@Parameter(label = "Help",
-			description="View a web page detailing Peak Tracker options",
-			callback="openWebPage", persist = false)
+		description = "View a web page detailing Peak Tracker options",
+		callback = "openWebPage", persist = false)
 	private Button openWebPage;
 
 	/**
@@ -341,7 +350,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
-	
+
 	/**
 	 * Map from T to label peak lists
 	 */
@@ -369,15 +378,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 		else return;
 
-		if (image.getRoi() != null)
-			imageRoi = image.getRoi();
-		
+		if (image.getRoi() != null) imageRoi = image.getRoi();
+
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
-					"imageName", String.class);
+				"imageName", String.class);
 			imageNameItem.setValue(this, dataset.getName());
 		}
-		
+
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
@@ -402,24 +410,28 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		if (dataset == null && image != null)
-			dataset = convertService.convert(image, Dataset.class);
-		
-		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
-		
-		if (image != null && imageRoi == null && image.getRoi() != null)
-			imageRoi = image.getRoi();
-		
+		if (dataset == null && image != null) dataset = convertService.convert(
+			image, Dataset.class);
+
+		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT =
+			true;
+
+		if (image != null && imageRoi == null && image.getRoi() != null) imageRoi =
+			image.getRoi();
+
 		if (region.equals("ROI from image")) {
 			rois = new Roi[1];
 			rois[0] = imageRoi;
-		} else if (region.equals("ROIs from manager")) {
-			rois = roiManager.getRoisAsArray();
-		} else {
-			rois = new Roi[1];
-			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 		}
-		
+		else if (region.equals("ROIs from manager")) {
+			rois = roiManager.getRoisAsArray();
+		}
+		else {
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+				(int) dataset.dimension(1)));
+		}
+
 		if (image != null) {
 			image.deleteRoi();
 			image.setOverlay(null);
@@ -445,60 +457,66 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		int tSize = (int) dataset.getImgPlus().dimension(tDim);
 
 		final int frameCount = (swapZandT) ? zSize : tSize;
-		
-		//build list of timepoints to process...
-		
+
+		// build list of timepoints to process...
+
 		List<int[]> excludeTimePoints = new ArrayList<int[]>();
 		if (excludeTimePointList.length() > 0) {
 			try {
 				final String[] excludeArray = excludeTimePointList.split(",");
-				for (int i=0; i<excludeArray.length; i++) {
+				for (int i = 0; i < excludeArray.length; i++) {
 					String[] endPoints = excludeArray[i].split("-");
 					int start = Integer.valueOf(endPoints[0].trim());
-					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1].trim()) : start;
-		
-					excludeTimePoints.add(new int[] {start, end});
+					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1]
+						.trim()) : start;
+
+					excludeTimePoints.add(new int[] { start, end });
 				}
-			} catch (NumberFormatException e) {
-				logService.info("NumberFormatException encountered when parsing exclude list. Tracking all time points.");
+			}
+			catch (NumberFormatException e) {
+				logService.info(
+					"NumberFormatException encountered when parsing exclude list. Tracking all time points.");
 				excludeTimePoints = new ArrayList<int[]>();
 			}
 		}
-			
+
 		for (int i = 0; i < rois.length; i++)
 			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
-		
+
 		List<Integer> processTimePoints = new ArrayList<Integer>();
 		List<Runnable> tasks = new ArrayList<Runnable>();
-		for (int t=0; t<frameCount; t++) {
+		for (int t = 0; t < frameCount; t++) {
 			boolean processedTimePoint = true;
-			for (int index=0; index<excludeTimePoints.size(); index++)
-				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(index)[1]) {
+			for (int index = 0; index < excludeTimePoints.size(); index++)
+				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(
+					index)[1])
+				{
 					processedTimePoint = false;
 					break;
 				}
-			
+
 			if (processedTimePoint) {
 				processTimePoints.add(t);
 				final int theT = t;
 				tasks.add(() -> {
-					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel), theT, useDogFilter, integrate, rois);
+					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel),
+						theT, useDogFilter, integrate, rois);
 					for (int i = 0; i < rois.length; i++)
-						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT, labelPeaks.get(i));
+						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT,
+							labelPeaks.get(i));
 				});
 			}
 		}
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(peakLabelsStack.get(0).size(), frameCount, "Finding Peaks for " + dataset
-				.getName()), tasks, nThreads);
+			.showStatus(peakLabelsStack.get(0).size(), frameCount,
+				"Finding Peaks for " + dataset.getName()), tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
 		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, verbose, logService,
-			pixelLength);
+			minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
 
 		archive = new SingleMoleculeArchive("archive.yama");
 
@@ -518,8 +536,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		for (int i=0; i < rois.length; i++)
-			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel), processTimePoints, nThreads);
+		for (int i = 0; i < rois.length; i++)
+			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel),
+				processTimePoints, nThreads);
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
@@ -543,10 +562,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				"No molecules found. Maybe there is a problem with your settings");
 			archive = null;
 			logService.info(LogBuilder.endBlock(false));
-			uiService.showDialog("No molecules found. Maybe there is a problem with your settings. "
-					+ "Make sure molecules are detected using preview. If not try lowering the "
-					+ "detection threshold.",
-					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog(
+				"No molecules found. Maybe there is a problem with your settings. " +
+					"Make sure molecules are detected using preview. If not try lowering the " +
+					"detection threshold.", MessageType.ERROR_MESSAGE,
+				OptionType.DEFAULT_OPTION);
 		}
 		else {
 			logService.info(LogBuilder.endBlock(true));
@@ -556,16 +576,17 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			archive.logln("   ");
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
+		int channel, int t, boolean useDogFilter, boolean integrate,
+		Roi[] processingRois)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
 			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
 				channel, t);
-			
+
 		// Workaround for IJ1 metadata in slices - Norpix format.
 		if (!preview && image != null) {
 			ImageStack stack = image.getImageStack();
@@ -578,34 +599,36 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			String label = stack.getSliceLabel(index);
 			metaDataStack.put(t, label);
 		}
-		
-		RandomAccessibleInterval<FloatType> filteredImg = null; 
-		if (useDogFilter)
-			filteredImg = MarsImageUtils.dogFilter(img, dogFilterRadius, opService);
+
+		RandomAccessibleInterval<FloatType> filteredImg = null;
+		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(img,
+			dogFilterRadius, opService);
 
 		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
 		for (int i = 0; i < processingRois.length; i++) {
 			List<Peak> peaks = new ArrayList<Peak>();
-			
-			RealMask roiMask = convertService.convert( processingRois[i], RealMask.class );
-			IterableRegion< BoolType > iterableROI = MarsImageUtils.toIterableRegion( roiMask, img );
-	
-			if (useDogFilter)
-				 peaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample( iterableROI, filteredImg ), t, threshold,
-					minimumDistance, findNegativePeaks);
-			else peaks = MarsImageUtils.findPeaks(img, Regions.sample( iterableROI, img ), t, threshold,
-				minimumDistance, findNegativePeaks);
-	
+
+			RealMask roiMask = convertService.convert(processingRois[i],
+				RealMask.class);
+			IterableRegion<BoolType> iterableROI = MarsImageUtils.toIterableRegion(
+				roiMask, img);
+
+			if (useDogFilter) peaks = MarsImageUtils.findPeaks(filteredImg, Regions
+				.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
+				findNegativePeaks);
+			else peaks = MarsImageUtils.findPeaks(img, Regions.sample(iterableROI,
+				img), t, threshold, minimumDistance, findNegativePeaks);
+
 			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
 				dogFilterRadius, findNegativePeaks, RsquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
-	
+
 			if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
 				integrationInnerRadius, integrationOuterRadius);
-			
+
 			labelPeakLists.add(peaks);
 		}
-		
+
 		return labelPeakLists;
 	}
 
@@ -614,63 +637,70 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		OMEXMLMetadata omexmlMetadata = null;
 		if (!(imp instanceof SCIFIOImgPlus)) {
-			logService.info("This image has not been opened with SCIFIO. Creating OME Metadata...");
+			logService.info(
+				"This image has not been opened with SCIFIO. Creating OME Metadata...");
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
-			} catch (ServiceException e) {
+			}
+			catch (ServiceException e) {
 				e.printStackTrace();
 			}
 		}
 		else {
 			Metadata metadata = (Metadata) dataset.getProperties().get(
 				"scifio.metadata.global");
-			
+
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info(
-					"Unable to extract OME Metadata. Creating...");
+				logService.info("Unable to extract OME Metadata. Creating...");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-							dataset);
-				} catch (ServiceException e) {
+						dataset);
+				}
+				catch (ServiceException e) {
 					e.printStackTrace();
 				}
 			}
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
-			
+
 			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
-			
-			//Check for SliceLabels
+
+			// Check for SliceLabels
 			if (metadata.get(0).getTable().containsKey("SliceLabels")) {
-				String[] sliceLabels = (String[]) metadata.get(0).getTable().get("SliceLabels");
+				String[] sliceLabels = (String[]) metadata.get(0).getTable().get(
+					"SliceLabels");
 				metaDataStack.clear();
-					
-					for (int i=0; i<sliceLabels.length; i++)
-						metaDataStack.put(i, sliceLabels[i]);
+
+				for (int i = 0; i < sliceLabels.length; i++)
+					metaDataStack.put(i, sliceLabels[i]);
 			}
 		}
-		
+
 		if (swapZandT) {
 			int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
 			int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
-			
+
 			omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
 			omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
 		}
-		
-		//Check format
-		if (metaDataStack.containsKey(0) && metaDataStack.get(0).contains("DateTime: ")) {
-			//Must be Norpix format..
+
+		// Check format
+		if (metaDataStack.containsKey(0) && metaDataStack.get(0).contains(
+			"DateTime: "))
+		{
+			// Must be Norpix format..
 			logService.info("Reading Norpix Format");
 
-			String metaUID = (metadataUIDSource.equals("unique from dataset")) ? generateUID(metaDataStack) : MarsMath.getUUID58().substring(0, 10);
+			String metaUID = (metadataUIDSource.equals("unique from dataset"))
+				? generateUID(metaDataStack) : MarsMath.getUUID58().substring(0, 10);
 			omexmlMetadata.setPixelsDimensionOrder(DimensionOrder.XYZCT, 0);
-			
-			MarsOMEMetadata marsOMEMetadata = new MarsOMEMetadata(metaUID, omexmlMetadata);
-			
+
+			MarsOMEMetadata marsOMEMetadata = new MarsOMEMetadata(metaUID,
+				omexmlMetadata);
+
 			MarsOMEUtils.getTimeFromNoprixSliceLabels(marsOMEMetadata, metaDataStack);
 
 			return marsOMEMetadata;
@@ -695,11 +725,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		String metaUID;
 		if (metadataUIDSource.equals("unique from dataset")) {
 			metaUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
-			
+
 			if (metaUID == null) {
-				logService.info("Failed to generate unique metadata uid. Using random generated metadata uid.");
-			} else metaUID = MarsMath.getUUID58().substring(0, 10);
-		} else metaUID = MarsMath.getUUID58().substring(0, 10);
+				logService.info(
+					"Failed to generate unique metadata uid. Using random generated metadata uid.");
+			}
+			else metaUID = MarsMath.getUUID58().substring(0, 10);
+		}
+		else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
@@ -717,29 +750,31 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (preview) {
 			if (swapZandT) image.setSlice(previewT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-			
+
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-					if (imageRoi == null && image.getRoi() != null)
-						imageRoi = image.getRoi();
-					
+					if (imageRoi == null && image.getRoi() != null) imageRoi = image
+						.getRoi();
+
 					if (region.equals("ROI from image")) {
 						rois = new Roi[1];
 						rois[0] = imageRoi;
-					} else if (region.equals("ROIs from manager")) {
-						rois = roiManager.getRoisAsArray();
-					} else {
-						rois = new Roi[1];
-						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 					}
-		
-					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(channel), previewT,
-						useDogFilter, false, rois);
-					
-					if (Thread.currentThread().isInterrupted())
-						return;
-		
+					else if (region.equals("ROIs from manager")) {
+						rois = roiManager.getRoisAsArray();
+					}
+					else {
+						rois = new Roi[1];
+						rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+							(int) dataset.dimension(1)));
+					}
+
+					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(
+						channel), previewT, useDogFilter, false, rois);
+
+					if (Thread.currentThread().isInterrupted()) return;
+
 					int peakCount = 0;
 					Overlay overlay = new Overlay();
 					if (previewRoiType.equals("point")) {
@@ -748,46 +783,47 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 							for (Peak p : labelPeaks) {
 								poly.addPoint(p.getDoublePosition(0), p.getDoublePosition(1));
 								peakCount++;
-								
-								if (Thread.currentThread().isInterrupted())
-									return;
+
+								if (Thread.currentThread().isInterrupted()) return;
 							}
-	
+
 						PointRoi peakRoi = new PointRoi(poly);
-	
+
 						overlay.add(peakRoi);
 					}
 					else {
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
-								// The pixel origin for OvalRois is at the upper left corner !!!!
+								// The pixel origin for OvalRois is at the upper left corner
+								// !!!!
 								// The pixel origin for PointRois is at the center !!!
-								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) + 0.5 -
-										integrationInnerRadius, p.getDoublePosition(1) + 0.5 - integrationInnerRadius, integrationInnerRadius *
-										2, integrationInnerRadius * 2);
-								//ovalRoi.setStrokeColor(Color.CYAN.darker());
+								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) +
+									0.5 - integrationInnerRadius, p.getDoublePosition(1) + 0.5 -
+										integrationInnerRadius, integrationInnerRadius * 2,
+									integrationInnerRadius * 2);
+								// ovalRoi.setStrokeColor(Color.CYAN.darker());
 								overlay.add(ovalRoi);
 								peakCount++;
-								if (Thread.currentThread().isInterrupted())
-									return;
+								if (Thread.currentThread().isInterrupted()) return;
 							}
 					}
-					if (Thread.currentThread().isInterrupted())
-						return;
-	
+					if (Thread.currentThread().isInterrupted()) return;
+
 					final String countString = "count: " + peakCount;
-					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-							"tPeakCount", String.class);
+					final MutableModuleItem<String> preFrameCount = getInfo()
+						.getMutableInput("tPeakCount", String.class);
 					preFrameCount.setValue(this, countString);
-					
-					SwingUtilities.invokeLater( () -> {
+
+					SwingUtilities.invokeLater(() -> {
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
-							
+
 							for (Window window : Window.getWindows())
-								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
-									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", countString);
+								if (window instanceof JDialog && ((JDialog) window).getTitle()
+									.equals(getInfo().getLabel())) MarsUtil
+										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+											countString);
 						}
 					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
@@ -795,8 +831,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			catch (TimeoutException e1) {
 				es.shutdownNow();
 				uiService.showDialog(
-						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
-						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+					"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
 			catch (InterruptedException | ExecutionException e2) {
@@ -806,14 +842,15 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			es.shutdownNow();
 		}
 	}
-	
+
 	protected void openWebPage() {
 		try {
 			String urlString =
-					"https://duderstadt-lab.github.io/mars-docs/docs/image/PeakTracker/";
+				"https://duderstadt-lab.github.io/mars-docs/docs/image/PeakTracker/";
 			URL url = new URL(urlString);
 			platformService.open(url);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// do nothing
 		}
 	}
@@ -844,7 +881,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		else builder.addParameter("Dataset name", dataset.getName());
 
 		builder.addParameter("Region", region);
-		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
+		if (region.equals("ROI from image") && imageRoi != null) builder
+			.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
 		builder.addParameter("DoG filter radius", String.valueOf(dogFilterRadius));
@@ -902,12 +940,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	public String getRegion() {
 		return region;
 	}
-	
+
 	public void setRois(Roi[] rois) {
 		this.rois = rois;
 		this.region = "ROIs from manager";
 	}
-	
+
 	public Roi[] getROIs() {
 		return this.rois;
 	}
@@ -1055,27 +1093,27 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	public String getPixelUnits() {
 		return this.pixelUnits;
 	}
-	
+
 	public void setExcludedTimePointsList(String excludeTimePointList) {
 		this.excludeTimePointList = excludeTimePointList;
 	}
-	
+
 	public String getExcludedTimePointsList() {
 		return this.excludeTimePointList;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}
-	
+
 	public void setMetadataUIDSource(String metadataUIDSource) {
 		this.metadataUIDSource = metadataUIDSource;
 	}
-	
+
 	public String getMetadataUIDSource() {
 		return this.metadataUIDSource;
 	}

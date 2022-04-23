@@ -64,11 +64,11 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected AtomicInteger numberOfMolecules;
 	protected AtomicInteger numMetadata;
 	protected String inputSchema;
-	
-	//Additional documents
+
+	// Additional documents
 	protected Map<String, MarsDocument> documents;
-	
-	//Format YYYY-MM-DD
+
+	// Format YYYY-MM-DD
 	public static final String SCHEMA = "2022-04-11";
 	private static final String COMMENTS = "Comments";
 
@@ -90,13 +90,13 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		super();
 		numberOfMolecules = new AtomicInteger(0);
 		numMetadata = new AtomicInteger(0);
-		
-		//Additional documents
+
+		// Additional documents
 		documents = new LinkedHashMap<String, MarsDocument>();
-		
-		//Initialize default Comments
+
+		// Initialize default Comments
 		documents.put(COMMENTS, new MarsDocument(COMMENTS));
-		
+
 		tagSet = ConcurrentHashMap.newKeySet();
 		positionSet = ConcurrentHashMap.newKeySet();
 		regionSet = ConcurrentHashMap.newKeySet();
@@ -163,8 +163,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (moleculeSegmentTableNames.size() > 0) {
 				jGenerator.writeFieldName("moleculeSegmentTableNames");
 				jGenerator.writeStartArray();
-				Iterator<List<String>> iterator = moleculeSegmentTableNames
-					.iterator();
+				Iterator<List<String>> iterator = moleculeSegmentTableNames.iterator();
 				while (iterator.hasNext()) {
 					jGenerator.writeStartObject();
 
@@ -264,7 +263,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			while (jParser.nextToken() != JsonToken.END_ARRAY)
 				positionSet.add(jParser.getText());
 		});
-		
+
 		setJsonField("documents", jGenerator -> {
 			if (documents.size() > 0) {
 				jGenerator.writeArrayFieldStart("documents");
@@ -275,8 +274,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
 				MarsDocument document = new MarsDocument(jParser);
-				documents.put(document.getName(),
-					document);
+				documents.put(document.getName(), document);
 			}
 		});
 
@@ -346,8 +344,10 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 				moleculeSegmentTableNames.add(segemntTableName);
 			}
 		});
-		setJsonField("comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
-		setJsonField("Comments", null, jParser -> documents.put(COMMENTS, new MarsDocument(COMMENTS, jParser.getText())));
+		setJsonField("comments", null, jParser -> documents.put(COMMENTS,
+			new MarsDocument(COMMENTS, jParser.getText())));
+		setJsonField("Comments", null, jParser -> documents.put(COMMENTS,
+			new MarsDocument(COMMENTS, jParser.getText())));
 	}
 
 	/**
@@ -612,9 +612,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Add segment table names to the unique set of segment table names found in
 	 * molecule records.
 	 */
-	public void addAllSegmentsTableNames(
-		Set<List<String>> segmentTableNames)
-	{
+	public void addAllSegmentsTableNames(Set<List<String>> segmentTableNames) {
 		this.moleculeSegmentTableNames.addAll(segmentTableNames);
 	}
 
@@ -638,7 +636,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * Get archive comments.
 	 */
 	public String getComments() {
-		return (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS).getContent() : "";
+		return (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS)
+			.getContent() : "";
 	}
 
 	/**
@@ -646,7 +645,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 */
 	public void addComment(String comment) {
 		synchronized (this.documents) {
-			String str = (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS).getContent() : "";
+			String str = (documents.containsKey(COMMENTS)) ? documents.get(COMMENTS)
+				.getContent() : "";
 			documents.get(COMMENTS).setContent(str + comment);
 		}
 	}
@@ -659,27 +659,27 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			documents.put(COMMENTS, new MarsDocument(COMMENTS, comments));
 		}
 	}
-	
+
 	public void putDocument(String name, String content) {
 		synchronized (documents) {
 			documents.put(name, new MarsDocument(name, content));
 		}
 	}
-	
+
 	public void putDocument(MarsDocument document) {
 		synchronized (documents) {
 			documents.put(document.getName(), document);
 		}
 	}
-	
+
 	public MarsDocument getDocument(String name) {
 		return documents.get(name);
 	}
-	
+
 	public void removeDocument(String name) {
 		documents.remove(name);
 	}
-	
+
 	public void removeAllDocuments() {
 		documents.clear();
 	}

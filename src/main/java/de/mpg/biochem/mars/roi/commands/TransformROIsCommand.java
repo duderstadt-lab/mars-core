@@ -129,20 +129,23 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter
 	private RoiManager roiManager;
-	
+
 	/**
 	 * INPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String inputGroup = "Input";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
+		persist = false)
 	private String inputFigure = "TransformROIsInput.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String imageName = "name";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:left", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:left", persist = false)
 	private final String affineTitle = "Affine2D Transformation Matrix";
 
 	@Parameter(label = "m00", style = "group:Input")
@@ -162,10 +165,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "m12", style = "group:Input")
 	private double m12;
-	
+
 	@Parameter(label = "Apply inverse transformation", style = "group:Input")
 	private boolean inverseTransform = false;
-	
+
 	/**
 	 * COLOCALIZE SETTINGS
 	 */
@@ -175,7 +178,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Colocalize", style = "group:Colocalize")
 	private boolean colocalize = false;
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Colocalize", persist = false)
+	@Parameter(label = "Channel", choices = { "a", "b", "c" },
+		style = "group:Colocalize", persist = false)
 	private String channel = "0";
 
 	@Parameter(label = "DoG filter", style = "group:Colocalize")
@@ -189,49 +193,51 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Search radius", style = "group:Colocalize")
 	private int colocalizeRadius = 0;
-	
+
 	@Parameter(label = "Filter original ROIs", style = "group:Colocalize")
 	private boolean filterOriginalRois = true;
-	
+
 	@Parameter(label = "Remove colocalizing ROIs", style = "group:Colocalize")
 	private boolean filterColocalizingRois = false;
-	
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output", persist = false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output",
+		persist = false)
 	private String outputFigure = "TransformROIsOutput.png";
-	
+
 	/**
 	 * PREVIEW SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
-	
+
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
-			callback = "previewChanged", style = "group:Preview")
+		callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
-	
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-			persist = false)
-		private int theT;
-	
+
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
+		", group:Preview", persist = false)
+	private int theT;
+
 	@Parameter(label = "Preview timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
 
 	private Dataset dataset;
 	private ImagePlus image;
 	private boolean swapZandT = false;
-	
-	//True when two regions already exist in the Roi manager based on _ suffixes existing.
+
+	// True when two regions already exist in the Roi manager based on _ suffixes
+	// existing.
 	private boolean subRegionMode = false;
-	
+
 	MutableModuleItem<String> fromRegionName, toRegionName;
-	
+
 	private String transformFrom, transformTo;
 
 	@Override
@@ -241,10 +247,10 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			image = convertService.convert(imageDisplay, ImagePlus.class);
 		}
 		else if (dataset == null) return;
-		
+
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
-					"imageName", String.class);
+				"imageName", String.class);
 			imageNameItem.setValue(this, dataset.getName());
 		}
 
@@ -256,19 +262,22 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			channels.add(String.valueOf(ch - 1));
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
-		
-		fromRegionName = new DefaultMutableModuleItem<String>(this, "Transform from region", String.class);
+
+		fromRegionName = new DefaultMutableModuleItem<String>(this,
+			"Transform from region", String.class);
 		fromRegionName.setWidgetStyle("group:Output");
-		
+
 		subRegionMode = roisHaveSuffixes();
 		if (subRegionMode) {
 			fromRegionName.setChoices(getSubRegionNames());
-		} else {
+		}
+		else {
 			fromRegionName.setDefaultValue("LONG");
 		}
 		getInfo().addInput(fromRegionName);
 
-		toRegionName = new DefaultMutableModuleItem<String>(this, "Transform to region", String.class);
+		toRegionName = new DefaultMutableModuleItem<String>(this,
+			"Transform to region", String.class);
 		toRegionName.setWidgetStyle("group:Output");
 		toRegionName.setDefaultValue("SHORT");
 		getInfo().addInput(toRegionName);
@@ -297,7 +306,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			image.deleteRoi();
 			image.setOverlay(null);
 		}
-		
+
 		transformFrom = fromRegionName.getValue(this);
 		transformTo = toRegionName.getValue(this);
 
@@ -307,19 +316,19 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 		logService.info(log);
-		
+
 		List<Roi> originalROIs = new ArrayList<Roi>();
 		List<Roi> remainingROIs = new ArrayList<Roi>();
-		
+
 		int roiNum = roiManager.getCount();
 		for (int i = 0; i < roiNum; i++) {
 			Roi roi = roiManager.getRoi(i);
-			if(subRegionMode && !roi.getName().endsWith(transformFrom)) {
+			if (subRegionMode && !roi.getName().endsWith(transformFrom)) {
 				remainingROIs.add((Roi) roi.clone());
-			} else
-				originalROIs.add((Roi) roi.clone());
+			}
+			else originalROIs.add((Roi) roi.clone());
 		}
-		
+
 		List<Roi> transformedROIs = new ArrayList<Roi>();
 		transformROIs(transformedROIs, originalROIs);
 
@@ -352,16 +361,15 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 				combinedRoiList.add(transformedROIs.get(i));
 			}
 		}
-		
+
 		combinedRoiList.addAll(remainingROIs);
 		combinedRoiList.sort(Comparator.comparing(Roi::getName));
-		
+
 		roiManager.reset();
 		for (int i = 0; i < combinedRoiList.size(); i++)
 			roiManager.addRoi(combinedRoiList.get(i));
-		
-		if (!uiService.isHeadless())
-			roiManager.repaint();
+
+		if (!uiService.isHeadless()) roiManager.repaint();
 
 		logService.info(LogBuilder.endBlock(true));
 	}
@@ -373,25 +381,26 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		}
 		return false;
 	}
-	
+
 	private List<String> getSubRegionNames() {
 		Set<String> uniqueSuffixes = new HashSet<String>();
-		
+
 		int roiNum = roiManager.getCount();
 		for (int i = 0; i < roiNum; i++) {
 			String name = roiManager.getRoi(i).getName();
-			if (name.contains("_")) uniqueSuffixes.add(name.substring(name.indexOf("_") + 1));
+			if (name.contains("_")) uniqueSuffixes.add(name.substring(name.indexOf(
+				"_") + 1));
 		}
 		return new ArrayList<String>(uniqueSuffixes);
 	}
-	
+
 	private void transformROIs(List<Roi> transformedROIs,
 		List<Roi> originalROIs)
 	{
 
 		AffineTransform2D transform = new AffineTransform2D();
 		transform.set(m00, m01, m02, m10, m11, m12);
-		
+
 		for (Roi roi : originalROIs) {
 			double[] source = new double[2];
 			source[0] = roi.getFloatBounds().x;
@@ -401,19 +410,20 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 			String originalRoiName = roi.getName();
 
-			if (!subRegionMode)
-				roi.setName(originalRoiName + "_" + transformFrom);
+			if (!subRegionMode) roi.setName(originalRoiName + "_" + transformFrom);
 
 			Roi newRoi = (Roi) roi.clone();
 			if (this.inverseTransform) {
-				//This one transforms target to source...
-				//same input order as apply but operates on second input and result is in first...
+				// This one transforms target to source...
+				// same input order as apply but operates on second input and result is
+				// in first...
 				transform.applyInverse(target, source);
-			} else
-				transform.apply(source, target);
-			
-			String baseRoiName = (subRegionMode) ? originalRoiName.substring(0, originalRoiName.indexOf("_")) : originalRoiName;
-			
+			}
+			else transform.apply(source, target);
+
+			String baseRoiName = (subRegionMode) ? originalRoiName.substring(0,
+				originalRoiName.indexOf("_")) : originalRoiName;
+
 			newRoi.setLocation(target[0], target[1]);
 			newRoi.setName(baseRoiName + "_" + transformTo);
 			newRoi.setStrokeColor(Color.CYAN.darker());
@@ -463,7 +473,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 					if (max < ra.setPositionAndGet(Sx, Sy).get()) max = ra.get().get();
 
 			if (!filterColocalizingRois && max > threshold) colocalizedIndex.add(i);
-			else if (filterColocalizingRois && max < threshold) colocalizedIndex.add(i);
+			else if (filterColocalizingRois && max < threshold) colocalizedIndex.add(
+				i);
 		}
 		return colocalizedIndex;
 	}
@@ -474,86 +485,87 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-						if (swapZandT) image.setSlice(theT + 1);
-						else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
-						
-						transformFrom = fromRegionName.getValue(this);
-						transformTo = toRegionName.getValue(this);
-			
-						List<Roi> transformedROIs = new ArrayList<Roi>();
-						List<Roi> originalROIs = new ArrayList<Roi>();
-						int roiNum = roiManager.getCount();
-						for (int i = 0; i < roiNum; i++) {
-							Roi roi = roiManager.getRoi(i);
-							if(subRegionMode && !roi.getName().endsWith(transformFrom)) continue;
-							
-							if (roi instanceof OvalRoi) {
-								final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
-									.getFloatBounds().y, roi.getFloatBounds().width, roi
-										.getFloatBounds().height);
-								ovalRoi.setName(roi.getName());
-								originalROIs.add(ovalRoi);
-							}
-							else {
-								final PointRoi pointRoi = new PointRoi(roi.getFloatBounds().x, roi
-									.getFloatBounds().y);
-								pointRoi.setName(roi.getName());
-								originalROIs.add(pointRoi);
-							}
+					if (swapZandT) image.setSlice(theT + 1);
+					else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+
+					transformFrom = fromRegionName.getValue(this);
+					transformTo = toRegionName.getValue(this);
+
+					List<Roi> transformedROIs = new ArrayList<Roi>();
+					List<Roi> originalROIs = new ArrayList<Roi>();
+					int roiNum = roiManager.getCount();
+					for (int i = 0; i < roiNum; i++) {
+						Roi roi = roiManager.getRoi(i);
+						if (subRegionMode && !roi.getName().endsWith(transformFrom))
+							continue;
+
+						if (roi instanceof OvalRoi) {
+							final OvalRoi ovalRoi = new OvalRoi(roi.getFloatBounds().x, roi
+								.getFloatBounds().y, roi.getFloatBounds().width, roi
+									.getFloatBounds().height);
+							ovalRoi.setName(roi.getName());
+							originalROIs.add(ovalRoi);
 						}
-			
-						transformROIs(transformedROIs, originalROIs);
-			
-						List<Integer> colocalizedIndex = new ArrayList<Integer>();
-			
-						Overlay overlay = new Overlay();
-						if (colocalize) {
-							colocalizedIndex = colocalize(transformedROIs, threshold, Integer
-								.valueOf(channel), theT);
-			
-							if (filterOriginalRois) {
-								for (int i = 0; i < colocalizedIndex.size(); i++) {
-									overlay.add(originalROIs.get(colocalizedIndex.get(i)));
-									overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
-								}
-							}
-							else {
-								for (int i = 0; i < transformedROIs.size(); i++) {
-									overlay.add(originalROIs.get(i));
-									if (colocalizedIndex.contains(i)) {
-										overlay.add(transformedROIs.get(colocalizedIndex.get(
-											colocalizedIndex.indexOf(i))));
-									}
-								}
+						else {
+							final PointRoi pointRoi = new PointRoi(roi.getFloatBounds().x, roi
+								.getFloatBounds().y);
+							pointRoi.setName(roi.getName());
+							originalROIs.add(pointRoi);
+						}
+					}
+
+					transformROIs(transformedROIs, originalROIs);
+
+					List<Integer> colocalizedIndex = new ArrayList<Integer>();
+
+					Overlay overlay = new Overlay();
+					if (colocalize) {
+						colocalizedIndex = colocalize(transformedROIs, threshold, Integer
+							.valueOf(channel), theT);
+
+						if (filterOriginalRois) {
+							for (int i = 0; i < colocalizedIndex.size(); i++) {
+								overlay.add(originalROIs.get(colocalizedIndex.get(i)));
+								overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
 							}
 						}
 						else {
 							for (int i = 0; i < transformedROIs.size(); i++) {
 								overlay.add(originalROIs.get(i));
-								overlay.add(transformedROIs.get(i));
+								if (colocalizedIndex.contains(i)) {
+									overlay.add(transformedROIs.get(colocalizedIndex.get(
+										colocalizedIndex.indexOf(i))));
+								}
 							}
 						}
-			
-						SwingUtilities.invokeLater( () -> {
-							if (image != null) {
-								image.deleteRoi();
-								image.setOverlay(overlay);
-							}
-						});
+					}
+					else {
+						for (int i = 0; i < transformedROIs.size(); i++) {
+							overlay.add(originalROIs.get(i));
+							overlay.add(transformedROIs.get(i));
+						}
+					}
+
+					SwingUtilities.invokeLater(() -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(overlay);
+						}
+					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
 			}
 			catch (TimeoutException e1) {
 				es.shutdownNow();
 				uiService.showDialog(
-						"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
-						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+					"Preview took too long. Try a smaller region, a higher threshold, or try again with a longer delay before preview timeout.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
 			catch (InterruptedException | ExecutionException e2) {
 				es.shutdownNow();
 				cancel();
 			}
-			es.shutdownNow();		
+			es.shutdownNow();
 		}
 	}
 
@@ -574,7 +586,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		builder.addParameter("Affine2D m10", String.valueOf(m10));
 		builder.addParameter("Affine2D m11", String.valueOf(m11));
 		builder.addParameter("Affine2D m12", String.valueOf(m12));
-		builder.addParameter("Apply inverse transformation", String.valueOf(inverseTransform));
+		builder.addParameter("Apply inverse transformation", String.valueOf(
+			inverseTransform));
 		builder.addParameter("Transform from region", transformFrom);
 		builder.addParameter("Transform to region", transformTo);
 		builder.addParameter("Use DoG filter", String.valueOf(useDogFilter));
@@ -584,13 +597,13 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		builder.addParameter("filterOriginalRois", String.valueOf(
 			filterOriginalRois));
 		builder.addParameter("filterColocalizingRois", String.valueOf(
-				filterColocalizingRois));
+			filterColocalizingRois));
 	}
-	
+
 	public void setRoiManager(RoiManager roiManager) {
 		this.roiManager = roiManager;
 	}
-	
+
 	public RoiManager getRoiManager() {
 		return roiManager;
 	}
@@ -618,11 +631,11 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	public void setM12(double m12) {
 		this.m12 = m12;
 	}
-	
+
 	public void setApplyInverseTransformation(boolean inverseTransform) {
 		this.inverseTransform = inverseTransform;
 	}
-	
+
 	public boolean getApplyInverseTransformation() {
 		return inverseTransform;
 	}
@@ -658,7 +671,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	public String getTransformFromRegion() {
 		return transformFrom;
 	}
-	
+
 	public void setTransformToRegion(String transformTo) {
 		this.transformTo = transformTo;
 	}
@@ -698,7 +711,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	public boolean getFilterOriginalRois() {
 		return filterOriginalRois;
 	}
-	
+
 	public void setFilterColocalizingRois(boolean filterColocalizingRois) {
 		this.filterColocalizingRois = filterColocalizingRois;
 	}

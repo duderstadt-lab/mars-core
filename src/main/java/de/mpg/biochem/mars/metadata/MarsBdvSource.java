@@ -51,8 +51,8 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	private int singleTimePoint = 0;
 	private boolean singleTimePointMode = false;
 	private AffineTransform3D affine3D;
-	
-	private final Map< String, String > properties = new ConcurrentHashMap<>();
+
+	private final Map<String, String> properties = new ConcurrentHashMap<>();
 
 	public MarsBdvSource(String name) {
 		super();
@@ -80,30 +80,30 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 
 		setJsonField("name", jGenerator -> jGenerator.writeStringField("name",
 			name), jParser -> name = jParser.getText());
-		
-		setJsonField("isN5", jGenerator -> jGenerator.writeBooleanField(
-				"isN5", isN5), jParser -> isN5 = jParser
-					.getBooleanValue());
+
+		setJsonField("isN5", jGenerator -> jGenerator.writeBooleanField("isN5",
+			isN5), jParser -> isN5 = jParser.getBooleanValue());
 
 		setJsonField("driftCorrect", jGenerator -> jGenerator.writeBooleanField(
 			"driftCorrect", driftCorrect), jParser -> driftCorrect = jParser
 				.getBooleanValue());
 
-		setJsonField("path", jGenerator -> jGenerator.writeStringField(
-			"path", path ), jParser -> path = jParser.getText());
-		
-		setJsonField("dataset", jGenerator -> jGenerator.writeStringField(
-				"dataset", n5Dataset ), jParser -> n5Dataset = jParser.getText());
-		
-		setJsonField("channel", jGenerator -> jGenerator.writeNumberField(
-				"channel", channel), jParser -> channel = jParser.getIntValue());
-		
-		setJsonField("singleTimePointMode", jGenerator -> jGenerator.writeBooleanField(
-				"singleTimePointMode", singleTimePointMode), jParser -> singleTimePointMode = jParser
-					.getBooleanValue());
-		
+		setJsonField("path", jGenerator -> jGenerator.writeStringField("path",
+			path), jParser -> path = jParser.getText());
+
+		setJsonField("dataset", jGenerator -> jGenerator.writeStringField("dataset",
+			n5Dataset), jParser -> n5Dataset = jParser.getText());
+
+		setJsonField("channel", jGenerator -> jGenerator.writeNumberField("channel",
+			channel), jParser -> channel = jParser.getIntValue());
+
+		setJsonField("singleTimePointMode", jGenerator -> jGenerator
+			.writeBooleanField("singleTimePointMode", singleTimePointMode),
+			jParser -> singleTimePointMode = jParser.getBooleanValue());
+
 		setJsonField("singleTimePoint", jGenerator -> jGenerator.writeNumberField(
-				"singleTimePoint", singleTimePoint), jParser -> singleTimePoint = jParser.getIntValue());
+			"singleTimePoint", singleTimePoint), jParser -> singleTimePoint = jParser
+				.getIntValue());
 
 		setJsonField("affineTransform3D", jGenerator -> {
 			// Jackson 2.9.9 compatible stuff
@@ -126,7 +126,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 			affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
 				trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
 		});
-		
+
 		setJsonField("properties", jGenerator -> {
 			if (properties.size() > 0) {
 				jGenerator.writeFieldName("properties");
@@ -146,26 +146,23 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		/*
 		 * Remove me in a future release.
 		 */
-		
-		setJsonField("Name", null, 
-				jParser -> name = jParser.getText());
 
-		setJsonField("DriftCorrect", null,
-				jParser -> driftCorrect = jParser.getBooleanValue());
+		setJsonField("Name", null, jParser -> name = jParser.getText());
 
-		setJsonField("pathToXml", null, 
-				jParser -> path = jParser.getText());
+		setJsonField("DriftCorrect", null, jParser -> driftCorrect = jParser
+			.getBooleanValue());
 
-		setJsonField("AffineTransform3D", null, 
-			jParser -> {
-				double[] trans = new double[12];
-				int index = 0;
-				while (jParser.nextToken() != JsonToken.END_ARRAY) {
-					trans[index] = jParser.getDoubleValue();
-					index++;
-				}
-				affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
-					trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
+		setJsonField("pathToXml", null, jParser -> path = jParser.getText());
+
+		setJsonField("AffineTransform3D", null, jParser -> {
+			double[] trans = new double[12];
+			int index = 0;
+			while (jParser.nextToken() != JsonToken.END_ARRAY) {
+				trans[index] = jParser.getDoubleValue();
+				index++;
+			}
+			affine3D.set(trans[0], trans[1], trans[2], trans[3], trans[4], trans[5],
+				trans[6], trans[7], trans[8], trans[9], trans[10], trans[11]);
 		});
 	}
 
@@ -192,48 +189,48 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	public void setCorrectDrift(boolean driftCorrect) {
 		this.driftCorrect = driftCorrect;
 	}
-	
+
 	public boolean isN5() {
 		return this.isN5;
 	}
-	
+
 	public void setN5(boolean isN5) {
 		this.isN5 = isN5;
 	}
-	
+
 	public int getChannel() {
 		return channel;
 	}
-	
+
 	public void setChannel(int channel) {
 		this.channel = channel;
 	}
-	
+
 	public void setSingleTimePointMode(boolean singleTimePointMode) {
 		this.singleTimePointMode = singleTimePointMode;
 	}
-	
+
 	public boolean getSingleTimePointMode() {
 		return this.singleTimePointMode;
 	}
-	
+
 	public int getSingleTimePoint() {
 		return singleTimePoint;
 	}
-	
+
 	public void setSingleTimePoint(int singleTimePoint) {
 		this.singleTimePoint = singleTimePoint;
 	}
-	
+
 	public void setN5Dataset(String n5Dataset) {
 		this.n5Dataset = n5Dataset;
 	}
-	
+
 	public String getN5Dataset() {
 		return n5Dataset;
 	}
-	
-	public Map< String, String > getProperties() {
+
+	public Map<String, String> getProperties() {
 		return properties;
 	}
 

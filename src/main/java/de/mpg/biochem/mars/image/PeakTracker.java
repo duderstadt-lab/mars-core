@@ -129,16 +129,18 @@ public class PeakTracker {
 		if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
 		else searchRadius = maxDifference[3];
 	}
-	
+
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<?, ?, ?, ?> archive, final int channel, final int nThreads)
+		MoleculeArchive<?, ?, ?, ?> archive, final int channel, final int nThreads)
 	{
-		List<Integer> trackingTimePoints = (List<Integer>)peakStack.keySet().stream().sorted().collect(toList());
+		List<Integer> trackingTimePoints = (List<Integer>) peakStack.keySet()
+			.stream().sorted().collect(toList());
 		track(peakStack, archive, channel, trackingTimePoints, nThreads);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-			MoleculeArchive<?, ?, ?, ?> archive, int channel, List<Integer> trackingTimePoints, final int nThreads)
+		MoleculeArchive<?, ?, ?, ?> archive, int channel,
+		List<Integer> trackingTimePoints, final int nThreads)
 	{
 		metaDataUID = archive.getMetadataUIDs().get(0);
 
@@ -153,8 +155,8 @@ public class PeakTracker {
 
 		try {
 
-			forkJoinPool.submit(() -> trackingTimePoints.parallelStream()
-				.forEach(t -> {
+			forkJoinPool.submit(() -> trackingTimePoints.parallelStream().forEach(
+				t -> {
 					// Remember this operation will change the order of the peaks in the
 					// Arraylists but that should not be a problem here...
 
@@ -169,8 +171,9 @@ public class PeakTracker {
 					}
 				})).get();
 
-			forkJoinPool.submit(() -> trackingTimePoints.parallelStream()
-				.forEach(t -> findPossibleLinks(peakStack, trackingTimePoints.indexOf(t), trackingTimePoints))).get();
+			forkJoinPool.submit(() -> trackingTimePoints.parallelStream().forEach(
+				t -> findPossibleLinks(peakStack, trackingTimePoints.indexOf(t),
+					trackingTimePoints))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
@@ -207,7 +210,7 @@ public class PeakTracker {
 					// We need to check if the to peak has any nearest neighbors that have
 					// already been linked...
 					boolean regionAlreadyLinked = false;
-					
+
 					for (int q = indexT + 1; q <= indexT + maxDifference[5]; q++) {
 						if (!KDTreeStack.containsKey(q)) continue;
 
@@ -256,8 +259,9 @@ public class PeakTracker {
 
 		// I think we need to reinitialize this pool since I shut it down above.
 		forkJoinPool = new ForkJoinPool(nThreads);
-		
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils.buildChannelToTtoDtMap(archive.getMetadata(0));
+
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils
+			.buildChannelToTtoDtMap(archive.getMetadata(0));
 
 		// Now we build a MoleculeArchive in a multithreaded manner in which
 		// each molecule is build by a different thread just following the
@@ -270,7 +274,8 @@ public class PeakTracker {
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
-			logService.error("Failed to add molecules to archive.. " + e.getMessage());
+			logService.error("Failed to add molecules to archive.. " + e
+				.getMessage());
 			e.printStackTrace();
 		}
 		finally {
@@ -351,14 +356,15 @@ public class PeakTracker {
 
 	@SuppressWarnings("unchecked")
 	private <M extends Molecule> void buildMolecule(Peak startingPeak,
-		HashMap<String, Integer> trajectoryLengths, MoleculeArchive<M, ?, ?, ?> archive,
-		int channel, Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
+		HashMap<String, Integer> trajectoryLengths,
+		MoleculeArchive<M, ?, ?, ?> archive, int channel,
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
 	{
 		// don't add the molecule if the trajectory length is below
 		// minTrajectoryLength
 		if (trajectoryLengths.get(startingPeak.getTrackUID())
 			.intValue() < minTrajectoryLength) return;
-		
+
 		Molecule mol = archive.createMolecule(startingPeak.getTrackUID());
 		mol.setMetadataUID(metaDataUID);
 		mol.setChannel(channel);
@@ -370,44 +376,48 @@ public class PeakTracker {
 		// Now loop through all peaks connected to this starting peak and
 		// add them to a DataTable as we go
 		Peak peak = startingPeak;
-				
+
 		// fail-safe in case there are more peak links than sizeT
 		int row = 0;
 		int sizeT = archive.metadata().findFirst().get().getImage(0).getSizeT();
 		do {
 			table.appendRow();
-			table.setValue(Peak.T, row, (double)peak.getT());
+			table.setValue(Peak.T, row, (double) peak.getT());
 			table.setValue(Peak.X, row, peak.getX());
 			table.setValue(Peak.Y, row, peak.getY());
-			if (channelToTtoDtMap.get(channel).get(peak.getT()) != -1)
-				table.setValue("Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
+			if (channelToTtoDtMap.get(channel).get(peak.getT()) != -1) table.setValue(
+				"Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
 			if (verbose) {
 				for (String name : peak.getProperties().keySet())
 					table.setValue(name, row, peak.getProperties().get(name));
-			} else {
-				if (peak.getProperties().containsKey(Peak.INTENSITY))
-					table.setValue(Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
+			}
+			else {
+				if (peak.getProperties().containsKey(Peak.INTENSITY)) table.setValue(
+					Peak.INTENSITY, row, peak.getProperties().get(Peak.INTENSITY));
 				if (archive instanceof ObjectArchive) {
 					table.setValue(Peak.AREA, row, peak.getProperties().get(Peak.AREA));
-					table.setValue(Peak.PERIMETER, row, peak.getProperties().get(Peak.PERIMETER));
-					table.setValue(Peak.CIRCULARITY, row, peak.getProperties().get(Peak.CIRCULARITY));
+					table.setValue(Peak.PERIMETER, row, peak.getProperties().get(
+						Peak.PERIMETER));
+					table.setValue(Peak.CIRCULARITY, row, peak.getProperties().get(
+						Peak.CIRCULARITY));
 				}
 			}
-			
-			if (archive instanceof ObjectArchive)
-				((MartianObject) mol).putShape(peak.getT(), peak.getShape());
-			
+
+			if (archive instanceof ObjectArchive) ((MartianObject) mol).putShape(peak
+				.getT(), peak.getShape());
+
 			row++;
 			peak = peak.getForwardLink();
-		} while (peak != null && row < sizeT);
+		}
+		while (peak != null && row < sizeT);
 
 		// Convert units
 		if (pixelSize != 1) {
 			table.rows().forEach(r -> {
 				r.setValue(Peak.X, r.getValue(Peak.X) * pixelSize);
 				r.setValue(Peak.Y, r.getValue(Peak.Y) * pixelSize);
-				
-				//What about objects? The polygons be multiplied also by pixelSize...
+
+				// What about objects? The polygons be multiplied also by pixelSize...
 			});
 		}
 

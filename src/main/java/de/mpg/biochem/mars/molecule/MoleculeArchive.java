@@ -79,7 +79,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong saving the indexes.
 	 */
 	void rebuildIndexes() throws IOException;
-	
+
 	/**
 	 * Rebuild all indexes by inspecting the contents of store directories. Then
 	 * save the new indexes to the indexes.json file in the store. Use the number
@@ -125,7 +125,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	void saveAsVirtualStore(File virtualDirectory) throws IOException;
-	
+
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
 	 * smile format with .sml file extension. This is the default format. Rebuilds
@@ -135,7 +135,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param nThreads The thread count.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsVirtualStore(File virtualDirectory, final int nThreads) throws IOException;
+	void saveAsVirtualStore(File virtualDirectory, final int nThreads)
+		throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
@@ -146,7 +147,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	void saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
-	
+
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
 	 * json format with .json file extension. Rebuilds indexes in the process if
@@ -156,7 +157,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param nThreads The thread count.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads) throws IOException;
+	void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)
+		throws IOException;
 
 	/**
 	 * Adds a molecule to the archive. If a molecule with the same UID is already
@@ -191,7 +193,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param meta metadata record to remove.
 	 */
 	void removeMetadata(I meta);
-	
+
 	/**
 	 * Retrieves an MarsMetadata record.
 	 * 
@@ -440,7 +442,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The Molecule record with the UID given or null if none is located.
 	 */
 	M get(String UID);
-	
+
 	/**
 	 * Retrieves the molecule record at the provided index.
 	 * 

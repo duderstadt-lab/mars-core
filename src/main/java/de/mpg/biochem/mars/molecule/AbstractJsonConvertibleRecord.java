@@ -61,8 +61,10 @@ public abstract class AbstractJsonConvertibleRecord implements
 	JsonConvertibleRecord
 {
 
-	private final LinkedHashMap<String, Predicate<JsonGenerator>> outputMap = new LinkedHashMap<String, Predicate<JsonGenerator>>();
-	private final HashMap<String, Predicate<JsonParser>> inputMap = new HashMap<String, Predicate<JsonParser>>();
+	private final LinkedHashMap<String, Predicate<JsonGenerator>> outputMap =
+		new LinkedHashMap<String, Predicate<JsonGenerator>>();
+	private final HashMap<String, Predicate<JsonParser>> inputMap =
+		new HashMap<String, Predicate<JsonParser>>();
 
 	/**
 	 * IOMaps are created during the first call to toJSON or fromJSON lazily This
@@ -70,7 +72,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 * before the first call. If false this field triggers initialization.
 	 */
 	private boolean IOMapsInitialized = false;
-	
+
 	private boolean showWarnings = true;
 
 	/**
@@ -141,15 +143,13 @@ public abstract class AbstractJsonConvertibleRecord implements
 			// In that case we simply pass through it and all substructures that
 			// contain arrays or objects
 			if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
-				if (showWarnings)
-					System.out.println("unknown object " + fieldBlockName +
-						" encountered in the record ... skipping");
+				if (showWarnings) System.out.println("unknown object " +
+					fieldBlockName + " encountered in the record ... skipping");
 				MarsUtil.passThroughUnknownObjects(jParser);
 			}
 			else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
-				if (showWarnings)
-					System.out.println("unknown array " + fieldBlockName +
-						" encountered in the record ... skipping");
+				if (showWarnings) System.out.println("unknown array " + fieldBlockName +
+					" encountered in the record ... skipping");
 				MarsUtil.passThroughUnknownArrays(jParser);
 			}
 			else {
@@ -158,7 +158,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 			}
 		}
 	}
-	
+
 	@Override
 	public void setShowWarnings(boolean showWarnings) {
 		this.showWarnings = showWarnings;

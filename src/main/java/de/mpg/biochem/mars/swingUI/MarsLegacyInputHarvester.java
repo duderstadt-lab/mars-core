@@ -59,16 +59,18 @@ import org.scijava.widget.WidgetService;
 import net.imagej.legacy.ui.LegacyUI;
 
 /**
- * Trivial Legacy extension of the {@link org.scijava.ui.swing.widget.SwingInputHarvester}. Just need to
- * link it to the {@link net.imagej.legacy.ui.LegacyUI}.
+ * Trivial Legacy extension of the
+ * {@link org.scijava.ui.swing.widget.SwingInputHarvester}. Just need to link it
+ * to the {@link net.imagej.legacy.ui.LegacyUI}.
  */
 @Plugin(type = PreprocessorPlugin.class, priority = InputHarvester.PRIORITY)
-public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPanel, JPanel>
+public class MarsLegacyInputHarvester extends
+	AbstractInputHarvesterPlugin<JPanel, JPanel>
 {
-	
+
 	@Parameter(required = false)
 	private UIService uiService;
-	
+
 	@Parameter
 	private LogService log;
 
@@ -80,10 +82,10 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 
 	@Parameter
 	private ConvertService convertService;
-	
+
 	@Parameter
 	private PrefService prefService;
-	
+
 	// -- ModuleProcessor methods --
 
 	@Override
@@ -101,17 +103,17 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 			cancel(e.getMessage());
 		}
 	}
-	
+
 	// -- InputHarvester methods --
 
 	@Override
 	public MarsSwingInputPanel createInputPanel() {
 		return new MarsSwingInputPanel();
 	}
-	
+
 	@Override
-	public void buildPanel(final InputPanel<JPanel, JPanel> inputPanel, final Module module)
-		throws ModuleException
+	public void buildPanel(final InputPanel<JPanel, JPanel> inputPanel,
+		final Module module) throws ModuleException
 	{
 		final Iterable<ModuleItem<?>> inputs = module.getInfo().inputs();
 
@@ -149,16 +151,16 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		}
 		else messageType = JOptionPane.PLAIN_MESSAGE;
 		final boolean doScrollBars = messageType == JOptionPane.PLAIN_MESSAGE;
-		final SwingDialog dialog =
-			new SwingDialog(pane, optionType, messageType, doScrollBars);
+		final SwingDialog dialog = new SwingDialog(pane, optionType, messageType,
+			doScrollBars);
 		dialog.setTitle(title);
 		dialog.setModal(modal);
 		final int rval = dialog.show();
-			
+
 		// verify return value of dialog
 		return rval == JOptionPane.OK_OPTION;
 	}
-	
+
 	// -- Helper methods --
 
 	private <T> WidgetModel addInput(final InputPanel<JPanel, JPanel> inputPanel,
@@ -169,8 +171,8 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		if (resolved) return null; // skip resolved inputs
 
 		final Class<T> type = item.getType();
-		final WidgetModel model =
-			widgetService.createModel(inputPanel, module, item, getObjects(type));
+		final WidgetModel model = widgetService.createModel(inputPanel, module,
+			item, getObjects(type));
 
 		final Class<JPanel> widgetType = inputPanel.getWidgetComponentType();
 		final InputWidget<?, ?> widget = widgetService.create(model);
@@ -179,7 +181,8 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 		}
 		if (widget != null && widget.getComponentType() == widgetType) {
 			@SuppressWarnings("unchecked")
-			final InputWidget<?, JPanel> typedWidget = (InputWidget<?, JPanel>) widget;
+			final InputWidget<?, JPanel> typedWidget =
+				(InputWidget<?, JPanel>) widget;
 			inputPanel.addWidget(typedWidget);
 			return model;
 		}
@@ -197,8 +200,8 @@ public class MarsLegacyInputHarvester extends AbstractInputHarvesterPlugin<JPane
 	@SuppressWarnings("unchecked")
 	private List<?> getObjects(final Class<?> type) {
 		@SuppressWarnings("rawtypes")
-		Set compatibleInputs =
-				new HashSet(convertService.getCompatibleInputs(type));
+		Set compatibleInputs = new HashSet(convertService.getCompatibleInputs(
+			type));
 		compatibleInputs.addAll(objectService.getObjects(type));
 		return new ArrayList<>(compatibleInputs);
 	}

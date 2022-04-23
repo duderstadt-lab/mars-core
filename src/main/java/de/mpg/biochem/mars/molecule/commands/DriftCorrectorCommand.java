@@ -53,9 +53,9 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-				label = "Drift Corrector", weight = 9, mnemonic = 'd') })
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Drift Corrector",
+					weight = 9, mnemonic = 'd') })
 public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter
@@ -72,19 +72,19 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "MoleculeArchive")
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
-	
+
 	@Parameter(label = "Single channel")
 	private boolean singleChannel = false;
-	
+
 	@Parameter(label = "Channel")
 	private int theC = 0;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String calcDriftMessage = "Drift calculator:";
-	
+
 	@Parameter(label = "Calculate drift")
 	private boolean calculateDrift = true;
-	
+
 	@Parameter(label = "Background tag")
 	private String backgroundTag = "background";
 
@@ -96,7 +96,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "Use incomplete traces")
 	private boolean use_incomplete_traces = false;
-	
+
 	@Parameter(label = "Mode", choices = { "mean", "median" })
 	private String mode = "mean";
 
@@ -104,43 +104,43 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 		style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE, choices = { "beginning",
 			"end" })
 	private String zeroPoint = "end";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private final String corrDriftMessage = "Drift corrector:";
-	
+
 	@Parameter(label = "Correct drift")
 	private boolean correctDrift = true;
-	
+
 	@Parameter(label = "Output X (X_drift_corr)")
 	private String output_x = "X_drift_corr";
 
 	@Parameter(label = "Output Y (Y_drift_corr)")
 	private String output_y = "Y_drift_corr";
-	
-	//@Parameter(label = "set output zero to mean of region")
-	//private boolean zeroToRegion = false;
-	
-	//@Parameter(visibility = ItemVisibility.MESSAGE)
-	//private final String header = "Region:";
 
-	//@Parameter(label = "start T")
-	//private int start = 0;
+	// @Parameter(label = "set output zero to mean of region")
+	// private boolean zeroToRegion = false;
 
-	//@Parameter(label = "end T")
-	//private int end = 100;
+	// @Parameter(visibility = ItemVisibility.MESSAGE)
+	// private final String header = "Region:";
+
+	// @Parameter(label = "start T")
+	// private int start = 0;
+
+	// @Parameter(label = "end T")
+	// private int end = 100;
 
 	@Override
 	public void run() {
-		
+
 		final int channel = (singleChannel) ? theC : 0;
-		
-		if (calculateDrift) ArchiveUtils.calculateDrift(archive,
-			backgroundTag, input_x, input_y, use_incomplete_traces, mode,
-			zeroPoint, singleChannel, channel, logService);
-		
-		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y, 
+
+		if (calculateDrift) ArchiveUtils.calculateDrift(archive, backgroundTag,
+			input_x, input_y, use_incomplete_traces, mode, zeroPoint, singleChannel,
+			channel, logService);
+
+		if (correctDrift) ArchiveUtils.correctDrift(archive, input_x, input_y,
 			output_x, output_y, singleChannel, channel, logService);
-		
+
 	}
 
 	public void setArchive(
@@ -155,27 +155,27 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	{
 		return archive;
 	}
-	
+
 	public void setSingleChannel(boolean singleChannel) {
 		this.singleChannel = singleChannel;
 	}
-	
+
 	public boolean getSingleChannel() {
 		return this.singleChannel;
 	}
-	
+
 	public void setChannel(int theC) {
 		this.theC = theC;
 	}
-	
+
 	public int getChannel() {
 		return this.theC;
 	}
-	
+
 	public void setCalculateDrift(boolean calculateDrift) {
 		this.calculateDrift = calculateDrift;
 	}
-	
+
 	public boolean getCalculateDrift() {
 		return this.calculateDrift;
 	}
@@ -199,7 +199,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	public void setMode(String mode) {
 		this.mode = mode;
 	}
-	
+
 	public String getMode() {
 		return mode;
 	}
@@ -207,15 +207,15 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	public void setZeroPoint(String zeroPoint) {
 		this.zeroPoint = zeroPoint;
 	}
-	
+
 	public String getZeroPoint() {
 		return zeroPoint;
 	}
-	
+
 	public void setUseIncompleteTraces(boolean use_incomplete_traces) {
 		this.use_incomplete_traces = use_incomplete_traces;
 	}
-	
+
 	public boolean getUseIncompleteTraces() {
 		return use_incomplete_traces;
 	}
@@ -227,11 +227,11 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	public void setBackgroundTag(String backgroundTag) {
 		this.backgroundTag = backgroundTag;
 	}
-	
+
 	public void setCorrectDrift(boolean correctDrift) {
 		this.correctDrift = correctDrift;
 	}
-	
+
 	public boolean getCorrectDrift() {
 		return this.correctDrift;
 	}

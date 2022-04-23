@@ -84,7 +84,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		return source.endsWith(".yama") || source.endsWith(".yama.json") || source
 			.endsWith(".yama.store");
 	}
-	
+
 	@Override
 	public boolean supportsOpen(final Location source) {
 		return supportsOpen(source.getURI().getPath());
@@ -94,7 +94,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	public boolean supportsSave(final String source) {
 		return supportsOpen(source);
 	}
-	
+
 	@Override
 	public boolean supportsSave(final Location destination) {
 		return supportsOpen(destination);
@@ -155,7 +155,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 		return archive;
 	}
-	
+
 	@Override
 	public MoleculeArchive open(final Location source) throws IOException {
 		return open(source.getURI().getPath());
@@ -169,10 +169,10 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		if (file.isDirectory()) archive.saveAsVirtualStore(file);
 		else archive.saveAs(file);
 	}
-	
+
 	@Override
 	public void save(final MoleculeArchive archive, final Location destination)
-			throws IOException
+		throws IOException
 	{
 		save(archive, destination.getURI().getPath());
 	}

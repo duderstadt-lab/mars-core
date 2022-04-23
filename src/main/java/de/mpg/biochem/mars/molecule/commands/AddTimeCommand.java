@@ -59,9 +59,9 @@ import de.mpg.biochem.mars.util.LogBuilder;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
-			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(label = "Add Time",
-				weight = 8, mnemonic = 'a') })
+			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Add Time", weight = 8,
+					mnemonic = 'a') })
 public class AddTimeCommand extends DynamicCommand implements Command {
 
 	@Parameter
@@ -80,8 +80,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
 
 	@Parameter(label = "Source:",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = { "from metadata (dt)",
-			"constant time increment" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
+			"from metadata (dt)", "constant time increment" })
 	private String source;
 
 	@Parameter(label = "Time increment (s)")
@@ -91,11 +91,12 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	public void run() {
 		// Let's keep track of the time it takes
 		double starttime = System.currentTimeMillis();
-		
+
 		if (archive.get(0) instanceof DnaMolecule) {
 			archive.getWindow().unlock();
-			uiService.showDialog("The Add Time command can only be run on SingleMoleculeArchives and you provided a DnaMoleculeArchive",
-					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+			uiService.showDialog(
+				"The Add Time command can only be run on SingleMoleculeArchives and you provided a DnaMoleculeArchive",
+				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 			return;
 		}
 
@@ -139,8 +140,9 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 
 			final int finalImageIndex = imageIndex;
 
-			if (source.equals("from metadata (dt)")) datatable.rows().forEach(row -> row.setValue(
-				"Time_(s)", metadata.getPlane(finalImageIndex, 0, molecule.getChannel(), (int) row.getValue("T"))
+			if (source.equals("from metadata (dt)")) datatable.rows().forEach(
+				row -> row.setValue("Time_(s)", metadata.getPlane(finalImageIndex, 0,
+					molecule.getChannel(), (int) row.getValue("T"))
 					.getDeltaTinSeconds()));
 			else molecule.getTable().rows().forEach(row -> row.setValue("Time_(s)",
 				row.getValue("T") * timeIncrement));
@@ -186,8 +188,8 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
 			datatable.rows().forEach(row -> row.setValue("Time_(s)", metadata
-				.getPlane(0, 0, molecule.getChannel(), (int) row
-					.getValue("T")).getDeltaTinSeconds()));
+				.getPlane(0, 0, molecule.getChannel(), (int) row.getValue("T"))
+				.getDeltaTinSeconds()));
 
 			archive.put(molecule);
 		});
@@ -235,11 +237,16 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 		archive.logln("  ");
 	}
 
-	public void setArchive(MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive) {
+	public void setArchive(
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive)
+	{
 		this.archive = archive;
 	}
 
-	public MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> getArchive() {
+	public
+		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>>
+		getArchive()
+	{
 		return archive;
 	}
 

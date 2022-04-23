@@ -26,21 +26,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.util;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 
 public class DefaultJsonConverter extends AbstractJsonConvertibleRecord {
-	
+
 	public DefaultJsonConverter() {
 		super();
 	}
 
 	@Override
 	protected void createIOMaps() {
-		//No implementation needed
-		//This reader will be populated with fields
-		//and run.
+		// No implementation needed
+		// This reader will be populated with fields
+		// and run.
 	}
 
 }

@@ -26,20 +26,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+
 package de.mpg.biochem.mars.image;
 
 import net.imglib2.RealLocalizable;
 
 public class PeakPixel implements RealLocalizable {
+
 	public double x, y, pixelValue;
 	public boolean valid = true;
-	
+
 	public PeakPixel(double x, double y, double pixelValue) {
 		this.x = x;
 		this.y = y;
 		this.pixelValue = pixelValue;
 	}
-	
+
 	// Override from RealLocalizable interface. So peaks can be passed to KDTree
 	// and other imglib2 functions.
 	@Override

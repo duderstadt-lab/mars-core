@@ -162,10 +162,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private OpService opService;
-	
+
 	@Parameter
 	private EventService eventService;
-	
+
 	@Parameter
 	private UIService uiService;
 
@@ -183,40 +183,44 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(required = false)
 	private RoiManager roiManager;
-	
+
 	/**
 	 * INPUT SETTINGS
 	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "groupLabel, tabbedPaneWidth:450")
 	private String inputGroup = "Input";
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input", persist=false)
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
+		persist = false)
 	private String inputFigure = "ImageInput.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input, align:center", persist=false)
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Input, align:center", persist = false)
 	private String imageName = "name";
 
 	@Parameter(label = "Region",
-		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input", choices = { "whole image",
-			"ROI from image", "ROIs from manager" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
+		choices = { "whole image", "ROI from image", "ROIs from manager" })
 	private String region = "whole image";
 
-	@Parameter(label = "Channel", choices = { "a", "b", "c" }, style = "group:Input", persist = false)
+	@Parameter(label = "Channel", choices = { "a", "b", "c" },
+		style = "group:Input", persist = false)
 	private String channel = "0";
-	
+
 	/**
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String findGroup = "Find";
-	
+
 	@Parameter(label = "Use median filter", style = "group:Find")
 	private boolean useMedianFilter = false;
 
 	@Parameter(label = "Median filter radius", style = "group:Find")
 	private long medianFilterRadius = 2;
-	
+
 	@Parameter(label = "Use local otsu", style = "group:Find")
 	private boolean useLocalOstu = true;
 
@@ -225,10 +229,10 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Minimum object center separation", style = "group:Find")
 	private int minimumDistance = 4;
-	
+
 	@Parameter(label = "Use area filter", style = "group:Find")
 	private boolean useAreaFilter = true;
-	
+
 	@Parameter(label = "Minimum area", style = "group:Find")
 	private double minArea = 1;
 
@@ -246,7 +250,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String trackGroup = "Track";
-	
+
 	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
 
@@ -258,59 +262,63 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Minimum length", style = "group:Track")
 	private int minTrajectoryLength = 100;
-	
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
 	private String outputFigure = "ObjectArchive.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Output, align:center")
 	private String outputArchiveType = "type: ObjectArchive";
-	
+
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
 
 	@Parameter(label = "Pixel length", style = "group:Output")
 	private double pixelLength = 1;
 
-	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel", "µm", "nm" })
+	@Parameter(label = "Pixel units", style = "group:Output", choices = { "pixel",
+		"µm", "nm" })
 	private String pixelUnits = "pixel";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
-	private final String excludeTitle = "List of time points to exclude (T0, T1-T2, ...)";
-	
+	private final String excludeTitle =
+		"List of time points to exclude (T0, T1-T2, ...)";
+
 	@Parameter(label = "Exclude", style = "group:Output", required = false)
 	private String excludeTimePointList = "";
-	
+
 	@Parameter(label = "Verbose", style = "group:Output")
 	private boolean verbose = false;
-	
+
 	@Parameter(label = "Metadata UID",
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output", choices = { "unique from dataset",
-				"random" })
+		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Output",
+		choices = { "unique from dataset", "random" })
 	private String metadataUIDSource = "random";
-	
+
 	/**
 	 * THREADS
 	 */
-	
-	@Parameter(label = "Threads", required = false, min = "1", max = "120", style = "group:Output")
+
+	@Parameter(label = "Threads", required = false, min = "1", max = "120",
+		style = "group:Output")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
-	
+
 	/**
 	 * PREVIEW SETTINGS
 	 */
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String previewGroup = "Preview";
-	
+
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
 	private int previewTimeout = 10;
-	
+
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
@@ -318,8 +326,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
 	private String tObjectCount = "count: 0";
 
-	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE + ", group:Preview",
-		persist = false)
+	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
+		", group:Preview", persist = false)
 	private int previewT;
 
 	/**
@@ -336,13 +344,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	private PeakTracker tracker;
 
 	private boolean swapZandT = false;
-	
+
 	private Roi[] rois;
 	private Roi imageRoi;
 
 	private Dataset dataset;
 	private ImagePlus image;
-	
+
 	@Override
 	public void initialize() {
 		if (imageDisplay != null) {
@@ -351,12 +359,11 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		}
 		else return;
 
-		if (image.getRoi() != null)
-			imageRoi = image.getRoi();
-		
+		if (image.getRoi() != null) imageRoi = image.getRoi();
+
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
-					"imageName", String.class);
+				"imageName", String.class);
 			imageNameItem.setValue(this, dataset.getName());
 		}
 
@@ -384,21 +391,25 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		if (dataset == null && image != null)
-			dataset = convertService.convert(image, Dataset.class);
-		
-		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT = true;
+		if (dataset == null && image != null) dataset = convertService.convert(
+			image, Dataset.class);
+
+		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT =
+			true;
 
 		if (region.equals("ROI from image")) {
 			rois = new Roi[1];
 			rois[0] = imageRoi;
-		} else if (region.equals("ROIs from manager")) {
-			rois = roiManager.getRoisAsArray();
-		} else {
-			rois = new Roi[1];
-			rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
 		}
-		
+		else if (region.equals("ROIs from manager")) {
+			rois = roiManager.getRoisAsArray();
+		}
+		else {
+			rois = new Roi[1];
+			rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+				(int) dataset.dimension(1)));
+		}
+
 		if (image != null) {
 			image.deleteRoi();
 			image.setOverlay(null);
@@ -411,7 +422,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		objectLabelsStack = new ConcurrentHashMap<Integer, ConcurrentMap<Integer, List<Peak>>>();
+		objectLabelsStack =
+			new ConcurrentHashMap<Integer, ConcurrentMap<Integer, List<Peak>>>();
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Objects...");
@@ -423,61 +435,68 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		int tSize = (int) dataset.getImgPlus().dimension(tDim);
 
 		final int frameCount = (swapZandT) ? zSize : tSize;
-		
-		//build list of timepoints to process...
+
+		// build list of timepoints to process...
 		List<int[]> excludeTimePoints = new ArrayList<int[]>();
 		if (excludeTimePointList.length() > 0) {
 			try {
 				final String[] excludeArray = excludeTimePointList.split(",");
-				for (int i=0; i<excludeArray.length; i++) {
+				for (int i = 0; i < excludeArray.length; i++) {
 					String[] endPoints = excludeArray[i].split("-");
 					int start = Integer.valueOf(endPoints[0].trim());
-					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1].trim()) : start;
-		
-					excludeTimePoints.add(new int[] {start, end});
+					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1]
+						.trim()) : start;
+
+					excludeTimePoints.add(new int[] { start, end });
 				}
-			} catch (NumberFormatException e) {
-				logService.info("NumberFormatException encountered when parsing exclude list. Tracking all time points.");
+			}
+			catch (NumberFormatException e) {
+				logService.info(
+					"NumberFormatException encountered when parsing exclude list. Tracking all time points.");
 				excludeTimePoints = new ArrayList<int[]>();
 			}
 		}
-		
+
 		for (int i = 0; i < rois.length; i++)
 			objectLabelsStack.put(i, new ConcurrentHashMap<Integer, List<Peak>>());
-		
+
 		List<Integer> processTimePoints = new ArrayList<Integer>();
 		List<Runnable> tasks = new ArrayList<Runnable>();
-		for (int t=0; t<frameCount; t++) {
+		for (int t = 0; t < frameCount; t++) {
 			boolean processedTimePoint = true;
-			for (int index=0; index<excludeTimePoints.size(); index++)
-				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(index)[1]) {
+			for (int index = 0; index < excludeTimePoints.size(); index++)
+				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(
+					index)[1])
+				{
 					processedTimePoint = false;
 					break;
 				}
-			
+
 			if (processedTimePoint) {
 				processTimePoints.add(t);
 				final int theT = t;
 				tasks.add(() -> {
-					List<List<Peak>> objectLabels = findObjectsInT(Integer.valueOf(channel), theT, rois);
+					List<List<Peak>> objectLabels = findObjectsInT(Integer.valueOf(
+						channel), theT, rois);
 					for (int i = 0; i < rois.length; i++)
-						if (objectLabels.get(i).size() > 0) objectLabelsStack.get(i).put(theT, objectLabels.get(i));
+						if (objectLabels.get(i).size() > 0) objectLabelsStack.get(i).put(
+							theT, objectLabels.get(i));
 				});
 			}
 		}
- 
+
 		final int excludedFrameCount = excludeTimePoints.size();
-		
+
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(objectLabelsStack.get(0).size(), frameCount - excludedFrameCount, "Finding objects for " + dataset
-				.getName()), tasks, nThreads);
+			.showStatus(objectLabelsStack.get(0).size(), frameCount -
+				excludedFrameCount, "Finding objects for " + dataset.getName()), tasks,
+			nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
 		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, verbose, logService,
-			pixelLength);
+			minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
 
 		archive = new ObjectArchive("archive.yama");
 
@@ -497,12 +516,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		archive.putMetadata(marsOMEMetadata);
 
-		for (int i=0; i < rois.length; i++)
-			tracker.track(objectLabelsStack.get(i), archive, Integer.valueOf(channel), processTimePoints, nThreads);
+		for (int i = 0; i < rois.length; i++)
+			tracker.track(objectLabelsStack.get(i), archive, Integer.valueOf(channel),
+				processTimePoints, nThreads);
 
 		// Make sure the output archive has the correct name
-		getInfo().getMutableOutput("archive", ObjectArchive.class).setLabel(
-			archive.getName());
+		getInfo().getMutableOutput("archive", ObjectArchive.class).setLabel(archive
+			.getName());
 
 		if (image != null && imageRoi != null) image.setRoi(imageRoi);
 
@@ -533,115 +553,133 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findObjectsInT(
-		int channel, int t, Roi[] processingRois)
+	private <T extends RealType<T> & NativeType<T>> List<List<Peak>>
+		findObjectsInT(int channel, int t, Roi[] processingRois)
 	{
 		RandomAccessibleInterval<T> rawImg = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
 			: MarsImageUtils.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), 0,
 				channel, t);
-			
+
 		RandomAccessibleInterval<T> img;
 		if (useMedianFilter) {
 			img = (RandomAccessibleInterval<T>) opService.run("create.img", rawImg);
-			opService.filter().median((IterableInterval<T>) img, rawImg, new HyperSphereShape(medianFilterRadius));
-		} else
-			img = rawImg;
-			
-        List<List<Peak>> objectLabelLists = new ArrayList<List<Peak>>();
+			opService.filter().median((IterableInterval<T>) img, rawImg,
+				new HyperSphereShape(medianFilterRadius));
+		}
+		else img = rawImg;
+
+		List<List<Peak>> objectLabelLists = new ArrayList<List<Peak>>();
 		for (int roiIndex = 0; roiIndex < processingRois.length; roiIndex++) {
-			Interval interval = Intervals.createMinMax(processingRois[roiIndex].getBounds().x, processingRois[roiIndex].getBounds().y, 
-					processingRois[roiIndex].getBounds().x + processingRois[roiIndex].getBounds().width - 1, processingRois[roiIndex].getBounds().y + processingRois[roiIndex].getBounds().height - 1);
-	       
-	        double[] scaleFactors = new double[] {interpolationFactor, interpolationFactor};
-	        NLinearInterpolatorFactory<T> interpolator = new NLinearInterpolatorFactory<T>();
-	        
-	        Interval newInterval = Intervals.createMinMax(Math.round(interval.min(0) * interpolationFactor), 
-	        		Math.round(interval.min(1) * interpolationFactor), Math.round(interval.max(0) * interpolationFactor), Math.round(interval.max(1) * interpolationFactor));
-	        
-	        IntervalView<T> scaledImg = Views.interval(Views.raster(RealViews.affineReal(
-					Views.interpolate(Views.extendMirrorSingle(img), interpolator),
-					new Scale(scaleFactors))), newInterval);
-	        
-	        final RandomAccessibleInterval<BitType> binaryImg = (RandomAccessibleInterval<BitType>) opService.run("create.img", scaledImg, new BitType());
-	        
-	        if (useLocalOstu) {
-				opService.run("threshold.otsu", binaryImg, scaledImg, new HyperSphereShape(this.otsuRadius), 
-						new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(Boundary.SINGLE));
-			} else {
+			Interval interval = Intervals.createMinMax(processingRois[roiIndex]
+				.getBounds().x, processingRois[roiIndex].getBounds().y,
+				processingRois[roiIndex].getBounds().x + processingRois[roiIndex]
+					.getBounds().width - 1, processingRois[roiIndex].getBounds().y +
+						processingRois[roiIndex].getBounds().height - 1);
+
+			double[] scaleFactors = new double[] { interpolationFactor,
+				interpolationFactor };
+			NLinearInterpolatorFactory<T> interpolator =
+				new NLinearInterpolatorFactory<T>();
+
+			Interval newInterval = Intervals.createMinMax(Math.round(interval.min(0) *
+				interpolationFactor), Math.round(interval.min(1) * interpolationFactor),
+				Math.round(interval.max(0) * interpolationFactor), Math.round(interval
+					.max(1) * interpolationFactor));
+
+			IntervalView<T> scaledImg = Views.interval(Views.raster(RealViews
+				.affineReal(Views.interpolate(Views.extendMirrorSingle(img),
+					interpolator), new Scale(scaleFactors))), newInterval);
+
+			final RandomAccessibleInterval<BitType> binaryImg =
+				(RandomAccessibleInterval<BitType>) opService.run("create.img",
+					scaledImg, new BitType());
+
+			if (useLocalOstu) {
+				opService.run("threshold.otsu", binaryImg, scaledImg,
+					new HyperSphereShape(this.otsuRadius),
+					new OutOfBoundsMirrorFactory<T, RandomAccessibleInterval<T>>(
+						Boundary.SINGLE));
+			}
+			else {
 				opService.run("threshold.otsu", binaryImg, scaledImg);
 			}
-	
-			final RandomAccessibleInterval<UnsignedShortType> indexImg = (RandomAccessibleInterval<UnsignedShortType>) opService.run("create.img", binaryImg, new UnsignedShortType());
-	        final ImgLabeling<Integer, UnsignedShortType> labeling = new ImgLabeling<>(indexImg);
-	
-	        opService.run("labeling.cca", labeling, binaryImg, StructuringElement.FOUR_CONNECTED);
-	        
-	        List<Peak> objects = new ArrayList<Peak>();
-			
-	        LabelRegions< Integer > regions = new LabelRegions< Integer >(labeling);
-	        Iterator< LabelRegion< Integer > > iterator = regions.iterator();
-	        while ( iterator.hasNext() ) {
-	        	LabelRegion< Integer > region = iterator.next();
-	        	Polygon2D poly = opService.geom().contour( region, true );
-	        	float[] xPoints = new float[poly.numVertices()];
-	        	float[] yPoints = new float[poly.numVertices()];
-	        	for (int i=0; i<poly.numVertices(); i++) {
-	        		RealLocalizable p = poly.vertex(i);
-	        		xPoints[i] = p.getFloatPosition(0);
-	        		yPoints[i] = p.getFloatPosition(1);
-	        	}
-	        	PolygonRoi r = new PolygonRoi( xPoints, yPoints, Roi.POLYGON);
-	        	r = new PolygonRoi(r.getInterpolatedPolygon(1, false), Roi.POLYGON);
-	        	r = smoothPolygonRoi(r);
-	        	r = new PolygonRoi(r.getInterpolatedPolygon(Math.min(2, r.getNCoordinates() * 0.1), false), Roi.POLYGON);
-	        	
-	        	double[] xs = new double[r.getFloatPolygon().xpoints.length];
-	        	double[] ys = new double[r.getFloatPolygon().ypoints.length];
-	        	for (int i=0; i< xs.length; i++) {
-	        		xs[i] = r.getFloatPolygon().xpoints[i]/interpolationFactor;
-	        		ys[i] = r.getFloatPolygon().ypoints[i]/interpolationFactor;
-	        	}
-	        	
-	        	Peak peak = PeakShape.createPeak(xs, ys);
-	        	final double area = peak.getShape().area();
-	        	peak.setProperty(Peak.AREA, area);
-	        	
-	        	final double perimeter = peak.getShape().perimeter();
-	        	peak.setProperty(Peak.PERIMETER, perimeter);
-	        	
-	        	final double circularity = peak.getShape().circularity();
-	        	peak.setProperty(Peak.CIRCULARITY, circularity);
-	        	
-	        	if (useAreaFilter) { 
-	        		if (area > minArea) 
-	        			objects.add(peak);
-	        	} else
-	        		objects.add(peak);
-	        }
-	
+
+			final RandomAccessibleInterval<UnsignedShortType> indexImg =
+				(RandomAccessibleInterval<UnsignedShortType>) opService.run(
+					"create.img", binaryImg, new UnsignedShortType());
+			final ImgLabeling<Integer, UnsignedShortType> labeling =
+				new ImgLabeling<>(indexImg);
+
+			opService.run("labeling.cca", labeling, binaryImg,
+				StructuringElement.FOUR_CONNECTED);
+
+			List<Peak> objects = new ArrayList<Peak>();
+
+			LabelRegions<Integer> regions = new LabelRegions<Integer>(labeling);
+			Iterator<LabelRegion<Integer>> iterator = regions.iterator();
+			while (iterator.hasNext()) {
+				LabelRegion<Integer> region = iterator.next();
+				Polygon2D poly = opService.geom().contour(region, true);
+				float[] xPoints = new float[poly.numVertices()];
+				float[] yPoints = new float[poly.numVertices()];
+				for (int i = 0; i < poly.numVertices(); i++) {
+					RealLocalizable p = poly.vertex(i);
+					xPoints[i] = p.getFloatPosition(0);
+					yPoints[i] = p.getFloatPosition(1);
+				}
+				PolygonRoi r = new PolygonRoi(xPoints, yPoints, Roi.POLYGON);
+				r = new PolygonRoi(r.getInterpolatedPolygon(1, false), Roi.POLYGON);
+				r = smoothPolygonRoi(r);
+				r = new PolygonRoi(r.getInterpolatedPolygon(Math.min(2, r
+					.getNCoordinates() * 0.1), false), Roi.POLYGON);
+
+				double[] xs = new double[r.getFloatPolygon().xpoints.length];
+				double[] ys = new double[r.getFloatPolygon().ypoints.length];
+				for (int i = 0; i < xs.length; i++) {
+					xs[i] = r.getFloatPolygon().xpoints[i] / interpolationFactor;
+					ys[i] = r.getFloatPolygon().ypoints[i] / interpolationFactor;
+				}
+
+				Peak peak = PeakShape.createPeak(xs, ys);
+				final double area = peak.getShape().area();
+				peak.setProperty(Peak.AREA, area);
+
+				final double perimeter = peak.getShape().perimeter();
+				peak.setProperty(Peak.PERIMETER, perimeter);
+
+				final double circularity = peak.getShape().circularity();
+				peak.setProperty(Peak.CIRCULARITY, circularity);
+
+				if (useAreaFilter) {
+					if (area > minArea) objects.add(peak);
+				}
+				else objects.add(peak);
+			}
+
 			objects = MarsImageUtils.removeNearestNeighbors(objects, minimumDistance);
-			
-			//Set the T for the Peaks
+
+			// Set the T for the Peaks
 			objects.forEach(p -> p.setT(t));
-			
+
 			objectLabelLists.add(objects);
 		}
-		
+
 		return objectLabelLists;
 	}
-	
+
 	private PolygonRoi smoothPolygonRoi(PolygonRoi r) {
-	    FloatPolygon poly = r.getFloatPolygon();
-	    FloatPolygon poly2 = new FloatPolygon();
-	    int nPoints = poly.npoints;
-	    for (int i = 0; i < nPoints; i += 2) {
-	        int iMinus = (i + nPoints - 1) % nPoints;
-	        int iPlus = (i + 1) % nPoints;
-	        poly2.addPoint((poly.xpoints[iMinus] + poly.xpoints[iPlus] + poly.xpoints[i])/3,
-	                (poly.ypoints[iMinus] + poly.ypoints[iPlus] + poly.ypoints[i])/3);
-	    }
-	    return new PolygonRoi(poly2, Roi.POLYGON);
+		FloatPolygon poly = r.getFloatPolygon();
+		FloatPolygon poly2 = new FloatPolygon();
+		int nPoints = poly.npoints;
+		for (int i = 0; i < nPoints; i += 2) {
+			int iMinus = (i + nPoints - 1) % nPoints;
+			int iPlus = (i + 1) % nPoints;
+			poly2.addPoint((poly.xpoints[iMinus] + poly.xpoints[iPlus] +
+				poly.xpoints[i]) / 3, (poly.ypoints[iMinus] + poly.ypoints[iPlus] +
+					poly.ypoints[i]) / 3);
+		}
+		return new PolygonRoi(poly2, Roi.POLYGON);
 	}
 
 	private MarsOMEMetadata buildOMEMetadata() {
@@ -649,40 +687,42 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 		OMEXMLMetadata omexmlMetadata = null;
 		if (!(imp instanceof SCIFIOImgPlus)) {
-			logService.info("This image has not been opened with SCIFIO. Creating OME Metadata...");
+			logService.info(
+				"This image has not been opened with SCIFIO. Creating OME Metadata...");
 			try {
 				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
 					dataset);
-			} catch (ServiceException e) {
+			}
+			catch (ServiceException e) {
 				e.printStackTrace();
 			}
 		}
 		else {
 			Metadata metadata = (Metadata) dataset.getProperties().get(
 				"scifio.metadata.global");
-			
+
 			OMEMetadata omeMeta = new OMEMetadata(getContext());
 			if (!translatorService.translate(metadata, omeMeta, true)) {
-				logService.info(
-					"Unable to extract OME Metadata. Creating...");
+				logService.info("Unable to extract OME Metadata. Creating...");
 				try {
 					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-							dataset);
-				} catch (ServiceException e) {
+						dataset);
+				}
+				catch (ServiceException e) {
 					e.printStackTrace();
 				}
 			}
 			else {
 				omexmlMetadata = omeMeta.getRoot();
 			}
-			
+
 			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 		}
-		
+
 		if (swapZandT) {
 			int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
 			int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
-			
+
 			omexmlMetadata.setPixelsSizeT(new PositiveInteger(sizeZ), 0);
 			omexmlMetadata.setPixelsSizeZ(new PositiveInteger(sizeT), 0);
 		}
@@ -706,11 +746,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		String metaUID;
 		if (metadataUIDSource.equals("unique from dataset")) {
 			metaUID = MarsOMEUtils.generateMetadataUIDfromDataset(omexmlMetadata);
-			
+
 			if (metaUID == null) {
-				logService.info("Failed to generate unique metadata uid. Using random generated metadata uid.");
-			} else metaUID = MarsMath.getUUID58().substring(0, 10);
-		} else metaUID = MarsMath.getUUID58().substring(0, 10);
+				logService.info(
+					"Failed to generate unique metadata uid. Using random generated metadata uid.");
+			}
+			else metaUID = MarsMath.getUUID58().substring(0, 10);
+		}
+		else metaUID = MarsMath.getUUID58().substring(0, 10);
 
 		return new MarsOMEMetadata(metaUID, omexmlMetadata);
 	}
@@ -720,61 +763,65 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		if (preview) {
 			if (swapZandT) image.setSlice(previewT + 1);
 			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
-			
+
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
 				es.submit(() -> {
-					if (imageRoi == null && image.getRoi() != null)
-						imageRoi = image.getRoi();
-					
+					if (imageRoi == null && image.getRoi() != null) imageRoi = image
+						.getRoi();
+
 					if (region.equals("ROI from image")) {
 						rois = new Roi[1];
 						rois[0] = imageRoi;
-					} else if (region.equals("ROIs from manager")) {
+					}
+					else if (region.equals("ROIs from manager")) {
 						rois = roiManager.getRoisAsArray();
-					} else {
+					}
+					else {
 						rois = new Roi[1];
-						rois[0] = new Roi(new Rectangle(0, 0, (int)dataset.dimension(0), (int)dataset.dimension(1)));
+						rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
+							(int) dataset.dimension(1)));
 					}
 
-					List<List<Peak>> objectLabelLists = findObjectsInT(Integer.valueOf(channel), previewT, rois);
-					
-					if (Thread.currentThread().isInterrupted())
-						return;
-		
+					List<List<Peak>> objectLabelLists = findObjectsInT(Integer.valueOf(
+						channel), previewT, rois);
+
+					if (Thread.currentThread().isInterrupted()) return;
+
 					int labelCount = 0;
 					Overlay overlay = new Overlay();
 					for (List<Peak> objectLabels : objectLabelLists) {
 						for (Peak p : objectLabels) {
 							float[] xs = new float[p.getShape().x.length];
 							float[] ys = new float[p.getShape().y.length];
-				        	for (int i=0; i< xs.length; i++) {
-				        		xs[i] = (float) (p.getShape().x[i] + 0.5);
-				        		ys[i] = (float) (p.getShape().y[i] + 0.5);
-				        	}
+							for (int i = 0; i < xs.length; i++) {
+								xs[i] = (float) (p.getShape().x[i] + 0.5);
+								ys[i] = (float) (p.getShape().y[i] + 0.5);
+							}
 							PolygonRoi r = new PolygonRoi(xs, ys, Roi.POLYGON);
 							overlay.add(r);
-							
-							if (Thread.currentThread().isInterrupted())
-								return;
-							
+
+							if (Thread.currentThread().isInterrupted()) return;
+
 							labelCount++;
 						}
 					}
-					
+
 					final String countString = "count: " + labelCount;
-					final MutableModuleItem<String> preFrameCount = getInfo().getMutableInput(
-							"tObjectCount", String.class);
+					final MutableModuleItem<String> preFrameCount = getInfo()
+						.getMutableInput("tObjectCount", String.class);
 					preFrameCount.setValue(this, countString);
 
-					SwingUtilities.invokeLater( () -> {
+					SwingUtilities.invokeLater(() -> {
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
-							
+
 							for (Window window : Window.getWindows())
-								if (window instanceof JDialog && ((JDialog) window).getTitle().equals(getInfo().getLabel()))
-									MarsUtil.updateJLabelTextInContainer(((JDialog) window), "count: ", countString);
+								if (window instanceof JDialog && ((JDialog) window).getTitle()
+									.equals(getInfo().getLabel())) MarsUtil
+										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+											countString);
 						}
 					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
@@ -782,8 +829,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			catch (TimeoutException e1) {
 				es.shutdownNow();
 				uiService.showDialog(
-						"Preview took too long. Try a smaller region, a smaller local radius, or try again with a longer delay before preview timeout.",
-						MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+					"Preview took too long. Try a smaller region, a smaller local radius, or try again with a longer delay before preview timeout.",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 				cancel();
 			}
 			catch (InterruptedException | ExecutionException e2) {
@@ -820,14 +867,17 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		else builder.addParameter("Dataset Name", dataset.getName());
 
 		builder.addParameter("Region", region);
-		if (region.equals("ROI from image") && imageRoi != null) builder.addParameter("ROI from image", imageRoi.toString());
+		if (region.equals("ROI from image") && imageRoi != null) builder
+			.addParameter("ROI from image", imageRoi.toString());
 		builder.addParameter("Channel", channel);
 		builder.addParameter("Use median filter", String.valueOf(useMedianFilter));
-		builder.addParameter("Median filter radius", String.valueOf(medianFilterRadius));
+		builder.addParameter("Median filter radius", String.valueOf(
+			medianFilterRadius));
 		builder.addParameter("Use local otsu", String.valueOf(useLocalOstu));
 		builder.addParameter("Local otsu radius", String.valueOf(otsuRadius));
 		builder.addParameter("Minimum distance", String.valueOf(minimumDistance));
-		builder.addParameter("Interpolation factor", String.valueOf(interpolationFactor));
+		builder.addParameter("Interpolation factor", String.valueOf(
+			interpolationFactor));
 		builder.addParameter("Use area filter", String.valueOf(useAreaFilter));
 		builder.addParameter("Minimum area", String.valueOf(minArea));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
@@ -873,12 +923,12 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	public String getRegion() {
 		return region;
 	}
-	
+
 	public void setRois(Roi[] rois) {
 		this.rois = rois;
 		this.region = "ROIs from manager";
 	}
-	
+
 	public Roi[] getROIs() {
 		return this.rois;
 	}
@@ -890,11 +940,11 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	public int getChannel() {
 		return Integer.valueOf(channel);
 	}
-	
+
 	public void setUseLocalOstu(boolean useLocalOstu) {
 		this.useLocalOstu = useLocalOstu;
 	}
-	
+
 	public boolean getUseLocalOstu() {
 		return useLocalOstu;
 	}
@@ -914,27 +964,27 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	public int getMinimumDistance() {
 		return minimumDistance;
 	}
-	
+
 	public void setInterpolationFactor(double interpolationFactor) {
 		this.interpolationFactor = interpolationFactor;
 	}
-	
+
 	public double getInterpolationFactor() {
 		return this.interpolationFactor;
 	}
-	
+
 	public void setUseAreaFilter(boolean useAreaFilter) {
 		this.useAreaFilter = useAreaFilter;
 	}
-	
+
 	public boolean getUseAreaFilter() {
 		return this.useAreaFilter;
 	}
-	
+
 	public void setMinimumArea(double minArea) {
 		this.minArea = minArea;
 	}
-	
+
 	public double getMinimumArea() {
 		return this.minArea;
 	}
@@ -1002,27 +1052,27 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	public String getPixelUnits() {
 		return this.pixelUnits;
 	}
-	
+
 	public void setExcludedTimePointsList(String excludeTimePointList) {
 		this.excludeTimePointList = excludeTimePointList;
 	}
-	
+
 	public String getExcludedTimePointsList() {
 		return this.excludeTimePointList;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}
-	
+
 	public void setMetadataUIDSource(String metadataUIDSource) {
 		this.metadataUIDSource = metadataUIDSource;
 	}
-	
+
 	public String getMetadataUIDSource() {
 		return this.metadataUIDSource;
 	}

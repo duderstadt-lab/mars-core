@@ -72,7 +72,9 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
 			label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
 				label = "Build DNA Archive", weight = 4, mnemonic = 'b') })
-public class BuildDnaArchiveCommand extends DynamicCommand implements Command, Initializable {
+public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
+	Initializable
+{
 
 	// GENERAL SERVICES NEEDED
 	@Parameter
@@ -89,111 +91,130 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 	@Parameter
 	private MarsTableService marsTableService;
-	
+
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
-	
+
 	/**
 	 * INPUT SETTINGS
 	 */
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel, tabbedPaneWidth:450")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "groupLabel, tabbedPaneWidth:450")
 	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
 	private String inputFigure = "BuildDNAArchiveInput.png";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
 	private String roiCount = "No ROIs in manager!";
-	
-	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" }, style = "group:Input")
+
+	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" },
+		style = "group:Input")
 	private String archive1InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 1 Name", style = "group:Input")
 	private String archive1Name = "mol1";
 
-	@Parameter(label = "SingleMoleculeArchive 2", choices = { "a", "b", "c" }, style = "group:Input")
+	@Parameter(label = "SingleMoleculeArchive 2", choices = { "a", "b", "c" },
+		style = "group:Input")
 	private String archive2InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 2 Name", style = "group:Input")
 	private String archive2Name = "mol2";
-	
-	@Parameter(label = "SingleMoleculeArchive 3", choices = { "a", "b", "c" }, style = "group:Input")
+
+	@Parameter(label = "SingleMoleculeArchive 3", choices = { "a", "b", "c" },
+		style = "group:Input")
 	private String archive3InputName;
 
 	@Parameter(label = "SingleMoleculeArchive 3 Name", style = "group:Input")
 	private String archive3Name = "mol3";
-	
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String mergeGroup = "Search Parameters";
-	
-	@Parameter(label = "Search radius around DNA", style = "group:Search Parameters")
+
+	@Parameter(label = "Search radius around DNA",
+		style = "group:Search Parameters")
 	private double radius;
 
 	@Parameter(label = "DNA length in bps", style = "group:Search Parameters")
 	private int DNALength = 21236;
 
-	@Parameter(label = "Input Archive X column", style = "group:Search Parameters")
+	@Parameter(label = "Input Archive X column",
+		style = "group:Search Parameters")
 	private String xColumn = "X";
 
-	@Parameter(label = "Input Archive Y column", style = "group:Search Parameters")
+	@Parameter(label = "Input Archive Y column",
+		style = "group:Search Parameters")
 	private String yColumn = "Y";
-	
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
 	private String outputGroup = "Output";
-	
+
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
 	private String outputFigure = "DnaMoleculeArchive.png";
-	
-	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output, align:center")
+
+	@Parameter(visibility = ItemVisibility.MESSAGE,
+		style = "group:Output, align:center")
 	private String outputArchiveType = "type: DnaMoleculeArchive";
 
 	// OUTPUT PARAMETERS
 	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)
 	private DnaMoleculeArchive dnaMoleculeArchive;
-	
+
 	private SingleMoleculeArchive archive1, archive2, archive3;
-	
+
 	@Override
 	public void initialize() {
 		if (roiManager != null) {
 			final MutableModuleItem<String> roiCountItem = getInfo().getMutableInput(
-					"roiCount", String.class);
-			roiCountItem.setValue(this, roiManager.getRoisAsArray().length + " molecules found in manager for integration.");
+				"roiCount", String.class);
+			roiCountItem.setValue(this, roiManager.getRoisAsArray().length +
+				" molecules found in manager for integration.");
 		}
-		
+
 		ArrayList<String> archiveNames = new ArrayList<String>();
 		archiveNames.add("None");
-		
-		for (MoleculeArchive<?, ?, ?, ?> archive : moleculeArchiveService.getArchives())
-			if (archive instanceof SingleMoleculeArchive)
-				archiveNames.add(archive.getName());
 
-		final MutableModuleItem<String> singleMoleculeArchive1Items = getInfo().getMutableInput(
-			"archive1InputName", String.class);
+		for (MoleculeArchive<?, ?, ?, ?> archive : moleculeArchiveService
+			.getArchives())
+			if (archive instanceof SingleMoleculeArchive) archiveNames.add(archive
+				.getName());
+
+		final MutableModuleItem<String> singleMoleculeArchive1Items = getInfo()
+			.getMutableInput("archive1InputName", String.class);
 		singleMoleculeArchive1Items.setChoices(archiveNames);
 
-		final MutableModuleItem<String> singleMoleculeArchive2Items = getInfo().getMutableInput(
-			"archive2InputName", String.class);
+		final MutableModuleItem<String> singleMoleculeArchive2Items = getInfo()
+			.getMutableInput("archive2InputName", String.class);
 		singleMoleculeArchive2Items.setChoices(archiveNames);
-		
-		final MutableModuleItem<String> singleMoleculeArchive3Items = getInfo().getMutableInput(
-			"archive3InputName", String.class);
+
+		final MutableModuleItem<String> singleMoleculeArchive3Items = getInfo()
+			.getMutableInput("archive3InputName", String.class);
 		singleMoleculeArchive3Items.setChoices(archiveNames);
 	}
 
 	@Override
 	public void run() {
-		
-		if (!archive1InputName.equals("None") && moleculeArchiveService.contains(archive1InputName)) archive1 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive1InputName);
-		if (!archive2InputName.equals("None") && moleculeArchiveService.contains(archive2InputName)) archive2 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive2InputName);
-		if (!archive3InputName.equals("None") && moleculeArchiveService.contains(archive3InputName)) archive3 = (SingleMoleculeArchive) moleculeArchiveService.getArchive(archive3InputName);
+
+		if (!archive1InputName.equals("None") && moleculeArchiveService.contains(
+			archive1InputName)) archive1 =
+				(SingleMoleculeArchive) moleculeArchiveService.getArchive(
+					archive1InputName);
+		if (!archive2InputName.equals("None") && moleculeArchiveService.contains(
+			archive2InputName)) archive2 =
+				(SingleMoleculeArchive) moleculeArchiveService.getArchive(
+					archive2InputName);
+		if (!archive3InputName.equals("None") && moleculeArchiveService.contains(
+			archive3InputName)) archive3 =
+				(SingleMoleculeArchive) moleculeArchiveService.getArchive(
+					archive3InputName);
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
@@ -226,19 +247,20 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 				line.x2d - 0.5, line.y2d - 0.5);
 			DNASegments.add(dnaSegment);
 		}
-		
+
 		if (archive1InputName.equals("None")) {
 			logService.info("SingleMoleculeArchive 1 was not specified.");
 			return;
-		} else {
-			
+		}
+		else {
+
 		}
 
 		MarsOMEMetadata metadata1 = archive1.metadata().findFirst().get();
 		if (archive2 != null) {
 			metadata1.merge(archive2.metadata().findFirst().get());
 		}
-		
+
 		if (archive3 != null) {
 			metadata1.merge(archive3.metadata().findFirst().get());
 		}
@@ -259,9 +281,11 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 
 		archive1PositionSearcher = getMoleculeSearcher(archive1);
 
-		if (archive2 != null) archive2PositionSearcher = getMoleculeSearcher(archive2);
+		if (archive2 != null) archive2PositionSearcher = getMoleculeSearcher(
+			archive2);
 
-		if (archive3 != null) archive3PositionSearcher = getMoleculeSearcher(archive3);
+		if (archive3 != null) archive3PositionSearcher = getMoleculeSearcher(
+			archive3);
 
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
@@ -377,8 +401,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command, I
 			new ArrayList<MoleculePosition>();
 
 		archive.molecules().forEach(molecule -> moleculePositionList.add(
-			new MoleculePosition(molecule.getUID(), molecule.getTable().median(Peak.X),
-				molecule.getTable().median(Peak.Y))));
+			new MoleculePosition(molecule.getUID(), molecule.getTable().median(
+				Peak.X), molecule.getTable().median(Peak.Y))));
 
 		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(
 			moleculePositionList, moleculePositionList);

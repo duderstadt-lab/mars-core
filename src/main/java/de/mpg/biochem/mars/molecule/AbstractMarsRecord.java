@@ -431,7 +431,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 
 	/**
 	 * Add or update a parameter value. Parameters are used to store single values
-	 * associated with the record. 
+	 * associated with the record.
 	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The double value to set for the parameter name.

@@ -70,9 +70,9 @@ import net.imglib2.view.Views;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-				label = "Overlay Channels", weight = 10, mnemonic = 'o') })
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Overlay Channels",
+					weight = 10, mnemonic = 'o') })
 public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 	/**
@@ -128,7 +128,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 	@Parameter(label = "Merged image", type = ItemIO.OUTPUT)
 	private ImagePlus imgOut;
-	
+
 	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
@@ -194,10 +194,11 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
-		
+
 		List<Runnable> tasks = new ArrayList<Runnable>();
-		IntStream.rangeClosed(1, transformMe.getStackSize()).forEach(t -> 
-			tasks.add(() -> transformT(t, new ImagePlus("T " + t, oldStack.getProcessor(t)), transform)));
+		IntStream.rangeClosed(1, transformMe.getStackSize()).forEach(t -> tasks.add(
+			() -> transformT(t, new ImagePlus("T " + t, oldStack.getProcessor(t)),
+				transform)));
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(transformedImageMap.size(), transformMe.getStackSize(),
@@ -345,11 +346,11 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	public double getM12() {
 		return m12;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}

@@ -61,7 +61,7 @@ public class ObjectArchive extends
 	{
 		super(name, file);
 	}
-	
+
 	public Stream<MartianObject> objects() {
 		return this.moleculeMap.keySet().stream().map(UID -> get(UID));
 	}
@@ -109,9 +109,7 @@ public class ObjectArchive extends
 	}
 
 	@Override
-	public ObjectArchiveIndex createIndex(JsonParser jParser)
-		throws IOException
-	{
+	public ObjectArchiveIndex createIndex(JsonParser jParser) throws IOException {
 		return new ObjectArchiveIndex(jParser);
 	}
 }

@@ -85,7 +85,7 @@ public class MartianObject extends AbstractMolecule {
 	public Set<Integer> getShapeKeys() {
 		return shapes.keySet();
 	}
-	
+
 	/**
 	 * Used to merge another MartianObject record into this one.
 	 * 
@@ -93,7 +93,8 @@ public class MartianObject extends AbstractMolecule {
 	 */
 	public void merge(MartianObject martianObject) {
 		super.merge(martianObject);
-		martianObject.getShapeKeys().stream().filter(t -> !hasShape(t)).forEach( t -> putShape(t, martianObject.getShape(t)));
+		martianObject.getShapeKeys().stream().filter(t -> !hasShape(t)).forEach(
+			t -> putShape(t, martianObject.getShape(t)));
 	}
 
 	@Override

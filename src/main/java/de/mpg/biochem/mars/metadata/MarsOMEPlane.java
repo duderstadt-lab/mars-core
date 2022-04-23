@@ -404,7 +404,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 	public void setStringField(String field, String value) {
 		stringFields.put(field, value);
 	}
-	
+
 	public boolean hasStringField(String field) {
 		return stringFields.containsKey(field);
 	}

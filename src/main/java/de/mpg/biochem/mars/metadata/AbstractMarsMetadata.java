@@ -137,7 +137,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 
 	public void populateMetadata(OMEXMLMetadata md) {
 		images.clear();
-		
+
 		for (int imageIndex = 0; imageIndex < md.getImageCount(); imageIndex++)
 			images.put(imageIndex, new MarsOMEImage(imageIndex, md));
 	}
@@ -282,7 +282,7 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	public void removeBdvSource(String name) {
 		bdvSources.remove(name);
 	}
-	
+
 	/**
 	 * Remove all {@link MarsBdvSource}s.
 	 */

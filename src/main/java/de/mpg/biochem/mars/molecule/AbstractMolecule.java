@@ -221,8 +221,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 						// Must not have a region name
 						tableColumnNames.add("");
 					}
-					
-					String tableTitle = (region.equals("")) ? yColumn + "_vs_" + xColumn : yColumn + "_vs_" + xColumn + "_" + region;
+
+					String tableTitle = (region.equals("")) ? yColumn + "_vs_" + xColumn
+						: yColumn + "_vs_" + xColumn + "_" + region;
 					MarsTable segmentTable = new MarsTable(tableTitle);
 
 					segmentTable.fromJSON(jParser);
@@ -299,7 +300,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 						tableColumnNames.add("");
 					}
 
-					String tableTitle = (regionName.equals("")) ? yColumnName + "_vs_" + xColumnName : yColumnName + "_vs_" + xColumnName + "_" + regionName;
+					String tableTitle = (regionName.equals("")) ? yColumnName + "_vs_" +
+						xColumnName : yColumnName + "_vs_" + xColumnName + "_" + regionName;
 					MarsTable segmentTable = new MarsTable(tableTitle);
 
 					segmentTable.fromJSON(jParser);
@@ -367,10 +369,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public int getChannel() {
 		return channel;
 	}
-	
+
 	/**
 	 * Add or update a parameter value. Parameters are used to store single values
-	 * associated with the record. 
+	 * associated with the record.
 	 * 
 	 * @param parameter The string parameter name.
 	 * @param value The double value to set for the parameter name.
@@ -378,8 +380,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void setParameter(String parameter, double value) {
 		super.setParameter(parameter, value);
-		if (parent != null)
-			parent.properties().addParameter(parameter);
+		if (parent != null) parent.properties().addParameter(parameter);
 	}
 
 	/**
@@ -391,8 +392,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void setParameter(String parameter, String value) {
 		super.setParameter(parameter, value);
-		if (parent != null)
-			parent.properties().addParameter(parameter);
+		if (parent != null) parent.properties().addParameter(parameter);
 	}
 
 	/**
@@ -404,10 +404,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void setParameter(String parameter, boolean value) {
 		super.setParameter(parameter, value);
-		if (parent != null)
-			parent.properties().addParameter(parameter);
+		if (parent != null) parent.properties().addParameter(parameter);
 	}
-	
+
 	/**
 	 * Add a string tag to the record. Tags are used for marking individual record
 	 * to sorting and processing with subsets of molecules.
@@ -417,10 +416,9 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void addTag(String tag) {
 		super.addTag(tag);
-		if (parent != null)
-			parent.properties().addTag(tag);
+		if (parent != null) parent.properties().addTag(tag);
 	}
-	
+
 	/**
 	 * Add or update a {@link MarsRegion}. This can be a region of interest for
 	 * further analysis steps: slope calculations or KCP calculations
@@ -432,10 +430,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void putRegion(MarsRegion regionOfInterest) {
 		super.putRegion(regionOfInterest);
-		if (parent != null)
-			parent.properties().addRegion(regionOfInterest.getName());
+		if (parent != null) parent.properties().addRegion(regionOfInterest
+			.getName());
 	}
-	
+
 	/**
 	 * Add or update a {@link MarsPosition}. This can be a position of interest
 	 * for further analysis steps. Position names are unique. If a position with
@@ -447,8 +445,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	@Override
 	public void putPosition(MarsPosition positionOfInterest) {
 		super.putPosition(positionOfInterest);
-		if (parent != null)
-			parent.properties().addPosition(positionOfInterest.getName());
+		if (parent != null) parent.properties().addPosition(positionOfInterest
+			.getName());
 	}
 
 	/**
@@ -618,8 +616,8 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 
 	/**
 	 * Retrieve a segments table ({@link MarsTable}) generated using x column, y
-	 * column and region names provided in index positions 0, 1 and 2 of a
-	 * List, respectively.
+	 * column and region names provided in index positions 0, 1 and 2 of a List,
+	 * respectively.
 	 * 
 	 * @param tableColumnNames The list of x column, y column and region names.
 	 * @return The MarsTable generated using the columns specified.
@@ -680,17 +678,15 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	/**
 	 * Get the set of segment table names as lists of x and y column names.
 	 * 
-	 * @return The set of Lists holding the x and y column and region names
-	 *         at index positions 0, 1 and 2, respectively.
+	 * @return The set of Lists holding the x and y column and region names at
+	 *         index positions 0, 1 and 2, respectively.
 	 */
 	@Override
 	public Set<List<String>> getSegmentsTableNames() {
-		
-		
-		
+
 		return segmentTables.keySet();
 	}
-	
+
 	/**
 	 * Used to merge another molecule record into this one.
 	 * 
@@ -700,39 +696,40 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void merge(Molecule molecule) {
 		super.merge(molecule);
 
- 		Set<Double> tNumbers = new HashSet<Double>();
- 		
- 		//First add all current T to set
- 		for (int row=0;row<table.getRowCount();row++) {
-    		tNumbers.add(table.getValue("T", row));
-    	}
-        
-    	MarsTable nextDataTable = molecule.getTable();
-    	
-    	for (int row=0;row<nextDataTable.getRowCount();row++) {
-    		if (!tNumbers.contains(nextDataTable.getValue("T", row))) {
-    			table.appendRow();
-    			int mergeLastRow = table.getRowCount() - 1;
-    			
-    			for (int col=0;col<table.getColumnCount();col++) {
-    				String column = table.getColumnHeader(col);
-    				table.setValue(column, mergeLastRow, nextDataTable.getValue(column, row));
-            	}
-    			
-    			tNumbers.add(nextDataTable.getValue("T", row));
-    		}
-    	}
-        
-        //sort by T
-        table.sort(true, "T");
-        
-        String previousNotes = "";
-        if (getNotes() != null)
-        	previousNotes = getNotes() + "\n";
-        
-        setNotes(previousNotes + "merged " + molecule.getUID());
-        
-        //For now we ignore channel, image, metadataUID, and all segmentTables
-        //KCP should be rerun after merging. Combining the segmentTables would not give the same result.
+		Set<Double> tNumbers = new HashSet<Double>();
+
+		// First add all current T to set
+		for (int row = 0; row < table.getRowCount(); row++) {
+			tNumbers.add(table.getValue("T", row));
+		}
+
+		MarsTable nextDataTable = molecule.getTable();
+
+		for (int row = 0; row < nextDataTable.getRowCount(); row++) {
+			if (!tNumbers.contains(nextDataTable.getValue("T", row))) {
+				table.appendRow();
+				int mergeLastRow = table.getRowCount() - 1;
+
+				for (int col = 0; col < table.getColumnCount(); col++) {
+					String column = table.getColumnHeader(col);
+					table.setValue(column, mergeLastRow, nextDataTable.getValue(column,
+						row));
+				}
+
+				tNumbers.add(nextDataTable.getValue("T", row));
+			}
+		}
+
+		// sort by T
+		table.sort(true, "T");
+
+		String previousNotes = "";
+		if (getNotes() != null) previousNotes = getNotes() + "\n";
+
+		setNotes(previousNotes + "merged " + molecule.getUID());
+
+		// For now we ignore channel, image, metadataUID, and all segmentTables
+		// KCP should be rerun after merging. Combining the segmentTables would not
+		// give the same result.
 	}
 }

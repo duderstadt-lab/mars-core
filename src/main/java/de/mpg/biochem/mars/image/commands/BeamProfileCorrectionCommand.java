@@ -99,9 +99,9 @@ import net.imagej.display.ImageDisplay;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-				label = "Beam Profile Corrector", weight = 8, mnemonic = 'b') })
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Beam Profile Corrector",
+					weight = 8, mnemonic = 'b') })
 public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	Command
 {
@@ -138,7 +138,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 
 	@Parameter(label = "Electronic offset")
 	private double electronicOffset = 0;
-	
+
 	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = 1;
 
@@ -171,7 +171,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 
 		final MutableModuleItem<String> backgroundItems = getInfo().getMutableInput(
 			"backgroundImageName", String.class);
-		
+
 		nThreads = Runtime.getRuntime().availableProcessors();
 
 		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
@@ -222,7 +222,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		// final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
 
 		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
-		//ForkJoinPool forkJoinPool = new ForkJoinPool(1);
+		// ForkJoinPool forkJoinPool = new ForkJoinPool(1);
 		try {
 			// Start a thread to keep track of the progress of the number of frames
 			// that have been processed.
@@ -307,8 +307,8 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 				.getOriginalFileInfo().directory);
 		}
 		builder.addParameter("Channel", channel);
-		if (backgroundImage.getTitle() != null)
-			builder.addParameter("Background Image Title", backgroundImage.getTitle());
+		if (backgroundImage.getTitle() != null) builder.addParameter(
+			"Background Image Title", backgroundImage.getTitle());
 		if (backgroundImage.getOriginalFileInfo() != null && backgroundImage
 			.getOriginalFileInfo().directory != null)
 		{
@@ -318,7 +318,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		builder.addParameter("Electronic offset", String.valueOf(electronicOffset));
 		builder.addParameter("Thread count", nThreads);
 	}
-	
+
 	public void setChannel(int channel) {
 		this.channel = String.valueOf(channel);
 	}
@@ -350,11 +350,11 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	public double getElectronicOffset() {
 		return electronicOffset;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}

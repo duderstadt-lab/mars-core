@@ -62,10 +62,10 @@ import net.imagej.ops.Initializable;
 		weight = MenuConstants.PLUGINS_WEIGHT,
 		mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-				label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
-						label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-					label = "Region Difference Calculator", weight = 10,
-					mnemonic = 'o') })
+				label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(label = "Util",
+					weight = 7, mnemonic = 'u'), @Menu(
+						label = "Region Difference Calculator", weight = 10,
+						mnemonic = 'o') })
 public class RegionDifferenceCalculatorCommand extends DynamicCommand implements
 	Command, Initializable
 {

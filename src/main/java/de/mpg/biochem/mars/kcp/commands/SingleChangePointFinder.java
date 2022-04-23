@@ -122,7 +122,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 	@Parameter(label = "Tags (comma separated list)")
 	private String tags = "";
-	
+
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
@@ -166,7 +166,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 	public void run() {
 		progressUpdating.set(true);
 		numFinished.set(0);
-		
+
 		// Build log message
 		LogBuilder builder = new LogBuilder();
 
@@ -185,17 +185,16 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 				tagList[i] = tagList[i].trim();
 			}
 
-			UIDs = archive.getMoleculeUIDs().stream().filter(
-				UID -> {
-					boolean hasTags = true;
-					for (int i = 0; i < tagList.length; i++) {
-						if (!archive.moleculeHasTag(UID, tagList[i])) {
-							hasTags = false;
-							break;
-						}
+			UIDs = archive.getMoleculeUIDs().stream().filter(UID -> {
+				boolean hasTags = true;
+				for (int i = 0; i < tagList.length; i++) {
+					if (!archive.moleculeHasTag(UID, tagList[i])) {
+						hasTags = false;
+						break;
 					}
-					return hasTags;
-				}).collect(toList());
+				}
+				return hasTags;
+			}).collect(toList());
 		}
 		else if (include.equals("Untagged")) {
 			UIDs = (ArrayList<String>) archive.getMoleculeUIDs().stream().filter(
@@ -634,11 +633,11 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 	public boolean getFitSteps() {
 		return step_analysis;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}

@@ -36,7 +36,7 @@ public class DNASegment {
 	private int medianIntensity;
 
 	private double variance;
-	
+
 	public static final String X1 = "X1";
 	public static final String Y1 = "Y1";
 	public static final String X2 = "X2";

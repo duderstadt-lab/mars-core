@@ -453,10 +453,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public int getSizeC() {
-		if (sizeC != null)
-			return sizeC.getValue();
-		else
-			return -1;
+		if (sizeC != null) return sizeC.getValue();
+		else return -1;
 	}
 
 	public void setSizeT(PositiveInteger sizeT) {
@@ -464,10 +462,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public int getSizeT() {
-		if (sizeT != null)
-			return sizeT.getValue();
-		else
-			return -1;
+		if (sizeT != null) return sizeT.getValue();
+		else return -1;
 	}
 
 	public void setSizeX(PositiveInteger sizeX) {
@@ -475,10 +471,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public int getSizeX() {
-		if (sizeX != null)
-			return sizeX.getValue();
-		else
-			return -1;
+		if (sizeX != null) return sizeX.getValue();
+		else return -1;
 	}
 
 	public void setSizeY(PositiveInteger sizeY) {
@@ -486,10 +480,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public int getSizeY() {
-		if (sizeY != null)
-			return sizeY.getValue();
-		else
-			return -1;
+		if (sizeY != null) return sizeY.getValue();
+		else return -1;
 	}
 
 	public void setSizeZ(PositiveInteger sizeZ) {
@@ -497,10 +489,8 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public int getSizeZ() {
-		if (sizeZ != null)
-			return sizeZ.getValue();
-		else
-			return -1;
+		if (sizeZ != null) return sizeZ.getValue();
+		else return -1;
 	}
 
 	public void setImageID(int imageID) {

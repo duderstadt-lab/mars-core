@@ -99,9 +99,9 @@ import net.imglib2.view.Views;
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
 	mnemonic = MenuConstants.PLUGINS_MNEMONIC), @Menu(label = "Mars",
 		weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 'm'), @Menu(
-			label = "Image", weight = 1, mnemonic = 'i'), @Menu(
-					label = "Util", weight = 7, mnemonic = 'u'), @Menu(
-				label = "Gradient Calculator", weight = 9, mnemonic = 'g') })
+			label = "Image", weight = 1, mnemonic = 'i'), @Menu(label = "Util",
+				weight = 7, mnemonic = 'u'), @Menu(label = "Gradient Calculator",
+					weight = 9, mnemonic = 'g') })
 public class GradientCommand extends DynamicCommand implements Command {
 
 	/**
@@ -136,7 +136,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE, choices = {
 			"Top to bottom", "Left to right" })
 	private String gradientDirection = "Top to bottom";
-	
+
 	@Parameter(label = "Threads", required = false, min = "1", max = "120")
 	private int nThreads = Runtime.getRuntime().availableProcessors();
 
@@ -171,14 +171,14 @@ public class GradientCommand extends DynamicCommand implements Command {
 		for (int c = 0; c < cSize; c++)
 			for (int t = 0; t < tSize; t++)
 				CTs.add(new int[] { c, t });
-		
+
 		List<Runnable> tasks = new ArrayList<Runnable>();
 		IntStream.range(0, CTs.size()).forEach(i -> {
 			tasks.add(() -> {
 				int[] ct = CTs.get(i);
 				Img<DoubleType> in = getInput2DSlice(ct);
-				RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(
-					gradImage, ct);
+				RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(gradImage,
+					ct);
 				opService.filter().derivativeGauss(out, in, derivatives, sigma);
 				slicesDone.incrementAndGet();
 			});
@@ -186,7 +186,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(slicesDone.get(), CTs.size(), "Calculating gradient for " +
-				dataset.getName()), tasks , nThreads);
+				dataset.getName()), tasks, nThreads);
 
 		output = datasetService.create(gradImage);
 
@@ -244,11 +244,11 @@ public class GradientCommand extends DynamicCommand implements Command {
 	public String getDirection() {
 		return gradientDirection;
 	}
-	
+
 	public void setThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
-	
+
 	public int getThreads() {
 		return this.nThreads;
 	}
