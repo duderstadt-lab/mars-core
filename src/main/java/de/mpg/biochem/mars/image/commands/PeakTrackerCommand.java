@@ -29,6 +29,13 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import io.scif.Metadata;
+import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.FormatService;
+import io.scif.services.TranslatorService;
+
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.net.URL;
@@ -44,6 +51,21 @@ import java.util.concurrent.TimeoutException;
 
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
+
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.roi.Regions;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -86,27 +108,7 @@ import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatPolygon;
-import io.scif.Metadata;
-import io.scif.img.SCIFIOImgPlus;
-import io.scif.ome.OMEMetadata;
-import io.scif.ome.services.OMEXMLService;
-import io.scif.services.FormatService;
-import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.roi.IterableRegion;
-import net.imglib2.roi.RealMask;
-import net.imglib2.roi.Regions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BoolType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.DimensionOrder;
@@ -576,11 +578,18 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			archive.logln("   ");
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
+	{
+		return findPeaksInT(channel, t, useDogFilter, integrate, processingRois, 1);
+	}
 
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
-		int channel, int t, boolean useDogFilter, boolean integrate,
-		Roi[] processingRois)
+		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois, 
+		int numThreads)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
@@ -602,7 +611,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		RandomAccessibleInterval<FloatType> filteredImg = null;
 		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(img,
-			dogFilterRadius, opService);
+			dogFilterRadius, numThreads);
 
 		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
 		for (int i = 0; i < processingRois.length; i++) {
@@ -771,7 +780,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					}
 
 					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(
-						channel), previewT, useDogFilter, false, rois);
+						channel), previewT, useDogFilter, false, rois, Runtime.getRuntime().availableProcessors());
 
 					if (Thread.currentThread().isInterrupted()) return;
 

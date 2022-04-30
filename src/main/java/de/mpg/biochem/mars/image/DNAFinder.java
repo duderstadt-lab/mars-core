@@ -32,10 +32,6 @@ package de.mpg.biochem.mars.image;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.scijava.table.DoubleColumn;
-
-import de.mpg.biochem.mars.table.MarsTable;
 import net.imagej.ops.OpService;
 import net.imglib2.Cursor;
 import net.imglib2.KDTree;
@@ -51,6 +47,11 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.scijava.table.DoubleColumn;
+
+import de.mpg.biochem.mars.table.MarsTable;
 
 public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
@@ -74,18 +75,30 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	public DNAFinder(OpService opService) {
 		this.opService = opService;
 	}
-
+	
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
 		IterableRegion<BoolType> iterableRegion, int theT)
+	{
+		return findDNAs(img, iterableRegion, theT, 1);
+	}
+	
+	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
+		IterableRegion<BoolType> iterableRegion, int theT, int numThreads)
 	{
 		List<IterableRegion<BoolType>> regionList =
 			new ArrayList<IterableRegion<BoolType>>();
 		regionList.add(iterableRegion);
-		return findDNAs(img, regionList, theT);
+		return findDNAs(img, regionList, theT, numThreads);
 	}
 
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
 		List<IterableRegion<BoolType>> iterableRegions, int theT)
+	{
+		return findDNAs(img, iterableRegions, theT, 1);
+	}
+	
+	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
+		List<IterableRegion<BoolType>> iterableRegions, int theT, int numThreads)
 	{
 		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
 
@@ -98,7 +111,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 		RandomAccessibleInterval<FloatType> filteredImg = null;
 		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(gradImage,
-			dogFilterRadius, opService);
+			dogFilterRadius, numThreads);
 
 		Img<DoubleType> secondOrderImage = null;
 		double median = 0;

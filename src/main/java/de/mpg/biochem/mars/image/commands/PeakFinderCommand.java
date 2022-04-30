@@ -46,6 +46,22 @@ import java.util.concurrent.TimeoutException;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.roi.Regions;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -84,21 +100,6 @@ import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatPolygon;
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.roi.IterableRegion;
-import net.imglib2.roi.RealMask;
-import net.imglib2.roi.Regions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BoolType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 @Plugin(type = Command.class, label = "Peak Finder", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -421,11 +422,19 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean fitPeaks,
 		boolean integrate, Roi[] processingRois)
+	{
+		return findPeaksInT(channel, t, useDogFilter, fitPeaks, integrate, processingRois, 1);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
+		int channel, int t, boolean useDogFilter, boolean fitPeaks,
+		boolean integrate, Roi[] processingRois, int numThreads)
 	{
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
@@ -434,7 +443,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 		RandomAccessibleInterval<FloatType> filteredImg = null;
 		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(img,
-			dogFilterRadius, opService);
+			dogFilterRadius, numThreads);
 
 		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
 		for (int i = 0; i < processingRois.length; i++) {
@@ -577,7 +586,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 					}
 
 					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(
-						channel), theT, useDogFilter, fitPeaks, false, rois);
+						channel), theT, useDogFilter, fitPeaks, false, rois, Runtime.getRuntime().availableProcessors());
 
 					if (Thread.currentThread().isInterrupted()) return;
 

@@ -46,6 +46,19 @@ import java.util.concurrent.TimeoutException;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.roi.IterableRegion;
+import net.imglib2.roi.RealMask;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BoolType;
+import net.imglib2.type.numeric.RealType;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -82,18 +95,6 @@ import ij.gui.Line;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.roi.IterableRegion;
-import net.imglib2.roi.RealMask;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BoolType;
-import net.imglib2.type.numeric.RealType;
 
 /**
  * Finds the location of vertically aligned DNA molecules within the specified
@@ -406,7 +407,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			for (int t = 0; t < frameCount; t++) {
 				final int theT = t;
 				tasks.add(() -> dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel),
-					theT, rois)));
+					theT, rois, 1)));
 			}
 
 			MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
@@ -414,7 +415,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 					.getName()), tasks, nThreads);
 
 		}
-		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois));
+		else dnaStack.put(theT, findDNAsInT(Integer.valueOf(channel), theT, rois, nThreads));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
@@ -434,7 +435,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<DNASegment> findDNAsInT(
-		int channel, int t, Roi[] processingRois)
+		int channel, int t, Roi[] processingRois, int numTheads)
 	{
 
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
@@ -470,7 +471,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			regionList.add(iterableROI);
 		}
 
-		return dnaFinder.findDNAs(img, regionList, t);
+		return dnaFinder.findDNAs(img, regionList, t, numTheads);
 	}
 
 	private void generateDNACountTable() {
@@ -586,7 +587,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 					}
 
 					List<DNASegment> segments = findDNAsInT(Integer.valueOf(channel),
-						theT, rois);
+						theT, rois, Runtime.getRuntime().availableProcessors());
 
 					if (Thread.currentThread().isInterrupted()) return;
 

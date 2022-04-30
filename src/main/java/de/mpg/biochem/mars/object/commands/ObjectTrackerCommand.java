@@ -29,6 +29,13 @@
 
 package de.mpg.biochem.mars.object.commands;
 
+import io.scif.Metadata;
+import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.FormatService;
+import io.scif.services.TranslatorService;
+
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.util.ArrayList;
@@ -44,6 +51,35 @@ import java.util.concurrent.TimeoutException;
 
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
+
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.Interval;
+import net.imglib2.IterableInterval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealLocalizable;
+import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.outofbounds.OutOfBoundsMirrorFactory;
+import net.imglib2.outofbounds.OutOfBoundsMirrorFactory.Boundary;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Scale;
+import net.imglib2.roi.geom.real.Polygon2D;
+import net.imglib2.roi.labeling.ImgLabeling;
+import net.imglib2.roi.labeling.LabelRegion;
+import net.imglib2.roi.labeling.LabelRegions;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -84,41 +120,7 @@ import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatPolygon;
-import io.scif.Metadata;
-import io.scif.img.SCIFIOImgPlus;
-import io.scif.ome.OMEMetadata;
-import io.scif.ome.services.OMEXMLService;
-import io.scif.services.FormatService;
-import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.axis.Axes;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.Interval;
-import net.imglib2.IterableInterval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
-import net.imglib2.algorithm.neighborhood.HyperSphereShape;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.outofbounds.OutOfBoundsMirrorFactory;
-import net.imglib2.outofbounds.OutOfBoundsMirrorFactory.Boundary;
-import net.imglib2.realtransform.RealViews;
-import net.imglib2.realtransform.Scale;
-import net.imglib2.roi.geom.real.Polygon2D;
-import net.imglib2.roi.labeling.ImgLabeling;
-import net.imglib2.roi.labeling.LabelRegion;
-import net.imglib2.roi.labeling.LabelRegions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.logic.BitType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.IntervalView;
-import net.imglib2.view.Views;
 import ome.units.quantity.Length;
 import ome.xml.meta.OMEXMLMetadata;
 import ome.xml.model.enums.EnumerationException;
@@ -305,9 +307,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * THREADS
 	 */
 
-	@Parameter(label = "Threads", required = false, min = "1", max = "120",
-		style = "group:Output")
-	private int nThreads = Runtime.getRuntime().availableProcessors();
+	//For now we comment this out to avoid the creation of too many threads
+	//OpService commands already multithread when processing individual 
+	//2D images and segmentation takes a lot of computations so this should be
+	//reasonably efficient already.
+	//@Parameter(label = "Threads", required = false, min = "1", max = "120",
+	//	style = "group:Output")
+	private int nThreads = 1;//Runtime.getRuntime().availableProcessors();
 
 	/**
 	 * PREVIEW SETTINGS

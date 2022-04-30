@@ -43,6 +43,22 @@ import java.util.concurrent.TimeoutException;
 
 import javax.swing.SwingUtilities;
 
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
+
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -70,21 +86,6 @@ import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.realtransform.AffineTransform2D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
 
 @Plugin(type = Command.class, label = "Transform ROIs", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -447,7 +448,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			dataset.dimension(1) - 1);
 
 		RandomAccessibleInterval<FloatType> dog = (useDogFilter) ? MarsImageUtils
-			.dogFilter(img, dogFilterRadius, opService) : opService.convert().float32(
+			.dogFilter(img, dogFilterRadius, Runtime.getRuntime().availableProcessors()) : opService.convert().float32(
 				Views.iterable(img));
 
 		RandomAccessible<FloatType> rae = Views.extendMirrorSingle(Views.interval(

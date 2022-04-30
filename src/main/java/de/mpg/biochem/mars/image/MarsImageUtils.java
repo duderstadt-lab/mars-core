@@ -37,10 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.mpg.biochem.mars.util.Gaussian2D;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
-import net.imagej.ops.OpService;
 import net.imglib2.Cursor;
 import net.imglib2.Interval;
 import net.imglib2.IterableInterval;
@@ -49,7 +47,8 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.Img;
+import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.Masks;
@@ -61,9 +60,12 @@ import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.RandomAccessibleOnRealRandomAccessible;
 import net.imglib2.view.Views;
+
+import de.mpg.biochem.mars.util.Gaussian2D;
 
 /**
  * Common utility functions for DoG filtering, peak finding, peak fitting and
@@ -358,6 +360,25 @@ public class MarsImageUtils {
 
 		return finalPeaks;
 	}
+	
+	/**
+	 * This method uses the OpService to apply a Difference of Gaussian (DoG)
+	 * filter on a 2D image provided. The dog filter op requires two sigmas that
+	 * are used to generate two images and the difference of these images is
+	 * returned. The relationship between dogFilterRadius and the two sigmas is
+	 * the following: sigma1 = dogFilterRadius / sqrt(2) * 1.1 sigma2 =
+	 * dogFilterRadius / sqrt(2) * 0.9
+	 * 
+	 * @param <T> Image type.
+	 * @param img 2D image that will be dog filtered.
+	 * @param dogFilterRadius Radius to use for dog filtering.
+	 * @return The dog filtered image.
+	 */
+	public static <T extends RealType<T>> RandomAccessibleInterval<FloatType>
+		dogFilter(RandomAccessibleInterval<T> img, double dogFilterRadius)
+	{
+		return dogFilter(img, dogFilterRadius, 1);
+	}
 
 	/**
 	 * This method uses the OpService to apply a Difference of Gaussian (DoG)
@@ -370,20 +391,47 @@ public class MarsImageUtils {
 	 * @param <T> Image type.
 	 * @param img 2D image that will be dog filtered.
 	 * @param dogFilterRadius Radius to use for dog filtering.
-	 * @param opService An instance of the opService to run the dog filter op.
+	 * @param numThreads The number of threads to use.
 	 * @return The dog filtered image.
 	 */
 	public static <T extends RealType<T>> RandomAccessibleInterval<FloatType>
 		dogFilter(RandomAccessibleInterval<T> img, double dogFilterRadius,
-			OpService opService)
+			int numThreads)
 	{
-		Img<FloatType> converted = opService.convert().float32(Views.iterable(img));
-		Img<FloatType> dog = opService.create().img(converted);
+		//Replace opService calls with direct function calls to prevent 
+		//creation to too many threads and commands never finishing
+		//default is Runtime.getRuntime().availableProcessors()
+		//See Image commands stall due to too many threads issue #29
+		
+		//Img<FloatType> tmp = opService.convert().float32(Views.iterable(img));
+		//Img<FloatType> dog = opService.create().img(tmp);
+
+		final RandomAccessible< T > extended = Views.extendMirrorSingle( img );
+		final FloatType type = new FloatType();
+		final RandomAccessibleInterval< FloatType > dog =  Util.getArrayOrCellImgFactory( img, type ).create( img );
+		final RandomAccessibleInterval< FloatType > dog2 = Util.getArrayOrCellImgFactory( img, type ).create( img );
 
 		final double sigma1 = dogFilterRadius / Math.sqrt(2) * 1.1;
 		final double sigma2 = dogFilterRadius / Math.sqrt(2) * 0.9;
 
-		opService.filter().dog(dog, converted, sigma1, sigma2);
+		try
+		{
+			Gauss3.gauss( new double[] { sigma1, sigma1 }, extended, dog2, numThreads );
+			Gauss3.gauss( new double[] { sigma2, sigma2 }, extended, dog, numThreads );
+		}
+		catch ( final IncompatibleTypeException e )
+		{
+			e.printStackTrace();
+		}
+
+		final IterableInterval< FloatType > dogIterable = Views.iterable( dog );
+		final IterableInterval< FloatType > tmpIterable = Views.iterable( dog2 );
+		final Cursor< FloatType > dogCursor = dogIterable.cursor();
+		final Cursor< FloatType > tmpCursor = tmpIterable.cursor();
+		while ( dogCursor.hasNext() )
+			dogCursor.next().sub( tmpCursor.next() );
+
+		//opService.filter().dog(dog, converted, sigma1, sigma2);
 
 		return dog;
 	}
