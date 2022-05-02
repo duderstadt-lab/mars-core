@@ -171,7 +171,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
-		choices = { "whole image", "ROI from image", "ROIs from manager" })
+		choices = { "whole image", "ROI from image", "ROIs from manager" }, persist = false)
 	private String region = "whole image";
 
 	@Parameter(label = "Channel", choices = { "a", "b", "c" },
@@ -314,7 +314,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		}
 		else if (dataset == null) return;
 
-		if (image.getRoi() != null) imageRoi = image.getRoi();
+		if (image.getRoi() != null) {
+			imageRoi = image.getRoi();
+			region = "ROI from image";
+			final MutableModuleItem<String> regionItem = getInfo().getMutableInput(
+				"region", String.class);
+			regionItem.setValue(this, "ROI from image");
+			System.out.println("setting ROI from image...");
+		}
 
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
