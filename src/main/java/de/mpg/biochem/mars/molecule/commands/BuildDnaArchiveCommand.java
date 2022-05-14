@@ -31,6 +31,12 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
+import net.imagej.ops.Initializable;
+import net.imagej.ops.OpService;
+import net.imglib2.KDTree;
+import net.imglib2.RealLocalizable;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -44,6 +50,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.DoubleColumn;
+import org.scijava.ui.DialogPrompt;
+import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
@@ -60,11 +68,6 @@ import de.mpg.biochem.mars.util.MarsMath;
 import ij.gui.Line;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import net.imagej.ops.Initializable;
-import net.imagej.ops.OpService;
-import net.imglib2.KDTree;
-import net.imglib2.RealLocalizable;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 @Plugin(type = Command.class, label = "Build DNA Archive", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -85,6 +88,9 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 
 	@Parameter
 	private OpService ops;
+	
+	@Parameter
+	private UIService uiService;
 
 	@Parameter
 	private StatusService statusService;
@@ -333,7 +339,15 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 			dnaMolecule.setTable(mergedTable);
 			dnaMoleculeArchive.put(dnaMolecule);
 		}
-
+		
+		if (dnaMoleculeArchive.getNumberOfMolecules() == 0) {
+			uiService.showDialog("No single molecules from the archives provided colocalize\n" +
+			                     "with the DNA molecules discovered in the ROI manager.\n", DialogPrompt.MessageType.ERROR_MESSAGE);
+			dnaMoleculeArchive = null;
+			logService.info(LogBuilder.endBlock(false));
+			return;
+		}
+		
 		logService.info(LogBuilder.endBlock(true));
 
 		log += "\n" + LogBuilder.endBlock(true);
