@@ -739,7 +739,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	/**
 	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * Integration types are "Do not integrate" or "Integrate"
 	 * 
 	 * @param channel Index of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
@@ -750,7 +750,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	/**
 	 * Method used to set the channels that will be integrated in a script.
-	 * Integration types are "Do not integrate", "Both", "Short" or "Long"
+	 * Integration types are "Do not integrate" or "Integrate"
 	 * 
 	 * @param channelName Name of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
@@ -778,6 +778,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		return verbose;
 	}
 
+	/**
+	 * Determines whether a the metadata UID is taken directly from the
+	 * image metadata or randomly generated. Options are "unique from dataset" 
+	 * or "random"
+	 * 
+	 * @param metadataUIDSource The metadata UID source.
+	 */
 	public void setMetadataUIDSource(String metadataUIDSource) {
 		this.metadataUIDSource = metadataUIDSource;
 	}
