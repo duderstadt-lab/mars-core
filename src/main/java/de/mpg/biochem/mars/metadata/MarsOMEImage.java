@@ -29,6 +29,11 @@
 
 package de.mpg.biochem.mars.metadata;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
+import io.scif.util.FormatTools;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,12 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import io.scif.util.FormatTools;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Temperature;
@@ -353,7 +354,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	public double getTimeIncrementInSeconds() {
 		if (timeIncrement != null) return timeIncrement.value(UNITS.SECOND)
 			.doubleValue();
-		else return -1;
+		return -1;
 	}
 
 	public void setDetectorSerialNumber(String detectorSerialNumber) {

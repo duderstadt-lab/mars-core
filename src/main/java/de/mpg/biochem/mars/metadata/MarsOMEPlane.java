@@ -29,15 +29,15 @@
 
 package de.mpg.biochem.mars.metadata;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
 import de.mpg.biochem.mars.molecule.AbstractJsonConvertibleRecord;
 import ome.units.UNITS;
@@ -435,7 +435,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 
 	public double getDeltaTinSeconds() {
 		if (dt != null) return dt.value(UNITS.SECOND).doubleValue();
-		else return -1;
+		return -1;
 	}
 
 	public void setImageID(int imageID) {
@@ -509,7 +509,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 	public double getExposureTimeInSeconds() {
 		if (exposureTime != null) return exposureTime.value(UNITS.SECOND)
 			.doubleValue();
-		else return -1;
+		return -1;
 	}
 
 	public void setPosX(float posX) {

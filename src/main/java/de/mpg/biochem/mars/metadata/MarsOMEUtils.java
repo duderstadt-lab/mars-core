@@ -29,6 +29,8 @@
 
 package de.mpg.biochem.mars.metadata;
 
+import io.scif.ome.services.OMEXMLService;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,13 +39,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.imagej.Dataset;
+import net.imagej.axis.Axes;
+
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsMath;
-import io.scif.ome.services.OMEXMLService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.axis.Axes;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;
@@ -507,6 +509,12 @@ public class MarsOMEUtils {
 		}
 
 		return channelToTtoDtMap;
+	}
+	
+	public static boolean checkOMEMetadataForDt(MarsMetadata marsOMEMetadata) {
+		if (marsOMEMetadata.getImage(0).planes().filter(plane -> plane.getDeltaTinSeconds() != -1).count() > 0)
+			return true;
+		return false;
 	}
 
 	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,

@@ -532,10 +532,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		// Build columns
 		List<DoubleColumn> columns = new ArrayList<>();
 		columns.add(new DoubleColumn(Peak.T));
+		
+		boolean containsDt = MarsOMEUtils.checkOMEMetadataForDt(marsOMEMetadata);
 
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
-			columns.add(new DoubleColumn(name + "_Time_(s)"));
+			if (containsDt) columns.add(new DoubleColumn(name + "_Time_(s)"));
 			columns.add(new DoubleColumn(name + "_X"));
 			columns.add(new DoubleColumn(name + "_Y"));
 			columns.add(new DoubleColumn(name));
@@ -560,8 +562,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					.get(t).containsKey(UID))
 				{
 					Peak peak = integrationMap.getMap().get(t).get(UID);
-					if (channelToTtoDtMap.get(integrationMap.getC()).get(t) != -1)
-						table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(
+					if (containsDt) table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(
 							integrationMap.getC()).get(t));
 					table.setValue(name + "_X", row, peak.getX());
 					table.setValue(name + "_Y", row, peak.getY());
@@ -576,7 +577,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					}
 				}
 				else {
-					table.setValue(name + "_Time_(s)", row, Double.NaN);
+					if (containsDt) table.setValue(name + "_Time_(s)", row, Double.NaN);
 					table.setValue(name + "_X", row, Double.NaN);
 					table.setValue(name + "_Y", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
@@ -666,7 +667,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		Optional<IntegrationMap> peakMap = peakIntegrationMaps.stream().filter(
 			m -> m.getName().equals(name) && m.getC() == c).findFirst();
 		if (peakMap.isPresent()) return peakMap.get().getMap();
-		else return null;
+		return null;
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {

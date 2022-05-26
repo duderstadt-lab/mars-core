@@ -29,6 +29,12 @@
 
 package de.mpg.biochem.mars.image.commands;
 
+import io.scif.Metadata;
+import io.scif.img.SCIFIOImgPlus;
+import io.scif.ome.OMEMetadata;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.TranslatorService;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +45,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.ops.Initializable;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Intervals;
 
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
@@ -76,21 +92,7 @@ import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import io.scif.Metadata;
-import io.scif.img.SCIFIOImgPlus;
-import io.scif.ome.OMEMetadata;
-import io.scif.ome.services.OMEXMLService;
-import io.scif.services.TranslatorService;
 import loci.common.services.ServiceException;
-import net.imagej.Dataset;
-import net.imagej.ImgPlus;
-import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Intervals;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
@@ -482,8 +484,11 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 				UIDs.addAll(integrationMap.getMap().get(t).keySet());
 
 		tasks.clear();
+		
+		boolean containsDt = MarsOMEUtils.checkOMEMetadataForDt(marsOMEMetadata);
+		
 		for (String uid : UIDs) {
-			tasks.add(() -> buildMolecule(uid, imageIndex, channelToTtoDtMap));
+			tasks.add(() -> buildMolecule(uid, imageIndex, channelToTtoDtMap, containsDt));
 		}
 
 		progressInteger.set(0);
@@ -613,14 +618,14 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 	}
 
 	private void buildMolecule(String UID, int imageIndex,
-		Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
+		Map<Integer, Map<Integer, Double>> channelToTtoDtMap, boolean containsDt)
 	{
 		MarsTable table = new MarsTable();
 
 		table.add(new DoubleColumn("T"));
 		for (IntegrationMap integrationMap : peakIntegrationMaps) {
 			String name = integrationMap.getName();
-			table.add(new DoubleColumn(name + "_Time_(s)"));
+			if (containsDt) table.add(new DoubleColumn(name + "_Time_(s)"));
 			table.add(new DoubleColumn(name + "_X"));
 			table.add(new DoubleColumn(name + "_Y"));
 			table.add(new DoubleColumn(name));
@@ -642,7 +647,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 					.get(t).containsKey(UID))
 				{
 					Peak peak = integrationMap.getMap().get(t).get(UID);
-					table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(
+					if (containsDt) table.setValue(name + "_Time_(s)", row, channelToTtoDtMap.get(
 						integrationMap.getC()).get(t));
 					table.setValue(name + "_X", row, peak.getX());
 					table.setValue(name + "_Y", row, peak.getY());
@@ -657,7 +662,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 					}
 				}
 				else {
-					table.setValue(name + "_Time_(s)", row, Double.NaN);
+					if (containsDt) table.setValue(name + "_Time_(s)", row, Double.NaN);
 					table.setValue(name + "_X", row, Double.NaN);
 					table.setValue(name + "_Y", row, Double.NaN);
 					table.setValue(name, row, Double.NaN);
