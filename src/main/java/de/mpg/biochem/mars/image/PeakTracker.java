@@ -42,6 +42,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
+import net.imglib2.KDTree;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.log.LogService;
 
@@ -52,8 +55,6 @@ import de.mpg.biochem.mars.object.MartianObject;
 import de.mpg.biochem.mars.object.ObjectArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
-import net.imglib2.KDTree;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 /**
  * PeakTracker tracks the relative position of peaks over time based on peak
@@ -382,11 +383,11 @@ public class PeakTracker {
 		int sizeT = archive.metadata().findFirst().get().getImage(0).getSizeT();
 		do {
 			table.appendRow();
-			table.setValue(Peak.T, row, (double) peak.getT());
-			table.setValue(Peak.X, row, peak.getX());
-			table.setValue(Peak.Y, row, peak.getY());
+			table.setValue(Peak.T, row, peak.getT());
 			if (channelToTtoDtMap.get(channel).get(peak.getT()) != -1) table.setValue(
 				"Time_(s)", row, channelToTtoDtMap.get(channel).get(peak.getT()));
+			table.setValue(Peak.X, row, peak.getX());
+			table.setValue(Peak.Y, row, peak.getY());
 			if (verbose) {
 				for (String name : peak.getProperties().keySet())
 					table.setValue(name, row, peak.getProperties().get(name));
