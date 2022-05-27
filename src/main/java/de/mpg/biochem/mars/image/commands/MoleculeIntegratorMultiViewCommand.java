@@ -227,7 +227,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 	private boolean verbose = false;
 
 	@Parameter(label = "Help",
-		description = "View a web page detailing Molecule Integrator MutliView options",
+		description = "View a web page detailing Molecule Integrator (mutliview) options",
 		callback = "openWebPage", persist = false)
 	private Button openWebPage;
 
@@ -747,7 +747,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 	protected void openWebPage() {
 		try {
 			String urlString =
-				"https://duderstadt-lab.github.io/mars-docs/docs/image/MoleculeIntegrator/";
+				"https://duderstadt-lab.github.io/mars-docs/docs/image/MoleculeIntegratorMultiView/";
 			URL url = new URL(urlString);
 			platformService.open(url);
 		}
