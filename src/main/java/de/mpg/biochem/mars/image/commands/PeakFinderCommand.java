@@ -242,7 +242,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Generate peak table", style = "group:Output")
 	private boolean generatePeakTable;
 
-	@Parameter(label = "Add to RoiManager", style = "group:Output")
+	@Parameter(label = "Add to ROI Manager", style = "group:Output")
 	private boolean addToRoiManager;
 
 	@Parameter(label = "Process all frames", style = "group:Output")
