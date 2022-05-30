@@ -320,7 +320,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 			final MutableModuleItem<String> regionItem = getInfo().getMutableInput(
 				"region", String.class);
 			regionItem.setValue(this, "ROI from image");
-			System.out.println("setting ROI from image...");
 		}
 
 		if (dataset != null) {
