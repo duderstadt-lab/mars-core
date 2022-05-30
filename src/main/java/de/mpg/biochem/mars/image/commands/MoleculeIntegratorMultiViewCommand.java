@@ -764,7 +764,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 		Optional<IntegrationMap> peakMap = peakIntegrationMaps.stream().filter(
 			m -> m.getName().equals(name) && m.getC() == c).findFirst();
 		if (peakMap.isPresent()) return peakMap.get().getMap();
-		else return null;
+		return null;
 	}
 
 	private void addInputParameterLog(LogBuilder builder) {
