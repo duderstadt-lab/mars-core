@@ -308,8 +308,11 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			image.setOverlay(null);
 		}
 
-		transformFrom = fromRegionName.getValue(this);
-		transformTo = toRegionName.getValue(this);
+		if (transformFrom == null && fromRegionName != null)
+			transformFrom = fromRegionName.getValue(this);
+		
+		if (transformTo == null && toRegionName != null)
+			transformTo = toRegionName.getValue(this);
 
 		// Build log
 		LogBuilder builder = new LogBuilder();
