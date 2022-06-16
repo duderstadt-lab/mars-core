@@ -39,6 +39,8 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import net.imagej.ops.Initializable;
+
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -63,7 +65,6 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsPosition;
-import net.imagej.ops.Initializable;
 
 @Plugin(type = Command.class, headless = true,
 	label = "Single Change Point Finder", menu = { @Menu(
@@ -120,7 +121,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			"Tagged with", "Untagged" })
 	private String include;
 
-	@Parameter(label = "Tags (comma separated list)")
+	@Parameter(label = "Tags (comma separated list (AND))")
 	private String tags = "";
 
 	@Parameter(label = "Thread count", required = false, min = "1", max = "120")
