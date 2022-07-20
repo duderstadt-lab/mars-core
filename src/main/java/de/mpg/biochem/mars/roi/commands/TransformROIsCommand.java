@@ -148,23 +148,23 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:left", persist = false)
 	private final String affineTitle = "Affine2D Transformation Matrix";
-
-	@Parameter(label = "m00", style = "group:Input")
+	
+	@Parameter(label = "m00", style = "format:#####.#####, group:Input")
 	private double m00;
 
-	@Parameter(label = "m01", style = "group:Input")
+	@Parameter(label = "m01", style = "format:#####.#####, group:Input")
 	private double m01;
 
-	@Parameter(label = "m02", style = "group:Input")
+	@Parameter(label = "m02", style = "format:#####.#####, group:Input")
 	private double m02;
 
-	@Parameter(label = "m10", style = "group:Input")
+	@Parameter(label = "m10", style = "format:#####.#####, group:Input")
 	private double m10;
 
-	@Parameter(label = "m11", style = "group:Input")
+	@Parameter(label = "m11", style = "format:#####.#####, group:Input")
 	private double m11;
 
-	@Parameter(label = "m12", style = "group:Input")
+	@Parameter(label = "m12", style = "format:#####.#####, group:Input")
 	private double m12;
 
 	@Parameter(label = "Apply inverse transformation", style = "group:Input")
