@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
+import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
 import net.imagej.ops.Initializable;
 import net.imglib2.Interval;
@@ -259,7 +260,13 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		if (dataset != null) {
 			final MutableModuleItem<String> imageNameItem = getInfo().getMutableInput(
 				"imageName", String.class);
-			imageNameItem.setValue(this, dataset.getName());
+			if (dataset.dimension(Axes.TIME) == 1)
+				imageNameItem.setValue(this, "<p style=\"text-align:center;color:red\">" + dataset.getName() + "</p>" +
+					"\n<p style=\"color:red\">WARNING: The image selected has only one time point.</p>\n" +
+					"<p style=\"color:red\">Usually, a sequence of time points are integrated. Are </p>\n" +
+					"<p style=\"color:red\">you sure the correct image was selected?</p>\n");
+			else
+				imageNameItem.setValue(this, dataset.getName());
 		}
 
 		if (roiManager != null) {
