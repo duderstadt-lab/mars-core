@@ -47,5 +47,13 @@ public class MarsTablePostprocessor extends AbstractPostprocessorPlugin {
 			Object obj = module.getOutputs().get(key);
 			if (obj instanceof MarsTable) marsTableService.addTable((MarsTable) obj);
 		}
+		
+		for (String key : module.getInputs().keySet()) {
+			Object obj = module.getInputs().get(key);
+			if (obj != null && obj instanceof MarsTable) {
+				if (((MarsTable) obj).getWindow() != null)
+					((MarsTable) obj).getWindow().update();
+			}
+		}
 	}
 }
