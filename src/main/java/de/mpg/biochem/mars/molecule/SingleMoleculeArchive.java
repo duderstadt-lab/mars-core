@@ -29,11 +29,11 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+
+import java.io.File;
+import java.io.IOException;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
@@ -123,10 +123,26 @@ public class SingleMoleculeArchive extends
 	public SingleMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
 	}
+	
+	/**
+	 * Constructor for building a molecule archive from a MarsTable. The table
+	 * provided must contain a column for the molecule index. The integer values in the index
+	 * column determine the grouping for creation of molecule records. Status will
+	 * be reported during processing by retrieving the StatusService from the
+	 * MoleculeArchiveService instance.
+	 * 
+	 * @param name The name of the archive.
+	 * @param table A MarsTable to build the archive from.
+	 * @param indexColumnName Molecule index column. 
+	 */
+	public SingleMoleculeArchive(String name, MarsTable table, String indexColumnName) {
+		super(name, table, indexColumnName);
+	}
 
 	/**
 	 * Create empty SingleMoleculeArchiveProperties record.
 	 */
+	@Override
 	public SingleMoleculeArchiveProperties createProperties() {
 		return new SingleMoleculeArchiveProperties();
 	}

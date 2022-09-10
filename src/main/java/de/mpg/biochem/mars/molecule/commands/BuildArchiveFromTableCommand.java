@@ -29,12 +29,17 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
+import java.util.ArrayList;
+
+import net.imagej.ops.Initializable;
+
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.log.LogService;
 import org.scijava.menu.MenuConstants;
+import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -55,8 +60,13 @@ import de.mpg.biochem.mars.util.LogBuilder;
 			weight = MenuConstants.PLUGINS_WEIGHT, mnemonic = 's'), @Menu(
 				label = "Molecule", weight = 2, mnemonic = 'm'), @Menu(
 					label = "Build Archive from Table", weight = 3, mnemonic = 'b') })
-public class BuildArchiveFromTableCommand extends DynamicCommand {
+public class BuildArchiveFromTableCommand extends DynamicCommand implements
+  Initializable
+{
 
+	@Parameter
+	private MarsTableService marsTableService;
+	
 	@Parameter
 	private MoleculeArchiveService moleculeArchiveService;
 
@@ -71,13 +81,45 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 
 	@Parameter
 	private LogService logService;
-
-	@Parameter(label = "Table with molecule column")
+	
+	@Parameter(label = "Table", callback = "tableSelectionChanged", choices = {
+		"a", "b", "c" })
 	private MarsTable table;
+
+	@Parameter(label = "Molecule index column", choices = { "a", "b",
+		"c" })
+	private String columnName;
 
 	// OUTPUT PARAMETERS
 	@Parameter(label = "Molecule Archive", type = ItemIO.OUTPUT)
 	private SingleMoleculeArchive archive;
+	
+  //-- Callback methods --
+
+	private void tableSelectionChanged() {
+		ArrayList<String> columns = new ArrayList<>();
+		columns.addAll(table.getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
+
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"columnName", String.class);
+		columnItems.setChoices(columns);
+		columnItems.setDefaultValue("molecule");
+	}
+
+	// -- Initializable methods --
+
+	@Override
+	public void initialize() {
+		ArrayList<String> columns = new ArrayList<>();
+		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		columns.sort(String::compareToIgnoreCase);
+
+		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
+			"columnName", String.class);
+		columnItems.setChoices(columns);
+		columnItems.setDefaultValue("molecule");
+	}
 
 	@Override
 	public void run() {
@@ -91,22 +133,15 @@ public class BuildArchiveFromTableCommand extends DynamicCommand {
 			return;
 		}
 
-		if (table.get("molecule") == null) {
-			uiService.showDialog(
-				"The table given doesn't have a molecule column. It must have a molecule column in order to generate the Molecule Archive.",
-				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
-			return;
-		}
-
 		LogBuilder builder = new LogBuilder();
 
 		String log = LogBuilder.buildTitleBlock(
 			"Building SingleMoleculeArchive from Table");
 
-		builder.addParameter("From table", table.getName());
+		builder.addParameter("Table", table.getName());
 		builder.addParameter("Ouput archive name", name);
 
-		archive = new SingleMoleculeArchive(name, table);
+		archive = new SingleMoleculeArchive(name, table, columnName);
 
 		builder.addParameter("Molecules added", String.valueOf(archive
 			.getNumberOfMolecules()));

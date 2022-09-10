@@ -31,6 +31,16 @@ package de.mpg.biochem.mars.molecule;
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import com.google.common.collect.ImmutableList;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,16 +70,6 @@ import java.util.stream.Stream;
 import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.table.DoubleColumn;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.google.common.collect.ImmutableList;
 
 import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
 import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
@@ -306,6 +306,27 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		buildFromTable(table);
 	}
+	
+	/**
+	 * Constructor for building a molecule archive from a MarsTable. The table
+	 * provided must contain a column for the molecule index. The integer values in the index
+	 * column determine the grouping for creation of molecule records. Status will
+	 * be reported during processing by retrieving the StatusService from the
+	 * MoleculeArchiveService instance.
+	 * 
+	 * @param name The name of the archive.
+	 * @param table A MarsTable to build the archive from.
+	 * @param indexColumnName Molecule index column. 
+	 */
+	public AbstractMoleculeArchive(String name, MarsTable table, String indexColumnName) {
+		super();
+		this.name = name;
+		this.virtual = false;
+
+		initializeVariables();
+
+		buildFromTable(table, indexColumnName);
+	}
 
 	private void initializeVariables() {
 		metadataMap = new ConcurrentSkipListMap<>();
@@ -392,10 +413,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		rebuildIndexes();
 	}
-
+	
 	private void buildFromTable(MarsTable results) {
+		buildFromTable(results, "molecule");
+	}
+
+	private void buildFromTable(MarsTable results, String indexColumnName) {
 		LinkedHashMap<Integer, GroupIndices> groups = MarsTableService
-			.find_group_indices(results, "molecule");
+			.find_group_indices(results, indexColumnName);
 
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
 		I meta = createMetadata(metaUID);
@@ -404,7 +429,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		String[] headers = new String[results.getColumnCount() - 1];
 		int col = 0;
 		for (int i = 0; i < results.getColumnCount(); i++) {
-			if (!results.getColumnHeader(i).equals("molecule")) {
+			if (!results.getColumnHeader(i).equals(indexColumnName)) {
 				headers[col] = results.getColumnHeader(i);
 				col++;
 			}
@@ -422,7 +447,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				molTable.appendRow();
 				col = 0;
 				for (int i = 0; i < results.getColumnCount(); i++) {
-					if (!results.getColumnHeader(i).equals("molecule")) {
+					if (!results.getColumnHeader(i).equals(indexColumnName)) {
 						molTable.set(col, row, results.get(i, j));
 						col++;
 					}

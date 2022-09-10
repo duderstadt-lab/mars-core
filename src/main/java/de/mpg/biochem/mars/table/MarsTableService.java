@@ -34,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.imagej.ImageJService;
+
 import org.scijava.display.DisplayService;
 import org.scijava.event.EventService;
 import org.scijava.log.LogService;
@@ -47,7 +49,6 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.ui.UIService;
 
 import ij.measure.ResultsTable;
-import net.imagej.ImageJService;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
@@ -157,9 +158,9 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 		// MarsTableSorter.sort(table, true, groupColumn);
 
 		LinkedHashMap<Integer, GroupIndices> map =
-			new LinkedHashMap<Integer, GroupIndices>();
+			new LinkedHashMap<>();
 
-		List<Integer> indices = new ArrayList<Integer>();
+		List<Integer> indices = new ArrayList<>();
 		indices.add(0);
 
 		int key = (int) table.getValue(groupColumn, 0);
