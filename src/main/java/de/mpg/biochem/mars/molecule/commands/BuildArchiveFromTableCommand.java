@@ -86,7 +86,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 		"a", "b", "c" })
 	private MarsTable table;
 
-	@Parameter(label = "Molecule index column", choices = { "a", "b",
+	@Parameter(label = "Molecule id column", choices = { "a", "b",
 		"c" })
 	private String columnName;
 
@@ -100,11 +100,11 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 		ArrayList<String> columns = new ArrayList<>();
 		columns.addAll(table.getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
-
+		columns.add(0, "None");
+		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"columnName", String.class);
 		columnItems.setChoices(columns);
-		columnItems.setDefaultValue("molecule");
 	}
 
 	// -- Initializable methods --
@@ -114,11 +114,11 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 		ArrayList<String> columns = new ArrayList<>();
 		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
-
+		columns.add(0, "None");
+		
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
 			"columnName", String.class);
 		columnItems.setChoices(columns);
-		columnItems.setDefaultValue("molecule");
 	}
 
 	@Override
@@ -140,8 +140,9 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 
 		builder.addParameter("Table", table.getName());
 		builder.addParameter("Ouput archive name", name);
+		builder.addParameter("Molecule id column", columnName);
 
-		archive = new SingleMoleculeArchive(name, table, columnName);
+		archive = (!columnName.equals("None")) ? new SingleMoleculeArchive(name, table, columnName) : new SingleMoleculeArchive(name, table);
 
 		builder.addParameter("Molecules added", String.valueOf(archive
 			.getNumberOfMolecules()));
