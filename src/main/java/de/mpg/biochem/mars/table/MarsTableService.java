@@ -32,6 +32,7 @@ package de.mpg.biochem.mars.table;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import net.imagej.ImageJService;
@@ -46,6 +47,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.script.ScriptService;
 import org.scijava.service.Service;
 import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 import org.scijava.ui.UIService;
 
 import ij.measure.ResultsTable;
@@ -151,37 +153,44 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 	// Utility method returning HashMap of molecule numbers and start and stop
 	// index positions.
 	// Here we are assuming the table is already sorted on the groupColumn..
-	public static LinkedHashMap<Integer, GroupIndices> find_group_indices(
+	public static Map<String, GroupIndices> find_group_indices(
 		MarsTable table, String groupColumn)
 	{
-		// make sure we sort on groupColumn
-		// MarsTableSorter.sort(table, true, groupColumn);
+		// Should we sort?
 
-		LinkedHashMap<Integer, GroupIndices> map =
+		Map<String, GroupIndices> map =
 			new LinkedHashMap<>();
 
-		List<Integer> indices = new ArrayList<>();
-		indices.add(0);
+		int groupStartIndex = 0;
 
-		int key = (int) table.getValue(groupColumn, 0);
-
-		for (int i = 1; i < table.getRowCount(); i++) {
-			if (key != (int) table.getValue(groupColumn, i)) {
-				// Means we have encountered a new group so we add the key and start and
-				// end values
-				indices.add(i - 1);
-				map.put(key, new GroupIndices(indices.get(0), indices.get(1)));
-
-				// Then we clean the indices and add the start of the next group
-				indices.clear();
-				indices.add(i);
-				key = (int) table.getValue(groupColumn, i);
+		if (table.get(groupColumn) instanceof GenericColumn) {
+			String key = table.getStringValue(groupColumn, 0);
+			for (int i = 1; i < table.getRowCount(); i++) {
+				if (!key.equals(table.getStringValue(groupColumn, i))) {
+					// Means we have encountered a new group so we add the key and start and
+					// end values
+					map.put(key, new GroupIndices(groupStartIndex, i - 1));
+	
+					groupStartIndex = i;
+					key = table.getStringValue(groupColumn, i);
+				}
 			}
+			map.put(key, new GroupIndices(groupStartIndex, table.getRowCount() - 1));
+		} else if (table.get(groupColumn) instanceof DoubleColumn) {
+			double key = table.getValue(groupColumn, 0);
+			for (int i = 1; i < table.getRowCount(); i++) {
+				if (key != table.getValue(groupColumn, i)) {
+					// Means we have encountered a new group so we add the key and start and
+					// end values
+					map.put(String.valueOf(key), new GroupIndices(groupStartIndex, i - 1));
+	
+					groupStartIndex = i;
+					key = table.getValue(groupColumn, i);
+				}
+			}
+			map.put(String.valueOf(key), new GroupIndices(groupStartIndex, table.getRowCount() - 1));
 		}
-
-		indices.add(table.getRowCount() - 1);
-		map.put(key, new GroupIndices(indices.get(0), indices.get(1)));
-
+			
 		return map;
 	}
 

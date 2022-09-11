@@ -111,11 +111,9 @@ public class SingleMoleculeArchive extends
 	}
 
 	/**
-	 * Constructor for building a SingleMoleculeArchive from a MarsTable. The
-	 * table provided must contain a molecule column. The integer values in the
-	 * molecule column determine the grouping for creation of molecule records.
-	 * Status will be reported during processing by retrieving the StatusService
-	 * from the MoleculeArchiveService instance.
+	 * Constructor for building a Molecule Archive from a MarsTable. The
+	 * Molecule Archive will contain one Molecule record with the table
+	 * provided.
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.

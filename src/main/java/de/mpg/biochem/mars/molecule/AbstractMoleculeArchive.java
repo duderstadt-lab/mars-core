@@ -54,7 +54,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,7 @@ import java.util.stream.Stream;
 import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.table.DoubleColumn;
+import org.scijava.table.GenericColumn;
 
 import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
 import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
@@ -288,11 +288,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
-	 * Constructor for building a molecule archive from a MarsTable. The table
-	 * provided must contain a molecule column. The integer values in the molecule
-	 * column determine the grouping for creation of molecule records. Status will
-	 * be reported during processing by retrieving the StatusService from the
-	 * MoleculeArchiveService instance.
+	 * Constructor for building a Molecule Archive from a MarsTable. The
+	 * Molecule Archive will contain one Molecule record with the table
+	 * provided.
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
@@ -308,11 +306,9 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	/**
-	 * Constructor for building a molecule archive from a MarsTable. The table
-	 * provided must contain a column for the molecule index. The integer values in the index
-	 * column determine the grouping for creation of molecule records. Status will
-	 * be reported during processing by retrieving the StatusService from the
-	 * MoleculeArchiveService instance.
+	 * Constructor for building a molecule archive from a MarsTable. The index column 
+	 * specified defines the rows that belong to each Molecule record either using either 
+	 * unique numbering or id strings.
 	 * 
 	 * @param name The name of the archive.
 	 * @param table A MarsTable to build the archive from.
@@ -415,47 +411,54 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 	
 	private void buildFromTable(MarsTable results) {
-		buildFromTable(results, "molecule");
+		String metaUID = MarsMath.getUUID58().substring(0, 10);
+		I meta = createMetadata(metaUID);
+		putMetadata(meta);
+		M molecule = createMolecule(MarsMath.getUUID58(), results);
+		molecule.setMetadataUID(metaUID);
+		put(molecule);
 	}
 
 	private void buildFromTable(MarsTable results, String indexColumnName) {
-		LinkedHashMap<Integer, GroupIndices> groups = MarsTableService
+		Map<String, GroupIndices> groups = MarsTableService
 			.find_group_indices(results, indexColumnName);
 
 		String metaUID = MarsMath.getUUID58().substring(0, 10);
 		I meta = createMetadata(metaUID);
 		putMetadata(meta);
 
-		String[] headers = new String[results.getColumnCount() - 1];
-		int col = 0;
-		for (int i = 0; i < results.getColumnCount(); i++) {
-			if (!results.getColumnHeader(i).equals(indexColumnName)) {
-				headers[col] = results.getColumnHeader(i);
-				col++;
-			}
-		}
-
-		for (int mol : groups.keySet()) {
+		for (String mol : groups.keySet()) {
 			MarsTable molTable = new MarsTable();
-			for (String header : headers) {
-				molTable.add(new DoubleColumn(header));
-			}
-			int row = 0;
-			for (int j = groups.get(mol).getStart(); j <= groups.get(mol)
-				.getEnd(); j++)
-			{
-				molTable.appendRow();
-				col = 0;
-				for (int i = 0; i < results.getColumnCount(); i++) {
-					if (!results.getColumnHeader(i).equals(indexColumnName)) {
-						molTable.set(col, row, results.get(i, j));
-						col++;
+			for (String header : results.getColumnHeadingList()) {
+				if (header.equals(indexColumnName)) continue;
+				
+				if (results.get(header) instanceof DoubleColumn) {
+					int length = groups.get(mol).getEnd() - groups.get(mol).getStart() + 1;
+					double[] values = new double[length];
+					
+					DoubleColumn resultsCol = (DoubleColumn) results.get(header);
+					System.arraycopy(resultsCol.getArray(), groups.get(mol).getStart(), values, 0, length);
+					
+					DoubleColumn doubleCol = new DoubleColumn(header);
+					doubleCol.fill(values);
+					molTable.add(doubleCol);
+				} else {
+					GenericColumn genericCol = new GenericColumn(header);
+					
+					//shallow copy
+					GenericColumn resultsCol = (GenericColumn) results.get(header);
+					for (int j = groups.get(mol).getStart(); j <= groups.get(mol)
+						.getEnd(); j++)
+					{
+						genericCol.add(resultsCol.get(j));
 					}
+					molTable.add(genericCol);
 				}
-				row++;
 			}
+			
 			M molecule = createMolecule(MarsMath.getUUID58(), molTable);
 			molecule.setMetadataUID(metaUID);
+			molecule.setParameter(indexColumnName, mol);
 			put(molecule);
 		}
 	}
