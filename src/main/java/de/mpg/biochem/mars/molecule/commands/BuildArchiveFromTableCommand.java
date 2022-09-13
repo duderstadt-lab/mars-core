@@ -169,4 +169,13 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 	public MarsTable getTable() {
 		return table;
 	}
+	
+	public void setMoleculeIdColumn(String columnName) {
+		this.columnName = columnName;
+	}
+
+	public String getMoleculeIdColumn() {
+		return columnName;
+	}
+	
 }
