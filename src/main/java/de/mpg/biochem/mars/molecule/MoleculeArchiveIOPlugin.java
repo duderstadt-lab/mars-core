@@ -82,7 +82,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 	@Override
 	public boolean supportsOpen(final String source) {
 		return source.endsWith(".yama") || source.endsWith(".yama.json") || source
-			.endsWith(".yama.store");
+			.endsWith(".yama.store/");
 	}
 
 	@Override
