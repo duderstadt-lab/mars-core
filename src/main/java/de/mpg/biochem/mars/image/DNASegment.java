@@ -29,12 +29,15 @@
 
 package de.mpg.biochem.mars.image;
 
-public class DNASegment {
+import net.imglib2.RealLocalizable;
+
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+
+public class DNASegment implements RealLocalizable {
 
 	private double x1, y1, x2, y2;
-
+	private double centerX, centerY;
 	private int medianIntensity;
-
 	private double variance;
 
 	public static final String X1 = "X1";
@@ -50,6 +53,27 @@ public class DNASegment {
 		this.y1 = y1;
 		this.x2 = x2;
 		this.y2 = y2;
+		
+		centerX = x1 + (x2 - x1) / 2;
+		centerY = y1 + (y2 - y1) / 2;
+	}
+	
+	public double getA() {
+		SimpleRegression linearFit = new SimpleRegression(true);
+		linearFit.addData(x1, y1);
+		linearFit.addData(x2, y2);
+
+		// y = A + Bx
+		return linearFit.getIntercept();
+	}
+
+	public double getB() {
+		SimpleRegression linearFit = new SimpleRegression(true);
+		linearFit.addData(x1, y1);
+		linearFit.addData(x2, y2);
+
+		// y = A + Bx
+		return linearFit.getSlope();
 	}
 
 	public double getX1() {
@@ -83,6 +107,15 @@ public class DNASegment {
 	public void setY2(double y2) {
 		this.y2 = y2;
 	}
+	
+	public double getLength() {
+		return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+	}
+	
+	public double getPositionOnDNA(double x, double y, double DNALength) {
+		return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) *
+			(DNALength / getLength());
+	}
 
 	public void setMedianIntensity(int medianIntensity) {
 		this.medianIntensity = medianIntensity;
@@ -100,7 +133,49 @@ public class DNASegment {
 		return variance;
 	}
 
-	public double getLength() {
-		return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+	//Override from RealLocalizable interface.. so peaks can be passed to
+	// KDTree and other imglib2 functions.
+	@Override
+	public int numDimensions() {
+		// We make no effort to think beyond 2 dimensions !
+		return 2;
+	}
+
+	@Override
+	public double getDoublePosition(int arg0) {
+		if (arg0 == 0) {
+			return centerX;
+		}
+		else if (arg0 == 1) {
+			return centerY;
+		}
+		else {
+			return -1;
+		}
+	}
+
+	@Override
+	public float getFloatPosition(int arg0) {
+		if (arg0 == 0) {
+			return (float) centerX;
+		}
+		else if (arg0 == 1) {
+			return (float) centerY;
+		}
+		else {
+			return -1;
+		}
+	}
+
+	@Override
+	public void localize(float[] arg0) {
+		arg0[0] = (float) centerX;
+		arg0[1] = (float) centerY;
+	}
+
+	@Override
+	public void localize(double[] arg0) {
+		arg0[0] = centerX;
+		arg0[1] = centerY;
 	}
 }

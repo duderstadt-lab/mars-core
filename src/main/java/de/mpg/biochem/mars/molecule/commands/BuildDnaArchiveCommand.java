@@ -37,7 +37,6 @@ import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -53,6 +52,7 @@ import org.scijava.table.DoubleColumn;
 import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.UIService;
 
+import de.mpg.biochem.mars.image.DNASegment;
 import de.mpg.biochem.mars.image.Peak;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.DnaMolecule;
@@ -393,7 +393,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 				"_Position_on_DNA");
 			for (int row = 0; row < table.getRowCount(); row++) {
 				dnaPositionColumn.add(dnaSegment.getPositionOnDNA(table.getValue(
-					xColumn, row), table.getValue(yColumn, row)));
+					xColumn, row), table.getValue(yColumn, row), DNALength));
 			}
 
 			for (int col = 0; col < table.getColumnCount(); col++) {
@@ -431,7 +431,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		ArrayList<SingleMolecule> moleculesLocated =
 			new ArrayList<SingleMolecule>();
 
-		archivePositionSearcher.search(dnaSegment, dnaSegment.getSearchRadius(),
+		archivePositionSearcher.search(dnaSegment, radius + dnaSegment.getLength() / 2,
 			false);
 
 		// build DNA fit
@@ -648,133 +648,4 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		}
 	}
 
-	// Not sure which ROI library to use at the moment
-	// for now we just use this...
-	class DNASegment implements RealLocalizable {
-
-		private double x1, y1, x2, y2, a, b;
-
-		private double centerX, centerY;
-
-		private double bpsPerPixels;
-
-		DNASegment(double x1, double y1, double x2, double y2) {
-			this.x1 = x1;
-			this.y1 = y1;
-			this.x2 = x2;
-			this.y2 = y2;
-
-			centerX = x1 + (x2 - x1) / 2;
-			centerY = y1 + (y2 - y1) / 2;
-
-			SimpleRegression linearFit = new SimpleRegression(true);
-			linearFit.addData(x1, y1);
-			linearFit.addData(x2, y2);
-
-			// y = A + Bx
-			a = linearFit.getIntercept();
-			b = linearFit.getSlope();
-
-			bpsPerPixels = DNALength / getLength();
-		}
-
-		double getA() {
-			return a;
-		}
-
-		double getB() {
-			return b;
-		}
-
-		double getX1() {
-			return x1;
-		}
-
-		double getY1() {
-			return y1;
-		}
-
-		double getX2() {
-			return x2;
-		}
-
-		double getY2() {
-			return y2;
-		}
-
-		void setX1(double x1) {
-			this.x1 = x1;
-		}
-
-		void setY1(double y1) {
-			this.y1 = y1;
-		}
-
-		void setX2(double x2) {
-			this.x2 = x2;
-		}
-
-		void setY2(double y2) {
-			this.y2 = y2;
-		}
-
-		double getLength() {
-			return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-		}
-
-		double getPositionOnDNA(double x, double y) {
-			return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) *
-				bpsPerPixels;
-		}
-
-		double getSearchRadius() {
-			return radius + getLength() / 2;
-		}
-
-		// Override from RealLocalizable interface.. so peaks can be passed to
-		// KDTree and other imglib2 functions.
-		@Override
-		public int numDimensions() {
-			// We make no effort to think beyond 2 dimensions !
-			return 2;
-		}
-
-		@Override
-		public double getDoublePosition(int arg0) {
-			if (arg0 == 0) {
-				return centerX;
-			}
-			else if (arg0 == 1) {
-				return centerY;
-			}
-			else {
-				return -1;
-			}
-		}
-
-		@Override
-		public float getFloatPosition(int arg0) {
-			if (arg0 == 0) {
-				return (float) centerX;
-			}
-			else if (arg0 == 1) {
-				return (float) centerY;
-			}
-			else {
-				return -1;
-			}
-		}
-
-		@Override
-		public void localize(float[] arg0) {
-			arg0[0] = (float) centerX;
-			arg0[1] = (float) centerY;
-		}
-
-		@Override
-		public void localize(double[] arg0) {
-			arg0[0] = centerX;
-			arg0[1] = centerY;
-		}
-	}
 }
