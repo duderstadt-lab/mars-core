@@ -31,8 +31,6 @@ package de.mpg.biochem.mars.image;
 
 import net.imglib2.RealLocalizable;
 
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
 public class DNASegment implements RealLocalizable {
 
 	private double x1, y1, x2, y2;
@@ -56,24 +54,6 @@ public class DNASegment implements RealLocalizable {
 		
 		centerX = x1 + (x2 - x1) / 2;
 		centerY = y1 + (y2 - y1) / 2;
-	}
-	
-	public double getA() {
-		SimpleRegression linearFit = new SimpleRegression(true);
-		linearFit.addData(x1, y1);
-		linearFit.addData(x2, y2);
-
-		// y = A + Bx
-		return linearFit.getIntercept();
-	}
-
-	public double getB() {
-		SimpleRegression linearFit = new SimpleRegression(true);
-		linearFit.addData(x1, y1);
-		linearFit.addData(x2, y2);
-
-		// y = A + Bx
-		return linearFit.getSlope();
 	}
 
 	public double getX1() {

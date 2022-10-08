@@ -37,6 +37,7 @@ import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
@@ -441,9 +442,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		double x2 = dnaSegment.getX2();
 		double y2 = dnaSegment.getY2();
 
-		double A = dnaSegment.getA();
-		double B = dnaSegment.getB();
-
 		for (int j = 0; j < archivePositionSearcher.numNeighbors(); j++) {
 			MoleculePosition moleculePosition = archivePositionSearcher.getSampler(j)
 				.get();
@@ -469,7 +467,12 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 				// If there is no intercept just take top x1.
 				double DNAx;
 				if (x1 == x2) DNAx = x1;
-				else DNAx = (moleculePosition.getY() - A) / B;
+				else {
+						SimpleRegression linearFit = new SimpleRegression(true);
+						linearFit.addData(x1, y1);
+						linearFit.addData(x2, y2);
+						DNAx = (moleculePosition.getY() - linearFit.getIntercept()) / linearFit.getSlope();
+				}
 
 				distance = Math.abs(moleculePosition.getX() - DNAx);
 			}
