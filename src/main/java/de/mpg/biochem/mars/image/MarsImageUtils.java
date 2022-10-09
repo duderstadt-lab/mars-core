@@ -398,18 +398,13 @@ public class MarsImageUtils {
 		dogFilter(RandomAccessibleInterval<T> img, double dogFilterRadius,
 			int numThreads)
 	{
-		//Replace opService calls with direct function calls to prevent 
-		//creation to too many threads and commands never finishing
-		//default is Runtime.getRuntime().availableProcessors()
-		//See Image commands stall due to too many threads issue #29
-		
-		//Img<FloatType> tmp = opService.convert().float32(Views.iterable(img));
-		//Img<FloatType> dog = opService.create().img(tmp);
-
 		final RandomAccessible< T > extended = Views.extendMirrorSingle( img );
 		final FloatType type = new FloatType();
-		final RandomAccessibleInterval< FloatType > dog =  Util.getArrayOrCellImgFactory( img, type ).create( img );
-		final RandomAccessibleInterval< FloatType > dog2 = Util.getArrayOrCellImgFactory( img, type ).create( img );
+		
+		//Make sure to translate the dog images to the interval matching img. 
+		//This ensures the dog filtered image returned represent the same interval as the one provided.
+		final RandomAccessibleInterval< FloatType > dog =  Views.translate(Util.getArrayOrCellImgFactory( img, type ).create( img ), img.min(0), img.min(1));
+		final RandomAccessibleInterval< FloatType > dog2 = Views.translate(Util.getArrayOrCellImgFactory( img, type ).create( img ), img.min(0), img.min(1));
 
 		final double sigma1 = dogFilterRadius / Math.sqrt(2) * 1.1;
 		final double sigma2 = dogFilterRadius / Math.sqrt(2) * 0.9;
@@ -430,8 +425,6 @@ public class MarsImageUtils {
 		final Cursor< FloatType > tmpCursor = tmpIterable.cursor();
 		while ( dogCursor.hasNext() )
 			dogCursor.next().sub( tmpCursor.next() );
-
-		//opService.filter().dog(dog, converted, sigma1, sigma2);
 
 		return dog;
 	}
