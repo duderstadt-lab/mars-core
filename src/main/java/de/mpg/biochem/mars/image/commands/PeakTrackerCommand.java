@@ -287,10 +287,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Vertical grid regions", style = "group:Process")
 	private int verticalGridRegions = 5;
 
-	@Parameter(label = "New virtual archive name")
+	@Parameter(label = "New virtual archive name", style = "group:Process")
 	private String archiveName = "archive.yama.store";
 
-	@Parameter(label = "New virtual archive location", style="directory")
+	@Parameter(label = "New virtual archive location", style="group:Process, directory")
 	private File virtualArchiveLocation;
 
 	/**
@@ -481,7 +481,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		List<int[]> excludeTimePoints = excludedTimePointList();
 
 		double starttime = System.currentTimeMillis();
-		logService.info("Finding and Fitting Peaks...");
 
 		//We do not grid process int he case of ROIs from manager...
 		if (gridProcess && !region.equals("ROIs from manager")) {
@@ -517,6 +516,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				throw new RuntimeException(e);
 			}
 		} else {
+			logService.info("Finding and Fitting Peaks...");
 			archive = new SingleMoleculeArchive("archive.yama");
 			process(excludeTimePoints, rois);
 		}
