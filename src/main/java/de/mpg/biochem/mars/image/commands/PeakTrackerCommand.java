@@ -380,7 +380,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	private PeakTracker tracker;
 
-	private Roi[] rois;
+	private Roi[] inputRois;
 	private Roi imageRoi;
 
 	private Dataset dataset;
@@ -401,7 +401,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			final MutableModuleItem<String> regionItem = getInfo().getMutableInput(
 				"region", String.class);
 			regionItem.setValue(this, "ROI from image");
-			System.out.println("setting ROI from image...");
 		}
 
 		if (dataset != null) {
@@ -443,18 +442,18 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (image != null && imageRoi == null && image.getRoi() != null) imageRoi =
 			image.getRoi();
 
-		if (region.equals("ROI from image")) {
-			rois = new Roi[1];
-			rois[0] = imageRoi;
-		}
-		else if (region.equals("ROIs from manager")) {
-			rois = roiManager.getRoisAsArray();
-		}
-		else {
-			rois = new Roi[1];
-			rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
-				(int) dataset.dimension(1)));
-		}
+		Roi[] rois = (inputRois != null) ? inputRois : new Roi[1];
+		if (inputRois != null)
+			if (region.equals("ROI from image")) {
+				rois[0] = imageRoi;
+			}
+			else if (region.equals("ROIs from manager")) {
+				rois = roiManager.getRoisAsArray();
+			}
+			else {
+				rois[0] = new Roi(0, 0, (int) dataset.dimension(0),
+					(int) dataset.dimension(1));
+			}
 
 		if (image != null) {
 			image.deleteRoi();
@@ -468,101 +467,32 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		peakLabelsStack = new ArrayList<>();
-		metaDataStack = new ConcurrentHashMap<>();
+		List<int[]> excludeTimePoints = excludedTimePointList();
 
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
 
-		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
-		int zSize = (int) dataset.getImgPlus().dimension(zDim);
-
-		int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
-		int tSize = (int) dataset.getImgPlus().dimension(tDim);
-
-		final int frameCount = (swapZandT) ? zSize : tSize;
-
-		// build list of timepoints to process...
-
-		List<int[]> excludeTimePoints = new ArrayList<int[]>();
-		if (excludeTimePointList.length() > 0) {
-			try {
-				final String[] excludeArray = excludeTimePointList.split(",");
-				for (int i = 0; i < excludeArray.length; i++) {
-					String[] endPoints = excludeArray[i].split("-");
-					int start = Integer.valueOf(endPoints[0].trim());
-					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1]
-						.trim()) : start;
-
-					excludeTimePoints.add(new int[] { start, end });
-				}
-			}
-			catch (NumberFormatException e) {
-				logService.info(
-					"NumberFormatException encountered when parsing exclude list. Tracking all time points.");
-				excludeTimePoints = new ArrayList<int[]>();
-			}
-		}
-
-		for (int i = 0; i < rois.length; i++)
-			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
-
-		List<Integer> processTimePoints = new ArrayList<Integer>();
-		List<Runnable> tasks = new ArrayList<Runnable>();
-		for (int t = 0; t < frameCount; t++) {
-			boolean processedTimePoint = true;
-			for (int index = 0; index < excludeTimePoints.size(); index++)
-				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(
-					index)[1])
-				{
-					processedTimePoint = false;
-					break;
-				}
-
-			if (processedTimePoint) {
-				processTimePoints.add(t);
-				final int theT = t;
-				tasks.add(() -> {
-					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel),
-						theT, useDogFilter, integrate, rois);
-					for (int i = 0; i < rois.length; i++)
-						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT,
-							labelPeaks.get(i));
-				});
-			}
-		}
-
-		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
-			.showStatus(peakLabelsStack.get(0).size(), frameCount,
-				"Finding Peaks for " + dataset.getName()), tasks, nThreads);
-
-		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
-
-		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
-
 		archive = new SingleMoleculeArchive("archive.yama");
 
-		MarsOMEMetadata marsOMEMetadata = buildOMEMetadata();
-
-		try {
-			UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
-			Length pixelSize = new Length(pixelLength, UnitsLengthEnumHandler
-				.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
-
-			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
-			marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
-		}
-		catch (EnumerationException e1) {
-			e1.printStackTrace();
-		}
-
-		archive.putMetadata(marsOMEMetadata);
-
-		for (int i = 0; i < rois.length; i++)
-			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel),
-				processTimePoints, nThreads);
+		//We do not grid process int he case of ROIs from manager...
+		if (gridProcess && !region.equals("ROIs from manager")) {
+			for (int gridH = 0; gridH < horizontalGridRegions; gridH++) {
+				for (int gridV = 0; gridV < verticalGridRegions; gridV++) {
+					double gridStartTime = System.currentTimeMillis();
+					logService.info("Finding and Fitting Peaks in grid region H: " + gridH + " V: " + gridV);
+					//Determine roi for grid region
+					Roi[] gridRois = new Roi[1];
+					gridRois[0] =new Roi((int)(rois[0].getXBase() + (rois[0].getFloatWidth()/horizontalGridRegions)*gridH),
+							(int)(rois[0].getYBase() + (rois[0].getFloatHeight()/verticalGridRegions)*gridV),
+							Math.ceil(rois[0].getFloatWidth()/horizontalGridRegions),
+							Math.ceil(rois[0].getFloatHeight()/verticalGridRegions));
+					process(excludeTimePoints, gridRois);
+					logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
+							gridStartTime) / 60000, 2) + " minutes.");
+				}
+			}
+		} else
+			process(excludeTimePoints, rois);
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
@@ -599,6 +529,97 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			archive.logln(log);
 			archive.logln("   ");
 		}
+	}
+
+	private List<int[]> excludedTimePointList() {
+		List<int[]> excludeTimePoints = new ArrayList<int[]>();
+		if (excludeTimePointList.length() > 0) {
+			try {
+				final String[] excludeArray = excludeTimePointList.split(",");
+				for (int i = 0; i < excludeArray.length; i++) {
+					String[] endPoints = excludeArray[i].split("-");
+					int start = Integer.valueOf(endPoints[0].trim());
+					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1]
+							.trim()) : start;
+
+					excludeTimePoints.add(new int[] { start, end });
+				}
+			}
+			catch (NumberFormatException e) {
+				logService.info(
+						"NumberFormatException encountered when parsing exclude list. Tracking all time points.");
+				excludeTimePoints = new ArrayList<int[]>();
+			}
+		}
+		return excludeTimePoints;
+	}
+
+	private void process(List<int[]> excludeTimePoints, Roi[] rois) {
+		peakLabelsStack = new ArrayList<>();
+		metaDataStack = new ConcurrentHashMap<>();
+
+		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
+		int zSize = (int) dataset.getImgPlus().dimension(zDim);
+
+		int tDim = dataset.getImgPlus().dimensionIndex(Axes.TIME);
+		int tSize = (int) dataset.getImgPlus().dimension(tDim);
+
+		final int frameCount = (swapZandT) ? zSize : tSize;
+
+		for (int i = 0; i < rois.length; i++)
+			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+
+		List<Integer> processTimePoints = new ArrayList<Integer>();
+		List<Runnable> tasks = new ArrayList<Runnable>();
+		for (int t = 0; t < frameCount; t++) {
+			boolean processedTimePoint = true;
+			for (int index = 0; index < excludeTimePoints.size(); index++)
+				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(
+						index)[1]) {
+					processedTimePoint = false;
+					break;
+				}
+
+			if (processedTimePoint) {
+				processTimePoints.add(t);
+				final int theT = t;
+				tasks.add(() -> {
+					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel),
+							theT, useDogFilter, integrate, rois);
+					for (int i = 0; i < rois.length; i++)
+						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT,
+								labelPeaks.get(i));
+				});
+			}
+		}
+
+		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
+				.showStatus(peakLabelsStack.get(0).size(), frameCount,
+						"Finding Peaks for " + dataset.getName()), tasks, nThreads);
+
+		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
+				minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
+
+		if (archive.getNumberOfMetadatas() == 0) {
+			MarsOMEMetadata marsOMEMetadata = buildOMEMetadata();
+
+			try {
+				UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+				Length pixelSize = new Length(pixelLength, UnitsLengthEnumHandler
+						.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
+
+				marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
+				marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
+			} catch (EnumerationException e1) {
+				e1.printStackTrace();
+			}
+
+			archive.putMetadata(marsOMEMetadata);
+		}
+
+		for (int i = 0; i < rois.length; i++)
+			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel),
+					processTimePoints, nThreads);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -788,15 +809,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					if (imageRoi == null && image.getRoi() != null) imageRoi = image
 						.getRoi();
 
+					Roi[] rois = new Roi[1];
 					if (region.equals("ROI from image")) {
-						rois = new Roi[1];
 						rois[0] = imageRoi;
 					}
 					else if (region.equals("ROIs from manager")) {
 						rois = roiManager.getRoisAsArray();
 					}
 					else {
-						rois = new Roi[1];
 						rois[0] = new Roi(new Rectangle(0, 0, (int) dataset.dimension(0),
 							(int) dataset.dimension(1)));
 					}
@@ -978,12 +998,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	public void setRois(Roi[] rois) {
-		this.rois = rois;
+		this.inputRois = rois;
 		this.region = "ROIs from manager";
 	}
 
 	public Roi[] getROIs() {
-		return this.rois;
+		return this.inputRois;
 	}
 
 	public void setChannel(int channel) {
