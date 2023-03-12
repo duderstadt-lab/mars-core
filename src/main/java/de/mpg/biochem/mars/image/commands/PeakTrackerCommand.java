@@ -454,7 +454,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			image.getRoi();
 
 		Roi[] rois = (inputRois != null) ? inputRois : new Roi[1];
-		if (inputRois != null)
+		if (inputRois == null)
 			if (region.equals("ROI from image")) {
 				rois[0] = imageRoi;
 			}
