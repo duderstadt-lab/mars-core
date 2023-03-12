@@ -38,6 +38,8 @@ import io.scif.services.TranslatorService;
 
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -285,6 +287,12 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Vertical grid regions", style = "group:Process")
 	private int verticalGridRegions = 5;
 
+	@Parameter(label = "New virtual archive name")
+	private String archiveName = "archive.yama.store";
+
+	@Parameter(label = "New virtual archive location", style="directory")
+	private File virtualArchiveLocation;
+
 	/**
 	 * OUTPUT SETTINGS
 	 */
@@ -387,6 +395,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private ImagePlus image;
 	private boolean swapZandT = false;
 
+	public PeakTrackerCommand() {
+	}
+
 	@Override
 	public void initialize() {
 		if (dataset == null && imageDisplay != null) {
@@ -472,10 +483,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		double starttime = System.currentTimeMillis();
 		logService.info("Finding and Fitting Peaks...");
 
-		archive = new SingleMoleculeArchive("archive.yama");
-
 		//We do not grid process int he case of ROIs from manager...
 		if (gridProcess && !region.equals("ROIs from manager")) {
+			archive = new SingleMoleculeArchive("archive.yama");
 			for (int gridH = 0; gridH < horizontalGridRegions; gridH++) {
 				for (int gridV = 0; gridV < verticalGridRegions; gridV++) {
 					double gridStartTime = System.currentTimeMillis();
@@ -489,10 +499,27 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					process(excludeTimePoints, gridRois);
 					logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 							gridStartTime) / 60000, 2) + " minutes.");
+
+					if (gridH == 0 && gridV == 0) {
+						try {
+							File virtualArchiveDirectory = new File(virtualArchiveLocation.getAbsolutePath() + "/" + archiveName);
+							archive.saveAsVirtualStore(virtualArchiveDirectory);
+							archive = new SingleMoleculeArchive(virtualArchiveDirectory);
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					}
 				}
 			}
-		} else
+			try {
+				archive.save();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			archive = new SingleMoleculeArchive("archive.yama");
 			process(excludeTimePoints, rois);
+		}
 
 		// Make sure the output archive has the correct name
 		getInfo().getMutableOutput("archive", SingleMoleculeArchive.class).setLabel(
