@@ -271,6 +271,21 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private int integrationOuterRadius = 4;
 
 	/**
+	 * PROCESS SETTINGS
+	 */
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
+	private String processGroup = "Process";
+
+	@Parameter(label = "Use grid", style = "group:Process")
+	private boolean gridProcess = false;
+
+	@Parameter(label = "Horizontal grid regions", style = "group:Process")
+	private int horizontalGridRegions = 1;
+
+	@Parameter(label = "Vertical grid regions", style = "group:Process")
+	private int verticalGridRegions = 5;
+
+	/**
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
@@ -919,6 +934,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			integrationInnerRadius));
 		builder.addParameter("Integration outer radius", String.valueOf(
 			integrationOuterRadius));
+		builder.addParameter("Use grid", String.valueOf(gridProcess));
+		builder.addParameter("Horizontal grid regions", String.valueOf(
+				horizontalGridRegions));
+		builder.addParameter("Vertical grid regions", String.valueOf(
+				verticalGridRegions));
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Pixel length", String.valueOf(this.pixelLength));
 		builder.addParameter("Pixel units", this.pixelUnits);
@@ -1084,6 +1104,30 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	public int getIntegrationOuterRadius() {
 		return integrationOuterRadius;
+	}
+
+	public void setGridProcess(boolean gridProcess) {
+		this.gridProcess = gridProcess;
+	}
+
+	public boolean getGridProcess() {
+		return gridProcess;
+	}
+
+	public void setHorizontalGridRegions(int horizontalGridRegions) {
+		this.horizontalGridRegions = horizontalGridRegions;
+	}
+
+	public int getHorizontalGridRegions() {
+		return horizontalGridRegions;
+	}
+
+	public void setVerticalGridRegions(int verticalGridRegions) {
+		this.verticalGridRegions = verticalGridRegions;
+	}
+
+	public int getVerticalGridRegions() {
+		return verticalGridRegions;
 	}
 
 	public void setMicroscope(String microscope) {
