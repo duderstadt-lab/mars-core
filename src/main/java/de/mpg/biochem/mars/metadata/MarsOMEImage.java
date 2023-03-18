@@ -71,7 +71,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	GenericModel, JsonConvertibleRecord
 {
 
-	private Map<Integer, MarsOMEPlane> marsOMEPlanes =
+	private final Map<Integer, MarsOMEPlane> marsOMEPlanes =
 		new LinkedHashMap<Integer, MarsOMEPlane>();
 
 	private String id;
@@ -84,7 +84,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	private int imageID;
 	private String imageName;
 	private String imageDescription;
-	private Map<Integer, MarsOMEChannel> channels =
+	private final Map<Integer, MarsOMEChannel> channels =
 		new LinkedHashMap<Integer, MarsOMEChannel>();
 
 	private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
@@ -101,9 +101,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	private PositiveInteger sizeY;
 	private PositiveInteger sizeZ;
 
-	private Map<String, String> stringFields =
+	private final Map<String, String> stringFields =
 		new LinkedHashMap<String, String>();
-	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
+	private final Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
 
 	public MarsOMEImage() {
 		super();

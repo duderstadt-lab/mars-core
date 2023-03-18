@@ -105,8 +105,8 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 		{
 			try {
 				BufferedImage wPic = (isRetina()) ? ImageIO.read(getClass().getResource(
-					"/2x/" + (String) model.getValue())) : ImageIO.read(getClass()
-						.getResource("/1x/" + (String) model.getValue()));
+					"/2x/" + model.getValue())) : ImageIO.read(getClass()
+						.getResource("/1x/" + model.getValue()));
 				JLabel wIcon = new JLabel(new RetinaImageIcon(wPic));
 				if (tabbedPane != null && !group.equals("")) {
 					if (!tabPanels.containsKey(group)) addTab(group);

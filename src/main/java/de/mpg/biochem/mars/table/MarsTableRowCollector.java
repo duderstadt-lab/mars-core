@@ -45,7 +45,7 @@ public class MarsTableRowCollector implements
 	Collector<MarsTableRow, MarsTable, MarsTable>
 {
 
-	private MarsTable templateTable;
+	private final MarsTable templateTable;
 
 	public MarsTableRowCollector(MarsTable table) {
 		this.templateTable = table;

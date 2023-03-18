@@ -37,15 +37,15 @@ public class MarsFunctionFitter {
 	public double chiSquared = 0.0;
 	public int iterations;
 
-	private MarsFunction function;
-	private int nParameters;
-	private double precision;
-	private double maxIterations;
+	private final MarsFunction function;
+	private final int nParameters;
+	private final double precision;
+	private final double maxIterations;
 
-	private double[] delta;
-	private double[][] alpha;
-	private double[][] beta;
-	private double[][] covar;
+	private final double[] delta;
+	private final double[][] alpha;
+	private final double[][] beta;
+	private final double[][] covar;
 	double[][] identityMatrix;
 
 	public MarsFunctionFitter(MarsFunction function, int nParameters) {
@@ -254,7 +254,7 @@ public class MarsFunctionFitter {
 		double[][] x = { { 0 }, { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, {
 			8 }, { 9 }, { 10 }, { 11 }, { 12 }, { 13 } };
 
-		double y[] = { 3365.333251953, 3206.923095703, 3215.769287109,
+		double[] y = { 3365.333251953, 3206.923095703, 3215.769287109,
 			3474.846191406, 4320.333496094, 5953.307617188, 7291.846191406,
 			7010.307617188, 5404.307617188, 4016.153808594, 3668.281982422,
 			3543.769287109, 3320.820556641, 3248.000000000 };

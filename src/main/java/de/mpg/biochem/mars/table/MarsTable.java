@@ -708,13 +708,13 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 				if (get(colname) instanceof DoubleColumn) {
 					if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 						String str = jParser.getValueAsString();
-						if (Objects.equals(str, new String("Infinity"))) {
+						if (Objects.equals(str, "Infinity")) {
 							setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("-Infinity"))) {
+						else if (Objects.equals(str, "-Infinity")) {
 							setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("NaN"))) {
+						else if (Objects.equals(str, "NaN")) {
 							setValue(colname, rowIndex, Double.NaN);
 						}
 					}
@@ -740,8 +740,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 				String dimensions = fieldname.substring(23, fieldname.length() - 1);
 				int cols = Integer.valueOf(dimensions.substring(0, dimensions.indexOf(
 					",")));
-				rows = Integer.valueOf(dimensions.substring(dimensions.indexOf(",") + 1,
-					dimensions.length()));
+				rows = Integer.valueOf(dimensions.substring(dimensions.indexOf(",") + 1
+				));
 
 				jParser.nextToken();
 				byte[] binaryDataBlock = jParser.getBinaryValue();
@@ -943,7 +943,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		return this;
 	}
 
-	private MarsTable loadJSON(File file) throws JsonParseException, IOException {
+	private MarsTable loadJSON(File file) throws IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(
 			file));
 
@@ -953,8 +953,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
 		SmileFactory smileF = new SmileFactory();
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
-			smileF });
+		DataFormatDetector det = new DataFormatDetector(jsonF,
+				smileF);
 		DataFormatMatcher match = det.findFormat(inputStream);
 		JsonParser jParser = match.createParserWithMatch();
 
@@ -1898,7 +1898,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	// But the external API will not need to change.
 	private class ResultsTableList extends AbstractList<Row> {
 
-		private MarsTable table;
+		private final MarsTable table;
 
 		public ResultsTableList(MarsTable table) {
 			this.table = table;
@@ -1939,10 +1939,10 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 
 	private class Row {
 
-		private Map<String, Double> doubleValues = new HashMap<>();
-		private Map<String, String> stringValues = new HashMap<>();
+		private final Map<String, Double> doubleValues = new HashMap<>();
+		private final Map<String, String> stringValues = new HashMap<>();
 
-		private MarsTable table;
+		private final MarsTable table;
 
 		Row(int row, MarsTable table) {
 			this.table = table;

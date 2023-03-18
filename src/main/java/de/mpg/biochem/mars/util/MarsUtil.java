@@ -76,8 +76,7 @@ public class MarsUtil {
 			parser -> record.fromJSON(parser));
 		else {
 			String[] remainingObjects = new String[objects.length - 1];
-			for (int i = 0; i < objects.length - 1; i++)
-				remainingObjects[i] = objects[i + 1];
+			System.arraycopy(objects, 1, remainingObjects, 0, objects.length - 1);
 			defaultParser.setJsonField(objects[0], null, parser -> readJsonObject(
 				parser, record, remainingObjects));
 		}
@@ -133,7 +132,7 @@ public class MarsUtil {
 		String searchForPrefix, String newText)
 	{
 		for (Component c : parent.getComponents()) {
-			if (c instanceof JLabel && ((JLabel) c) != null && ((JLabel) c)
+			if (c instanceof JLabel && c != null && ((JLabel) c)
 				.getText() != null)
 			{
 				if (((JLabel) c).getText().startsWith(searchForPrefix)) ((JLabel) c)

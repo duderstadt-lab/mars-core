@@ -108,13 +108,13 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "groupLabel, tabbedPaneWidth:450")
-	private String inputGroup = "Input";
+	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
-	private String inputFigure = "BuildDNAArchiveInput.png";
+	private final String inputFigure = "BuildDNAArchiveInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
-	private String roiCount = "No ROIs in manager!";
+	private final String roiCount = "No ROIs in manager!";
 
 	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" },
 		style = "group:Input")
@@ -141,7 +141,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String mergeGroup = "Search Parameters";
+	private final String mergeGroup = "Search Parameters";
 
 	@Parameter(label = "Search radius around DNA",
 		style = "group:Search Parameters")
@@ -162,14 +162,14 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String outputGroup = "Output";
+	private final String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private String outputFigure = "DnaMoleculeArchive.png";
+	private final String outputFigure = "DnaMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private String outputArchiveType = "type: DnaMoleculeArchive";
+	private final String outputArchiveType = "type: DnaMoleculeArchive";
 
 	// OUTPUT PARAMETERS
 	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)
@@ -582,9 +582,10 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 
 	class MoleculePosition implements RealLocalizable {
 
-		private String UID;
+		private final String UID;
 
-		private double x, y;
+		private final double x;
+		private final double y;
 
 		public MoleculePosition(String UID, double x, double y) {
 			this.UID = UID;

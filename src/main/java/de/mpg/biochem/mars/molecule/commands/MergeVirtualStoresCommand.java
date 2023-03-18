@@ -35,12 +35,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
@@ -89,7 +84,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 	private UIService uiService;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
-	private String inputFigure = "MergeArchives.png";
+	private final String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;
@@ -115,8 +110,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			public boolean accept(File dir, String name) {
 				if (name.startsWith(".")) return false;
 
-				if (name.endsWith(".yama.store")) return true;
-				else return false;
+				return name.endsWith(".yama.store");
 			}
 		};
 
@@ -330,7 +324,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				for (String metaUID : archive.getMetadataUIDs()) {
 					mergedIndex.getMetadataUIDSet().add(metaUID);
 					if (archive.getMetadataTagSet(metaUID) != null) if (mergedIndex
-						.getMetadataUIDtoTagListMap().keySet().contains(metaUID))
+						.getMetadataUIDtoTagListMap().containsKey(metaUID))
 						mergedIndex.getMetadataUIDtoTagListMap().get(metaUID).addAll(archive
 							.getMetadataTagSet(metaUID));
 					else mergedIndex.getMetadataUIDtoTagListMap().put(metaUID, archive
@@ -370,9 +364,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 			newMoleculeDirectory.mkdirs();
 
 			ArrayList<File> virtualStoreDirectoryList = new ArrayList<File>();
-			for (File virtualDirectory : archiveDirectoryList) {
-				virtualStoreDirectoryList.add(virtualDirectory);
-			}
+			Collections.addAll(virtualStoreDirectoryList, archiveDirectoryList);
 
 			FilenameFilter nameFilter = new FilenameFilter() {
 
@@ -380,8 +372,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 				public boolean accept(File dir, String name) {
 					if (name.startsWith(".")) return false;
 
-					if (name.endsWith(".sml")) return true;
-					else return false;
+					return name.endsWith(".sml");
 				}
 			};
 

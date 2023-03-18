@@ -263,14 +263,14 @@ public class KCP {
 
 	private double confidenceTheshold(final int N, final double OneMa) {
 
-		if (OneMa == (double) (1 - 0.99) && (N < 7001) && (N > 1)) {
+		if (OneMa == (1 - 0.99) && (N < 7001) && (N > 1)) {
 			return interval99_values[N - 1];
 		}
 
 		LevenbergMarquardt lm = new LevenbergMarquardt() {
 
-			double h = Math.pow(Math.log(N), (double) 3 / 2) / N;
-			double T = Math.log((1 - h * h) / (h * h));
+			final double h = Math.pow(Math.log(N), (double) 3 / 2) / N;
+			final double T = Math.log((1 - h * h) / (h * h));
 
 			private double get(double[] x, double[] p) {
 				// We will consider p = 1/(C^2)

@@ -68,12 +68,12 @@ import de.mpg.biochem.mars.util.MarsMath;
  */
 public class PeakTracker {
 
-	private double[] maxDifference;
-	private boolean[] ckMaxDifference;
-	private int minTrajectoryLength;
-	private double searchRadius;
+	private final double[] maxDifference;
+	private final boolean[] ckMaxDifference;
+	private final int minTrajectoryLength;
+	private final double searchRadius;
 	private boolean verbose = false;
-	private int minimumDistance;
+	private final int minimumDistance;
 	private double pixelSize = 1;
 
 	private String metaDataUID;
@@ -85,7 +85,7 @@ public class PeakTracker {
 	// that T.
 	private ConcurrentMap<Integer, List<PeakLink>> possibleLinks;
 
-	private LogService logService;
+	private final LogService logService;
 
 	public PeakTracker(double maxDifferenceX, double maxDifferenceY,
 		double maxDifferenceT, int minimumDistance, int minTrajectoryLength,
@@ -134,7 +134,7 @@ public class PeakTracker {
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
 		MoleculeArchive<?, ?, ?, ?> archive, final int channel, final int nThreads)
 	{
-		List<Integer> trackingTimePoints = (List<Integer>) peakStack.keySet()
+		List<Integer> trackingTimePoints = peakStack.keySet()
 			.stream().sorted().collect(toList());
 		track(peakStack, archive, channel, trackingTimePoints, nThreads);
 	}

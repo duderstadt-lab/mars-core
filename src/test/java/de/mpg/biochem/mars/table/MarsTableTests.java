@@ -58,6 +58,7 @@ package de.mpg.biochem.mars.table;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.scijava.table.DoubleColumn;
@@ -632,7 +633,7 @@ public class MarsTableTests {
 
 	@Test
 	void medianOdd() {
-		MarsTable table = this.buildTestArrayOddTable();
+		MarsTable table = buildTestArrayOddTable();
 		assertEquals(-742.773464, table.median("col0"));
 	}
 
@@ -694,7 +695,7 @@ public class MarsTableTests {
 
 	@Test
 	void madOdd() {
-		MarsTable table = this.buildTestArrayOddTable();
+		MarsTable table = buildTestArrayOddTable();
 		assertEquals(2265.1944510000003, table.mad("col0"));
 	}
 
@@ -1241,9 +1242,7 @@ public class MarsTableTests {
 			col1.add(value[1]);
 		}
 
-		for (String str : stringColumn) {
-			col2.add(str);
-		}
+		Collections.addAll(col2, stringColumn);
 
 		table.add(col0);
 		table.add(col1);

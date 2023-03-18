@@ -241,8 +241,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		this.name = file.getName();
 		this.file = file;
 
-		if (file.isDirectory()) this.virtual = true;
-		else this.virtual = false;
+		this.virtual = file.isDirectory();
 
 		initializeVariables();
 
@@ -274,8 +273,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		this.name = name;
 		this.file = file;
 
-		if (file.isDirectory()) this.virtual = true;
-		else this.virtual = false;
+		this.virtual = file.isDirectory();
 
 		initializeVariables();
 
@@ -339,8 +337,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	{
 		JsonFactory jsonF = new JsonFactory();
 		SmileFactory smileF = new SmileFactory();
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
-			smileF });
+		DataFormatDetector det = new DataFormatDetector(jsonF,
+				smileF);
 		DataFormatMatcher match = det.findFormat(inputStream);
 		JsonParser jParser = match.createParserWithMatch();
 
@@ -361,8 +359,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return jParser;
 	}
 
-	protected void loadVirtualStore(File file) throws JsonParseException,
-		IOException
+	protected void loadVirtualStore(File file) throws
+			IOException
 	{
 		File propertiesFile = new File(file.getAbsolutePath() +
 			"/MoleculeArchiveProperties.json");
@@ -397,7 +395,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 	}
 
-	protected void load(File file) throws JsonParseException, IOException {
+	protected void load(File file) throws IOException {
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(
 			file));
 		JsonParser jParser = detectEncoding(inputStream);
@@ -670,7 +668,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			StatusService statusService = null;
 			try {
 				Context context = (Context) IJ.runPlugIn("org.scijava.Context", "");
-				statusService = (StatusService) context.getService(StatusService.class);
+				statusService = context.getService(StatusService.class);
 			}
 			catch (Exception e) {}
 			final int numberMolecules = properties().getNumberOfMolecules();
@@ -915,7 +913,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			if (metadataFile.exists()) metadataFile.delete();
 		}
 
-		if (metadataMap.containsKey(metaUID)) metadataMap.remove(metaUID);
+		metadataMap.remove(metaUID);
 
 		properties().setNumberOfMetadatas(metadataMap.size());
 	}
@@ -1419,10 +1417,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
-					archiveIndex.getMoleculeUIDtoTagListMap().get(UID).contains(tag))
-					return true;
-				else return false;
+				return archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
+						archiveIndex.getMoleculeUIDtoTagListMap().get(UID).contains(tag);
 			}
 			else return get(UID).hasTag(tag);
 		}
@@ -1444,10 +1440,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
 					archiveIndex.getMoleculeUIDtoTagListMap().get(UID).isEmpty())
 					return true;
-				else if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
-					!archiveIndex.getMoleculeUIDtoTagListMap().get(UID).isEmpty())
-					return false;
-				else return true;
+				else return !archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) ||
+						archiveIndex.getMoleculeUIDtoTagListMap().get(UID).isEmpty();
 			}
 			else return get(UID).hasNoTags();
 		}
@@ -1486,10 +1480,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean moleculeHasTags(String UID) {
 		if (UID != null) {
 			if (virtual) {
-				if (archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
-					archiveIndex.getMoleculeUIDtoTagListMap().get(UID).size() > 0)
-					return true;
-				else return false;
+				return archiveIndex.getMoleculeUIDtoTagListMap().containsKey(UID) &&
+						archiveIndex.getMoleculeUIDtoTagListMap().get(UID).size() > 0;
 			}
 			else return get(UID).getTags().size() > 0;
 		}
@@ -1510,10 +1502,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public boolean metadataHasTag(String UID, String tag) {
 		if (UID != null && tag != null) {
 			if (virtual) {
-				if (archiveIndex.getMetadataUIDtoTagListMap().containsKey(UID) &&
-					archiveIndex.getMetadataUIDtoTagListMap().get(UID).contains(tag))
-					return true;
-				else return false;
+				return archiveIndex.getMetadataUIDtoTagListMap().containsKey(UID) &&
+						archiveIndex.getMetadataUIDtoTagListMap().get(UID).contains(tag);
 			}
 			else return getMetadata(UID).hasTag(tag);
 		}

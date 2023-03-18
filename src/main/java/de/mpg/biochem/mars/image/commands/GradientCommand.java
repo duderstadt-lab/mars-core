@@ -198,8 +198,8 @@ public class GradientCommand extends DynamicCommand implements Command {
 		getInput2DSlice(int[] ct)
 	{
 		return opService.convert().float64(Views.iterable(
-			(RandomAccessibleInterval<T>) MarsImageUtils.get2DHyperSlice(
-				(ImgPlus<T>) dataset.getImgPlus(), 0, ct[0], ct[1])));
+				MarsImageUtils.get2DHyperSlice(
+					(ImgPlus<T>) dataset.getImgPlus(), 0, ct[0], ct[1])));
 	}
 
 	public static RandomAccessibleInterval<DoubleType> getOutput2DSlice(

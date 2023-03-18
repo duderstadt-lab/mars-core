@@ -59,12 +59,12 @@ public class SegmentDistributionBuilder {
 	// Also the advantage now is that you load the data once
 	// and can then make as many distributinos as you want on it
 
-	private Random ran;
+	private final Random ran;
 
 	private double Dstart = 0;
 	private double Dend = 0;
 	private int bins = 20;
-	private double binWidth;
+	private final double binWidth;
 
 	private boolean filter = false;
 	private double filter_region_start = 0;
@@ -74,17 +74,18 @@ public class SegmentDistributionBuilder {
 	private boolean bootstrap_Segments = false;
 	private boolean bootstrap_Molecules = false;
 
-	private MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
-	private ArrayList<String> UIDs;
-	private String yColumnName, xColumnName;
+	private final MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive;
+	private final ArrayList<String> UIDs;
+	private final String yColumnName;
+	private final String xColumnName;
 
 	// Global variables
 	// For the progress thread
 	private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
 	private final AtomicInteger numFinished = new AtomicInteger(0);
 
-	private LogService logService;
-	private StatusService statusService;
+	private final LogService logService;
+	private final StatusService statusService;
 
 	private ForkJoinPool forkJoinPool;
 

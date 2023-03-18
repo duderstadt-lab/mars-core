@@ -198,7 +198,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			}).collect(toList());
 		}
 		else if (include.equals("Untagged")) {
-			UIDs = (ArrayList<String>) archive.getMoleculeUIDs().stream().filter(
+			UIDs = archive.getMoleculeUIDs().stream().filter(
 				UID -> archive.get(UID).hasNoTags()).collect(toList());
 		}
 		else {

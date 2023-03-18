@@ -31,7 +31,8 @@ package de.mpg.biochem.mars.table;
 
 public class GroupIndices {
 
-	private int start, end;
+	private final int start;
+    private final int end;
 
 	GroupIndices(int start, int end) {
 		this.start = start;

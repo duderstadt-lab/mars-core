@@ -48,7 +48,7 @@ public class DnaMoleculeArchive extends
 		super(name);
 	}
 
-	public DnaMoleculeArchive(File file) throws IOException, JsonParseException {
+	public DnaMoleculeArchive(File file) throws IOException {
 		super(file);
 	}
 
@@ -56,8 +56,8 @@ public class DnaMoleculeArchive extends
 		super(name, table);
 	}
 
-	public DnaMoleculeArchive(String name, File file) throws JsonParseException,
-		IOException
+	public DnaMoleculeArchive(String name, File file) throws
+            IOException
 	{
 		super(name, file);
 	}

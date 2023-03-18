@@ -512,9 +512,7 @@ public class MarsOMEUtils {
 	}
 	
 	public static boolean checkOMEMetadataForDt(MarsMetadata marsOMEMetadata) {
-		if (marsOMEMetadata.getImage(0).planes().filter(plane -> plane.getDeltaTinSeconds() != -1).count() > 0)
-			return true;
-		return false;
+		return marsOMEMetadata.getImage(0).planes().filter(plane -> plane.getDeltaTinSeconds() != -1).count() > 0;
 	}
 
 	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,

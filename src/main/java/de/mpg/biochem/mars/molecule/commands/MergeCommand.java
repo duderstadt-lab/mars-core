@@ -94,7 +94,7 @@ public class MergeCommand extends DynamicCommand {
 	private UIService uiService;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
-	private String inputFigure = "MergeArchives.png";
+	private final String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;
@@ -115,8 +115,7 @@ public class MergeCommand extends DynamicCommand {
 			public boolean accept(File dir, String name) {
 				if (name.startsWith(".")) return false;
 
-				if (name.endsWith(".yama")) return true;
-				else return false;
+				return name.endsWith(".yama");
 			}
 		};
 
@@ -165,8 +164,7 @@ public class MergeCommand extends DynamicCommand {
 
 					JsonFactory jsonF = new JsonFactory();
 					SmileFactory smileF = new SmileFactory();
-					DataFormatDetector det = new DataFormatDetector(new JsonFactory[] {
-						jsonF, smileF });
+					DataFormatDetector det = new DataFormatDetector(jsonF, smileF);
 					DataFormatMatcher match = det.findFormat(inputStream);
 					JsonParser jParser = match.createParserWithMatch();
 

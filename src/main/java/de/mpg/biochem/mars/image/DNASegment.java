@@ -34,7 +34,8 @@ import net.imglib2.RealLocalizable;
 public class DNASegment implements RealLocalizable {
 
 	private double x1, y1, x2, y2;
-	private double centerX, centerY;
+	private final double centerX;
+	private final double centerY;
 	private int medianIntensity;
 	private double variance;
 

@@ -86,7 +86,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * Segments tables resulting from change point fitting: xColumn is at index 0
 	 * yColumn is at index 1 region is at index 2
 	 */
-	private LinkedHashMap<List<String>, MarsTable> segmentTables =
+	private final LinkedHashMap<List<String>, MarsTable> segmentTables =
 		new LinkedHashMap<>();
 
 	/**

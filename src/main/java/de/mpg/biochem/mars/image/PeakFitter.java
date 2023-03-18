@@ -76,7 +76,7 @@ import net.imglib2.type.numeric.RealType;
  */
 public class PeakFitter<T extends RealType<T> & NativeType<T>> {
 
-	private boolean[] vary;
+	private final boolean[] vary;
 	private double precision = 1e-6;
 
 	// Assumed 2D Gaussian input here is
@@ -86,7 +86,7 @@ public class PeakFitter<T extends RealType<T> & NativeType<T>> {
 	// p[3] = Y
 	// p[4] = Sigma
 
-	private LevenbergMarquardt lm = new LevenbergMarquardt() {
+	private final LevenbergMarquardt lm = new LevenbergMarquardt() {
 
 		// For symmetric gaussian
 		@Override

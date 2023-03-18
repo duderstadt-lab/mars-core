@@ -157,12 +157,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 			TableFilter = false;
 		}
 
-		if (selectionType.equals("inside")) {
-			includeSelection = true;
-		}
-		else {
-			includeSelection = false;
-		}
+		includeSelection = selectionType.equals("inside");
 
 		double[] filterList = new double[0];
 		if (TableFilter) {

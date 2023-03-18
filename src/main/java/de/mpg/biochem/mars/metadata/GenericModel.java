@@ -33,8 +33,8 @@ import java.util.List;
 
 public interface GenericModel {
 
-	public String toString();
+	String toString();
 
-	public Iterable<List<String>> getInformationsRow();
+	Iterable<List<String>> getInformationsRow();
 
 }

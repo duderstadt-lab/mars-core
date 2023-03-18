@@ -200,7 +200,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index The index of the MarsMetadata record to retrieve.
 	 * @return A MarsMetadata record.
 	 */
-	public I getMetadata(int index);
+    I getMetadata(int index);
 
 	/**
 	 * Retrieves a metadata record.
@@ -449,7 +449,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param index The integer index position of the molecule record.
 	 * @return A Molecule record.
 	 */
-	public M get(int index);
+    M get(int index);
 
 	/**
 	 * Convenience method to retrieve a Molecule stream. Can be used to iterate
@@ -481,7 +481,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @return Molecule stream.
 	 */
-	public Stream<M> parallelMolecules();
+    Stream<M> parallelMolecules();
 
 	/**
 	 * Get the UID of the metadata for a molecule record. If working from a

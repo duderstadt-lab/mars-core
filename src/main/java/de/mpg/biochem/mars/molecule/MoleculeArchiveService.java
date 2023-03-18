@@ -91,8 +91,8 @@ public class MoleculeArchiveService extends
 		scriptService.addAlias(MoleculeArchiveService.class);
 	}
 
-	public String getArchiveTypeFromYama(File file) throws JsonParseException,
-		IOException
+	public String getArchiveTypeFromYama(File file) throws
+			IOException
 	{
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(
 			file));
@@ -101,8 +101,8 @@ public class MoleculeArchiveService extends
 		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
 		SmileFactory smileF = new SmileFactory();
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
-			smileF });
+		DataFormatDetector det = new DataFormatDetector(jsonF,
+				smileF);
 		DataFormatMatcher match = det.findFormat(inputStream);
 		JsonParser jParser = match.createParserWithMatch();
 
@@ -139,7 +139,7 @@ public class MoleculeArchiveService extends
 	}
 
 	public static String getArchiveTypeFromStore(File file)
-		throws JsonParseException, IOException
+		throws IOException
 	{
 		InputStream inputStream = new BufferedInputStream(new FileInputStream(
 			file));
@@ -148,8 +148,8 @@ public class MoleculeArchiveService extends
 		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
 		SmileFactory smileF = new SmileFactory();
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
-			smileF });
+		DataFormatDetector det = new DataFormatDetector(jsonF,
+				smileF);
 		DataFormatMatcher match = det.findFormat(inputStream);
 		JsonParser jParser = match.createParserWithMatch();
 

@@ -159,15 +159,15 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private String inputGroup = "Input";
+	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private String inputFigure = "ImageInput.png";
+	private final String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private String imageName = "?";
+	private final String imageName = "?";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -182,7 +182,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String findGroup = "Find";
+	private final String findGroup = "Find";
 
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
@@ -203,7 +203,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String fitGroup = "Fit";
+	private final String fitGroup = "Fit";
 
 	@Parameter(label = "Fit", style = "group:Fit")
 	private boolean fitPeaks = false;
@@ -219,7 +219,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * INTEGRATION SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String integrateGroup = "Integrate";
+	private final String integrateGroup = "Integrate";
 
 	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
@@ -234,7 +234,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String outputGroup = "Output";
+	private final String outputGroup = "Output";
 
 	@Parameter(label = "Generate peak count table", style = "group:Output")
 	private boolean generatePeakCountTable;
@@ -260,25 +260,25 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String previewGroup = "Preview";
+	private final String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
+	private final boolean preview = false;
 
 	@Parameter(label = "Roi", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE +
 		", group:Preview", choices = { "circle", "point" })
 	private String roiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tPeakCount = "count: 0";
+	private final String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int theT;
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
+	private final int previewTimeout = 10;
 
 	@Parameter(label = "Help",
 		description = "View a web page detailing Peak Finder options",
@@ -510,7 +510,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 				List<Peak> framePeaks = peakStack.get(t);
 				for (int j = 0; j < framePeaks.size(); j++) {
 					peakTable.appendRow();
-					peakTable.setValue(Peak.T, row, (double) framePeaks.get(j).getT());
+					peakTable.setValue(Peak.T, row, framePeaks.get(j).getT());
 					peakTable.setValue(Peak.X, row, framePeaks.get(j).getX());
 					peakTable.setValue(Peak.Y, row, framePeaks.get(j).getY());
 					if (verbose) {
@@ -643,7 +643,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							for (Window window : Window.getWindows())
 								if (window instanceof JDialog && ((JDialog) window).getTitle()
 									.equals(getInfo().getLabel())) MarsUtil
-										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+										.updateJLabelTextInContainer(window, "count: ",
 											countString);
 						}
 					});

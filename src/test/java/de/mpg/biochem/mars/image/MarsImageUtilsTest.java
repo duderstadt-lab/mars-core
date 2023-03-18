@@ -117,8 +117,7 @@ public class MarsImageUtilsTest {
 
 		peaks = MarsImageUtils.removeNearestNeighbors(peaks, 4);
 
-		assertTrue(peaks.size() == 1,
-			"Nearest neighbor peak was not removed by MarsImageUtils.removeNearestNeighbors.");
+		assertEquals(1, peaks.size(), "Nearest neighbor peak was not removed by MarsImageUtils.removeNearestNeighbors.");
 		assertTrue(peaks.get(0).getX() == 10 & peaks.get(0).getY() == 10,
 			"Peak with higher R-squared was removed by MarsImageUtils.removeNearestNeighbors.");
 	}

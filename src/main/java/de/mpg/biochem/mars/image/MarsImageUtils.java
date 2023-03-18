@@ -784,9 +784,9 @@ public class MarsImageUtils {
 				Collections.sort(outerPixelValues);
 				double outerMedian;
 				if (outerPixelValues.size() % 2 == 0) outerMedian =
-					((double) outerPixelValues.get(outerPixelValues.size() / 2) +
-						(double) outerPixelValues.get(outerPixelValues.size() / 2 - 1)) / 2;
-				else outerMedian = (double) outerPixelValues.get(outerPixelValues
+					(outerPixelValues.get(outerPixelValues.size() / 2) +
+							outerPixelValues.get(outerPixelValues.size() / 2 - 1)) / 2;
+				else outerMedian = outerPixelValues.get(outerPixelValues
 					.size() / 2);
 
 				if (verbose) {

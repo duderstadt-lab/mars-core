@@ -73,10 +73,10 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	protected MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>> parent;
 
 	private String notes;
-	private LinkedHashSet<String> tags;
-	private LinkedHashMap<String, Object> parameters;
-	private LinkedHashMap<String, MarsRegion> regionsOfInterest;
-	private LinkedHashMap<String, MarsPosition> positionsOfInterest;
+	private final LinkedHashSet<String> tags;
+	private final LinkedHashMap<String, Object> parameters;
+	private final LinkedHashMap<String, MarsRegion> regionsOfInterest;
+	private final LinkedHashMap<String, MarsPosition> positionsOfInterest;
 
 	/**
 	 * Constructor for creating an empty MarsRecord.
@@ -174,13 +174,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 							if (type.equals("number")) {
 								if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 									String str = jParser.getValueAsString();
-									if (Objects.equals(str, new String("Infinity"))) {
+									if (Objects.equals(str, "Infinity")) {
 										parameters.put(name, Double.POSITIVE_INFINITY);
 									}
-									else if (Objects.equals(str, new String("-Infinity"))) {
+									else if (Objects.equals(str, "-Infinity")) {
 										parameters.put(name, Double.NEGATIVE_INFINITY);
 									}
-									else if (Objects.equals(str, new String("NaN"))) {
+									else if (Objects.equals(str, "NaN")) {
 										parameters.put(name, Double.NaN);
 									}
 								}
@@ -205,13 +205,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 					jParser.nextToken();
 					if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 						String str = jParser.getValueAsString();
-						if (Objects.equals(str, new String("Infinity"))) {
+						if (Objects.equals(str, "Infinity")) {
 							parameters.put(subfieldname, Double.POSITIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("-Infinity"))) {
+						else if (Objects.equals(str, "-Infinity")) {
 							parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("NaN"))) {
+						else if (Objects.equals(str, "NaN")) {
 							parameters.put(subfieldname, Double.NaN);
 						}
 					}
@@ -276,13 +276,13 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 				jParser.nextToken();
 				if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 					String str = jParser.getValueAsString();
-					if (Objects.equals(str, new String("Infinity"))) {
+					if (Objects.equals(str, "Infinity")) {
 						parameters.put(subfieldname, Double.POSITIVE_INFINITY);
 					}
-					else if (Objects.equals(str, new String("-Infinity"))) {
+					else if (Objects.equals(str, "-Infinity")) {
 						parameters.put(subfieldname, Double.NEGATIVE_INFINITY);
 					}
-					else if (Objects.equals(str, new String("NaN"))) {
+					else if (Objects.equals(str, "NaN")) {
 						parameters.put(subfieldname, Double.NaN);
 					}
 				}
@@ -407,7 +407,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	@Override
 	public String[] getTagsArray() {
-		String tagArray[] = new String[tags.size()];
+		String[] tagArray = new String[tags.size()];
 		return tags.toArray(tagArray);
 	}
 
@@ -478,9 +478,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	@Override
 	public void removeParameter(String parameter) {
-		if (parameters.containsKey(parameter)) {
-			parameters.remove(parameter);
-		}
+		parameters.remove(parameter);
 	}
 
 	/**
@@ -554,9 +552,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	@Override
 	public boolean hasDoubleParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(
-			parameter) instanceof Double) return true;
-		else return false;
+		return parameters.containsKey(parameter) && parameters.get(
+				parameter) instanceof Double;
 	}
 
 	/**
@@ -567,9 +564,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	@Override
 	public boolean hasStringParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(
-			parameter) instanceof String) return true;
-		else return false;
+		return parameters.containsKey(parameter) && parameters.get(
+				parameter) instanceof String;
 	}
 
 	/**
@@ -580,9 +576,8 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 */
 	@Override
 	public boolean hasBooleanParameter(String parameter) {
-		if (parameters.containsKey(parameter) && parameters.get(
-			parameter) instanceof Boolean) return true;
-		else return false;
+		return parameters.containsKey(parameter) && parameters.get(
+				parameter) instanceof Boolean;
 	}
 
 	/**

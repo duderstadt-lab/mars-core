@@ -56,7 +56,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
-	private OpService opService;
+	private final OpService opService;
 	private boolean useDogFilter = true;
 	private double dogFilterRadius = 1.8;
 	private double gaussSigma = 2;
@@ -194,11 +194,10 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 								calcSegmentProperties(ra, segment);
 
-								boolean pass = true;
+								boolean pass = !varianceFilter || !(varianceUpperBound < segment
+										.getVariance());
 
 								// Check if the segment passes through filters
-								if (varianceFilter && varianceUpperBound < segment
-									.getVariance()) pass = false;
 
 								if (medianIntensityFilter && medianIntensityLowerBound > segment
 									.getMedianIntensity()) pass = false;
@@ -340,11 +339,10 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 							calcSegmentProperties(ra, segment);
 
-							boolean pass = true;
+							boolean pass = !varianceFilter || !(varianceUpperBound < segment
+									.getVariance());
 
 							// Check if the segment passes through filters
-							if (varianceFilter && varianceUpperBound < segment
-								.getVariance()) pass = false;
 
 							if (medianIntensityFilter && medianIntensityLowerBound > segment
 								.getMedianIntensity()) pass = false;

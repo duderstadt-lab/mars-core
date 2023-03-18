@@ -46,7 +46,7 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 
 	private String name;
 	private String content = "";
-	private Map<String, String> media = new LinkedHashMap<>();
+	private final Map<String, String> media = new LinkedHashMap<>();
 
 	public MarsDocument(String name) {
 		this.name = name;

@@ -204,7 +204,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 	}
 
 	public List<MarsTable> getTables() {
-		return (List) objectService.getObjects(MarsTable.class);
+		return objectService.getObjects(MarsTable.class);
 	}
 
 	@Override

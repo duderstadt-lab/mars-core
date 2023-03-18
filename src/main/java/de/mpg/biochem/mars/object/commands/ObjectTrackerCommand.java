@@ -192,15 +192,15 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "groupLabel, tabbedPaneWidth:450")
-	private String inputGroup = "Input";
+	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private String inputFigure = "ImageInput.png";
+	private final String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private String imageName = "name";
+	private final String imageName = "name";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -215,13 +215,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String findGroup = "Find";
+	private final String findGroup = "Find";
 
 	@Parameter(label = "Use median filter", style = "group:Find")
-	private boolean useMedianFilter = false;
+	private final boolean useMedianFilter = false;
 
 	@Parameter(label = "Median filter radius", style = "group:Find")
-	private long medianFilterRadius = 2;
+	private final long medianFilterRadius = 2;
 
 	@Parameter(label = "Use local otsu", style = "group:Find")
 	private boolean useLocalOstu = true;
@@ -242,7 +242,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String contourGroup = "Contour";
+	private final String contourGroup = "Contour";
 
 	@Parameter(label = "Linear interpolation factor", style = "group:Contour")
 	private double interpolationFactor = 1;
@@ -251,7 +251,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * TRACKER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String trackGroup = "Track";
+	private final String trackGroup = "Track";
 
 	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
@@ -269,14 +269,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String outputGroup = "Output";
+	private final String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private String outputFigure = "ObjectArchive.png";
+	private final String outputFigure = "ObjectArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private String outputArchiveType = "type: ObjectArchive";
+	private final String outputArchiveType = "type: ObjectArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
@@ -320,17 +320,17 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String previewGroup = "Preview";
+	private final String previewGroup = "Preview";
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
+	private final int previewTimeout = 10;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
+	private final boolean preview = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tObjectCount = "count: 0";
+	private final String tObjectCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
@@ -826,7 +826,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 							for (Window window : Window.getWindows())
 								if (window instanceof JDialog && ((JDialog) window).getTitle()
 									.equals(getInfo().getLabel())) MarsUtil
-										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+										.updateJLabelTextInContainer(window, "count: ",
 											countString);
 						}
 					});

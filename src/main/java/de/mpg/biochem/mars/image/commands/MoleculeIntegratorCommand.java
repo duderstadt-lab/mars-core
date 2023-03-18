@@ -159,19 +159,19 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private String inputGroup = "Input";
+	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private String inputFigure = "MoleculeIntegratorInput.png";
+	private final String inputFigure = "MoleculeIntegratorInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private String imageName = "?";
+	private final String imageName = "?";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private String roiCount = "No ROIs in manager!";
+	private final String roiCount = "No ROIs in manager!";
 
 	/**
 	 * INTEGRATION SETTINGS
@@ -191,14 +191,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String outputGroup = "Output";
+	private final String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private String outputFigure = "SingleMoleculeArchive.png";
+	private final String outputFigure = "SingleMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private String outputArchiveType = "type: SingleMoleculeArchive";
+	private final String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
@@ -233,7 +233,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	/**
 	 * List of IntegrationMaps containing T -> UID peak maps, name and channel.
 	 */
-	private List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
+	private final List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
 
 	private Dataset dataset;
 	private ImagePlus image;
@@ -246,7 +246,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	private List<MutableModuleItem<String>> channelColors;
 
-	private List<String> channelColorOptions = new ArrayList<String>(Arrays
+	private final List<String> channelColorOptions = new ArrayList<String>(Arrays
 		.asList("Do not integrate", "Integrate"));
 
 	@Override

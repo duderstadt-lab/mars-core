@@ -38,7 +38,7 @@ public class LogBuilder {
 
 	private ArrayList<String[]> parameters;
 
-	private Properties properties;
+	private final Properties properties;
 
 	private String version, artifactId, gitBuild;
 

@@ -48,7 +48,7 @@ public class ObjectArchive extends
 		super(name);
 	}
 
-	public ObjectArchive(File file) throws IOException, JsonParseException {
+	public ObjectArchive(File file) throws IOException {
 		super(file);
 	}
 
@@ -56,8 +56,8 @@ public class ObjectArchive extends
 		super(name, table);
 	}
 
-	public ObjectArchive(String name, File file) throws JsonParseException,
-		IOException
+	public ObjectArchive(String name, File file) throws
+			IOException
 	{
 		super(name, file);
 	}
