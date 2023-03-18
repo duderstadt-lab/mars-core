@@ -186,7 +186,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
-		style = "groupLabel, tabbedPaneWidth:450", persist = false)
+		style = "groupLabel, tabbedPaneWidth:460", persist = false)
 	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
