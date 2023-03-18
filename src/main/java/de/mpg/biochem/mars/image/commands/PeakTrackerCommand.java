@@ -69,6 +69,7 @@ import net.imglib2.type.logic.BoolType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 
+import net.imglib2.view.Views;
 import org.decimal4j.util.DoubleRounder;
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
@@ -377,11 +378,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private SingleMoleculeArchive archive;
 
 	/**
-	 * Map from T to label peak lists
-	 */
-	private List<ConcurrentMap<Integer, List<Peak>>> peakLabelsStack;
-
-	/**
 	 * Map from T to IJ1 label metadata string
 	 */
 	private ConcurrentMap<Integer, String> metaDataStack;
@@ -488,13 +484,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			for (int gridH = 0; gridH < horizontalGridRegions; gridH++) {
 				for (int gridV = 0; gridV < verticalGridRegions; gridV++) {
 					double gridStartTime = System.currentTimeMillis();
-					logService.info("Finding and Fitting Peaks in grid region H: " + gridH + " V: " + gridV);
-					//Determine roi for grid region
+					int rx = (int)(rois[0].getXBase() + (rois[0].getFloatWidth()/horizontalGridRegions)*gridH);
+					int ry = (int)(rois[0].getYBase() + (rois[0].getFloatHeight()/verticalGridRegions)*gridV);
+					int rw = (int)Math.ceil(rois[0].getFloatWidth()/horizontalGridRegions);
+					int rh = (int)Math.ceil(rois[0].getFloatHeight()/verticalGridRegions);
+					logService.info("Finding and Fitting Peaks in grid region H: " + (gridH + 1) + " of " + horizontalGridRegions
+							+ " V: " + (gridV + 1) + " of " + verticalGridRegions + " (" + rx + ", " + ry + ", " + rw + ", " + rh + ")");
 					Roi[] gridRois = new Roi[1];
-					gridRois[0] =new Roi((int)(rois[0].getXBase() + (rois[0].getFloatWidth()/horizontalGridRegions)*gridH),
-							(int)(rois[0].getYBase() + (rois[0].getFloatHeight()/verticalGridRegions)*gridV),
-							Math.ceil(rois[0].getFloatWidth()/horizontalGridRegions),
-							Math.ceil(rois[0].getFloatHeight()/verticalGridRegions));
+					gridRois[0] = new Roi(rx, ry, rw, rh);
 					process(excludeTimePoints, gridRois);
 					logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 							gridStartTime) / 60000, 2) + " minutes.");
@@ -582,7 +579,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	private void process(List<int[]> excludeTimePoints, Roi[] rois) {
-		peakLabelsStack = new ArrayList<>();
+		//Map from T to label peak lists
+		List<ConcurrentMap<Integer, List<Peak>>> peakLabelsStack = new ArrayList<>();
 		metaDataStack = new ConcurrentHashMap<>();
 
 		int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
@@ -680,12 +678,20 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		RandomAccessibleInterval<FloatType> filteredImg = null;
-		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(img,
+		//To improve performance when processing using grid, only calculate
+		// the dog image within each grid region as needed in the loop below
+		if (useDogFilter && !gridProcess) filteredImg = MarsImageUtils.dogFilter(img,
 			dogFilterRadius, numThreads);
 
 		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
 		for (int i = 0; i < processingRois.length; i++) {
 			List<Peak> peaks = new ArrayList<Peak>();
+
+			if (useDogFilter && gridProcess) filteredImg = MarsImageUtils.dogFilter(Views.interval( img,
+				new long[] { (long)processingRois[i].getXBase(), (long)processingRois[i].getYBase() },
+				new long[]{ (long)processingRois[i].getXBase() + (long)processingRois[i].getFloatWidth(),
+				(long)processingRois[i].getYBase() + (long)processingRois[i].getFloatHeight() } ),
+				dogFilterRadius, numThreads);
 
 			RealMask roiMask = convertService.convert(processingRois[i],
 				RealMask.class);
@@ -699,7 +705,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				img), t, threshold, minimumDistance, findNegativePeaks);
 
 			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
-				dogFilterRadius, findNegativePeaks, RsquaredMin);
+					dogFilterRadius, findNegativePeaks, RsquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 
 			if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
