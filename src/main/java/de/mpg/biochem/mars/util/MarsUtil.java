@@ -99,7 +99,7 @@ public class MarsUtil {
 				public synchronized void run() {
 					try {
 						while (progressUpdating.get()) {
-							Thread.sleep(100);
+							Thread.sleep(300);
 							updateStatus.run();
 						}
 					}
