@@ -1046,10 +1046,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * 
 	 * @return The String absolute path of the open virtual store.
 	 */
-	// @Override
-	// public String getStoreLocation() {
-	// return file.getAbsolutePath();
-	// }
 
 	/**
 	 * Global comments.

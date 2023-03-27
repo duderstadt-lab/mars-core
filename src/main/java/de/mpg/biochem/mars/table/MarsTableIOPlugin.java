@@ -44,7 +44,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 import org.scijava.util.FileUtils;
 
-@SuppressWarnings("rawtypes")
 @Plugin(type = IOPlugin.class, priority = Priority.LOW)
 public class MarsTableIOPlugin extends AbstractIOPlugin<MarsTable> {
 

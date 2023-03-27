@@ -52,7 +52,6 @@ import org.scijava.ui.UIService;
 
 import ij.measure.ResultsTable;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
 public class MarsTableService extends AbstractPTService<MarsTableService>
 	implements ImageJService

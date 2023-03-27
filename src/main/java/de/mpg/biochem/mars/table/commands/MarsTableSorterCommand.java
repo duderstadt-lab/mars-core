@@ -42,7 +42,7 @@ import org.scijava.ui.UIService;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, label = "Sort", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

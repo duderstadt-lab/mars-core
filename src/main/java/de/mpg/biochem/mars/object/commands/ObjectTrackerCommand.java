@@ -56,7 +56,7 @@ import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.Interval;
 import net.imglib2.IterableInterval;
@@ -347,8 +347,6 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 	private ConcurrentMap<Integer, ConcurrentMap<Integer, List<Peak>>> objectLabelsStack;
 
-	private PeakTracker tracker;
-
 	private boolean swapZandT = false;
 
 	private Roi[] rois;
@@ -501,8 +499,8 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			starttime) / 60000, 2) + " minutes.");
 
-		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
-			minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
+		PeakTracker tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
+				minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
 
 		archive = new ObjectArchive("archive.yama");
 

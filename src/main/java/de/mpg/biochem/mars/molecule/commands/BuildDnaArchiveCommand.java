@@ -31,7 +31,6 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
@@ -49,6 +48,7 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.Initializable;
 import org.scijava.table.DoubleColumn;
 import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.UIService;
@@ -258,9 +258,6 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		if (archive1InputName.equals("None")) {
 			logService.info("SingleMoleculeArchive 1 was not specified.");
 			return;
-		}
-		else {
-
 		}
 
 		MarsOMEMetadata metadata1 = archive1.metadata().findFirst().get();

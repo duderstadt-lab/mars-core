@@ -322,9 +322,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void setImage(int image) {
 		if (image > -1) {
 			this.image = image;
-			// if (parent != null) {
-			// parent.properties().addImage(image);
-			// }
 		}
 		else channel = -1;
 	}

@@ -51,7 +51,7 @@ import net.imagej.DatasetService;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.roi.IterableRegion;
@@ -429,7 +429,6 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean fitPeaks,
 		boolean integrate, Roi[] processingRois)

@@ -58,7 +58,7 @@ import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.roi.IterableRegion;
@@ -382,8 +382,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 	private ConcurrentMap<Integer, String> metaDataStack;
 
-	private PeakTracker tracker;
-
 	private Roi[] inputRois;
 	private Roi imageRoi;
 
@@ -622,7 +620,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				.showStatus(peakLabelsStack.get(0).size(), frameCount,
 						"Finding Peaks for " + dataset.getName()), tasks, nThreads);
 
-		tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
+		PeakTracker tracker = new PeakTracker(maxDifferenceX, maxDifferenceY, maxDifferenceT,
 				minimumDistance, minTrajectoryLength, verbose, logService, pixelLength);
 
 		if (archive.getNumberOfMetadatas() == 0) {
@@ -647,7 +645,6 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					processTimePoints, nThreads);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
 	{

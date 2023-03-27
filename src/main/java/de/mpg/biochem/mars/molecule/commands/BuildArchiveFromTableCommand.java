@@ -31,7 +31,7 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;

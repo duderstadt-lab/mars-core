@@ -67,8 +67,8 @@ public class MarsFunctionFitter {
 		identityMatrix = new double[nParameters][nParameters];
 	}
 
-	private final double getChiSquared(double[] parameters, double[][] x,
-		double[] y, double[] sigma)
+	private double getChiSquared(double[] parameters, double[][] x,
+                                 double[] y, double[] sigma)
 	{
 		double sumOfSquares = 0.0;
 		double residual;
@@ -89,8 +89,8 @@ public class MarsFunctionFitter {
 		return sumOfSquares;
 	}
 
-	private final void calculateJacobian(double[] parameters, double[][] x,
-		double[] y, double[][] jacobian)
+	private void calculateJacobian(double[] parameters, double[][] x,
+                                   double[] y, double[][] jacobian)
 	{
 		for (int i = 0; i < nParameters; i++) {
 			parameters[i] += deltaParameter;

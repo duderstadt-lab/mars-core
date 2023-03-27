@@ -45,7 +45,7 @@ import org.scijava.widget.ChoiceWidget;
 
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.table.MarsTableService;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, label = "Filter", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -94,10 +94,6 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 	@Parameter(label = "Filter Table", choices = { "a", "b", "c" })
 	private MarsTable filterTable;
 
-	private boolean TableFilter = false;
-	private boolean STDFilter = false;
-	private boolean includeSelection = true;
-
 	// -- Callback methods --
 
 	private void tableSelectionChanged() {
@@ -144,23 +140,25 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 
 	@Override
 	public void run() {
+		boolean STDFilter = false;
+		boolean tableFilter = false;
 		if (FilterType.equals("Filter Table")) {
-			TableFilter = true;
+			tableFilter = true;
 			STDFilter = false;
 		}
 		else if (FilterType.equals("Standard Deviation")) {
 			STDFilter = true;
-			TableFilter = false;
+			tableFilter = false;
 		}
 		else {
 			STDFilter = false;
-			TableFilter = false;
+			tableFilter = false;
 		}
 
-		includeSelection = selectionType.equals("inside");
+		boolean includeSelection = selectionType.equals("inside");
 
 		double[] filterList = new double[0];
-		if (TableFilter) {
+		if (tableFilter) {
 			filterList = filterTable.getColumnAsDoubles(columnName);
 		}
 
@@ -180,7 +178,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 				// correctly
 				deleteList.add(row);
 			}
-			else if (TableFilter) {
+			else if (tableFilter) {
 				if (includeSelection) {
 					deleteList.add(row);
 					for (int q = 0; q < filterList.length; q++) {

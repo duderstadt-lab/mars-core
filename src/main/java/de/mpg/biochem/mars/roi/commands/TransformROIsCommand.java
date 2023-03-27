@@ -46,7 +46,7 @@ import javax.swing.SwingUtilities;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccess;

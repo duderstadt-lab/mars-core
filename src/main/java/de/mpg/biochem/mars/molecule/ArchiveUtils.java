@@ -51,7 +51,7 @@ import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
 
-	public static final File yamaFileExtensionFixer(File file) {
+	public static File yamaFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (!file.getAbsolutePath().endsWith(".yama")) return new File(file
@@ -59,7 +59,7 @@ public class ArchiveUtils {
 		else return file;
 	}
 
-	public static final File jsonFileExtensionFixer(File file) {
+	public static File jsonFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (file.getAbsolutePath().endsWith(".yama.json")) return file;
@@ -68,7 +68,7 @@ public class ArchiveUtils {
 		else return new File(file.getAbsolutePath() + ".yama.json");
 	}
 
-	public static final File storeFileExtensionFixer(File file) {
+	public static File storeFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (file.getAbsolutePath().endsWith(".yama.store")) return file;

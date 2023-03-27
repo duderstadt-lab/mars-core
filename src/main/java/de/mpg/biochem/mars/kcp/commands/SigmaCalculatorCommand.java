@@ -55,7 +55,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsRegion;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,

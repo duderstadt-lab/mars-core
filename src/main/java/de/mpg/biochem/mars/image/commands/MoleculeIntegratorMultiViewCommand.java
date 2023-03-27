@@ -50,7 +50,7 @@ import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;

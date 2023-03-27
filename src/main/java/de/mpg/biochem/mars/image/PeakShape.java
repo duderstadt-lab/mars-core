@@ -198,7 +198,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		return peak;
 	}
 
-	private static final double[] centroid(final double[] x, final double[] y) {
+	private static double[] centroid(final double[] x, final double[] y) {
 		final double area = signedArea(x, y);
 		double ax = 0.0;
 		double ay = 0.0;
@@ -215,7 +215,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		return new double[] { ax / 6. / area, ay / 6. / area };
 	}
 
-	private static final double signedArea(final double[] x, final double[] y) {
+	private static double signedArea(final double[] x, final double[] y) {
 		final int n = x.length;
 		double a = 0.0;
 		for (int i = 0; i < n - 1; i++)

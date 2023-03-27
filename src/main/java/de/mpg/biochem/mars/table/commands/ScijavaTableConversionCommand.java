@@ -44,7 +44,7 @@ import org.scijava.table.Table;
 import org.scijava.table.TableDisplay;
 
 import de.mpg.biochem.mars.table.MarsTable;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, label = "Import TableDisplay", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,

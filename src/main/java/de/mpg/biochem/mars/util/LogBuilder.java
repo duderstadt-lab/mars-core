@@ -38,12 +38,10 @@ public class LogBuilder {
 
 	private ArrayList<String[]> parameters;
 
-	private final Properties properties;
-
 	private String version, artifactId, gitBuild;
 
 	public LogBuilder() {
-		properties = new Properties();
+		Properties properties = new Properties();
 		try {
 			properties.load(this.getClass().getResourceAsStream(
 				"/project.properties"));
