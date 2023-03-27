@@ -292,7 +292,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private String archiveName = "archive.yama.store";
 
 	@Parameter(label = "New virtual archive location", style="group:Process, directory")
-	private File virtualArchiveLocation = new File(System.getProperty("user.dir"));
+	private File virtualArchiveLocation = new File(System.getProperty("user.home"));
 
 	/**
 	 * OUTPUT SETTINGS
