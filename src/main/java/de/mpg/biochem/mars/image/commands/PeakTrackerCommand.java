@@ -186,7 +186,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
-		style = "groupLabel, tabbedPaneWidth:460", persist = false)
+		style = "groupLabel, tabbedPaneWidth:480", persist = false)
 	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
@@ -292,7 +292,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private final String archiveName = "archive.yama.store";
 
 	@Parameter(label = "New virtual archive location", style="group:Process, directory")
-	private File virtualArchiveLocation;
+	private File virtualArchiveLocation = new File(System.getProperty("user.home"));
 
 	/**
 	 * OUTPUT SETTINGS
@@ -644,7 +644,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel),
 					processTimePoints, nThreads);
 	}
-	
+
 	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
 	{
