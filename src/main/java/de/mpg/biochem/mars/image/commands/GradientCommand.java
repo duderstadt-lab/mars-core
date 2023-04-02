@@ -145,17 +145,15 @@ public class GradientCommand extends DynamicCommand implements Command {
 			for (int t = 0; t < tSize; t++)
 				CTs.add(new int[] { c, t });
 
-		List<Runnable> tasks = new ArrayList<Runnable>();
-		IntStream.range(0, CTs.size()).forEach(i -> {
-			tasks.add(() -> {
-				int[] ct = CTs.get(i);
-				Img<DoubleType> in = getInput2DSlice(ct);
-				RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(gradImage,
-					ct);
-				opService.filter().derivativeGauss(out, in, derivatives, sigma);
-				slicesDone.incrementAndGet();
-			});
-		});
+		List<Runnable> tasks = new ArrayList<>();
+		IntStream.range(0, CTs.size()).forEach(i -> tasks.add(() -> {
+			int[] ct = CTs.get(i);
+			Img<DoubleType> in = getInput2DSlice(ct);
+			RandomAccessibleInterval<DoubleType> out = getOutput2DSlice(gradImage,
+				ct);
+			opService.filter().derivativeGauss(out, in, derivatives, sigma);
+			slicesDone.incrementAndGet();
+		}));
 
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
 			.showStatus(slicesDone.get(), CTs.size(), "Calculating gradient for " +
