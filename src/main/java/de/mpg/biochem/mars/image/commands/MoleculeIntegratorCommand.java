@@ -246,8 +246,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	private List<MutableModuleItem<String>> channelColors;
 
-	private final List<String> channelColorOptions = new ArrayList<String>(Arrays
-		.asList("Do not integrate", "Integrate"));
+	private final List<String> channelColorOptions = new ArrayList<>(Arrays
+			.asList("Do not integrate", "Integrate"));
 
 	@Override
 	public void initialize() {
@@ -267,6 +267,41 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 					"<p style=\"color:red\">you sure the correct image was selected?</p>\n");
 			else
 				imageNameItem.setValue(this, dataset.getName());
+
+			ImgPlus<?> imp = dataset.getImgPlus();
+
+			if (!(imp instanceof SCIFIOImgPlus)) {
+				if (channelColors == null) logService.info(
+						"This image has not been opened with SCIFIO.");
+				try {
+					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+							dataset);
+				}
+				catch (ServiceException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				// Attempt to read metadata
+				Metadata metadata = (Metadata) dataset.getProperties().get(
+						"scifio.metadata.global");
+				OMEMetadata omeMeta = new OMEMetadata(getContext());
+				if (!translatorService.translate(metadata, omeMeta, true)) {
+					if (channelColors == null) logService.info(
+							"Unable to extract OME Metadata. Generating OME metadata from dimensions.");
+					try {
+						omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
+								dataset);
+					}
+					catch (ServiceException e) {
+						e.printStackTrace();
+					}
+				}
+				else {
+					omexmlMetadata = omeMeta.getRoot();
+				}
+				omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
+			}
 		}
 
 		if (roiManager != null) {
@@ -274,41 +309,6 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 				"roiCount", String.class);
 			roiCountItem.setValue(this, roiManager.getRoisAsArray().length +
 				" molecules found in manager for integration.");
-		}
-
-		ImgPlus<?> imp = dataset.getImgPlus();
-
-		if (!(imp instanceof SCIFIOImgPlus)) {
-			if (channelColors == null) logService.info(
-				"This image has not been opened with SCIFIO.");
-			try {
-				omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-					dataset);
-			}
-			catch (ServiceException e) {
-				e.printStackTrace();
-			}
-		}
-		else {
-			// Attempt to read metadata
-			Metadata metadata = (Metadata) dataset.getProperties().get(
-				"scifio.metadata.global");
-			OMEMetadata omeMeta = new OMEMetadata(getContext());
-			if (!translatorService.translate(metadata, omeMeta, true)) {
-				if (channelColors == null) logService.info(
-					"Unable to extract OME Metadata. Generating OME metadata from dimensions.");
-				try {
-					omexmlMetadata = MarsOMEUtils.createOMEXMLMetadata(omexmlService,
-						dataset);
-				}
-				catch (ServiceException e) {
-					e.printStackTrace();
-				}
-			}
-			else {
-				omexmlMetadata = omeMeta.getRoot();
-			}
-			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 		}
 
 		// Ensures that MarsMicromanagerFormat correctly sets the ImageID based on
@@ -322,22 +322,24 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			}
 		}
 		catch (NullPointerException e) {
-			// Do nothing. Many of the omexmlmetadata methods give
-			// NullPointerException if fields are not set.
+			/*
+			 Do nothing. Many of the {@link ome.xml.meta.OMEXMLMetadata} methods give
+			 NullPointerException if fields are not set.
+			*/
 		}
 
 		imageID = omexmlMetadata.getImageID(0);
 
-		List<String> channelNames = new ArrayList<String>();
+		List<String> channelNames = new ArrayList<>();
 		for (int cIndex = 0; cIndex < omexmlMetadata.getChannelCount(0); cIndex++)
 			if (omexmlMetadata.getChannelName(0, cIndex) != null) channelNames.add(
 				omexmlMetadata.getChannelName(0, cIndex));
 			else channelNames.add(String.valueOf(cIndex));
 
-		channelColors = new ArrayList<MutableModuleItem<String>>();
+		channelColors = new ArrayList<>();
 		channelNames.forEach(name -> {
 			final MutableModuleItem<String> channelChoice =
-				new DefaultMutableModuleItem<String>(this, name, String.class);
+					new DefaultMutableModuleItem<>(this, name, String.class);
 			channelChoice.setChoices(channelColorOptions);
 			channelChoice.setValue(this, "Do not integrate");
 			channelColors.add(channelChoice);
@@ -389,29 +391,29 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		if (peakIntegrationMaps.size() > 0) {
 			logService.info("Using IntegrationMaps...");
 		}
-		else if (peakIntegrationMaps.size() == 0 && roiManager == null) {
+		else //noinspection ConstantValue
+			if (peakIntegrationMaps.size() == 0 && roiManager == null) {
 			logService.info(
 				"No ROIs found in RoiManager and no IntegrationMaps were provided. Nothing to integrate.");
 			logService.info(LogBuilder.endBlock(false));
 			return;
 		}
-		else if (peakIntegrationMaps.size() == 0 && roiManager != null && roiManager
+		else //noinspection ConstantValue
+				if (peakIntegrationMaps.size() == 0 && roiManager != null && roiManager
 			.getCount() > 0)
 		{
 			logService.info("Building integration lists from ROIs in RoiManager");
 			buildIntegrationLists();
 		}
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 		logService.info("Integrating Peaks...");
 
-		List<Runnable> tasks = new ArrayList<Runnable>();
-		marsOMEMetadata.getImage(0).planes().forEach(plane -> {
-			tasks.add(() -> {
-				integratePeaksInT(plane.getC(), plane.getT());
-				progressInteger.incrementAndGet();
-			});
-		});
+		List<Runnable> tasks = new ArrayList<>();
+		marsOMEMetadata.getImage(0).planes().forEach(plane -> tasks.add(() -> {
+			integratePeaksInT(plane.getC(), plane.getT());
+			progressInteger.incrementAndGet();
+		}));
 
 		// INTEGRATE PEAKS
 		MarsUtil.threadPoolBuilder(statusService, logService, () -> statusService
@@ -420,7 +422,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			tasks, nThreads);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 
 		// CREATE MOLECULE ARCHIVE
 		archive = new SingleMoleculeArchive("archive.yama");
@@ -431,7 +433,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		final int imageIndex = marsOMEMetadata.getImage(0).getImageID();
 
-		Set<String> UIDs = new HashSet<String>();
+		Set<String> UIDs = new HashSet<>();
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			for (int t : integrationMap.getMap().keySet())
 				UIDs.addAll(integrationMap.getMap().get(t).keySet());
@@ -451,7 +453,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		// FINISH UP
 		statusService.clearStatus();
 		logService.info("Finished in " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+			.currentTimeMillis() - startTime) / 60000, 2) + " minutes.");
 		if (archive.getNumberOfMolecules() == 0) {
 			logService.info(
 				"No molecules integrated. There must be a problem with your settings or ROIs.");
@@ -474,21 +476,21 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		// we assume the same positions are integrated in all frames...
 		Roi[] rois = roiManager.getRoisAsArray();
 
-		Map<String, Peak> integrationList = new HashMap<String, Peak>();
+		Map<String, Peak> integrationList = new HashMap<>();
 
 		// Build integration list
-		for (int i = 0; i < rois.length; i++) {
-			String UID = rois[i].getName();
+		for (Roi points : rois) {
+			String UID = points.getName();
 
-			// The pixel origin for OvalRois is at the upper left corner !!
-			// The pixel origin for PointRois is at the center !!
-			// We always use pixel center as origin when integrating peaks !!
-			double pixelOrginOffset = (rois[i] instanceof OvalRoi) ? -0.5 : 0;
+			// The pixel origin for OvalRois is in the upper left corner.
+			// The pixel origin for PointRois is in the center.
+			// We always use pixel center as origin when integrating peaks.
+			double pixelOriginOffset = (points instanceof OvalRoi) ? -0.5 : 0;
 
-			double x = rois[i].getFloatBounds().x + pixelOrginOffset + rois[i]
-				.getFloatBounds().width / 2;
-			double y = rois[i].getFloatBounds().y + pixelOrginOffset + rois[i]
-				.getFloatBounds().height / 2;
+			double x = points.getFloatBounds().x + pixelOriginOffset + points
+					.getFloatBounds().width / 2;
+			double y = points.getFloatBounds().y + pixelOriginOffset + points
+					.getFloatBounds().height / 2;
 
 			integrationList.put(UID, new Peak(x, y));
 		}
@@ -513,8 +515,8 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 		for (IntegrationMap integrationMap : peakIntegrationMaps)
 			if (integrationMap.getC() == c) MarsImageUtils.integratePeaks(img,
-				integrationMap.getInterval(), new ArrayList<Peak>(integrationMap
-					.getMap().get(t).values()), innerRadius, outerRadius, verbose);
+				integrationMap.getInterval(), new ArrayList<>(integrationMap
+							.getMap().get(t).values()), innerRadius, outerRadius, verbose);
 	}
 
 	private Map<Integer, Map<String, Peak>> createColorIntegrationList(
@@ -527,9 +529,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			if (channel.getName().startsWith(name)) {
 				int channelIndex = channel.getChannelIndex();
 				marsOMEMetadata.getImage(0).planes().filter(plane -> plane
-					.getC() == channelIndex).forEach(plane -> {
-						tToPeakList.put(plane.getT(), duplicateMap(peakMap));
-					});
+					.getC() == channelIndex).forEach(plane -> tToPeakList.put(plane.getT(), duplicateMap(peakMap)));
 			}
 
 		return tToPeakList;
@@ -566,8 +566,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 			}
 		}
 
-		for (DoubleColumn column : columns)
-			table.add(column);
+		table.addAll(columns);
 
 		for (int t = 0; t < marsOMEMetadata.getImage(0).getSizeT(); t++) {
 			table.appendRow();
@@ -617,7 +616,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		progressInteger.incrementAndGet();
 	}
 
-	private class IntegrationMap {
+	private static class IntegrationMap {
 
 		private final String name;
 		private final int c;
@@ -674,20 +673,19 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 		}
 
 		peakIntegrationMaps.add(new IntegrationMap(name, c, interval,
-			integrationMap));
+				integrationMap));
 	}
 
 	public int getNumberOfIntegrationMaps() {
 		return peakIntegrationMaps.size();
 	}
-
+	@SuppressWarnings("unused")
 	public Map<Integer, Map<String, Peak>> getIntegrationMap(String name, int c) {
 		Optional<IntegrationMap> peakMap = peakIntegrationMaps.stream().filter(
 			m -> m.getName().equals(name) && m.getC() == c).findFirst();
-		if (peakMap.isPresent()) return peakMap.get().getMap();
-		return null;
+		return peakMap.map(IntegrationMap::getMap).orElse(null);
 	}
-	
+	@SuppressWarnings("unused")
 	protected void openWebPage() {
 		try {
 			String urlString =
@@ -774,6 +772,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * @param channel Index of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
 	 */
+	@SuppressWarnings("unused")
 	public void setIntegrationChannel(int channel, String integrationType) {
 		channelColors.get(channel).setValue(this, integrationType);
 	}
@@ -785,11 +784,12 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 * @param channelName Name of the channel to integrate.
 	 * @param integrationType The type of integration to perform.
 	 */
+	@SuppressWarnings("unused")
 	public void setIntegrationChannel(String channelName,
 		String integrationType)
 	{
 		channelColors.stream().filter(channelInput -> channelInput.getName().equals(
-			channelName)).findAny().get().setValue(this, integrationType);
+			channelName)).findAny().ifPresent(c -> c.setValue(this, integrationType));
 	}
 
 	public void setThreads(int nThreads) {
@@ -809,7 +809,7 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	}
 
 	/**
-	 * Determines whether a the metadata UID is taken directly from the
+	 * Determines whether the metadata UID is taken directly from the
 	 * image metadata or randomly generated. Options are "unique from dataset" 
 	 * or "random"
 	 * 
