@@ -238,7 +238,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(label = "R-squared", style = NumberWidget.SLIDER_STYLE +
 		", group:Fit", min = "0.00", max = "1.00", stepSize = "0.01")
-	private double RsquaredMin = 0;
+	private double rSquaredMin = 0;
 
 	/**
 	 * TRACKER SETTINGS
@@ -417,7 +417,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
+		ArrayList<String> channels = new ArrayList<>();
 		for (int ch = 0; ch < channelCount; ch++)
 			channels.add(String.valueOf(ch));
 		channelItems.setChoices(channels);
@@ -440,6 +440,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	public void run() {
 		if (dataset == null && image != null) dataset = convertService.convert(
 			image, Dataset.class);
+
+		if (dataset == null) return;
 
 		if (dataset.dimension(dataset.dimensionIndex(Axes.TIME)) < 2) swapZandT =
 			true;
@@ -474,7 +476,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 		List<int[]> excludeTimePoints = excludedTimePointList();
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		//We do not grid process int he case of ROIs from manager...
 		if (gridProcess && !region.equals("ROIs from manager")) {
@@ -532,7 +534,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		statusService.showProgress(1, 1);
 
 		logService.info("Finished in " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+			.currentTimeMillis() - startTime) / 60000, 2) + " minutes.");
 		if (archive.getNumberOfMolecules() == 0) {
 			logService.info(
 				"No molecules found. Maybe there is a problem with your settings");
@@ -554,23 +556,23 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	private List<int[]> excludedTimePointList() {
-		List<int[]> excludeTimePoints = new ArrayList<int[]>();
+		List<int[]> excludeTimePoints = new ArrayList<>();
 		if (excludeTimePointList.length() > 0) {
 			try {
 				final String[] excludeArray = excludeTimePointList.split(",");
-				for (int i = 0; i < excludeArray.length; i++) {
-					String[] endPoints = excludeArray[i].split("-");
-					int start = Integer.valueOf(endPoints[0].trim());
-					int end = (endPoints.length > 1) ? Integer.valueOf(endPoints[1]
+				for (String s : excludeArray) {
+					String[] endPoints = s.split("-");
+					int start = Integer.parseInt(endPoints[0].trim());
+					int end = (endPoints.length > 1) ? Integer.parseInt(endPoints[1]
 							.trim()) : start;
 
-					excludeTimePoints.add(new int[] { start, end });
+					excludeTimePoints.add(new int[]{start, end});
 				}
 			}
 			catch (NumberFormatException e) {
 				logService.info(
 						"NumberFormatException encountered when parsing exclude list. Tracking all time points.");
-				excludeTimePoints = new ArrayList<int[]>();
+				excludeTimePoints = new ArrayList<>();
 			}
 		}
 		return excludeTimePoints;
@@ -590,15 +592,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		final int frameCount = (swapZandT) ? zSize : tSize;
 
 		for (int i = 0; i < rois.length; i++)
-			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+			peakLabelsStack.add(new ConcurrentHashMap<>());
 
-		List<Integer> processTimePoints = new ArrayList<Integer>();
-		List<Runnable> tasks = new ArrayList<Runnable>();
+		List<Integer> processTimePoints = new ArrayList<>();
+		List<Runnable> tasks = new ArrayList<>();
 		for (int t = 0; t < frameCount; t++) {
 			boolean processedTimePoint = true;
-			for (int index = 0; index < excludeTimePoints.size(); index++)
-				if (excludeTimePoints.get(index)[0] <= t && t <= excludeTimePoints.get(
-						index)[1]) {
+			for (int[] excludeTimePoint : excludeTimePoints)
+				if (excludeTimePoint[0] <= t && t <= excludeTimePoint[1]) {
 					processedTimePoint = false;
 					break;
 				}
@@ -607,7 +608,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				processTimePoints.add(t);
 				final int theT = t;
 				tasks.add(() -> {
-					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel),
+					List<List<Peak>> labelPeaks = findPeaksInT(Integer.parseInt(channel),
 							theT, useDogFilter, integrate, rois);
 					for (int i = 0; i < rois.length; i++)
 						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT,
@@ -627,9 +628,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			MarsOMEMetadata marsOMEMetadata = buildOMEMetadata();
 
 			try {
-				UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+				UnitsLengthEnumHandler unitsHandler = new UnitsLengthEnumHandler();
 				Length pixelSize = new Length(pixelLength, UnitsLengthEnumHandler
-						.getBaseUnit((UnitsLength) unitshandler.getEnumeration(pixelUnits)));
+						.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(pixelUnits)));
 
 				marsOMEMetadata.getImage(0).setPixelsPhysicalSizeX(pixelSize);
 				marsOMEMetadata.getImage(0).setPixelsPhysicalSizeY(pixelSize);
@@ -641,11 +642,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		for (int i = 0; i < rois.length; i++)
-			tracker.track(peakLabelsStack.get(i), archive, Integer.valueOf(channel),
+			tracker.track(peakLabelsStack.get(i), archive, Integer.parseInt(channel),
 					processTimePoints, nThreads);
 	}
 
-	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
+	private List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean integrate, Roi[] processingRois)
 	{
 		return findPeaksInT(channel, t, useDogFilter, integrate, processingRois, 1);
@@ -680,33 +681,33 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (useDogFilter && !gridProcess) filteredImg = MarsImageUtils.dogFilter(img,
 			dogFilterRadius, numThreads);
 
-		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
-		for (int i = 0; i < processingRois.length; i++) {
-			List<Peak> peaks = new ArrayList<Peak>();
+		List<List<Peak>> labelPeakLists = new ArrayList<>();
+		for (Roi rois : processingRois) {
+			List<Peak> peaks;
 
-			if (useDogFilter && gridProcess) filteredImg = MarsImageUtils.dogFilter(Views.interval( img,
-				new long[] { (long)processingRois[i].getXBase(), (long)processingRois[i].getYBase() },
-				new long[]{ (long)processingRois[i].getXBase() + (long)processingRois[i].getFloatWidth(),
-				(long)processingRois[i].getYBase() + (long)processingRois[i].getFloatHeight() } ),
-				dogFilterRadius, numThreads);
+			if (useDogFilter && gridProcess) filteredImg = MarsImageUtils.dogFilter(Views.interval(img,
+							new long[]{(long) rois.getXBase(), (long) rois.getYBase()},
+							new long[]{(long) rois.getXBase() + (long) rois.getFloatWidth(),
+									(long) rois.getYBase() + (long) rois.getFloatHeight()}),
+					dogFilterRadius, numThreads);
 
-			RealMask roiMask = convertService.convert(processingRois[i],
-				RealMask.class);
+			RealMask roiMask = convertService.convert(rois,
+					RealMask.class);
 			IterableRegion<BoolType> iterableROI = MarsImageUtils.toIterableRegion(
-				roiMask, img);
+					roiMask, img);
 
 			if (useDogFilter) peaks = MarsImageUtils.findPeaks(filteredImg, Regions
-				.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
-				findNegativePeaks);
+							.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
+					findNegativePeaks);
 			else peaks = MarsImageUtils.findPeaks(img, Regions.sample(iterableROI,
-				img), t, threshold, minimumDistance, findNegativePeaks);
+					img), t, threshold, minimumDistance, findNegativePeaks);
 
 			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
-					dogFilterRadius, findNegativePeaks, RsquaredMin);
+					dogFilterRadius, findNegativePeaks, rSquaredMin);
 			peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 
 			if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
-				integrationInnerRadius, integrationOuterRadius);
+					integrationInnerRadius, integrationOuterRadius);
 
 			labelPeakLists.add(peaks);
 		}
@@ -748,6 +749,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				omexmlMetadata = omeMeta.getRoot();
 			}
 
+			assert omexmlMetadata != null;
 			omexmlMetadata.setImageName(metadata.get(0).getName(), 0);
 
 			// Check for SliceLabels
@@ -761,6 +763,9 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 
+		if (omexmlMetadata == null)
+			return new MarsOMEMetadata(MarsMath.getUUID58().substring(0, 10), null);
+
 		if (swapZandT) {
 			int sizeT = omexmlMetadata.getPixelsSizeT(0).getNumberValue().intValue();
 			int sizeZ = omexmlMetadata.getPixelsSizeZ(0).getNumberValue().intValue();
@@ -773,7 +778,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		if (metaDataStack.containsKey(0) && metaDataStack.get(0).contains(
 			"DateTime: "))
 		{
-			// Must be Norpix format..
+			// Must be Norpix format.
 			logService.info("Reading Norpix Format");
 
 			String metaUID = (metadataUIDSource.equals("unique from dataset"))
@@ -788,7 +793,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			return marsOMEMetadata;
 		}
 
-		// Ensures that MarsMicromangerFormat correctly sets the ImageID based on
+		// Ensures that MarsMicromanagerFormat correctly sets the ImageID based on
 		// the position.
 		try {
 			if (omexmlMetadata.getDoubleAnnotationCount() > 0 && omexmlMetadata
@@ -799,9 +804,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 		catch (NullPointerException e) {
-			// Do nothing. Many of the omexmlmetadata methods give
-			// NullPointerExceptions
-			// if fields are not set.
+			/*
+			 Do nothing. Many of the {@link ome.xml.meta.OMEXMLMetadata} methods give
+			 NullPointerException if fields are not set.
+			*/
 		}
 
 		String metaUID;
@@ -820,18 +826,18 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	private String generateUID(ConcurrentMap<Integer, String> headerLabels) {
-		String allLabels = "";
+		StringBuilder allLabels = new StringBuilder();
 		for (int i = 0; i < headerLabels.size(); i++)
-			allLabels += headerLabels.get(i);
+			allLabels.append(headerLabels.get(i));
 
-		return MarsMath.getFNV1aBase58(allLabels);
+		return MarsMath.getFNV1aBase58(allLabels.toString());
 	}
 
 	@Override
 	public void preview() {
 		if (preview) {
 			if (swapZandT) image.setSlice(previewT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, previewT + 1);
+			else image.setPosition(Integer.parseInt(channel) + 1, 1, previewT + 1);
 
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
@@ -851,7 +857,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 							(int) dataset.dimension(1)));
 					}
 
-					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(
+					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.parseInt(
 						channel), previewT, useDogFilter, false, rois, Runtime.getRuntime().availableProcessors());
 
 					if (Thread.currentThread().isInterrupted()) return;
@@ -875,9 +881,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 					else {
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
-								// The pixel origin for OvalRois is at the upper left corner
-								// !!!!
-								// The pixel origin for PointRois is at the center !!!
+								// The pixel origin for OvalRois is in the upper left corner.
+								// The pixel origin for PointRois is in the center.
 								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) +
 									0.5 - integrationInnerRadius, p.getDoublePosition(1) + 0.5 -
 										integrationInnerRadius, integrationInnerRadius * 2,
@@ -924,6 +929,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 	}
 
+	@SuppressWarnings("unused")
 	protected void openWebPage() {
 		try {
 			String urlString =
@@ -945,6 +951,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	/** Called when the {@link #preview} parameter value changes. */
+	@SuppressWarnings("unused")
 	protected void previewChanged() {
 		if (!preview) cancel();
 	}
@@ -972,7 +979,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		builder.addParameter("Find negative peaks", String.valueOf(
 			findNegativePeaks));
 		builder.addParameter("Fit radius", String.valueOf(fitRadius));
-		builder.addParameter("Minimum R-squared", String.valueOf(RsquaredMin));
+		builder.addParameter("Minimum R-squared", String.valueOf(rSquaredMin));
 		builder.addParameter("Verbose output", String.valueOf(verbose));
 		builder.addParameter("Max difference X", String.valueOf(maxDifferenceX));
 		builder.addParameter("Max difference Y", String.valueOf(maxDifferenceY));
@@ -1041,7 +1048,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	public int getChannel() {
-		return Integer.valueOf(channel);
+		return Integer.parseInt(channel);
 	}
 
 	public void setUseDogFiler(boolean useDogFilter) {
@@ -1085,11 +1092,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	}
 
 	public void setMinimumRsquared(double Rsquared) {
-		this.RsquaredMin = Rsquared;
+		this.rSquaredMin = Rsquared;
 	}
 
 	public double getMinimumRsquared() {
-		return RsquaredMin;
+		return rSquaredMin;
 	}
 
 	public void setVerboseOutput(boolean verbose) {
