@@ -50,6 +50,7 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import net.imglib2.parallel.Parallelization;
 import net.imglib2.roi.IterableRegion;
 import net.imglib2.roi.Masks;
 import net.imglib2.roi.RealMask;
@@ -96,12 +97,12 @@ public class MarsImageUtils {
 	 * @param innerRadius Inner integration radius.
 	 * @return The list of x, y offsets for innerRadius.
 	 */
-	public synchronized static List<int[]> innerOffets(int innerRadius) {
+	public synchronized static List<int[]> innerOffsets(int innerRadius) {
 		if (innerOffsetCache == null) innerOffsetCache =
-			new HashMap<Integer, List<int[]>>();
+				new HashMap<>();
 
 		if (!innerOffsetCache.containsKey(innerRadius)) {
-			ArrayList<int[]> innerOffsets = new ArrayList<int[]>();
+			ArrayList<int[]> innerOffsets = new ArrayList<>();
 
 			for (int y = -innerRadius; y <= innerRadius; y++) {
 				for (int x = -innerRadius; x <= innerRadius; x++) {
@@ -131,18 +132,18 @@ public class MarsImageUtils {
 	 * @param outerRadius Outer integration radius.
 	 * @return The list of x, y offsets for between innerRadius and outerRadius.
 	 */
-	public synchronized static List<int[]> outerOffets(int innerRadius,
-		int outerRadius)
+	public synchronized static List<int[]> outerOffsets(int innerRadius,
+														int outerRadius)
 	{
 		if (outerOffsetCache == null) outerOffsetCache =
-			new HashMap<Integer[], List<int[]>>();
+				new HashMap<>();
 
 		Integer[] radii = new Integer[2];
 		radii[0] = innerRadius;
 		radii[1] = outerRadius;
 
 		if (!outerOffsetCache.containsKey(radii)) {
-			ArrayList<int[]> outerOffsets = new ArrayList<int[]>();
+			ArrayList<int[]> outerOffsets = new ArrayList<>();
 
 			for (int y = -outerRadius; y <= outerRadius; y++) {
 				for (int x = -outerRadius; x <= outerRadius; x++) {
@@ -163,12 +164,13 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * This method converts from a RealMaskRealInterval to an IterablRegion
+	 * This method converts from a RealMaskRealInterval to an IterableRegion
 	 * 
 	 * @param roi A RealMaskRealInterval represent the region of interest to
 	 *          convert.
 	 * @return An IterableRegion.
 	 */
+	@SuppressWarnings("unused")
 	public static IterableRegion<BoolType> toIterableRegion(
 		RealMaskRealInterval roi)
 	{
@@ -180,7 +182,7 @@ public class MarsImageUtils {
 	}
 
 	/**
-	 * This method converts from a RealMask to an IterablRegion
+	 * This method converts from a RealMask to an IterableRegion
 	 * 
 	 * @param mask The RealMaks representing the roi.
 	 * @param image The Interval of the image.
@@ -205,7 +207,6 @@ public class MarsImageUtils {
 	 * iterable interval provided.
 	 * 
 	 * @param <T> Image type.
-	 * @param img 2D image containing peaks.
 	 * @param iterableInterval The IterableInterval to search for peaks in the
 	 *          image.
 	 * @param t The T position being searched for peaks.
@@ -215,11 +216,11 @@ public class MarsImageUtils {
 	 * @return The list of peaks found.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
-		RandomAccessible<T> img, IterableInterval<T> iterableInterval, int t,
+		IterableInterval<T> iterableInterval, int t,
 		double threshold, int minimumDistance, boolean findNegativePeaks)
 	{
 		Cursor<T> cursor = iterableInterval.cursor();
-		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance,
+		return MarsImageUtils.findPeaks(cursor, t, threshold, minimumDistance,
 			findNegativePeaks);
 	}
 
@@ -244,7 +245,7 @@ public class MarsImageUtils {
 		int minimumDistance, boolean findNegativePeaks)
 	{
 		Cursor<T> cursor = Views.interval(img, interval).cursor();
-		return MarsImageUtils.findPeaks(img, cursor, t, threshold, minimumDistance,
+		return MarsImageUtils.findPeaks(cursor, t, threshold, minimumDistance,
 			findNegativePeaks);
 	}
 
@@ -256,7 +257,6 @@ public class MarsImageUtils {
 	 * desired.
 	 * 
 	 * @param <T> Image type.
-	 * @param img 2D image containing peaks.
 	 * @param cursor The cursor used to iterate through the regions of interest.
 	 * @param t The T position being searched for peaks.
 	 * @param threshold The pixel value threshold for peak detection.
@@ -265,10 +265,10 @@ public class MarsImageUtils {
 	 * @return The list of peaks found.
 	 */
 	public static <T extends RealType<T> & NativeType<T>> List<Peak> findPeaks(
-		RandomAccessible<T> img, Cursor<T> cursor, int t, double threshold,
+		Cursor<T> cursor, int t, double threshold,
 		int minimumDistance, boolean findNegativePeaks)
 	{
-		List<PeakPixel> possiblePeaks = new ArrayList<PeakPixel>();
+		List<PeakPixel> possiblePeaks = new ArrayList<>();
 
 		if (!findNegativePeaks) {
 			while (cursor.hasNext() && !Thread.currentThread().isInterrupted()) {
@@ -280,16 +280,10 @@ public class MarsImageUtils {
 				}
 			}
 
-			if (possiblePeaks.isEmpty()) return new ArrayList<Peak>();
+			if (possiblePeaks.isEmpty()) return new ArrayList<>();
 
 			// Sort the list from lowest to highest pixel value...
-			Collections.sort(possiblePeaks, new Comparator<PeakPixel>() {
-
-				@Override
-				public int compare(PeakPixel o1, PeakPixel o2) {
-					return Double.compare(o1.pixelValue, o2.pixelValue);
-				}
-			});
+			possiblePeaks.sort(Comparator.comparingDouble(o -> o.pixelValue));
 		}
 		else {
 			while (cursor.hasNext() && !Thread.currentThread().isInterrupted()) {
@@ -301,38 +295,32 @@ public class MarsImageUtils {
 				}
 			}
 
-			if (possiblePeaks.isEmpty()) return new ArrayList<Peak>();
+			if (possiblePeaks.isEmpty()) return new ArrayList<>();
 
 			// Sort the list from highest to lowest pixel value...
-			Collections.sort(possiblePeaks, new Comparator<PeakPixel>() {
-
-				@Override
-				public int compare(PeakPixel o1, PeakPixel o2) {
-					return Double.compare(o2.pixelValue, o1.pixelValue);
-				}
-			});
+			possiblePeaks.sort((o1, o2) -> Double.compare(o2.pixelValue, o1.pixelValue));
 		}
 
 		// We have to make a copy to pass to the KDTREE because it will change the
-		// order and we have already sorted from lowest to highest to pick center of
-		// peaks in for loop below.
+		// order, and we have already sorted from lowest to highest to pick center of
+		// peaks in the loop below.
 		// This is a shallow copy, which means it contains exactly the same elements
 		// as the first list, but the order can be completely different...
 		List<PeakPixel> KDTreePossiblePeaks = new ArrayList<>(possiblePeaks);
 
-		// Allows for fast search of nearest peaks...
-		KDTree<PeakPixel> possiblePeakTree = new KDTree<PeakPixel>(
-			KDTreePossiblePeaks, KDTreePossiblePeaks);
+		// Allows for fast searching of the nearest peaks.
+		KDTree<PeakPixel> possiblePeakTree = new KDTree<>(
+				KDTreePossiblePeaks, KDTreePossiblePeaks);
 
 		RadiusNeighborSearchOnKDTree<PeakPixel> radiusSearch =
-			new RadiusNeighborSearchOnKDTree<PeakPixel>(possiblePeakTree);
+				new RadiusNeighborSearchOnKDTree<>(possiblePeakTree);
 
 		// As we loop through all possible peaks and remove those that are too close
 		// we will add all the selected peaks to a new array
 		// that will serve as the finalList of actual peaks
 		// This whole process is to remove pixels near the center peak pixel that
 		// are also above the detection threshold but all part of the same peak...
-		List<Peak> finalPeaks = new ArrayList<Peak>();
+		List<Peak> finalPeaks = new ArrayList<>();
 
 		// It is really important to remember here that possiblePeaks and
 		// KDTreePossiblePeaks are different lists but point to the same elements
@@ -374,6 +362,7 @@ public class MarsImageUtils {
 	 * @param dogFilterRadius Radius to use for dog filtering.
 	 * @return The dog filtered image.
 	 */
+	@SuppressWarnings("unused")
 	public static <T extends RealType<T>> RandomAccessibleInterval<FloatType>
 		dogFilter(RandomAccessibleInterval<T> img, double dogFilterRadius)
 	{
@@ -411,8 +400,12 @@ public class MarsImageUtils {
 
 		try
 		{
-			Gauss3.gauss( new double[] { sigma1, sigma1 }, extended, dog2, numThreads );
-			Gauss3.gauss( new double[] { sigma2, sigma2 }, extended, dog, numThreads );
+			Parallelization.runWithNumThreads( numThreads,
+					() -> Gauss3.gauss( new double[] { sigma1, sigma1 }, extended, dog2)
+			);
+			Parallelization.runWithNumThreads( numThreads,
+					() -> Gauss3.gauss( new double[] { sigma2, sigma2 }, extended, dog)
+			);
 		}
 		catch ( final IncompatibleTypeException e )
 		{
@@ -444,7 +437,7 @@ public class MarsImageUtils {
 	 * @param radius The radius of the square region of pixels to use for fitting.
 	 * @param initialSize A starting guess for the peak size.
 	 * @param findNegativePeaks Whether negative peaks are being fit.
-	 * @param RsquaredMin The mininmum allowed R-squared value below which fits
+	 * @param RsquaredMin The minimum allowed R-squared value below which fits
 	 *          are rejected.
 	 * @return The list of peaks after fitting with those having rejected fits
 	 *         removed.
@@ -454,9 +447,9 @@ public class MarsImageUtils {
 		double initialSize, boolean findNegativePeaks, double RsquaredMin)
 	{
 
-		List<Peak> newList = new ArrayList<Peak>();
+		List<Peak> newList = new ArrayList<>();
 
-		int fitWidth = radius * 2 + 1;
+		int fitDiameter = radius * 2 + 1;
 
 		PeakFitter<T> fitter = new PeakFitter<>();
 
@@ -469,7 +462,7 @@ public class MarsImageUtils {
 			if (Thread.currentThread().isInterrupted()) break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
-				(int) (peak.getY() - radius), fitWidth, fitWidth);
+				(int) (peak.getY() - radius), fitDiameter, fitDiameter);
 
 			double[] p = new double[5];
 			p[0] = Double.NaN;
@@ -531,9 +524,9 @@ public class MarsImageUtils {
 		double initialSize, double fitRegionThreshold, boolean findNegativePeaks)
 	{
 
-		List<Peak> newList = new ArrayList<Peak>();
+		List<Peak> newList = new ArrayList<>();
 
-		int fitWidth = radius * 2 + 1;
+		int fitDiameter = radius * 2 + 1;
 
 		PeakFitter<T> fitter = new PeakFitter<>();
 
@@ -545,7 +538,7 @@ public class MarsImageUtils {
 			if (Thread.currentThread().isInterrupted()) break;
 
 			Rectangle subregion = new Rectangle((int) (peak.getX() - radius),
-				(int) (peak.getY() - radius), fitWidth, fitWidth);
+				(int) (peak.getY() - radius), fitDiameter, fitDiameter);
 
 			double[] p = new double[5];
 			p[0] = Double.NaN;
@@ -591,8 +584,8 @@ public class MarsImageUtils {
 	public static <T extends RealType<T> & NativeType<T>> double calcR2(
 		RandomAccess<T> ra, int radius, Gaussian2D gauss)
 	{
-		double SSres = 0;
-		double SStot = 0;
+		double ssr = 0;
+		double sst = 0;
 		double mean = 0;
 		double count = 0;
 
@@ -601,8 +594,8 @@ public class MarsImageUtils {
 		int y1 = (int) (gauss.y - radius);
 		int y2 = (int) (gauss.y + radius);
 
-		// Very very bad fits can go to the max integer value in which case we
-		// return 0..
+		// Very, very bad fits can go to the max integer value in which case we
+		// return 0.
 		if (x1 == Integer.MAX_VALUE || x2 == Integer.MAX_VALUE ||
 			y1 == Integer.MAX_VALUE || y2 == Integer.MAX_VALUE) return 0;
 
@@ -618,14 +611,14 @@ public class MarsImageUtils {
 		for (int y = y1; y <= y2; y++) {
 			for (int x = x1; x <= x2; x++) {
 				double value = ra.setPositionAndGet(x, y).getRealDouble();
-				SStot += (value - mean) * (value - mean);
+				sst += (value - mean) * (value - mean);
 
 				double prediction = gauss.getValue(x, y);
-				SSres += (value - prediction) * (value - prediction);
+				ssr += (value - prediction) * (value - prediction);
 			}
 		}
 
-		return 1 - SSres / SStot;
+		return 1 - ssr / sst;
 	}
 
 	/**
@@ -645,33 +638,27 @@ public class MarsImageUtils {
 	{
 		if (peaks.size() < 2) return peaks;
 
-		Collections.sort(peaks, new Comparator<Peak>() {
-
-			@Override
-			public int compare(Peak o1, Peak o2) {
-				return Double.compare(o2.getRSquared(), o1.getRSquared());
-			}
-		});
+		peaks.sort((o1, o2) -> Double.compare(o2.getRSquared(), o1.getRSquared()));
 
 		// We have to make a copy to pass to the KDTREE because it will change the
-		// order and we have already sorted from lowest to highest to pick center of
+		// order, and we have already sorted from lowest to highest to pick center of
 		// peaks in for loop below.
 		// This is a shallow copy, which means it contains exactly the same elements
 		// as the first list, but the order can be completely different...
 		ArrayList<Peak> KDTreePossiblePeaks = new ArrayList<>(peaks);
 
-		KDTree<Peak> possiblePeakTree = new KDTree<Peak>(KDTreePossiblePeaks,
-			KDTreePossiblePeaks);
+		KDTree<Peak> possiblePeakTree = new KDTree<>(KDTreePossiblePeaks,
+				KDTreePossiblePeaks);
 
 		RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-			new RadiusNeighborSearchOnKDTree<Peak>(possiblePeakTree);
+				new RadiusNeighborSearchOnKDTree<>(possiblePeakTree);
 
 		// As we loop through all possible peaks and remove those that are too close
 		// we will add all the selected peaks to a new array
 		// that will serve as the finalList of actual peaks
 		// This whole process is to remove pixels near the center peak pixel that
 		// are also above the detection threshold but all part of the same peak...
-		ArrayList<Peak> finalPeaks = new ArrayList<Peak>();
+		ArrayList<Peak> finalPeaks = new ArrayList<>();
 
 		// Reset all to valid for new search
 		for (int i = peaks.size() - 1; i >= 0; i--) {
@@ -682,16 +669,14 @@ public class MarsImageUtils {
 		// KDTreePossiblePeaks are different lists but point to the same elements
 		// That means if we setNotValid in one it is changing the same object in
 		// another that is required for the stuff below to work.
-		for (int i = 0; i < peaks.size(); i++) {
+		for (Peak value : peaks) {
 			if (Thread.currentThread().isInterrupted()) break;
-
-			Peak peak = peaks.get(i);
-			if (peak.isValid()) {
-				finalPeaks.add(peak);
+			if (value.isValid()) {
+				finalPeaks.add(value);
 
 				// Then we remove all possible peaks within the minimumDistance...
 				// This will include the peak we just added to the peaks list...
-				radiusSearch.search(peak, minimumDistance, false);
+				radiusSearch.search(value, minimumDistance, false);
 
 				for (int j = 0; j < radiusSearch.numNeighbors(); j++) {
 					radiusSearch.getSampler(j).get().setValid(false);
@@ -748,8 +733,8 @@ public class MarsImageUtils {
 		RandomAccessibleInterval<T> view = Views.interval(img, interval);
 		RandomAccess<T> ra = Views.extendMirrorSingle(view).randomAccess();
 
-		List<int[]> innerOffsets = innerOffets(innerRadius);
-		List<int[]> outerOffsets = outerOffets(innerRadius, outerRadius);
+		List<int[]> innerOffsets = innerOffsets(innerRadius);
+		List<int[]> outerOffsets = outerOffsets(innerRadius, outerRadius);
 
 		for (Peak peak : peaks) {
 			if (Thread.currentThread().isInterrupted()) break;
@@ -759,26 +744,22 @@ public class MarsImageUtils {
 			int x = (int) (peak.getX() + 0.5);
 			int y = (int) (peak.getY() + 0.5);
 
-			if (x == Double.NaN || y == Double.NaN) {
+			if (Double.isNaN(peak.getX()) || Double.isNaN(peak.getY())) {
 				peak.setIntensity(Double.NaN);
 				peak.setMedianBackground(Double.NaN);
 			}
 			else {
 				double intensity = 0;
-				List<Double> outerPixelValues = new ArrayList<Double>();
+				List<Double> outerPixelValues = new ArrayList<>();
 
-				for (int i = 0; i < innerOffsets.size(); i++) {
-					int[] circleOffset = innerOffsets.get(i);
-
+				for (int[] circleOffset : innerOffsets) {
 					intensity += ra.setPositionAndGet(x + circleOffset[0], y +
-						circleOffset[1]).getRealDouble();
+							circleOffset[1]).getRealDouble();
 				}
 
-				for (int i = 0; i < outerOffsets.size(); i++) {
-					int[] circleOffset = outerOffsets.get(i);
-
+				for (int[] circleOffset : outerOffsets) {
 					outerPixelValues.add(ra.setPositionAndGet(x + circleOffset[0], y +
-						circleOffset[1]).getRealDouble());
+							circleOffset[1]).getRealDouble());
 				}
 
 				Collections.sort(outerPixelValues);
@@ -808,7 +789,7 @@ public class MarsImageUtils {
 
 	/**
 	 * Convenience method to retrieve a 2D view from an ImgPlus for a given z, c,
-	 * and t. Axis positions are based on a zero index. This method reslices along
+	 * and t. Axis positions are based on a zero index. This method re-slices along
 	 * c, t, and z. Therefore, for higher dimensional images, the output may be
 	 * more than 2D.
 	 * 
