@@ -43,8 +43,8 @@ public class DNASegment implements RealLocalizable {
 	public static final String Y1 = "Y1";
 	public static final String X2 = "X2";
 	public static final String Y2 = "Y2";
-	public static final String MEDIAN_INTENSITY = "Median intensity";
-	public static final String INTENSITY_Variance = "Intensity variance";
+	public static final String MEDIAN_INTENSITY = "Median_intensity";
+	public static final String INTENSITY_VARIANCE = "Intensity_variance";
 	public static final String LENGTH = "Length";
 
 	public DNASegment(double x1, double y1, double x2, double y2) {
@@ -114,8 +114,8 @@ public class DNASegment implements RealLocalizable {
 		return variance;
 	}
 
-	//Override from RealLocalizable interface.. so peaks can be passed to
-	// KDTree and other imglib2 functions.
+	//Override from RealLocalizable interface so peaks can be passed to
+	// KDTree and other ImgLib2 functions.
 	@Override
 	public int numDimensions() {
 		// We make no effort to think beyond 2 dimensions !
