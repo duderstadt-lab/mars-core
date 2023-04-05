@@ -696,10 +696,10 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 			IterableRegion<BoolType> iterableROI = MarsImageUtils.toIterableRegion(
 					roiMask, img);
 
-			if (useDogFilter) peaks = MarsImageUtils.findPeaks(filteredImg, Regions
+			if (useDogFilter) peaks = MarsImageUtils.findPeaks(Regions
 							.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
 					findNegativePeaks);
-			else peaks = MarsImageUtils.findPeaks(img, Regions.sample(iterableROI,
+			else peaks = MarsImageUtils.findPeaks(Regions.sample(iterableROI,
 					img), t, threshold, minimumDistance, findNegativePeaks);
 
 			peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
