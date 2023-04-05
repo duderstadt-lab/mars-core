@@ -503,8 +503,8 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 		logService.info("Generating peak table..");
 		// build a table with all peaks
 		String title = "DNAs Table - " + dataset.getName();
-		dnaTable = new MarsTable(title, "T", "X1", "Y1", "X2", "Y2", "Length",
-			"Median_intensity", "Intensity_variance");
+		dnaTable = new MarsTable(title, "T", DNASegment.X1, DNASegment.Y1, DNASegment.X2, DNASegment.Y2, DNASegment.LENGTH,
+				DNASegment.MEDIAN_INTENSITY, DNASegment.INTENSITY_VARIANCE);
 
 		int row = 0;
 		for (int t : dnaStack.keySet()) {
@@ -512,14 +512,14 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 			for (DNASegment tDNA : tDNAs) {
 				dnaTable.appendRow();
 				dnaTable.setValue("T", row, t);
-				dnaTable.setValue("X1", row, tDNA.getX1());
-				dnaTable.setValue("Y1", row, tDNA.getY1());
-				dnaTable.setValue("X2", row, tDNA.getX2());
-				dnaTable.setValue("Y2", row, tDNA.getY2());
-				dnaTable.setValue("Length", row, tDNA.getLength());
-				dnaTable.setValue("Median_intensity", row, tDNA
+				dnaTable.setValue(DNASegment.X1, row, tDNA.getX1());
+				dnaTable.setValue(DNASegment.Y1, row, tDNA.getY1());
+				dnaTable.setValue(DNASegment.X2, row, tDNA.getX2());
+				dnaTable.setValue(DNASegment.Y2, row, tDNA.getY2());
+				dnaTable.setValue(DNASegment.LENGTH, row, tDNA.getLength());
+				dnaTable.setValue(DNASegment.MEDIAN_INTENSITY, row, tDNA
 						.getMedianIntensity());
-				dnaTable.setValue("Intensity_variance", row, tDNA
+				dnaTable.setValue(DNASegment.INTENSITY_VARIANCE, row, tDNA
 						.getVariance());
 				row++;
 			}
