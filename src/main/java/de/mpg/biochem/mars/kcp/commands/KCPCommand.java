@@ -143,9 +143,9 @@ public class KCPCommand extends DynamicCommand implements Command,
 	private final AtomicInteger numFinished = new AtomicInteger(0);
 
 	// -- Callback methods --
+	@SuppressWarnings("unused")
 	private void archiveSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(archive.properties().getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -159,9 +159,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
-			.getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(moleculeArchiveService.getArchives().get(0).properties()
+				.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -175,7 +174,7 @@ public class KCPCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		// Lock the window so it can't be changed while processing
+		// Lock the window, so it can't be changed while processing
 		if (!uiService.isHeadless()) archive.getWindow().lock();
 
 		// Build log message
@@ -198,8 +197,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 
 			UIDs = archive.getMoleculeUIDs().stream().filter(UID -> {
 				boolean hasTags = true;
-				for (int i = 0; i < tagList.length; i++) {
-					if (!archive.moleculeHasTag(UID, tagList[i])) {
+				for (String s : tagList) {
+					if (!archive.moleculeHasTag(UID, s)) {
 						hasTags = false;
 						break;
 					}
@@ -221,7 +220,7 @@ public class KCPCommand extends DynamicCommand implements Command,
 		// Output first part of log message...
 		logService.info(log);
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 		logService.info("Finding Change Points...");
 		archive.getWindow().updateLockMessage("Finding Change Points...");
 		try {
@@ -247,8 +246,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 			progressThread.start();
 
 			// This will spawn a bunch of threads that will analyze molecules
-			// individually in parallel
-			// and put the changepoint tables back into the same molecule record
+			// individually in parallel and put the change point tables back
+			// into the same molecule record.
 
 			forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 				Molecule molecule = archive.get(i);
@@ -277,7 +276,7 @@ public class KCPCommand extends DynamicCommand implements Command,
 		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 
@@ -286,27 +285,18 @@ public class KCPCommand extends DynamicCommand implements Command,
 	}
 
 	private void findChangePoints(Molecule molecule) {
-		MarsTable datatable = molecule.getTable();
-
-		MarsRecord regionRecord = null;
-		if (region || calcBackgroundSigma) {
-			if (regionSource.equals("Molecules")) {
-				regionRecord = molecule;
-			}
-			else {
-				regionRecord = archive.getMetadata(molecule.getMetadataUID());
-			}
-		}
+		MarsTable table = molecule.getTable();
+		MarsRecord regionRecord = (regionSource.equals("Molecules")) ? molecule : archive.getMetadata(molecule.getMetadataUID());
 
 		// START NaN FIX
-		ArrayList<Double> xDataSafe = new ArrayList<Double>();
-		ArrayList<Double> yDataSafe = new ArrayList<Double>();
-		for (int i = 0; i < datatable.getRowCount(); i++) {
-			if (!Double.isNaN(datatable.getValue(xColumn, i)) && !Double.isNaN(
-				datatable.getValue(yColumn, i)))
+		ArrayList<Double> xDataSafe = new ArrayList<>();
+		ArrayList<Double> yDataSafe = new ArrayList<>();
+		for (int i = 0; i < table.getRowCount(); i++) {
+			if (!Double.isNaN(table.getValue(xColumn, i)) && !Double.isNaN(
+				table.getValue(yColumn, i)))
 			{
-				xDataSafe.add(datatable.getValue(xColumn, i));
-				yDataSafe.add(datatable.getValue(yColumn, i));
+				xDataSafe.add(table.getValue(xColumn, i));
+				yDataSafe.add(table.getValue(yColumn, i));
 			}
 		}
 
@@ -315,8 +305,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 		int offset = 0;
 		int length = rowCount;
 
-		int SigXstart = 0;
-		int SigXend = rowCount;
+		int sigXStart = 0;
+		int sigXEnd = rowCount;
 
 		double[] xData = new double[rowCount];
 		double[] yData = new double[rowCount];
@@ -347,26 +337,24 @@ public class KCPCommand extends DynamicCommand implements Command,
 				if (xData[j] >= regionRecord.getRegion(backgroundRegion).getStart() &&
 					!sigmaOffsetSet)
 				{
-					SigXstart = j;
+					sigXStart = j;
 					sigmaOffsetSet = true;
 				}
 				else if (xData[j] <= regionRecord.getRegion(backgroundRegion)
 					.getEnd())
 				{
-					SigXend = j;
+					sigXEnd = j;
 				}
 			}
 		}
 
 		if (length == 0) {
-			// This means the region probably doesn't exist...
-			// So we just add a single dummy row with All NaN values...
-			// Then we return...
-			ArrayList<KCPSegment> segs = new ArrayList<KCPSegment>();
+			// When length is zero we add a single dummy row with all NaN values.
+			ArrayList<KCPSegment> segments = new ArrayList<>();
 			KCPSegment segment = new KCPSegment(Double.NaN, Double.NaN, Double.NaN,
 				Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
-			segs.add(segment);
-			molecule.putSegmentsTable(xColumn, yColumn, buildSegmentTable(segs));
+			segments.add(segment);
+			molecule.putSegmentsTable(xColumn, yColumn, buildSegmentTable(segments));
 			numFinished.incrementAndGet();
 			return;
 		}
@@ -378,8 +366,8 @@ public class KCPCommand extends DynamicCommand implements Command,
 			sigma = molecule.getParameter(yColumn + "_sigma");
 		}
 		else if (molecule.hasRegion(backgroundRegion)) {
-			if (calcBackgroundSigma) sigma = KCP.calc_sigma(yData, SigXstart,
-				SigXend);
+			if (calcBackgroundSigma) sigma = KCP.calc_sigma(yData, sigXStart,
+					sigXEnd);
 		}
 
 		double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
@@ -394,12 +382,6 @@ public class KCPCommand extends DynamicCommand implements Command,
 			else molecule.putSegmentsTable(xColumn, yColumn, segmentsTable);
 		}
 		catch (ArrayIndexOutOfBoundsException e) {
-			logService.error("Out of Bounds Exception");
-			logService.error("UID " + molecule.getUID() + " gave an error ");
-			logService.error("sigma " + sigma);
-			logService.error("confidenceLevel " + confidenceLevel);
-			logService.error("offset " + offset);
-			logService.error("length " + length);
 			e.printStackTrace();
 		}
 		numFinished.incrementAndGet();
@@ -407,8 +389,6 @@ public class KCPCommand extends DynamicCommand implements Command,
 
 	private MarsTable buildSegmentTable(List<KCPSegment> segments) {
 		MarsTable output = new MarsTable();
-
-		// Do i need to add these columns first? I can't remember...
 		output.add(new DoubleColumn(KCPSegment.X1));
 		output.add(new DoubleColumn(KCPSegment.Y1));
 		output.add(new DoubleColumn(KCPSegment.X2));
