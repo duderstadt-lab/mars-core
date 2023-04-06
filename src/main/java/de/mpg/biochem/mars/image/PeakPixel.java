@@ -43,10 +43,10 @@ public class PeakPixel implements RealLocalizable {
 	}
 
 	// Override from RealLocalizable interface. So peaks can be passed to KDTree
-	// and other imglib2 functions.
+	// and other ImgLib2 functions.
 	@Override
 	public int numDimensions() {
-		// We are simple minded and make no effort to think beyond 2 dimensions !
+		// We are simple-minded and make no effort to think beyond 2 dimensions.
 		return 2;
 	}
 
