@@ -133,9 +133,9 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 	private final AtomicInteger numFinished = new AtomicInteger(0);
 
 	// -- Callback methods --
+	@SuppressWarnings("unused")
 	private void archiveSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(archive.properties().getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -149,9 +149,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
-			.getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(moleculeArchiveService.getArchives().get(0).properties()
+				.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -188,8 +187,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 			UIDs = archive.getMoleculeUIDs().stream().filter(UID -> {
 				boolean hasTags = true;
-				for (int i = 0; i < tagList.length; i++) {
-					if (!archive.moleculeHasTag(UID, tagList[i])) {
+				for (String s : tagList) {
+					if (!archive.moleculeHasTag(UID, s)) {
 						hasTags = false;
 						break;
 					}
@@ -211,7 +210,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		// Output first part of log message...
 		logService.info(log);
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 		logService.info("Finding Single Change Points...");
 		archive.getWindow().updateLockMessage("Finding Single Change Points...");
 		try {
@@ -237,9 +236,8 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			progressThread.start();
 
 			// This will spawn a bunch of threads that will analyze molecules
-			// individually in parallel
-			// and put the changepoint tables back into the same molecule record
-
+			// individually in parallel and put the change point tables back
+			// into the same molecule record.
 			forkJoinPool.submit(() -> UIDs.parallelStream().forEach(i -> {
 				Molecule molecule = archive.get(i);
 
@@ -269,35 +267,24 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 	}
 
 	private void findChangePoints(Molecule molecule) {
-		MarsTable datatable = molecule.getTable();
-
-		MarsRecord regionRecord = null;
-		if (analyseRegion) {
-			if (regionSource.equals("Molecules")) {
-				regionRecord = molecule;
-			}
-			else {
-				regionRecord = archive.getMetadata(molecule.getMetadataUID());
-			}
-
-			if (!regionRecord.hasRegion(regionName)) return;
-		}
+		MarsTable table = molecule.getTable();
+		MarsRecord regionRecord = (regionSource.equals("Molecules")) ? molecule : archive.getMetadata(molecule.getMetadataUID());
 
 		// START NaN FIX
-		ArrayList<Double> xDataSafe = new ArrayList<Double>();
-		ArrayList<Double> yDataSafe = new ArrayList<Double>();
-		for (int i = 0; i < datatable.getRowCount(); i++) {
-			if (!Double.isNaN(datatable.getValue(xColumn, i)) && !Double.isNaN(
-				datatable.getValue(yColumn, i)))
+		ArrayList<Double> xDataSafe = new ArrayList<>();
+		ArrayList<Double> yDataSafe = new ArrayList<>();
+		for (int i = 0; i < table.getRowCount(); i++) {
+			if (!Double.isNaN(table.getValue(xColumn, i)) && !Double.isNaN(
+				table.getValue(yColumn, i)))
 			{
-				xDataSafe.add(datatable.getValue(xColumn, i));
-				yDataSafe.add(datatable.getValue(yColumn, i));
+				xDataSafe.add(table.getValue(xColumn, i));
+				yDataSafe.add(table.getValue(yColumn, i));
 			}
 		}
 
@@ -330,14 +317,12 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		}
 
 		if (length == 0) {
-			// This means the region probably doesn't exist...
-			// So we just add a single dummy row with All NaN values...
-			// Then we return...
-			ArrayList<KCPSegment> segs = new ArrayList<KCPSegment>();
+			// When length is zero we add a single dummy row with all NaN values.
+			ArrayList<KCPSegment> segments = new ArrayList<>();
 			KCPSegment segment = new KCPSegment(Double.NaN, Double.NaN, Double.NaN,
 				Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
-			segs.add(segment);
-			molecule.putSegmentsTable(xColumn, yColumn, buildSegmentTable(segs));
+			segments.add(segment);
+			molecule.putSegmentsTable(xColumn, yColumn, buildSegmentTable(segments));
 			numFinished.incrementAndGet();
 			return;
 		}
@@ -345,7 +330,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		double[] xRegion = Arrays.copyOfRange(xData, offset, offset + length);
 		double[] yRegion = Arrays.copyOfRange(yData, offset, offset + length);
 
-		int llr_max_row = changePoint(xRegion, yRegion, 0, xRegion.length);
+		int llr_max_row = changePoint(xRegion, yRegion);
 
 		if (llr_max_row == -1) return;
 
@@ -357,7 +342,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		}
 
 		if (addSegmentsTable) {
-			ArrayList<Integer> cp_positions = new ArrayList<Integer>();
+			ArrayList<Integer> cp_positions = new ArrayList<>();
 			cp_positions.add(0);
 			cp_positions.add(llr_max_row);
 			cp_positions.add(xRegion.length - 1);
@@ -373,17 +358,12 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		numFinished.incrementAndGet();
 	}
 
-	// returns the change-point position if one is found. Otherwise returns -1;
-	private int changePoint(double[] xData, double[] yData, int offset,
-		int length)
+	// returns the change-point position if one is found. Otherwise, returns -1;
+	private int changePoint(double[] xData, double[] yData)
 	{
-		// Here we store the llr curve for the movie
-		ArrayList<Double> cur_Y_llr = new ArrayList<Double>();
-		ArrayList<Double> cur_X_llr = new ArrayList<Double>();
-
-		// First we determine the fit for the null hypothesis...
-		double[] null_line = linearRegression(xData, yData, offset, length);
-		double null_ll = log_likelihood(xData, yData, offset, length, null_line[0],
+		// First we determine the fit for the null hypothesis.
+		double[] null_line = linearRegression(xData, yData, 0, xData.length);
+		double null_ll = log_likelihood(xData, yData, 0, xData.length, null_line[0],
 			null_line[2]);
 
 		// current max log-likelihood ratio value and position.
@@ -392,23 +372,20 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 
 		// Next we determine the fit for each pair of lines and store the
 		// log-likelihood
-		for (int w = 2; w < length - 2; w++) {
+		for (int w = 2; w < xData.length - 2; w++) {
 			// linear fit for first half
-			double[] segA_line = linearRegression(xData, yData, offset, w);
+			double[] segA_line = linearRegression(xData, yData, 0, w);
 			// linear fit for second half
-			double[] segB_line = linearRegression(xData, yData, offset + w, length -
+			double[] segB_line = linearRegression(xData, yData, w, xData.length -
 				w);
 
-			double ll_ratio = log_likelihood(xData, yData, offset, w, segA_line[0],
-				segA_line[2]) + log_likelihood(xData, yData, offset + w, length - w,
+			double ll_ratio = log_likelihood(xData, yData, 0, w, segA_line[0],
+				segA_line[2]) + log_likelihood(xData, yData, w, xData.length - w,
 					segB_line[0], segB_line[2]) - null_ll;
-
-			cur_Y_llr.add(ll_ratio);
-			cur_X_llr.add(xData[offset + w]);
 
 			if (ll_ratio > llr_max) {
 				llr_max = ll_ratio;
-				llr_max_position = offset + w;
+				llr_max_position = w;
 			}
 		}
 
@@ -428,36 +405,36 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 		double[] output = new double[4];
 
 		if (step_analysis) {
-			double Yaverage = 0;
+			double yAverage = 0;
 			for (int i = offset; i < offset + length; i++) {
-				Yaverage += yData[i];
+				yAverage += yData[i];
 			}
-			Yaverage = Yaverage / length;
-			double Ydiffsquares = 0;
+			yAverage = yAverage / length;
+			double yDiffSquares = 0;
 			for (int i = offset; i < offset + length; i++) {
-				Ydiffsquares += (Yaverage - yData[i]) * (Yaverage - yData[i]);
+				yDiffSquares += (yAverage - yData[i]) * (yAverage - yData[i]);
 			}
 
-			output[0] = Yaverage;
-			output[1] = Math.sqrt(Ydiffsquares / (length - 1));
+			output[0] = yAverage;
+			output[1] = Math.sqrt(yDiffSquares / (length - 1));
 			output[2] = 0;
 			output[3] = 0;
 		}
 		else {
 			// First we determine delta (Taylor's notation)
-			double XsumSquares = 0;
-			double Xsum = 0;
-			double Ysum = 0;
-			double XYsum = 0;
+			double xSumSquares = 0;
+			double xSum = 0;
+			double ySum = 0;
+			double xySum = 0;
 			for (int i = offset; i < offset + length; i++) {
-				XsumSquares += xData[i] * xData[i];
-				Xsum += xData[i];
-				Ysum += yData[i];
-				XYsum += xData[i] * yData[i];
+				xSumSquares += xData[i] * xData[i];
+				xSum += xData[i];
+				ySum += yData[i];
+				xySum += xData[i] * yData[i];
 			}
-			double Delta = length * XsumSquares - Xsum * Xsum;
-			double A = (XsumSquares * Ysum - Xsum * XYsum) / Delta;
-			double B = (length * XYsum - Xsum * Ysum) / Delta;
+			double Delta = length * xSumSquares - xSum * xSum;
+			double A = (xSumSquares * ySum - xSum * xySum) / Delta;
+			double B = (length * xySum - xSum * ySum) / Delta;
 
 			double ymAmBxSquare = 0;
 			for (int i = offset; i < offset + length; i++) {
@@ -467,7 +444,7 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			double sigmaY = Math.sqrt(ymAmBxSquare / (length - 2));
 
 			output[0] = A;
-			output[1] = sigmaY * Math.sqrt(XsumSquares / Delta);
+			output[1] = sigmaY * Math.sqrt(xSumSquares / Delta);
 			output[2] = B;
 			output[3] = sigmaY * Math.sqrt(length / Delta);
 		}
@@ -484,8 +461,6 @@ public class SingleChangePointFinder extends DynamicCommand implements Command,
 			lineSum += (yData[i] - B * xData[i] - A) * (yData[i] - B * xData[i] - A);
 		}
 
-		// I guess these pi terms cancel below so I could remove them but I will
-		// leave it for now...
 		return length * Math.log(1 / Math.sqrt(2 * Math.PI)) - lineSum / (2.0);
 	}
 
