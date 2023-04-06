@@ -39,9 +39,15 @@ public class KCP {
 	private double sigma;
 	private double confidenceLevel = 0.99;
 	private boolean step_analysis = false;
-	private double[] xData, yData;
+	private final double[] xData;
+	private final double[] yData;
 
-	public KCP() {}
+	@SuppressWarnings("unused")
+	public KCP(double[] xData,
+			   double[] yData) {
+		this.xData = xData;
+		this.yData = yData;
+	}
 
 	public KCP(double sigma, double confidenceLevel, double[] xData,
 		double[] yData, boolean step_analysis)
@@ -55,7 +61,7 @@ public class KCP {
 
 	private ArrayList<Integer> binary_search() {
 		// Here we implement the recursive binary segmentation algorithm.
-		ArrayList<Integer> CP_positions = new ArrayList<Integer>();
+		ArrayList<Integer> CP_positions = new ArrayList<>();
 		// We consider the start and end points of the molecule as change points for
 		// convenience.
 		CP_positions.add(0);
@@ -65,8 +71,7 @@ public class KCP {
 				q + 1) - CP_positions.get(q));
 			if (cp != -1) {
 				CP_positions.add(q + 1, cp);
-				// lets reset to the previous change point to make sure we don't miss
-				// any...
+				// let's reset to the previous change point to make sure we don't miss any.
 				q -= 1;
 			}
 		}
@@ -82,8 +87,8 @@ public class KCP {
 					CP_positions.add(q + 1, cp);
 				}
 				else {
-					// lets reset to the previous change point since by removing the
-					// current change point we have jump forward one..
+					// let's reset to the previous change point since by removing the
+					// current change point we have jump forward one.
 					q -= 1;
 				}
 			}
@@ -105,36 +110,36 @@ public class KCP {
 		double[] output = new double[4];
 
 		if (step_analysis) {
-			double Yaverage = 0;
+			double yAverage = 0;
 			for (int i = offset; i < offset + length; i++) {
-				Yaverage += yData[i];
+				yAverage += yData[i];
 			}
-			Yaverage = Yaverage / length;
-			double Ydiffsquares = 0;
+			yAverage = yAverage / length;
+			double yDiffSquares = 0;
 			for (int i = offset; i < offset + length; i++) {
-				Ydiffsquares += (Yaverage - yData[i]) * (Yaverage - yData[i]);
+				yDiffSquares += (yAverage - yData[i]) * (yAverage - yData[i]);
 			}
 
-			output[0] = Yaverage;
-			output[1] = Math.sqrt(Ydiffsquares / (length - 1));
+			output[0] = yAverage;
+			output[1] = Math.sqrt(yDiffSquares / (length - 1));
 			output[2] = 0;
 			output[3] = 0;
 		}
 		else {
 			// First we determine delta (Taylor's notation)
-			double XsumSquares = 0;
-			double Xsum = 0;
-			double Ysum = 0;
-			double XYsum = 0;
+			double xSumSquares = 0;
+			double xSum = 0;
+			double ySum = 0;
+			double xySum = 0;
 			for (int i = offset; i < offset + length; i++) {
-				XsumSquares += xData[i] * xData[i];
-				Xsum += xData[i];
-				Ysum += yData[i];
-				XYsum += xData[i] * yData[i];
+				xSumSquares += xData[i] * xData[i];
+				xSum += xData[i];
+				ySum += yData[i];
+				xySum += xData[i] * yData[i];
 			}
-			double Delta = length * XsumSquares - Xsum * Xsum;
-			double A = (XsumSquares * Ysum - Xsum * XYsum) / Delta;
-			double B = (length * XYsum - Xsum * Ysum) / Delta;
+			double Delta = length * xSumSquares - xSum * xSum;
+			double A = (xSumSquares * ySum - xSum * xySum) / Delta;
+			double B = (length * xySum - xSum * ySum) / Delta;
 
 			double ymAmBxSquare = 0;
 			for (int i = offset; i < offset + length; i++) {
@@ -144,7 +149,7 @@ public class KCP {
 			double sigmaY = Math.sqrt(ymAmBxSquare / (length - 2));
 
 			output[0] = A;
-			output[1] = sigmaY * Math.sqrt(XsumSquares / Delta);
+			output[1] = sigmaY * Math.sqrt(xSumSquares / Delta);
 			output[2] = B;
 			output[3] = sigmaY * Math.sqrt(length / Delta);
 		}
@@ -161,21 +166,15 @@ public class KCP {
 			lineSum += (yData[i] - B * xData[i] - A) * (yData[i] - B * xData[i] - A);
 		}
 
-		// I guess these pi terms cancel below so I could remove them but I will
-		// leave it for now...
 		return length * Math.log(1 / sigma * Math.sqrt(2 * Math.PI)) - lineSum /
 			(2 * sigma * sigma);
 	}
 
-	// returns the change-point position if one is found. Otherwise returns -1;
+	// returns the change-point position if one is found. Otherwise, returns -1;
 	private int changePoint(double[] xData, double[] yData, int offset,
 		int length)
 	{
-		// Here we store the llr curve for the movie
-		ArrayList<Double> cur_Y_llr = new ArrayList<Double>();
-		ArrayList<Double> cur_X_llr = new ArrayList<Double>();
-
-		// First we determine the fit for the null hypothesis...
+		// First we determine the fit for the null hypothesis.
 		double[] null_line = linearRegression(xData, yData, offset, length,
 			step_analysis);
 		double null_ll = log_likelihood(xData, yData, offset, length, null_line[0],
@@ -199,16 +198,13 @@ public class KCP {
 				segA_line[2]) + log_likelihood(xData, yData, offset + w, length - w,
 					segB_line[0], segB_line[2]) - null_ll;
 
-			cur_Y_llr.add(ll_ratio);
-			cur_X_llr.add(xData[offset + w]);
-
 			if (ll_ratio > llr_max) {
 				llr_max = ll_ratio;
 				llr_max_position = offset + w;
 			}
 		}
 
-		double confidenceT = confidenceTheshold(length, 1 - confidenceLevel);
+		double confidenceT = confidenceThreshold(length, 1 - confidenceLevel);
 
 		if (Math.sqrt(2 * llr_max) > confidenceT) {
 			return llr_max_position;
@@ -246,22 +242,22 @@ public class KCP {
 
 	public ArrayList<KCPSegment> generate_segments() {
 		ArrayList<Integer> cp_positions = binary_search();
-		ArrayList<KCPSegment> segs = new ArrayList<KCPSegment>();
+		ArrayList<KCPSegment> segments = new ArrayList<>();
 		for (int q = 0; q < cp_positions.size() - 1; q++) {
-			double[] linefit = linearRegression(xData, yData, cp_positions.get(q),
+			double[] linearFit = linearRegression(xData, yData, cp_positions.get(q),
 				cp_positions.get(q + 1) - cp_positions.get(q), step_analysis);
 
 			KCPSegment cur_segment = new KCPSegment(xData[cp_positions.get(q)],
-				linefit[0] + linefit[2] * xData[cp_positions.get(q)], xData[cp_positions
-					.get(q + 1)], linefit[0] + linefit[2] * xData[cp_positions.get(q +
-						1)], linefit[0], linefit[1], linefit[2], linefit[3]);
+				linearFit[0] + linearFit[2] * xData[cp_positions.get(q)], xData[cp_positions
+					.get(q + 1)], linearFit[0] + linearFit[2] * xData[cp_positions.get(q +
+						1)], linearFit[0], linearFit[1], linearFit[2], linearFit[3]);
 
-			segs.add(cur_segment);
+			segments.add(cur_segment);
 		}
-		return segs;
+		return segments;
 	}
 
-	private double confidenceTheshold(final int N, final double OneMa) {
+	private double confidenceThreshold(final int N, final double OneMa) {
 
 		if (OneMa == (1 - 0.99) && (N < 7001) && (N > 1)) {
 			return interval99_values[N - 1];
@@ -272,7 +268,7 @@ public class KCP {
 			final double h = Math.pow(Math.log(N), (double) 3 / 2) / N;
 			final double T = Math.log((1 - h * h) / (h * h));
 
-			private double get(double[] x, double[] p) {
+			private double get(double[] p) {
 				// We will consider p = 1/(C^2)
 				return ((p[0] * p[0]) / 2) * Math.exp(-(p[0] * p[0]) / 2) * (T - (2 *
 					T) / (p[0] * p[0]) + 4 / (p[0] * p[0]));
@@ -285,14 +281,14 @@ public class KCP {
 
 				for (int i = 0; i < p.length; i++) {
 					p[i] += delta;
-					dyda[i] = get(x, p);
+					dyda[i] = get(p);
 					p[i] -= 2 * delta;
-					dyda[i] -= get(x, p);
+					dyda[i] -= get(p);
 					p[i] += delta;
 					dyda[i] /= 2 * delta;
 				}
 
-				return get(x, p);
+				return get(p);
 			}
 		};
 
@@ -306,11 +302,11 @@ public class KCP {
 		return p[0];
 	}
 
-	public static double calc_sigma(double[] yData, int sigXstart, int sigXend) {
+	public static double calc_sigma(double[] yData, int sigXStart, int sigXEnd) {
 		// Used to find sigma in defined regions from a file
 		int N = 30;
 		double std_sum = 0;
-		for (int i = sigXstart; i < (sigXend - N); i++) {
+		for (int i = sigXStart; i < (sigXEnd - N); i++) {
 			double X_avg = 0;
 			double sum_square_diffs = 0;
 			for (int w = 0; w < N; w++) {
@@ -322,7 +318,7 @@ public class KCP {
 			}
 			std_sum += Math.sqrt(sum_square_diffs / (N - 1));
 		}
-		return std_sum / (sigXend - sigXstart - N);
+		return std_sum / (sigXEnd - sigXStart - N);
 	}
 
 	private final double[] interval99_values = { 3.0, 3.864787, 3.781763,
