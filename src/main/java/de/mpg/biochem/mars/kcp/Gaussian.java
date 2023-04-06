@@ -34,6 +34,7 @@ public class Gaussian {
 	public double x0, y0, x_sigma, y_sigma, normalization, duration;
 
 	// 1D case
+	@SuppressWarnings("unused")
 	public Gaussian(double X, double X_sigma) {
 		x0 = X;
 		x_sigma = X_sigma;
@@ -48,8 +49,8 @@ public class Gaussian {
 	}
 
 	// 2D case
+	@SuppressWarnings("unused")
 	public Gaussian(double X, double X_sigma, double Y, double Y_sigma) {
-		// I guess eventually this function could take a array or something.
 		x0 = X;
 		y0 = Y;
 		x_sigma = X_sigma;
