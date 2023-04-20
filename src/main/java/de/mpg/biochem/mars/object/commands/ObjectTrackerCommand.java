@@ -192,15 +192,15 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "groupLabel, tabbedPaneWidth:450")
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "ImageInput.png";
+	private String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "name";
+	private String imageName = "name";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -215,13 +215,13 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String findGroup = "Find";
+	private String findGroup = "Find";
 
 	@Parameter(label = "Use median filter", style = "group:Find")
-	private final boolean useMedianFilter = false;
+	private boolean useMedianFilter = false;
 
 	@Parameter(label = "Median filter radius", style = "group:Find")
-	private final long medianFilterRadius = 2;
+	private long medianFilterRadius = 2;
 
 	@Parameter(label = "Use local otsu", style = "group:Find")
 	private boolean useLocalOstu = true;
@@ -242,7 +242,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String contourGroup = "Contour";
+	private String contourGroup = "Contour";
 
 	@Parameter(label = "Linear interpolation factor", style = "group:Contour")
 	private double interpolationFactor = 1;
@@ -251,7 +251,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * TRACKER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String trackGroup = "Track";
+	private String trackGroup = "Track";
 
 	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
@@ -269,14 +269,14 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private final String outputFigure = "ObjectArchive.png";
+	private String outputFigure = "ObjectArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private final String outputArchiveType = "type: ObjectArchive";
+	private String outputArchiveType = "type: ObjectArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
@@ -320,17 +320,17 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String previewGroup = "Preview";
+	private String previewGroup = "Preview";
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private final int previewTimeout = 10;
+	private int previewTimeout = 10;
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private final boolean preview = false;
+	private boolean preview = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private final String tObjectCount = "count: 0";
+	private String tObjectCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
