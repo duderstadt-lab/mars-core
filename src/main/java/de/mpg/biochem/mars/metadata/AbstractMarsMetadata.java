@@ -84,15 +84,15 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 
 	protected String microscope = "unknown";
 
-	// Directory where the images are stored..
+	// Directory where the images are stored.
 	protected String sourceDirectory = "unknown";
 
 	protected Map<Integer, MarsOMEImage> images =
-		new ConcurrentHashMap<Integer, MarsOMEImage>();
+			new ConcurrentHashMap<>();
 
 	// BDV views
 	protected LinkedHashMap<String, MarsBdvSource> bdvSources =
-		new LinkedHashMap<String, MarsBdvSource>();
+			new LinkedHashMap<>();
 
 	/**
 	 * Constructor for creating an empty MarsMetadata record.
@@ -115,11 +115,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	 * Constructor for creating a MarsMetadata record using OMEXMLMetadata.
 	 * 
 	 * @param UID The UID of the MarsMetadata record being created.
-	 * @param omexmlMetadata The OMEXMLMetadata to use.
+	 * @param omeXmlMetadata The OMEXMLMetadata to use.
 	 */
-	public AbstractMarsMetadata(String UID, OMEXMLMetadata omexmlMetadata) {
+	public AbstractMarsMetadata(String UID, OMEXMLMetadata omeXmlMetadata) {
 		super(UID);
-		populateMetadata(omexmlMetadata);
+		populateMetadata(omeXmlMetadata);
 	}
 
 	/**
@@ -225,8 +225,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 
 	/**
 	 * Used to merge another MarsMetadata record into this one. Assumes different
-	 * images are being merged. Keeps images in this record and add missing images
-	 * from the record provided.
+	 * images are being merged. Images from the record provided are added to this
+	 * record.
 	 * 
 	 * @param metadata MarsMetadata to merge into this one.
 	 */
@@ -242,8 +242,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 		for (MarsBdvSource source : metadata.getBdvSources())
 			putBdvSource(source);
 
-		// Get set of imageIndexes contained in this record..
-		Set<Integer> imageIndexes = new HashSet<Integer>();
+		// Get set of imageIndexes contained in this record.
+		Set<Integer> imageIndexes = new HashSet<>();
 		images().forEach(image -> imageIndexes.add(image.getImageID()));
 
 		List<MarsOMEImage> allImages = metadata.images().filter(

@@ -41,7 +41,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import ome.xml.meta.OMEXMLMetadata;
 
 /**
- * MarsImageMetadata records store image metadata and all information about
+ * MarsMetadata records store image metadata and all information about
  * specific data collections, imaging settings, frame timing. Mapping of
  * frames/slices to actual real time. These records can also include readouts
  * from other instruments connected to microscopes.

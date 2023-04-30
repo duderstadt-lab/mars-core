@@ -54,6 +54,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 
 	private final Map<String, String> properties = new ConcurrentHashMap<>();
 
+	@SuppressWarnings("unused")
 	public MarsBdvSource(String name) {
 		super();
 		this.name = name;
@@ -235,6 +236,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 	}
 
 	// Setters
+	@SuppressWarnings("unused")
 	public void setProperty(String name, String value) {
 		properties.put(name, value);
 	}
@@ -254,6 +256,7 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		return affine3D;
 	}
 
+	@SuppressWarnings("unused")
 	public AffineTransform3D getAffineTransform3D(double dX, double dY) {
 		AffineTransform3D affine = affine3D.copy();
 		affine.set(affine.get(0, 3) - dX, 0, 3);
