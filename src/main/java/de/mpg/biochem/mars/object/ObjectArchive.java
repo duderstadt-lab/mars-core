@@ -29,16 +29,14 @@
 
 package de.mpg.biochem.mars.object;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.stream.Stream;
-
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.stream.Stream;
 
 public class ObjectArchive extends
 	AbstractMoleculeArchive<MartianObject, MarsOMEMetadata, ObjectArchiveProperties, ObjectArchiveIndex>
@@ -63,7 +61,7 @@ public class ObjectArchive extends
 	}
 
 	public Stream<MartianObject> objects() {
-		return this.moleculeMap.keySet().stream().map(UID -> get(UID));
+		return this.moleculeMap.keySet().stream().map(this::get);
 	}
 
 	public ObjectArchiveProperties createProperties() {
