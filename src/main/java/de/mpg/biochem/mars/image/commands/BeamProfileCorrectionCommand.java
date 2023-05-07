@@ -26,33 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/*******************************************************************************
- * Copyright (C) 2019, Duderstadt Lab
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
-
 package de.mpg.biochem.mars.image.commands;
 
 import java.util.ArrayList;
@@ -149,7 +122,6 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	ImageProcessor backgroundIp;
 	double maximumPixelValue;
 
-	private Dataset dataset;
 	private ImagePlus image;
 	private ImagePlus backgroundImage;
 
@@ -157,13 +129,13 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	public void initialize() {
 		if (imageDisplay == null) return;
 
-		dataset = (Dataset) imageDisplay.getActiveView().getData();
+		Dataset dataset = (Dataset) imageDisplay.getActiveView().getData();
 		image = convertService.convert(imageDisplay, ImagePlus.class);
 
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
+		ArrayList<String> channels = new ArrayList<>();
 		for (int ch = 0; ch < channelCount; ch++)
 			channels.add(String.valueOf(ch));
 		channelItems.setChoices(channels);
@@ -177,7 +149,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
 		// getting images.
 		int numberOfImages = WindowManager.getImageCount();
-		List<String> imageNames = new ArrayList<String>();
+		List<String> imageNames = new ArrayList<>();
 
 		for (int i = 0; i < numberOfImages; i++) {
 			ImagePlus img = WindowManager.getImage(i + 1);
@@ -202,7 +174,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		// Output first part of log message...
 		logService.info(log);
 
-		// We assume there is just a single frame..
+		// We assume there is just a single 2D image
 		backgroundIp = backgroundImage.getProcessor();
 
 		// determine maximum pixel value
@@ -218,15 +190,10 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 			}
 		}
 
-		// Need to determine the number of threads
-		// final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
-		// ForkJoinPool forkJoinPool = new ForkJoinPool(1);
 		try {
-			// Start a thread to keep track of the progress of the number of frames
-			// that have been processed.
-			// Waiting call back to update the progress bar!!
+			// Start a thread to keep track of the progress of the number of frames.
+			// that have been processed and create a callback to update the progress bar.
 			Thread progressThread = new Thread() {
 
 				public synchronized void run() {
@@ -247,10 +214,9 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 			progressThread.start();
 
 			// This will spawn a bunch of threads that will correct the beam profile
-			// in individual frames
-			// in parallel
+			// for individual time points in parallel.
 			forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames())
-				.parallel().forEach(t -> correctFrame(Integer.valueOf(channel), t)))
+				.parallel().forEach(t -> correctFrame(Integer.parseInt(channel), t)))
 				.get();
 
 			progressUpdating.set(false);
@@ -324,7 +290,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 	}
 
 	public int getChannel() {
-		return Integer.valueOf(channel);
+		return Integer.parseInt(channel);
 	}
 
 	public void setImage(ImagePlus image) {
