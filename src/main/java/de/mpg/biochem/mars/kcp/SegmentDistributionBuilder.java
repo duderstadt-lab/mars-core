@@ -54,16 +54,16 @@ import de.mpg.biochem.mars.util.LogBuilder;
 public class SegmentDistributionBuilder {
 	// Here we use a bunch of global variables for everything
 	// Would be better not to do this and instead make all the
-	// methods self contained and static
+	// methods self-contained and static
 	// However, this is kind of how it was previously in the old version
 	// Also the advantage now is that you load the data once
-	// and can then make as many distributinos as you want on it
+	// and can then make as many distributions as you want on it
 
 	private final Random ran;
 
-	private double Dstart = 0;
-	private double Dend = 0;
-	private int bins = 20;
+	private final double start;
+	private final double end;
+	private final int bins;
 	private final double binWidth;
 
 	private boolean filter = false;
@@ -92,7 +92,7 @@ public class SegmentDistributionBuilder {
 	public SegmentDistributionBuilder(
 		MoleculeArchive<Molecule, MarsMetadata, MoleculeArchiveProperties<Molecule, MarsMetadata>, MoleculeArchiveIndex<Molecule, MarsMetadata>> archive,
 		ArrayList<String> UIDs, String yColumnName, String xColumnName,
-		double Dstart, double Dend, int bins, LogService logService,
+		double start, double end, int bins, LogService logService,
 		StatusService statusService)
 	{
 		this.archive = archive;
@@ -100,11 +100,11 @@ public class SegmentDistributionBuilder {
 		this.yColumnName = yColumnName;
 		this.xColumnName = xColumnName;
 
-		this.Dstart = Dstart;
-		this.Dend = Dend;
+		this.start = start;
+		this.end = end;
 		this.bins = bins;
 
-		binWidth = (Dend - Dstart) / bins;
+		binWidth = (end - start) / bins;
 
 		this.logService = logService;
 		this.statusService = statusService;
@@ -159,19 +159,19 @@ public class SegmentDistributionBuilder {
 
 		double[] distribution = generate_Gaussian_Distribution(gaussians);
 
-		double binWidth = (Dend - Dstart) / bins;
+		double binWidth = (end - start) / bins;
 
-		// Now lets determine the normalization constant...
+		// Now let's determine the normalization constant...
 		double normalization = 0;
 		for (int a = 0; a < bins; a++) {
 			normalization += distribution[a];
 		}
 		double prob_den_norm = normalization * binWidth;
 
-		// Now lets renormalize the distribution and go ahead and generate the
+		// Now let's normalize the distribution and go ahead and generate the
 		// table...
 		for (int a = 0; a < bins; a++) {
-			table.setValue("Rate", a, Dstart + (a + 0.5) * binWidth);
+			table.setValue("Rate", a, start + (a + 0.5) * binWidth);
 			table.setValue("Probability", a, distribution[a] / normalization);
 			table.setValue("Probability Density", a, distribution[a] / prob_den_norm);
 		}
@@ -216,7 +216,7 @@ public class SegmentDistributionBuilder {
 						double[] bootDistribution;
 
 						if (bootstrap_Molecules) {
-							ArrayList<String> resampledUIDs = new ArrayList<String>();
+							ArrayList<String> resampledUIDs = new ArrayList<>();
 							for (int i = 0; i < UIDs.size(); i++) {
 								resampledUIDs.add(UIDs.get(ran.nextInt(UIDs.size())));
 							}
@@ -227,7 +227,7 @@ public class SegmentDistributionBuilder {
 						else {
 							// bootstrap_Segments must be true...
 							ArrayList<Gaussian> resampledGaussians =
-								new ArrayList<Gaussian>();
+									new ArrayList<>();
 							for (int i = 0; i < gaussians.size(); i++) {
 								resampledGaussians.add(gaussians.get(ran.nextInt(gaussians
 									.size())));
@@ -237,7 +237,7 @@ public class SegmentDistributionBuilder {
 								resampledGaussians);
 						}
 
-						// Now lets determine the normalization constant...
+						// Now let's determine the normalization constant...
 						double norm = 0;
 						for (int a = 0; a < bins; a++) {
 							norm += bootDistribution[a];
@@ -292,17 +292,17 @@ public class SegmentDistributionBuilder {
 
 		double[] distribution = generate_Histogram_Distribution(allSegments);
 
-		// Now lets determine the normalization constant...
+		// Now let's determine the normalization constant...
 		double normalization = 0;
 		for (int a = 0; a < bins; a++) {
 			normalization += distribution[a];
 		}
 		double prob_den_norm = normalization * binWidth;
 
-		// Now lets renormalize the distribution and go ahead and generate the
+		// Now let's normalize the distribution and go ahead and generate the
 		// table...
 		for (int a = 0; a < bins; a++) {
-			table.setValue("Rate", a, Dstart + (a + 0.5) * binWidth);
+			table.setValue("Rate", a, start + (a + 0.5) * binWidth);
 			table.setValue("Probability", a, distribution[a] / normalization);
 			table.setValue("Probability Density", a, distribution[a] / prob_den_norm);
 		}
@@ -347,7 +347,7 @@ public class SegmentDistributionBuilder {
 						double[] bootDistribution;
 
 						if (bootstrap_Molecules) {
-							ArrayList<String> resampledUIDs = new ArrayList<String>();
+							ArrayList<String> resampledUIDs = new ArrayList<>();
 							for (int i = 0; i < UIDs.size(); i++) {
 								resampledUIDs.add(UIDs.get(ran.nextInt(UIDs.size())));
 							}
@@ -358,7 +358,7 @@ public class SegmentDistributionBuilder {
 						else {
 							// bootstrap_Segments must be true...
 							ArrayList<KCPSegment> resampledSegments =
-								new ArrayList<KCPSegment>();
+									new ArrayList<>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));
@@ -368,7 +368,7 @@ public class SegmentDistributionBuilder {
 								resampledSegments);
 						}
 
-						// Now lets determine the normalization constant...
+						// Now let's determine the normalization constant...
 						double norm = 0;
 						for (int a = 0; a < bins; a++) {
 							norm += bootDistribution[a];
@@ -406,16 +406,16 @@ public class SegmentDistributionBuilder {
 		return table;
 	}
 
-	public MarsTable buildDurationHistogram(final int nTheads) {
-		return buildDurationHistogram(false, false, nTheads);
+	public MarsTable buildDurationHistogram(final int nThreads) {
+		return buildDurationHistogram(false, false, nThreads);
 	}
 
-	public MarsTable buildProcessivityByMoleculeHistogram(final int nTheads) {
-		return buildDurationHistogram(false, true, nTheads);
+	public MarsTable buildProcessivityByMoleculeHistogram(final int nThreads) {
+		return buildDurationHistogram(false, true, nThreads);
 	}
 
-	public MarsTable buildProcessivityByRegionHistogram(final int nTheads) {
-		return buildDurationHistogram(true, false, nTheads);
+	public MarsTable buildProcessivityByRegionHistogram(final int nThreads) {
+		return buildDurationHistogram(true, false, nThreads);
 	}
 
 	private MarsTable buildDurationHistogram(boolean processivityPerRegion,
@@ -430,7 +430,7 @@ public class SegmentDistributionBuilder {
 		}
 
 		table.setColumnHeader(0, "Duration");
-		table.setColumnHeader(1, "Occurences");
+		table.setColumnHeader(1, "Occurrences");
 
 		ArrayList<KCPSegment> allSegments = collectSegments(UIDs);
 
@@ -438,8 +438,8 @@ public class SegmentDistributionBuilder {
 			processivityPerRegion, processivityPerMolecule);
 
 		for (int a = 0; a < bins; a++) {
-			table.setValue("Duration", a, Dstart + (a + 0.5) * binWidth);
-			table.setValue("Occurences", a, distribution[a]);
+			table.setValue("Duration", a, start + (a + 0.5) * binWidth);
+			table.setValue("Occurrences", a, distribution[a]);
 		}
 
 		// Now if we are bootstrapping we generate a series of resampled
@@ -482,7 +482,7 @@ public class SegmentDistributionBuilder {
 						double[] bootDistribution;
 
 						if (bootstrap_Molecules) {
-							ArrayList<String> resampledUIDs = new ArrayList<String>();
+							ArrayList<String> resampledUIDs = new ArrayList<>();
 							for (int i = 0; i < UIDs.size(); i++) {
 								resampledUIDs.add(UIDs.get(ran.nextInt(UIDs.size())));
 							}
@@ -493,7 +493,7 @@ public class SegmentDistributionBuilder {
 						else {
 							// bootstrap_Segments must be true...
 							ArrayList<KCPSegment> resampledSegments =
-								new ArrayList<KCPSegment>();
+									new ArrayList<>();
 							for (int i = 0; i < allSegments.size(); i++) {
 								resampledSegments.add(allSegments.get(ran.nextInt(allSegments
 									.size())));
@@ -504,7 +504,7 @@ public class SegmentDistributionBuilder {
 								processivityPerMolecule);
 						}
 
-						// Now lets determine the normalization constant...
+						// Now let's determine the normalization constant...
 						double norm = 0;
 						for (int a = 0; a < bins; a++) {
 							norm += bootDistribution[a];
@@ -552,12 +552,12 @@ public class SegmentDistributionBuilder {
 		for (int a = 0; a < bins; a++) {
 			// Here we should integrate to get the mean value in the bin instead of
 			// just taking the value at the center
-			for (double q = Dstart + a * binWidth; q < (Dstart + (a + 1) *
+			for (double q = start + a * binWidth; q < (start + (a + 1) *
 				binWidth); q += binWidth / integration_resolution)
 			{
-				for (int i = 0; i < Gaussians.size(); i++) {
-					distribution[a] += Gaussians.get(i).getValue(q) * Gaussians.get(i)
-						.getDuration() * (binWidth / integration_resolution);
+				for (Gaussian gaussian : Gaussians) {
+					distribution[a] += gaussian.getValue(q) * gaussian
+							.getDuration() * (binWidth / integration_resolution);
 				}
 			}
 		}
@@ -569,24 +569,18 @@ public class SegmentDistributionBuilder {
 		ArrayList<KCPSegment> allSegments)
 	{
 		double[] distribution = new double[bins];
-		for (int j = 0; j < distribution.length; j++)
-			distribution[j] = 0;
 
 		for (int a = 0; a < bins; a++) {
-			for (int i = 0; i < allSegments.size(); i++) {
-				if (Double.isNaN(allSegments.get(i).b) || Double.isNaN(allSegments.get(
-					i).x1) || Double.isNaN(allSegments.get(i).x2)) continue;
-				if (!filter || (allSegments.get(i).b > filter_region_start &&
-					allSegments.get(i).b < filter_region_stop))
-				{
+			for (KCPSegment allSegment : allSegments) {
+				if (Double.isNaN(allSegment.b) || Double.isNaN(allSegment.x1) || Double.isNaN(allSegment.x2)) continue;
+				if (!filter || (allSegment.b > filter_region_start &&
+						allSegment.b < filter_region_stop)) {
 					// We test to see if the current slope is in the current bin, which is
-					// centered at the positon on the x-axis.
-					if (((Dstart + a * binWidth) < allSegments.get(i).b) && (allSegments
-						.get(i).b <= (Dstart + (a + 1) * binWidth)))
-					{
+					// centered at the position on the x-axis.
+					if (((start + a * binWidth) < allSegment.b) && (allSegment.b <= (start + (a + 1) * binWidth))) {
 						// If it is inside we add the number of observations of that slope
 						// minus 1 since it takes at least two frames to find the slope.
-						distribution[a] += (allSegments.get(i).x2 - allSegments.get(i).x1);
+						distribution[a] += (allSegment.x2 - allSegment.x1);
 					}
 				}
 			}
@@ -599,61 +593,53 @@ public class SegmentDistributionBuilder {
 		boolean processivityPerMolecule)
 	{
 		double[] distribution = new double[bins];
-		for (int j = 0; j < distribution.length; j++)
-			distribution[j] = 0;
 
-		ArrayList<Double> durations = new ArrayList<Double>();
+		ArrayList<Double> durations = new ArrayList<>();
 		boolean wasInsideRegion = false;
 		double duration = 0;
 		String curUID = allSegments.get(0).getUID();
 
 		if (processivityPerMolecule) {
-			for (int i = 0; i < allSegments.size(); i++) {
-				if (!filter || (allSegments.get(i).b > filter_region_start &&
-					allSegments.get(i).b < filter_region_stop))
-				{
-					if (allSegments.get(i).getUID().equals(curUID)) {
+			for (KCPSegment allSegment : allSegments) {
+				if (!filter || (allSegment.b > filter_region_start &&
+						allSegment.b < filter_region_stop)) {
+					if (allSegment.getUID().equals(curUID)) {
 						durations.add(duration);
 						duration = 0;
 					}
-					duration += allSegments.get(i).b * (allSegments.get(i).x2 -
-						allSegments.get(i).x1);
-					curUID = allSegments.get(i).getUID();
+					duration += allSegment.b * (allSegment.x2 -
+							allSegment.x1);
+					curUID = allSegment.getUID();
 				}
 			}
-			if (duration != 0) durations.add(duration);
 		}
 		else {
-			for (int i = 0; i < allSegments.size(); i++) {
-				if (!filter || (allSegments.get(i).b > filter_region_start &&
-					allSegments.get(i).b < filter_region_stop))
-				{
-					if (allSegments.get(i).getUID().equals(curUID)) {
+			for (KCPSegment allSegment : allSegments) {
+				if (!filter || (allSegment.b > filter_region_start &&
+						allSegment.b < filter_region_stop)) {
+					if (allSegment.getUID().equals(curUID)) {
 						if (wasInsideRegion) {
 							durations.add(duration);
 							duration = 0;
 						}
 					}
-					if (processivityPerRegion) duration += allSegments.get(i).b *
-						(allSegments.get(i).x2 - allSegments.get(i).x1);
-					else duration += allSegments.get(i).x2 - allSegments.get(i).x1;
+					if (processivityPerRegion) duration += allSegment.b *
+							(allSegment.x2 - allSegment.x1);
+					else duration += allSegment.x2 - allSegment.x1;
 					wasInsideRegion = true;
-				}
-				else if (wasInsideRegion) {
+				} else if (wasInsideRegion) {
 					durations.add(duration);
 					duration = 0;
 					wasInsideRegion = false;
 				}
-				curUID = allSegments.get(i).getUID();
+				curUID = allSegment.getUID();
 			}
-			if (duration != 0) durations.add(duration);
 		}
+		if (duration != 0) durations.add(duration);
 
 		for (int a = 0; a < bins; a++) {
-			for (int i = 0; i < durations.size(); i++) {
-				if ((Dstart + a * binWidth) <= durations.get(i) && durations.get(
-					i) < (Dstart + (a + 1) * binWidth))
-				{
+			for (Double aDouble : durations) {
+				if ((start + a * binWidth) <= aDouble && aDouble < (start + (a + 1) * binWidth)) {
 					distribution[a]++;
 				}
 			}
@@ -661,11 +647,11 @@ public class SegmentDistributionBuilder {
 		return distribution;
 	}
 
-	private ArrayList<KCPSegment> collectSegments(Collection<String> UIDset) {
-		ArrayList<KCPSegment> allSegments = new ArrayList<KCPSegment>();
+	private ArrayList<KCPSegment> collectSegments(Collection<String> UIDSet) {
+		ArrayList<KCPSegment> allSegments = new ArrayList<>();
 
 		// Can't do this multithreaded at the moment since we are using an arraylist
-		UIDset.stream().forEach(UID -> {
+		UIDSet.forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				// Get the segments table for the current molecule
 				MarsTable segments = archive.get(UID).getSegmentsTable(xColumnName,
@@ -683,11 +669,11 @@ public class SegmentDistributionBuilder {
 		return allSegments;
 	}
 
-	private ArrayList<Gaussian> generateGaussians(Collection<String> UIDset) {
-		ArrayList<Gaussian> Gaussians = new ArrayList<Gaussian>();
+	private ArrayList<Gaussian> generateGaussians(Collection<String> UIDSet) {
+		ArrayList<Gaussian> Gaussians = new ArrayList<>();
 
 		// Can't do this multithreaded at the moment since we are using an arraylist
-		UIDset.stream().forEach(UID -> {
+		UIDSet.forEach(UID -> {
 			if (archive.get(UID).getSegmentsTable(xColumnName, yColumnName) != null) {
 				// Get the segments table for the current molecule
 				MarsTable segments = archive.get(UID).getSegmentsTable(xColumnName,
