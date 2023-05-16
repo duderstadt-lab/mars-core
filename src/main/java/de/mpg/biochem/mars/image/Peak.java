@@ -54,7 +54,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	RealLocalizable
 {
 
-	public static AtomicLong idGenerator = new AtomicLong(-1);
+	public static final AtomicLong idGenerator = new AtomicLong(-1);
 
 	private long id;
 	private long forwardLinkID = -1;
@@ -163,6 +163,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 			this.properties.put(key, peak.getProperties().get(key));
 	}
 
+	@SuppressWarnings("unused")
 	public void reset() {
 		reset(0, 0, -1);
 	}
@@ -204,15 +205,15 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	}
 
 	public double getHeight() {
-		return this.properties.get(HEIGHT).doubleValue();
+		return this.properties.get(HEIGHT);
 	}
 
 	public double getBaseline() {
-		return this.properties.get(BASELINE).doubleValue();
+		return this.properties.get(BASELINE);
 	}
 
 	public double getSigma() {
-		return this.properties.get(SIGMA).doubleValue();
+		return this.properties.get(SIGMA);
 	}
 
 	public PeakShape getShape() {
@@ -333,9 +334,8 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	}
 
 	public double getIntensity() {
-		if (this.properties.containsKey(INTENSITY)) return this.properties.get(
-			INTENSITY).doubleValue();
-		else return Double.NaN;
+		return this.properties.getOrDefault(
+				INTENSITY, Double.NaN);
 	}
 
 	public void setMedianBackground(double medianBackground) {
@@ -344,7 +344,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 
 	public double getMedianBackground() {
 		if (this.properties.containsKey(MEDIAN_BACKGROUND)) return this.properties
-			.get("Median_background").doubleValue();
+				.get("Median_background");
 		else return Double.NaN;
 	}
 
@@ -353,9 +353,8 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	}
 
 	public double getMeanBackground() {
-		if (this.properties.containsKey(MEAN_BACKGROUND)) return this.properties
-			.get(MEAN_BACKGROUND).doubleValue();
-		else return Double.NaN;
+		return this.properties
+				.getOrDefault(MEAN_BACKGROUND, Double.NaN);
 	}
 
 	public void setRsquared(double R2value) {
@@ -363,16 +362,15 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	}
 
 	public double getRSquared() {
-		if (properties.containsKey(R2)) return this.properties.get(R2)
-			.doubleValue();
+		if (properties.containsKey(R2)) return this.properties.get(R2);
 		else return 0;
 	}
 
-	// Override from RealLocalizable interface. So peaks can be passed to KDTree
-	// and other imglib2 functions.
+	// Override from RealLocalizable interface so peaks can be passed to KDTree
+	// and other ImgLib2 functions.
 	@Override
 	public int numDimensions() {
-		// We are simple minded and make no effort to think beyond 2 dimensions !
+		// We are simple-minded and make no effort to think beyond 2 dimensions.
 		return 2;
 	}
 

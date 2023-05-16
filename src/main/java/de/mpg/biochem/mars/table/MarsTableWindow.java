@@ -31,5 +31,5 @@ package de.mpg.biochem.mars.table;
 
 public interface MarsTableWindow {
 
-	public void update();
+	void update();
 }

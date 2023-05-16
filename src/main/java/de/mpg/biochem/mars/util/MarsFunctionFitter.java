@@ -37,15 +37,15 @@ public class MarsFunctionFitter {
 	public double chiSquared = 0.0;
 	public int iterations;
 
-	private MarsFunction function;
-	private int nParameters;
-	private double precision;
-	private double maxIterations;
+	private final MarsFunction function;
+	private final int nParameters;
+	private final double precision;
+	private final double maxIterations;
 
-	private double[] delta;
-	private double[][] alpha;
-	private double[][] beta;
-	private double[][] covar;
+	private final double[] delta;
+	private final double[][] alpha;
+	private final double[][] beta;
+	private final double[][] covar;
 	double[][] identityMatrix;
 
 	public MarsFunctionFitter(MarsFunction function, int nParameters) {
@@ -67,8 +67,8 @@ public class MarsFunctionFitter {
 		identityMatrix = new double[nParameters][nParameters];
 	}
 
-	private final double getChiSquared(double[] parameters, double[][] x,
-		double[] y, double[] sigma)
+	private double getChiSquared(double[] parameters, double[][] x,
+                                 double[] y, double[] sigma)
 	{
 		double sumOfSquares = 0.0;
 		double residual;
@@ -89,8 +89,8 @@ public class MarsFunctionFitter {
 		return sumOfSquares;
 	}
 
-	private final void calculateJacobian(double[] parameters, double[][] x,
-		double[] y, double[][] jacobian)
+	private void calculateJacobian(double[] parameters, double[][] x,
+                                   double[] y, double[][] jacobian)
 	{
 		for (int i = 0; i < nParameters; i++) {
 			parameters[i] += deltaParameter;
@@ -254,7 +254,7 @@ public class MarsFunctionFitter {
 		double[][] x = { { 0 }, { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, {
 			8 }, { 9 }, { 10 }, { 11 }, { 12 }, { 13 } };
 
-		double y[] = { 3365.333251953, 3206.923095703, 3215.769287109,
+		double[] y = { 3365.333251953, 3206.923095703, 3215.769287109,
 			3474.846191406, 4320.333496094, 5953.307617188, 7291.846191406,
 			7010.307617188, 5404.307617188, 4016.153808594, 3668.281982422,
 			3543.769287109, 3320.820556641, 3248.000000000 };
@@ -286,24 +286,21 @@ public class MarsFunctionFitter {
 		System.out.printf("sum of squares : %f\n", lm.chiSquared);
 
 		System.out.println("parameters :");
-		for (int i = 0; i < p.length; i++)
-			System.out.printf("%f, ", p[i]);
+		for (double v : p) System.out.printf("%f, ", v);
 		System.out.println();
 
 		System.out.println("standard deviation :");
-		for (int i = 0; i < s.length; i++)
-			System.out.printf("%f, ", s[i]);
+		for (double v : s) System.out.printf("%f, ", v);
 		System.out.println();
 
 		// calculating R^2
 		double mean = 0;
-		for (int i = 0; i < y.length; i++)
-			mean += y[i];
+		for (double v : y) mean += v;
 		mean /= y.length;
 
 		double sst = 0;
-		for (int i = 0; i < y.length; i++) {
-			double deviation = y[i] - mean;
+		for (double v : y) {
+			double deviation = v - mean;
 			sst += deviation * deviation;
 		}
 
@@ -330,16 +327,14 @@ public class MarsFunctionFitter {
 	private static void printMatrices(double[][] l, double[][] r) {
 
 		System.out.println("left :");
-		for (int i = 0; i < l.length; i++) {
-			for (int j = 0; j < l[i].length; j++)
-				System.out.printf("%f, ", l[i][j]);
+		for (double[] doubles : l) {
+			for (double aDouble : doubles) System.out.printf("%f, ", aDouble);
 			System.out.println();
 		}
 
 		System.out.println("right :");
-		for (int i = 0; i < r.length; i++) {
-			for (int j = 0; j < r[i].length; j++)
-				System.out.printf("%f, ", r[i][j]);
+		for (double[] doubles : r) {
+			for (double aDouble : doubles) System.out.printf("%f, ", aDouble);
 			System.out.println();
 		}
 

@@ -307,7 +307,7 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @param name The name of the position to retrieve.
 	 * @return The MarsPosition with the name given.
 	 */
-	public MarsPosition getPosition(String name);
+    MarsPosition getPosition(String name);
 
 	/**
 	 * Check if the record contains a {@link MarsPosition} using the name.
@@ -315,21 +315,21 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @param name The name of the position to check for.
 	 * @return True if the position exists, false otherwise.
 	 */
-	public boolean hasPosition(String name);
+    boolean hasPosition(String name);
 
 	/**
 	 * Remove a {@link MarsPosition} from the record using the name.
 	 * 
 	 * @param name The name of the position to remove.
 	 */
-	public void removePosition(String name);
+    void removePosition(String name);
 
 	/**
 	 * Get the set of position names contained in this record.
 	 * 
 	 * @return The set of MarsPosition names.
 	 */
-	public Set<String> getPositionNames();
+    Set<String> getPositionNames();
 
 	/**
 	 * Get the map for all regions.

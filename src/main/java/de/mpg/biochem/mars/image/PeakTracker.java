@@ -29,25 +29,6 @@
 
 package de.mpg.biochem.mars.image;
 
-import static java.util.stream.Collectors.toList;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-
-import net.imglib2.KDTree;
-import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
-
-import org.decimal4j.util.DoubleRounder;
-import org.scijava.log.LogService;
-
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.molecule.Molecule;
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
@@ -55,6 +36,18 @@ import de.mpg.biochem.mars.object.MartianObject;
 import de.mpg.biochem.mars.object.ObjectArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsMath;
+import net.imglib2.KDTree;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import org.decimal4j.util.DoubleRounder;
+import org.scijava.log.LogService;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * PeakTracker tracks the relative position of peaks over time based on peak
@@ -68,13 +61,13 @@ import de.mpg.biochem.mars.util.MarsMath;
  */
 public class PeakTracker {
 
-	private double[] maxDifference;
-	private boolean[] ckMaxDifference;
-	private int minTrajectoryLength;
-	private double searchRadius;
-	private boolean verbose = false;
-	private int minimumDistance;
-	private double pixelSize = 1;
+	private final double[] maxDifference;
+	private final boolean[] ckMaxDifference;
+	private final int minTrajectoryLength;
+	private final double searchRadius;
+	private final boolean verbose;
+	private final int minimumDistance;
+	private final double pixelSize;
 
 	private String metaDataUID;
 
@@ -85,7 +78,7 @@ public class PeakTracker {
 	// that T.
 	private ConcurrentMap<Integer, List<PeakLink>> possibleLinks;
 
-	private LogService logService;
+	private final LogService logService;
 
 	public PeakTracker(double maxDifferenceX, double maxDifferenceY,
 		double maxDifferenceT, int minimumDistance, int minTrajectoryLength,
@@ -103,21 +96,18 @@ public class PeakTracker {
 		maxDifference[5] = maxDifferenceT;
 
 		ckMaxDifference = new boolean[3];
-		ckMaxDifference[0] = false;
-		ckMaxDifference[1] = false;
-		ckMaxDifference[2] = false;
 
 		this.minimumDistance = minimumDistance;
 		this.minTrajectoryLength = minTrajectoryLength;
 		this.pixelSize = pixelSize;
 
-		if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
-		else searchRadius = maxDifference[3];
+		searchRadius = Math.max(maxDifference[2], maxDifference[3]);
 	}
 
+	@SuppressWarnings("unused")
 	public PeakTracker(double[] maxDifference, boolean[] ckMaxDifference,
-		int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
-		boolean verbose, LogService logService, double pixelSize)
+					   int minimumDistance, int minTrajectoryLength, boolean writeIntegration,
+					   boolean verbose, LogService logService, double pixelSize)
 	{
 		this.logService = logService;
 		this.verbose = verbose;
@@ -127,14 +117,13 @@ public class PeakTracker {
 		this.minTrajectoryLength = minTrajectoryLength;
 		this.pixelSize = pixelSize;
 
-		if (maxDifference[2] >= maxDifference[3]) searchRadius = maxDifference[2];
-		else searchRadius = maxDifference[3];
+		searchRadius = Math.max(maxDifference[2], maxDifference[3]);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
 		MoleculeArchive<?, ?, ?, ?> archive, final int channel, final int nThreads)
 	{
-		List<Integer> trackingTimePoints = (List<Integer>) peakStack.keySet()
+		List<Integer> trackingTimePoints = peakStack.keySet()
 			.stream().sorted().collect(toList());
 		track(peakStack, archive, channel, trackingTimePoints, nThreads);
 	}
@@ -152,22 +141,22 @@ public class PeakTracker {
 
 		logService.info("building KDTrees and finding possible Peak links...");
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		try {
 
 			forkJoinPool.submit(() -> trackingTimePoints.parallelStream().forEach(
 				t -> {
 					// Remember this operation will change the order of the peaks in the
-					// Arraylists but that should not be a problem here...
+					// Arraylists but that should not be a problem here.
 
-					// If you have a very small ROI and there are fames with no actual
+					// If you have a very small ROI and there are frames with no actual
 					// peaks in them.
 					// you need to skip that T.
 					if (peakStack.containsKey(t))
 					{
-						KDTree<Peak> tree = new KDTree<Peak>(peakStack.get(t), peakStack
-							.get(t));
+						KDTree<Peak> tree = new KDTree<>(peakStack.get(t), peakStack
+								.get(t));
 						KDTreeStack.put(trackingTimePoints.indexOf(t), tree);
 					}
 				})).get();
@@ -186,22 +175,22 @@ public class PeakTracker {
 		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 
 		HashMap<String, Integer> trackLengths = new HashMap<>();
 
-		List<Peak> trackFirstT = new ArrayList<Peak>();
+		List<Peak> trackFirstT = new ArrayList<>();
 
 		logService.info("Connecting most likely links...");
 
-		starttime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 
 		for (int indexT = 0; indexT < possibleLinks.size(); indexT++) {
 			List<PeakLink> tPossibleLinks = possibleLinks.get(indexT);
 			if (tPossibleLinks != null) {
-				for (int i = 0; i < tPossibleLinks.size(); i++) {
-					Peak from = tPossibleLinks.get(i).getFrom();
-					Peak to = tPossibleLinks.get(i).getTo();
+				for (PeakLink tPossibleLink : tPossibleLinks) {
+					Peak from = tPossibleLink.getFrom();
+					Peak to = tPossibleLink.getTo();
 
 					if (from.getForwardLink() != null || to.getBackwardLink() != null) {
 						// already linked
@@ -216,7 +205,7 @@ public class PeakTracker {
 						if (!KDTreeStack.containsKey(q)) continue;
 
 						RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-							new RadiusNeighborSearchOnKDTree<Peak>(KDTreeStack.get(q));
+								new RadiusNeighborSearchOnKDTree<>(KDTreeStack.get(q));
 						radiusSearch.search(to, minimumDistance, false);
 
 						for (int w = 0; w < radiusSearch.numNeighbors(); w++) {
@@ -228,14 +217,13 @@ public class PeakTracker {
 					if (from.getTrackUID() != null && !regionAlreadyLinked) {
 						to.setTrackUID(from.getTrackUID());
 						trackLengths.put(from.getTrackUID(), trackLengths.get(from
-							.getTrackUID()) + 1);
+								.getTrackUID()) + 1);
 
 						// Add references in each peak for forward and backward links...
 						from.setForwardLink(to);
 						to.setBackwardLink(from);
 
-					}
-					else if (!regionAlreadyLinked) {
+					} else if (!regionAlreadyLinked) {
 						// Generate a new UID
 						String UID = MarsMath.getUUID58();
 						from.setTrackUID(UID);
@@ -252,11 +240,11 @@ public class PeakTracker {
 		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 
 		logService.info("Adding molecules to archive...");
 
-		starttime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 
 		// I think we need to reinitialize this pool since I shut it down above.
 		forkJoinPool = new ForkJoinPool(nThreads);
@@ -284,7 +272,7 @@ public class PeakTracker {
 		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 	}
 
 	private void findPossibleLinks(ConcurrentMap<Integer, List<Peak>> peakStack,
@@ -292,7 +280,7 @@ public class PeakTracker {
 	{
 		if (!peakStack.containsKey(trackingTimePoints.get(indexT))) return;
 
-		List<PeakLink> tPossibleLinks = new ArrayList<PeakLink>();
+		List<PeakLink> tPossibleLinks = new ArrayList<>();
 
 		int endT = indexT + (int) maxDifference[5];
 
@@ -300,13 +288,13 @@ public class PeakTracker {
 		if (endT >= trackingTimePoints.size()) endT = trackingTimePoints.size() - 1;
 
 		// Here we only need to loop until maxDifference[5] slices into the
-		// future...
+		// future.
 		for (int j = indexT + 1; j <= endT; j++) {
-			// can't search if there are not peaks in that given slice...
+			// can't search if there are no peaks in the given slice.
 			if (!KDTreeStack.containsKey(j)) continue;
 
 			RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-				new RadiusNeighborSearchOnKDTree<Peak>(KDTreeStack.get(j));
+					new RadiusNeighborSearchOnKDTree<>(KDTreeStack.get(j));
 			for (Peak linkFrom : peakStack.get(trackingTimePoints.get(indexT))) {
 				radiusSearch.search(linkFrom, searchRadius, false);
 
@@ -316,9 +304,8 @@ public class PeakTracker {
 					boolean valid = true;
 
 					// We check distance again here because the KDTree search can only do
-					// radius
-					// and perhaps we want to look at dy bigger than dx
-					// this is why we take the larger difference above...
+					// radius, and perhaps we want to look at dy bigger than dx.
+					// This is why we take the larger difference above.
 					if (ckMaxDifference[0] && Math.abs(linkFrom.getBaseline() - linkTo
 						.getBaseline()) > maxDifference[0]) valid = false;
 					else if (ckMaxDifference[1] && Math.abs(linkFrom.getHeight() - linkTo
@@ -339,23 +326,17 @@ public class PeakTracker {
 			}
 		}
 		// Now we sort all the possible links for this T...
-		Collections.sort(tPossibleLinks, new Comparator<PeakLink>() {
-
-			@Override
-			public int compare(PeakLink o1, PeakLink o2) {
-				// Sort by T difference
-				if (o1.getTDifference() != o2.getTDifference()) return Double.compare(o1
+		tPossibleLinks.sort((o1, o2) -> {
+			// Sort by T difference
+			if (o1.getTDifference() != o2.getTDifference()) return Double.compare(o1
 					.getTDifference(), o2.getTDifference());
 
-				// next sort by distance - the shorter linking distance wins...
-				return Double.compare(o1.getSquaredDistance(), o2.getSquaredDistance());
-			}
-
+			// next sort by distance - the shorter linking distance wins...
+			return Double.compare(o1.getSquaredDistance(), o2.getSquaredDistance());
 		});
 		possibleLinks.put(indexT, tPossibleLinks);
 	}
 
-	@SuppressWarnings("unchecked")
 	private <M extends Molecule> void buildMolecule(Peak startingPeak,
 		HashMap<String, Integer> trajectoryLengths,
 		MoleculeArchive<M, ?, ?, ?> archive, int channel,
@@ -363,13 +344,13 @@ public class PeakTracker {
 	{
 		// don't add the molecule if the trajectory length is below
 		// minTrajectoryLength
-		if (trajectoryLengths.get(startingPeak.getTrackUID())
-			.intValue() < minTrajectoryLength) return;
+		if (trajectoryLengths.get(startingPeak.getTrackUID()) < minTrajectoryLength) return;
 
-		Molecule mol = archive.createMolecule(startingPeak.getTrackUID());
+		M mol = archive.createMolecule(startingPeak.getTrackUID());
 		mol.setMetadataUID(metaDataUID);
 		mol.setChannel(channel);
-		mol.setImage(archive.metadata().findFirst().get().images().findFirst().get()
+		if (archive.metadata().findFirst().isPresent() && archive.metadata().findFirst().get().images().findFirst().isPresent())
+			mol.setImage(archive.metadata().findFirst().get().images().findFirst().get()
 			.getImageID());
 
 		MarsTable table = new MarsTable();
@@ -418,11 +399,11 @@ public class PeakTracker {
 				r.setValue(Peak.X, r.getValue(Peak.X) * pixelSize);
 				r.setValue(Peak.Y, r.getValue(Peak.Y) * pixelSize);
 
-				// What about objects? The polygons be multiplied also by pixelSize...
+				// What about objects? The polygons be multiplied also by pixelSize.
 			});
 		}
 
 		mol.setTable(table);
-		archive.put((M) mol);
+		archive.put(mol);
 	}
 }

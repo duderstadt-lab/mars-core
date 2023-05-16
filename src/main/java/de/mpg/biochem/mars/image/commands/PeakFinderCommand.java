@@ -51,7 +51,7 @@ import net.imagej.DatasetService;
 import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
 import net.imagej.display.ImageDisplay;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.roi.IterableRegion;
@@ -159,15 +159,15 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private String inputGroup = "Input";
+	private final String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private String inputFigure = "ImageInput.png";
+	private final String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private String imageName = "?";
+	private final String imageName = "?";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -182,7 +182,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String findGroup = "Find";
+	private final String findGroup = "Find";
 
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
@@ -203,7 +203,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String fitGroup = "Fit";
+	private final String fitGroup = "Fit";
 
 	@Parameter(label = "Fit", style = "group:Fit")
 	private boolean fitPeaks = false;
@@ -219,7 +219,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * INTEGRATION SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String integrateGroup = "Integrate";
+	private final String integrateGroup = "Integrate";
 
 	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
@@ -234,7 +234,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String outputGroup = "Output";
+	private final String outputGroup = "Output";
 
 	@Parameter(label = "Generate peak count table", style = "group:Output")
 	private boolean generatePeakCountTable;
@@ -260,25 +260,25 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private String previewGroup = "Preview";
+	private final String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private boolean preview = false;
+	private final boolean preview = false;
 
 	@Parameter(label = "Roi", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE +
 		", group:Preview", choices = { "circle", "point" })
 	private String roiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private String tPeakCount = "count: 0";
+	private final String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int theT;
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private int previewTimeout = 10;
+	private final int previewTimeout = 10;
 
 	@Parameter(label = "Help",
 		description = "View a web page detailing Peak Finder options",
@@ -331,7 +331,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
+		ArrayList<String> channels = new ArrayList<>();
 		for (int ch = 1; ch <= channelCount; ch++)
 			channels.add(String.valueOf(ch - 1));
 		channelItems.setChoices(channels);
@@ -381,9 +381,9 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 		peakLabelsStack = new ArrayList<>();
 		for (int i = 0; i < rois.length; i++)
-			peakLabelsStack.add(new ConcurrentHashMap<Integer, List<Peak>>());
+			peakLabelsStack.add(new ConcurrentHashMap<>());
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 		logService.info("Finding Peaks...");
 		if (allFrames) {
 			int zDim = dataset.getImgPlus().dimensionIndex(Axes.Z);
@@ -394,11 +394,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 			final int frameCount = (swapZandT) ? zSize : tSize;
 
-			List<Runnable> tasks = new ArrayList<Runnable>();
+			List<Runnable> tasks = new ArrayList<>();
 			for (int t = 0; t < frameCount; t++) {
 				final int theT = t;
 				tasks.add(() -> {
-					List<List<Peak>> labelPeaks = findPeaksInT(Integer.valueOf(channel),
+					List<List<Peak>> labelPeaks = findPeaksInT(Integer.parseInt(channel),
 						theT, useDogFilter, fitPeaks, integrate, rois);
 					for (int i = 0; i < rois.length; i++)
 						if (labelPeaks.get(i).size() > 0) peakLabelsStack.get(i).put(theT,
@@ -410,11 +410,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 				.showStatus(peakLabelsStack.get(0).size(), frameCount,
 					"Finding Peaks for " + dataset.getName()), tasks, nThreads);
 		}
-		else peakLabelsStack.get(0).put(theT, findPeaksInT(Integer.valueOf(channel),
+		else peakLabelsStack.get(0).put(theT, findPeaksInT(Integer.parseInt(channel),
 			theT, useDogFilter, fitPeaks, integrate, rois).get(0));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 
 		if (generatePeakCountTable) generatePeakCountTable();
 
@@ -425,12 +425,11 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		if (image != null) image.setRoi(imageRoi);
 
 		logService.info("Finished in " + DoubleRounder.round((System
-			.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+			.currentTimeMillis() - startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 	}
 	
-	@SuppressWarnings("unchecked")
-	private <T extends RealType<T> & NativeType<T>> List<List<Peak>> findPeaksInT(
+	private List<List<Peak>> findPeaksInT(
 		int channel, int t, boolean useDogFilter, boolean fitPeaks,
 		boolean integrate, Roi[] processingRois)
 	{
@@ -451,29 +450,29 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		if (useDogFilter) filteredImg = MarsImageUtils.dogFilter(img,
 			dogFilterRadius, numThreads);
 
-		List<List<Peak>> labelPeakLists = new ArrayList<List<Peak>>();
-		for (int i = 0; i < processingRois.length; i++) {
-			List<Peak> peaks = new ArrayList<Peak>();
+		List<List<Peak>> labelPeakLists = new ArrayList<>();
+		for (Roi points : processingRois) {
+			List<Peak> peaks;
 
-			RealMask roiMask = convertService.convert(processingRois[i],
-				RealMask.class);
+			RealMask roiMask = convertService.convert(points,
+					RealMask.class);
 			IterableRegion<BoolType> iterableROI = MarsImageUtils.toIterableRegion(
-				roiMask, img);
+					roiMask, img);
 
-			if (useDogFilter) peaks = MarsImageUtils.findPeaks(filteredImg, Regions
-				.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
-				findNegativePeaks);
-			else peaks = MarsImageUtils.findPeaks(img, Regions.sample(iterableROI,
-				img), t, threshold, minimumDistance, findNegativePeaks);
+			if (useDogFilter) peaks = MarsImageUtils.findPeaks(Regions
+							.sample(iterableROI, filteredImg), t, threshold, minimumDistance,
+					findNegativePeaks);
+			else peaks = MarsImageUtils.findPeaks(Regions.sample(iterableROI,
+					img), t, threshold, minimumDistance, findNegativePeaks);
 
 			if (fitPeaks) {
 				peaks = MarsImageUtils.fitPeaks(img, img, peaks, fitRadius,
-					dogFilterRadius, findNegativePeaks, RsquaredMin);
+						dogFilterRadius, findNegativePeaks, RsquaredMin);
 				peaks = MarsImageUtils.removeNearestNeighbors(peaks, minimumDistance);
 			}
 
 			if (integrate) MarsImageUtils.integratePeaks(img, img, peaks,
-				integrationInnerRadius, integrationOuterRadius);
+					integrationInnerRadius, integrationOuterRadius);
 
 			labelPeakLists.add(peaks);
 		}
@@ -508,19 +507,18 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		for (Map<Integer, List<Peak>> peakStack : peakLabelsStack)
 			for (int t : peakStack.keySet()) {
 				List<Peak> framePeaks = peakStack.get(t);
-				for (int j = 0; j < framePeaks.size(); j++) {
+				for (Peak framePeak : framePeaks) {
 					peakTable.appendRow();
-					peakTable.setValue(Peak.T, row, (double) framePeaks.get(j).getT());
-					peakTable.setValue(Peak.X, row, framePeaks.get(j).getX());
-					peakTable.setValue(Peak.Y, row, framePeaks.get(j).getY());
+					peakTable.setValue(Peak.T, row, framePeak.getT());
+					peakTable.setValue(Peak.X, row, framePeak.getX());
+					peakTable.setValue(Peak.Y, row, framePeak.getY());
 					if (verbose) {
-						for (String name : framePeaks.get(j).getProperties().keySet())
-							peakTable.setValue(name, row, framePeaks.get(j).getProperties()
-								.get(name));
-					}
-					else if (framePeaks.get(j).getProperties().containsKey(
-						Peak.INTENSITY)) peakTable.setValue(Peak.INTENSITY, row, framePeaks
-							.get(j).getProperties().get(Peak.INTENSITY));
+						for (String name : framePeak.getProperties().keySet())
+							peakTable.setValue(name, row, framePeak.getProperties()
+									.get(name));
+					} else if (framePeak.getProperties().containsKey(
+							Peak.INTENSITY))
+						peakTable.setValue(Peak.INTENSITY, row, framePeak.getProperties().get(Peak.INTENSITY));
 					row++;
 				}
 			}
@@ -536,7 +534,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		int peakNumber = 1;
 		for (Map<Integer, List<Peak>> peakStack : peakLabelsStack)
 			for (int t : peakStack.keySet())
-				peakNumber = addToRoiManager(peakStack.get(t), Integer.valueOf(channel),
+				peakNumber = addToRoiManager(peakStack.get(t), Integer.parseInt(channel),
 					t, peakNumber);
 
 		statusService.showStatus("Done adding ROIs to Manager");
@@ -548,8 +546,8 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		if (roiManager == null) roiManager = new RoiManager();
 		int pCount = startingPeakNum;
 		for (Peak peak : peaks) {
-			// The pixel origin for OvalRois is at the upper left corner !!!!
-			// The pixel origin for PointRois is at the center !!!
+			// The pixel origin for OvalRois is in the upper left corner.
+			// The pixel origin for PointRois is in the center.
 			Roi peakRoi = (roiType.equals("point")) ? new PointRoi(peak
 				.getDoublePosition(0), peak.getDoublePosition(1)) : new OvalRoi(peak
 					.getDoublePosition(0) + 0.5 - integrationInnerRadius, peak
@@ -570,7 +568,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	public void preview() {
 		if (preview) {
 			if (swapZandT) image.setSlice(theT + 1);
-			else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+			else image.setPosition(Integer.parseInt(channel) + 1, 1, theT + 1);
 
 			ExecutorService es = Executors.newSingleThreadExecutor();
 			try {
@@ -591,7 +589,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							(int) dataset.dimension(1)));
 					}
 
-					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.valueOf(
+					List<List<Peak>> labelPeakLists = findPeaksInT(Integer.parseInt(
 						channel), theT, useDogFilter, fitPeaks, false, rois, Runtime.getRuntime().availableProcessors());
 
 					if (Thread.currentThread().isInterrupted()) return;
@@ -615,9 +613,8 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 					else {
 						for (List<Peak> labelPeaks : labelPeakLists)
 							for (Peak p : labelPeaks) {
-								// The pixel origin for OvalRois is at the upper left corner
-								// !!!!
-								// The pixel origin for PointRois is at the center !!!
+								// The pixel origin for OvalRois is in the upper left corner.
+								// The pixel origin for PointRois is in the center.
 								final OvalRoi ovalRoi = new OvalRoi(p.getDoublePosition(0) +
 									0.5 - integrationInnerRadius, p.getDoublePosition(1) + 0.5 -
 										integrationInnerRadius, integrationInnerRadius * 2,
@@ -643,7 +640,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 							for (Window window : Window.getWindows())
 								if (window instanceof JDialog && ((JDialog) window).getTitle()
 									.equals(getInfo().getLabel())) MarsUtil
-										.updateJLabelTextInContainer(((JDialog) window), "count: ",
+										.updateJLabelTextInContainer(window, "count: ",
 											countString);
 						}
 					});
@@ -664,6 +661,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 		}
 	}
 
+	@SuppressWarnings("unused")
 	protected void openWebPage() {
 		try {
 			String urlString =
@@ -685,6 +683,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	}
 
 	/** Called when the {@link #preview} parameter value changes. */
+	@SuppressWarnings("unused")
 	protected void previewChanged() {
 		if (!preview) cancel();
 	}
@@ -776,7 +775,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	}
 
 	public int getChannel() {
-		return Integer.valueOf(channel);
+		return Integer.parseInt(channel);
 	}
 
 	public void setT(int theT) {

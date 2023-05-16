@@ -46,20 +46,20 @@ package de.mpg.biochem.mars.molecule;
 public interface MoleculeArchiveWindow {
 
 	/**
-	 * This is used to report the progress for a long running task working on the
-	 * archive when its locked. This should be a value between 0 and 1 with 1
+	 * This is used to report the progress for a long-running task working on the
+	 * archive when it is locked. This should be a value between 0 and 1 with 1
 	 * representing completion.
 	 * 
 	 * @param progress Fraction of job that is complete.
 	 */
-	public void setProgress(double progress);
+    void setProgress(double progress);
 
 	/**
 	 * Update the message presented on the lock screen.
 	 * 
 	 * @param message Message presented on the lock screen.
 	 */
-	public void updateLockMessage(String message);
+    void updateLockMessage(String message);
 
 	/**
 	 * Add a message to the log that is presented in the background of the lock
@@ -69,7 +69,7 @@ public interface MoleculeArchiveWindow {
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
-	public void log(String message);
+    void log(String message);
 
 	/**
 	 * Add a message and start a new line in the log that is presented in the
@@ -79,7 +79,7 @@ public interface MoleculeArchiveWindow {
 	 * 
 	 * @param message String message to add to the lock screen log background.
 	 */
-	public void logln(String message);
+    void logln(String message);
 
 	/**
 	 * Lock the MoleculeArchive window to prevent changes from being made at the
@@ -89,16 +89,16 @@ public interface MoleculeArchiveWindow {
 	 * 
 	 * @param message Message to present in the lock screen.
 	 */
-	public void lock(String message);
+    void lock(String message);
 
 	/**
 	 * Lock the MoleculeArchive window to prevent changes from being made at the
 	 * same time as calculations are running on the archive.
 	 */
-	public void lock();
+    void lock();
 
 	/**
 	 * Unlock the MoleculeArchive window once processing is complete.
 	 */
-	public void unlock();
+    void unlock();
 }

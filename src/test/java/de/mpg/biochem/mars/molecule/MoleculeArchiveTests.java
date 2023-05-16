@@ -428,11 +428,7 @@ public class MoleculeArchiveTests {
 
 		MarsOMEImage image = new MarsOMEImage();
 		image.setImageID(0);
-		// image.setID(id);
-		// image.setPixelID(pixelID);
-		// image.setAquisitionDate(imageAquisitionDate);
 		image.setName("simulated");
-		// image.setDescription(imageDescription);
 
 		// create channels
 		for (int channelIndex = 0; channelIndex < cNum; channelIndex++) {

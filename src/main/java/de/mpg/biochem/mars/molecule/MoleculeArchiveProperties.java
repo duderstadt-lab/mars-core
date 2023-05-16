@@ -164,7 +164,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * Add molecule position names to the global set that contains a record of all
 	 * unique position names that are being used.
 	 * 
-	 * @param positions The positions names to add.
+	 * @param positions The position names to add.
 	 */
 	void addAllPositions(Set<String> positions);
 
@@ -378,18 +378,18 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * @param properties MoleculeArchiveProperties record to merge into this one.
 	 * @param archiveName Name of the archive that is being merged with this one.
 	 */
-	void merge(MoleculeArchiveProperties<M, I> properties, String archiveName);
+	void merge(MoleculeArchiveProperties<?, ?> properties, String archiveName);
 
 	/**
 	 * Save the archive properties to a file.
 	 * 
 	 * @param directory Folder to save to.
-	 * @param jfactory JsonFactory to use when saving.
+	 * @param jFactory JsonFactory to use when saving.
 	 * @param fileExtension The file extension (.json or .sml).
-	 * @throws IOException An exception if thrown if there is a problem with the
+	 * @throws IOException An exception is thrown if there is a problem with the
 	 *           file path.
 	 */
-	void save(File directory, JsonFactory jfactory, String fileExtension)
+	void save(File directory, JsonFactory jFactory, String fileExtension)
 		throws IOException;
 
 	/**
@@ -410,6 +410,7 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	 * 
 	 * @param metadata The {@link MarsMetadata} to add the properties from.
 	 */
+	@SuppressWarnings("EmptyMethod")
 	void addMetadataProperties(I metadata);
 
 	/**

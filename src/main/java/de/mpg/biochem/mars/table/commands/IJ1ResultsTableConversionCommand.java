@@ -48,7 +48,7 @@ import ij.WindowManager;
 import ij.measure.ResultsTable;
 import ij.text.TextPanel;
 import ij.text.TextWindow;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, label = "Import IJ1 ResultsTable", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -101,7 +101,7 @@ public class IJ1ResultsTableConversionCommand extends DynamicCommand implements
 	public static ArrayList<String> getResultsTableTitles() {
 
 		Frame[] nonImageWindows = WindowManager.getNonImageWindows();
-		ArrayList<String> openTables = new ArrayList<String>();
+		ArrayList<String> openTables = new ArrayList<>();
 
 		for (Frame frame : nonImageWindows) {
 

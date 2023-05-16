@@ -29,50 +29,15 @@
 
 package de.mpg.biochem.mars.table;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileGenerator;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.zip.Deflater;
-
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import de.mpg.biochem.mars.util.MarsMath;
+import de.mpg.biochem.mars.util.MarsUtil;
+import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
@@ -82,17 +47,20 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
-import org.scijava.table.AbstractTable;
-import org.scijava.table.Column;
-import org.scijava.table.DoubleColumn;
-import org.scijava.table.GenericColumn;
-import org.scijava.table.GenericTable;
-import org.scijava.table.Table;
+import org.scijava.table.*;
 
-import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-import de.mpg.biochem.mars.util.MarsMath;
-import de.mpg.biochem.mars.util.MarsUtil;
-import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import java.util.zip.Deflater;
 
 /**
  * Mars implementation of a scijava results table. All numbers are stored as
@@ -126,7 +94,7 @@ import de.mpg.biochem.mars.util.MarsUtil.ThrowingConsumer;
  * 
  * @author Karl Duderstadt
  */
-public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
+public class MarsTable extends AbstractTable<Column<?>, Object>
 	implements GenericTable, JsonConvertibleRecord
 {
 
@@ -234,7 +202,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * 
 	 * @param table Something implementing the Table interface.
 	 */
-	public MarsTable(Table<Column<? extends Object>, Object> table) {
+	public MarsTable(Table<Column<?>, Object> table) {
 		for (int col = 0; col < table.getColumnCount(); col++) {
 			if (table.get(col) instanceof DoubleColumn) {
 				DoubleColumn column = new DoubleColumn(table.get(col).getHeader());
@@ -275,7 +243,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * @param table Something implementing the Table interface.
 	 * @return The wrapped MarsTable.
 	 */
-	public static MarsTable wrap(Table<Column<? extends Object>, Object> table) {
+	public static MarsTable wrap(Table<Column<?>, Object> table) {
 		MarsTable shell = new MarsTable();
 		for (int i = 0; i < table.getColumnCount(); i++)
 			shell.add(table.get(i));
@@ -310,7 +278,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	}
 
 	/**
-	 * Returns the column headings as a array of strings.
+	 * Returns the column headings as an array of strings.
 	 * 
 	 * @return String array contain the column headers.
 	 */
@@ -421,7 +389,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			column) instanceof DoubleColumn && get(
 				rowSelectionColumn) instanceof DoubleColumn)
 		{
-			ArrayList<Double> values = new ArrayList<Double>();
+			ArrayList<Double> values = new ArrayList<>();
 			double[] backingArrayColumn = ((DoubleColumn) get(column)).getArray();
 			double[] backingArrayRowSelectionColumn = ((DoubleColumn) get(
 				rowSelectionColumn)).getArray();
@@ -471,7 +439,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	public List<Object> getRowAsList(int row) {
 		if ((row < 0) || (row >= getRowCount())) throw new IllegalArgumentException(
 			"Row out of range: " + row);
-		List<Object> rowList = new ArrayList<Object>();
+		List<Object> rowList = new ArrayList<>();
 		rowList.add(row);
 		for (int i = 0; i < getColumnCount(); i++)
 			rowList.add(get(i, row));
@@ -513,7 +481,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			path += ".csv";
 		}
 
-		PrintWriter pw = null;
+		PrintWriter pw;
 		FileOutputStream fos = new FileOutputStream(path);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
 		pw = new PrintWriter(bos);
@@ -647,29 +615,29 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	public void fromJSON(JsonParser jParser) throws IOException {
 		// Then we move through fields
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldname_L1 = jParser.getCurrentName();
+			String fieldName_L1 = jParser.getCurrentName();
 
-			if ("schema".equals(fieldname_L1)) {
+			if ("schema".equals(fieldName_L1)) {
 				// First we move past object start
 				jParser.nextToken();
 
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname_L2 = jParser.getCurrentName();
-					if ("fields".equals(fieldname_L2)) {
+					String fieldName_L2 = jParser.getCurrentName();
+					if ("fields".equals(fieldName_L2)) {
 						// Have to move past array start
 						jParser.nextToken();
 
 						String columnName = "";
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							while (jParser.nextToken() != JsonToken.END_OBJECT) {
-								String fieldname_L3 = jParser.getCurrentName();
+								String fieldName_L3 = jParser.getCurrentName();
 
-								if ("name".equals(fieldname_L3)) {
+								if ("name".equals(fieldName_L3)) {
 									jParser.nextToken();
 									columnName = jParser.getText();
 								}
 
-								if ("type".equals(fieldname_L3)) {
+								if ("type".equals(fieldName_L3)) {
 									jParser.nextToken();
 
 									if ("number".equals(jParser.getText())) {
@@ -685,7 +653,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 				}
 			}
 
-			if ("data".equals(fieldname_L1)) {
+			if ("data".equals(fieldName_L1)) {
 				jParser.nextToken();
 
 				if (jParser.currentToken() == JsonToken.START_ARRAY)
@@ -701,29 +669,29 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			appendRow();
 			int rowIndex = getRowCount() - 1;
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String colname = jParser.getCurrentName();
+				String colName = jParser.getCurrentName();
 
 				// move to value token
 				jParser.nextToken();
-				if (get(colname) instanceof DoubleColumn) {
+				if (get(colName) instanceof DoubleColumn) {
 					if (jParser.getCurrentToken().equals(JsonToken.VALUE_STRING)) {
 						String str = jParser.getValueAsString();
-						if (Objects.equals(str, new String("Infinity"))) {
-							setValue(colname, rowIndex, Double.POSITIVE_INFINITY);
+						if (Objects.equals(str, "Infinity")) {
+							setValue(colName, rowIndex, Double.POSITIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("-Infinity"))) {
-							setValue(colname, rowIndex, Double.NEGATIVE_INFINITY);
+						else if (Objects.equals(str, "-Infinity")) {
+							setValue(colName, rowIndex, Double.NEGATIVE_INFINITY);
 						}
-						else if (Objects.equals(str, new String("NaN"))) {
-							setValue(colname, rowIndex, Double.NaN);
+						else if (Objects.equals(str, "NaN")) {
+							setValue(colName, rowIndex, Double.NaN);
 						}
 					}
 					else {
-						setValue(colname, rowIndex, jParser.getDoubleValue());
+						setValue(colName, rowIndex, jParser.getDoubleValue());
 					}
 				}
-				else if (get(colname) instanceof GenericColumn) {
-					setValue(colname, rowIndex, jParser.getValueAsString());
+				else if (get(colName) instanceof GenericColumn) {
+					setValue(colName, rowIndex, jParser.getValueAsString());
 				}
 			}
 		}
@@ -734,14 +702,14 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	{
 		int rows = -1;
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldname = jParser.getCurrentName();
+			String fieldName = jParser.getCurrentName();
 
-			if (fieldname.startsWith("DoubleBlock,GZIP,dims=[")) {
-				String dimensions = fieldname.substring(23, fieldname.length() - 1);
-				int cols = Integer.valueOf(dimensions.substring(0, dimensions.indexOf(
+			if (fieldName.startsWith("DoubleBlock,GZIP,dims=[")) {
+				String dimensions = fieldName.substring(23, fieldName.length() - 1);
+				int cols = Integer.parseInt(dimensions.substring(0, dimensions.indexOf(
 					",")));
-				rows = Integer.valueOf(dimensions.substring(dimensions.indexOf(",") + 1,
-					dimensions.length()));
+				rows = Integer.parseInt(dimensions.substring(dimensions.indexOf(",") + 1
+				));
 
 				jParser.nextToken();
 				byte[] binaryDataBlock = jParser.getBinaryValue();
@@ -753,7 +721,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 				ByteBuffer buffer = ByteBuffer.allocate(cols * rows * 8);
 				dis.readFully(buffer.array());
 				DoubleBuffer dubBuf = buffer.asDoubleBuffer();
-				List<DoubleColumn> doubleColumnList = new ArrayList<DoubleColumn>();
+				List<DoubleColumn> doubleColumnList = new ArrayList<>();
 				stream().filter(c -> c instanceof DoubleColumn).forEach(
 					col -> doubleColumnList.add((DoubleColumn) col));
 				for (int col = 0; col < cols; col++) {
@@ -764,8 +732,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 				dis.close();
 			}
 
-			if (hasColumn(fieldname)) {
-				GenericColumn column = (GenericColumn) get(fieldname);
+			if (hasColumn(fieldName)) {
+				GenericColumn column = (GenericColumn) get(fieldName);
 				int rowNum = 0;
 				jParser.nextToken();
 				while (jParser.nextToken() != JsonToken.END_ARRAY) {
@@ -791,12 +759,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			path += ".json";
 		}
 
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(
-			new File(path)));
+		OutputStream stream = new BufferedOutputStream(Files.newOutputStream(new File(path).toPath()));
 
 		JsonGenerator jGenerator;
-		JsonFactory jfactory = new JsonFactory();
-		jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+		JsonFactory jFactory = new JsonFactory();
+		jGenerator = jFactory.createGenerator(stream, JsonEncoding.UTF8);
 
 		toJSON(jGenerator);
 
@@ -812,7 +779,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 * encoded json file.
 	 * 
 	 * @param path String path for writing.
-	 * @throws IOException Thown if unable to save to path given.
+	 * @throws IOException Thrown if unable to save to path given.
 	 */
 	public void saveAsYAMT(String path) throws IOException {
 		if (getRowCount() == 0) return;
@@ -821,12 +788,11 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			path += ".yamt";
 		}
 
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(
-			new File(path)));
+		OutputStream stream = new BufferedOutputStream(Files.newOutputStream(new File(path).toPath()));
 
 		JsonGenerator jGenerator;
-		JsonFactory jfactory = new SmileFactory();
-		jGenerator = jfactory.createGenerator(stream);
+		JsonFactory jFactory = new SmileFactory();
+		jGenerator = jFactory.createGenerator(stream);
 
 		toJSON(jGenerator);
 
@@ -843,7 +809,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		double readPosition = 0;
 		final String lineSeparator = "\n";
 		int currentPercentDone = 0;
-		int currentPercent = 0;
+		int currentPercent;
 
 		Path path = Paths.get(absolutePath);
 		boolean csv = absolutePath.endsWith(".csv") || absolutePath.endsWith(
@@ -867,13 +833,12 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			boolean[] stringColumn = new boolean[headings.length];
 
 			int row = 0;
-			for (String line = null; (line = br.readLine()) != null;) {
+			for (String line; (line = br.readLine()) != null;) {
 				String[] items = line.split(cellSeparator);
 
 				// During the first cycle we need to build the table with columns that
-				// are either
-				// DoubleColumns or GenericColumns for numbers or strings
-				// We need to detect this by what is in the first row...
+				// are either DoubleColumns or GenericColumns for numbers or strings
+				// We need to detect this by what is in the first row.
 				if (row == 0) {
 					for (int i = firstColumn; i < headings.length; i++) {
 						if (items[i].equals("NaN") || items[i].equals("-Infinity") ||
@@ -888,7 +853,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 							try {
 								value = Double.parseDouble(items[i]);
 							}
-							catch (NumberFormatException e) {}
+							catch (NumberFormatException ignored) {}
 
 							if (Double.isNaN(value)) {
 								add(new GenericColumn(headings[i]));
@@ -912,7 +877,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 						try {
 							value = Double.parseDouble(items[i]);
 						}
-						catch (NumberFormatException e) {}
+						catch (NumberFormatException ignored) {}
 
 						setValue(i - firstColumn, row, value);
 					}
@@ -943,9 +908,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		return this;
 	}
 
-	private MarsTable loadJSON(File file) throws JsonParseException, IOException {
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(
-			file));
+	private MarsTable loadJSON(File file) throws IOException {
+		InputStream inputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
 
 		this.name = file.getName();
 
@@ -953,8 +917,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		// Can be JSON text or Smile encoded binary file...
 		JsonFactory jsonF = new JsonFactory();
 		SmileFactory smileF = new SmileFactory();
-		DataFormatDetector det = new DataFormatDetector(new JsonFactory[] { jsonF,
-			smileF });
+		DataFormatDetector det = new DataFormatDetector(jsonF,
+				smileF);
 		DataFormatMatcher match = det.findFormat(inputStream);
 		JsonParser jParser = match.createParserWithMatch();
 
@@ -967,8 +931,8 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	}
 
 	@Override
-	/**
-	 * Returns a JSON string representation of the table.
+	/*
+	  Returns a JSON string representation of the table.
 	 */
 	public String toString() {
 		return name;
@@ -1047,7 +1011,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		else if (get(column) instanceof DoubleColumn) {
 			double num = Double.NaN;
 			try {
-				num = Double.valueOf(value);
+				num = Double.parseDouble(value);
 			}
 			catch (NumberFormatException e) {
 				// Do nothing.. set NaN as value...
@@ -1069,7 +1033,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			return ((DoubleColumn) get(col)).get(row);
 		}
 		catch (ClassCastException e1) {
-			if (get(col) instanceof GenericColumn) return Double.valueOf((String) get(
+			if (get(col) instanceof GenericColumn) return Double.parseDouble((String) get(
 				col).get(row));
 			return Double.NaN;
 		}
@@ -1090,7 +1054,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 			return ((DoubleColumn) get(column)).get(row);
 		}
 		catch (ClassCastException e1) {
-			if (get(column) instanceof GenericColumn) return Double.valueOf(
+			if (get(column) instanceof GenericColumn) return Double.parseDouble(
 				(String) get(column).get(row));
 			return Double.NaN;
 		}
@@ -1639,24 +1603,19 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		for (int i = 0; i < columns.length; i++)
 			columnIndexes[i] = getColumnIndex(columns[i]);
 
-		Collections.sort(new ResultsTableList(this), new Comparator<Row>() {
-
-			@Override
-			public int compare(Row o1, Row o2) {
-				for (int columnIndex : columnIndexes) {
-					int groupDifference = 0;
-					if (get(columnIndex) instanceof DoubleColumn) groupDifference = Double
+		new ResultsTableList(this).sort((o1, o2) -> {
+			for (int columnIndex : columnIndexes) {
+				int groupDifference = 0;
+				if (get(columnIndex) instanceof DoubleColumn) groupDifference = Double
 						.compare(o1.getValue(columnIndex), o2.getValue(columnIndex));
-					else if (get(columnIndex) instanceof GenericColumn) groupDifference =
+				else if (get(columnIndex) instanceof GenericColumn) groupDifference =
 						StringUtils.compare(o1.getStringValue(columnIndex), o2
-							.getStringValue(columnIndex));
+								.getStringValue(columnIndex));
 
-					if (groupDifference != 0) return ascending ? groupDifference
+				if (groupDifference != 0) return ascending ? groupDifference
 						: -groupDifference;
-				}
-				return 0;
 			}
-
+			return 0;
 		});
 
 		return this;
@@ -1855,7 +1814,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	 */
 	@Override
 	public String dumpJSON() {
-		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+		return MarsUtil.dumpJSON(this::toJSON);
 	}
 
 	public File getFile() {
@@ -1896,9 +1855,9 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 	// These classes are used for sorting in place. They
 	// may be replaced with a different sort implementation in future releases.
 	// But the external API will not need to change.
-	private class ResultsTableList extends AbstractList<Row> {
+	private static class ResultsTableList extends AbstractList<Row> {
 
-		private MarsTable table;
+		private final MarsTable table;
 
 		public ResultsTableList(MarsTable table) {
 			this.table = table;
@@ -1906,8 +1865,7 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 
 		@Override
 		public Row get(int row) {
-			Row values = new Row(row, table);
-			return values;
+			return new Row(row, table);
 		}
 
 		@Override
@@ -1937,12 +1895,12 @@ public class MarsTable extends AbstractTable<Column<? extends Object>, Object>
 		}
 	}
 
-	private class Row {
+	private static class Row {
 
-		private Map<String, Double> doubleValues = new HashMap<>();
-		private Map<String, String> stringValues = new HashMap<>();
+		private final Map<String, Double> doubleValues = new HashMap<>();
+		private final Map<String, String> stringValues = new HashMap<>();
 
-		private MarsTable table;
+		private final MarsTable table;
 
 		Row(int row, MarsTable table) {
 			this.table = table;

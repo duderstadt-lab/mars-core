@@ -86,7 +86,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 * Segments tables resulting from change point fitting: xColumn is at index 0
 	 * yColumn is at index 1 region is at index 2
 	 */
-	private LinkedHashMap<List<String>, MarsTable> segmentTables =
+	private final LinkedHashMap<List<String>, MarsTable> segmentTables =
 		new LinkedHashMap<>();
 
 	/**
@@ -181,7 +181,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 					String yColumn = "";
 					String region = "";
 
-					ArrayList<String> tableColumnNames = new ArrayList<String>();
+					ArrayList<String> tableColumnNames = new ArrayList<>();
 
 					// Needed for backwards compatibility when reverse order was used...
 					if ("xColumn".equals(jParser.getCurrentName())) {
@@ -259,7 +259,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 					String yColumnName = "";
 					String regionName = "";
 
-					ArrayList<String> tableColumnNames = new ArrayList<String>();
+					ArrayList<String> tableColumnNames = new ArrayList<>();
 
 					// Needed for backwards compatibility when reverse order was used...
 					if ("xColumnName".equals(jParser.getCurrentName())) {
@@ -322,9 +322,6 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void setImage(int image) {
 		if (image > -1) {
 			this.image = image;
-			// if (parent != null) {
-			// parent.properties().addImage(image);
-			// }
 		}
 		else channel = -1;
 	}
@@ -355,11 +352,10 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 				parent.properties().addChannel(channel);
 			}
 		}
-		else channel = -1;
 	}
 
 	/**
-	 * Get the channel for this molecules. If the molecule does not have channel
+	 * Get the channel for these molecules. If the molecule does not have channel
 	 * information this parameter will be set to -1. Format is 0 to (channel
 	 * count) - 1.
 	 * 
@@ -510,7 +506,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void putSegmentsTable(String xColumn, String yColumn,
 		MarsTable segmentsTable)
 	{
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add("");
@@ -533,7 +529,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void putSegmentsTable(String xColumn, String yColumn, String region,
 		MarsTable segmentsTable)
 	{
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add(region);
@@ -550,7 +546,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 */
 	@Override
 	public MarsTable getSegmentsTable(String xColumn, String yColumn) {
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add("");
@@ -570,7 +566,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public MarsTable getSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add(region);
@@ -587,7 +583,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 */
 	@Override
 	public boolean hasSegmentsTable(String xColumn, String yColumn) {
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add("");
@@ -607,7 +603,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public boolean hasSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add(region);
@@ -649,7 +645,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	 */
 	@Override
 	public void removeSegmentsTable(String xColumn, String yColumn) {
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add("");
@@ -668,7 +664,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void removeSegmentsTable(String xColumn, String yColumn,
 		String region)
 	{
-		ArrayList<String> tableColumnNames = new ArrayList<String>();
+		ArrayList<String> tableColumnNames = new ArrayList<>();
 		tableColumnNames.add(xColumn);
 		tableColumnNames.add(yColumn);
 		tableColumnNames.add(region);
@@ -696,7 +692,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	public void merge(Molecule molecule) {
 		super.merge(molecule);
 
-		Set<Double> tNumbers = new HashSet<Double>();
+		Set<Double> tNumbers = new HashSet<>();
 
 		// First add all current T to set
 		for (int row = 0; row < table.getRowCount(); row++) {
@@ -728,7 +724,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 
 		setNotes(previousNotes + "merged " + molecule.getUID());
 
-		// For now we ignore channel, image, metadataUID, and all segmentTables
+		// For now, we ignore channel, image, metadataUID, and all segmentTables
 		// KCP should be rerun after merging. Combining the segmentTables would not
 		// give the same result.
 	}

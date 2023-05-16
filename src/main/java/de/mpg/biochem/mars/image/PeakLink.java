@@ -31,7 +31,7 @@ package de.mpg.biochem.mars.image;
 
 /**
  * PeakLinks are used to link peaks over time during peak tracking. PeakLinks
- * store the to and from peaks as well as time, difference in time and square
+ * store the start and end peaks that are linked as well as time, difference in time and square
  * distance.
  * 
  * @author Karl Duderstadt
@@ -56,8 +56,9 @@ public class PeakLink {
 		this.tDifference = tDifference;
 	}
 
+	@SuppressWarnings("unused")
 	public PeakLink(long fromID, long toID, double distanceSq, int t,
-		int tDifference)
+					int tDifference)
 	{
 		this.fromID = fromID;
 		this.toID = toID;
@@ -66,8 +67,9 @@ public class PeakLink {
 		this.tDifference = tDifference;
 	}
 
+	@SuppressWarnings("unused")
 	public void reset(Peak from, Peak to, double distanceSq, int t,
-		int tDifference)
+					  int tDifference)
 	{
 		this.from = from;
 		this.to = to;
@@ -76,8 +78,9 @@ public class PeakLink {
 		this.tDifference = tDifference;
 	}
 
+	@SuppressWarnings("unused")
 	public void reset(long fromID, long toID, double distanceSq, int t,
-		int tDifference)
+					  int tDifference)
 	{
 		this.fromID = fromID;
 		this.toID = toID;

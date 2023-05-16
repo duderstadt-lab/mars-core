@@ -164,7 +164,7 @@ public class MarsOMEChannel extends AbstractJsonConvertibleRecord {
 		});
 
 		setJsonField("gain", jGenerator -> {
-			if (gain != null) jGenerator.writeNumberField("gain", gain.doubleValue());
+			if (gain != null) jGenerator.writeNumberField("gain", gain);
 		}, jParser -> gain = jParser.getDoubleValue());
 
 		// Should we keep track of the units here ???

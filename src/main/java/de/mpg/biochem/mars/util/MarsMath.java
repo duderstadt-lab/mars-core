@@ -74,19 +74,19 @@ public class MarsMath {
 		double[] output = new double[4];
 
 		// First we determine delta (Taylor's notation)
-		double XsumSquares = 0;
-		double Xsum = 0;
-		double Ysum = 0;
-		double XYsum = 0;
+		double xSumSquares = 0;
+		double xSum = 0;
+		double ySum = 0;
+		double xySum = 0;
 		for (int i = offset; i < offset + length; i++) {
-			XsumSquares += xData[i] * xData[i];
-			Xsum += xData[i];
-			Ysum += yData[i];
-			XYsum += xData[i] * yData[i];
+			xSumSquares += xData[i] * xData[i];
+			xSum += xData[i];
+			ySum += yData[i];
+			xySum += xData[i] * yData[i];
 		}
-		double Delta = length * XsumSquares - Xsum * Xsum;
-		double A = (XsumSquares * Ysum - Xsum * XYsum) / Delta;
-		double B = (length * XYsum - Xsum * Ysum) / Delta;
+		double Delta = length * xSumSquares - xSum * xSum;
+		double A = (xSumSquares * ySum - xSum * xySum) / Delta;
+		double B = (length * xySum - xSum * ySum) / Delta;
 
 		double ymAmBxSquare = 0;
 		for (int i = offset; i < offset + length; i++) {
@@ -96,7 +96,7 @@ public class MarsMath {
 		double sigmaY = Math.sqrt(ymAmBxSquare / (length - 2));
 
 		output[0] = A;
-		output[1] = sigmaY * Math.sqrt(XsumSquares / Delta);
+		output[1] = sigmaY * Math.sqrt(xSumSquares / Delta);
 		output[2] = B;
 		output[3] = sigmaY * Math.sqrt(length / Delta);
 
@@ -107,21 +107,18 @@ public class MarsMath {
 	// indexing of molecules.
 	public static String getUUID58() {
 		Base58UUID bu = new Base58UUID();
-		String uuid58 = bu.encode(UUID.randomUUID());
-		return uuid58;
+		return bu.encode(UUID.randomUUID());
 	}
 
 	public static String getUUID58(String uuid) {
 		Base58UUID bu = new Base58UUID();
-		String uuid58 = bu.encode(UUID.fromString(uuid));
-		return uuid58;
+		return bu.encode(UUID.fromString(uuid));
 	}
 
 	// method to retrieve the UUID from a base64 encoded UID
 	public static UUID getUUID(String uuid58) {
 		Base58UUID bu = new Base58UUID();
-		UUID uuid = bu.decode(uuid58);
-		return uuid;
+		return bu.decode(uuid58);
 	}
 
 	public static String getFNV1aBase58(String str) {
@@ -144,8 +141,7 @@ public class MarsMath {
 	public static double[] calculateForceAndLength(double variance) {
 		ForceCalculator calculator = new ForceCalculator(50 * Math.pow(10, -9),
 			6.8 * Math.pow(10, -6));
-		double[] output = calculator.calculate(variance);
-		return output;
+		return calculator.calculate(variance);
 	}
 
 	// output[0] is force and output[1] is length
@@ -154,7 +150,6 @@ public class MarsMath {
 	{
 		ForceCalculator calculator = new ForceCalculator(persistenceLength, L0,
 			temperature);
-		double[] output = calculator.calculate(variance);
-		return output;
+		return calculator.calculate(variance);
 	}
 }

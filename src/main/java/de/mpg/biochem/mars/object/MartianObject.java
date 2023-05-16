@@ -43,7 +43,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class MartianObject extends AbstractMolecule {
 
-	private ConcurrentMap<Integer, PeakShape> shapes;
+	private final ConcurrentMap<Integer, PeakShape> shapes;
 
 	public MartianObject() {
 		super();

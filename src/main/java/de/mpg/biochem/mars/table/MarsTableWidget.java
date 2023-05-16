@@ -97,8 +97,6 @@ public class MarsTableWidget extends SwingInputWidget<MarsTable> implements
 
 	@Override
 	public void doRefresh() {
-		// final String value = get().getValue().toString();
-		// if (value.equals(comboBox.getSelectedItem())) return; // no change
-		// comboBox.setSelectedItem(value);
+		// TODO implement refresh
 	}
 }

@@ -102,8 +102,8 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		metadataUIDtoTagList = new ConcurrentHashMap<>();
 		moleculeUIDtoMetadataUID = new ConcurrentHashMap<>();
 
-		moleculeUIDs = new ConcurrentSkipListSet<String>();// ConcurrentHashMap.newKeySet();
-		metadataUIDs = new ConcurrentSkipListSet<String>();// ConcurrentHashMap.newKeySet();
+		moleculeUIDs = new ConcurrentSkipListSet<>();// ConcurrentHashMap.newKeySet();
+		metadataUIDs = new ConcurrentSkipListSet<>();// ConcurrentHashMap.newKeySet();
 	}
 
 	@Override
@@ -139,7 +139,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -195,7 +195,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -235,7 +235,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("Tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -259,7 +259,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("Tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -283,7 +283,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("Tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -315,7 +315,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("Tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -345,7 +345,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 					if ("Tags".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
-						LinkedHashSet<String> tags = new LinkedHashSet<String>();
+						LinkedHashSet<String> tags = new LinkedHashSet<>();
 						while (jParser.nextToken() != JsonToken.END_ARRAY) {
 							tags.add(jParser.getText());
 						}
@@ -360,15 +360,15 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	 * Save the archive properties to a file.
 	 * 
 	 * @param directory Folder to save to.
-	 * @param jfactory JsonFactory to use when saving.
+	 * @param jFactory JsonFactory to use when saving.
 	 * @param fileExtension The file extension (.json or .sml).
 	 */
-	public void save(File directory, JsonFactory jfactory, String fileExtension)
+	public void save(File directory, JsonFactory jFactory, String fileExtension)
 		throws IOException
 	{
 		File indexFile = new File(directory.getAbsolutePath() + "/indexes" +
 			fileExtension);
-		MarsUtil.writeJsonRecord(this, indexFile, jfactory);
+		MarsUtil.writeJsonRecord(this, indexFile, jFactory);
 	}
 
 	@Override

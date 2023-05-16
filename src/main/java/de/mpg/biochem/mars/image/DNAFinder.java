@@ -56,7 +56,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
-	private OpService opService;
+	private final OpService opService;
 	private boolean useDogFilter = true;
 	private double dogFilterRadius = 1.8;
 	private double gaussSigma = 2;
@@ -77,8 +77,9 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		this.opService = opService;
 	}
 	
+	@SuppressWarnings("unused")
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
-		IterableRegion<BoolType> iterableRegion, int theT)
+									 IterableRegion<BoolType> iterableRegion, int theT)
 	{
 		return findDNAs(img, iterableRegion, theT, 1);
 	}
@@ -87,13 +88,14 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		IterableRegion<BoolType> iterableRegion, int theT, int numThreads)
 	{
 		List<IterableRegion<BoolType>> regionList =
-			new ArrayList<IterableRegion<BoolType>>();
+				new ArrayList<>();
 		regionList.add(iterableRegion);
 		return findDNAs(img, regionList, theT, numThreads);
 	}
 
+	@SuppressWarnings("unused")
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
-		List<IterableRegion<BoolType>> iterableRegions, int theT)
+									 List<IterableRegion<BoolType>> iterableRegions, int theT)
 	{
 		return findDNAs(img, iterableRegions, theT, 1);
 	}
@@ -101,7 +103,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
 		List<IterableRegion<BoolType>> iterableRegions, int theT, int numThreads)
 	{
-		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
+		List<DNASegment> DNASegments = new ArrayList<>();
 
 		Img<DoubleType> input = opService.convert().float64(Views.iterable(img));
 		Img<DoubleType> gradImage = opService.create().img(input, new DoubleType());
@@ -136,14 +138,14 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		}
 
 		for (IterableRegion<BoolType> iterableRegion : iterableRegions) {
-			List<Peak> topPeaks = new ArrayList<Peak>();
-			List<Peak> bottomPeaks = new ArrayList<Peak>();
+			List<Peak> topPeaks;
+			List<Peak> bottomPeaks;
 
 			if (useDogFilter) {
-				topPeaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample(
+				topPeaks = MarsImageUtils.findPeaks(Regions.sample(
 					iterableRegion, filteredImg), theT, threshold, minimumDistance,
 					false);
-				bottomPeaks = MarsImageUtils.findPeaks(filteredImg, Regions.sample(
+				bottomPeaks = MarsImageUtils.findPeaks(Regions.sample(
 					iterableRegion, filteredImg), theT, threshold, minimumDistance, true);
 			}
 			else {
@@ -166,13 +168,12 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 				if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
 					// make sure they are all valid
 					// then we can remove them as we go.
-					for (int i = 0; i < bottomPeaks.size(); i++)
-						bottomPeaks.get(i).setValid(true);
+					for (Peak bottomPeak : bottomPeaks) bottomPeak.setValid(true);
 
-					KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
-						bottomPeaks);
+					KDTree<Peak> bottomPeakTree = new KDTree<>(bottomPeaks,
+							bottomPeaks);
 					RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-						new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
+							new RadiusNeighborSearchOnKDTree<>(bottomPeakTree);
 
 					// RandomAccessibleInterval<T> view = Views.interval(img, interval);
 					RandomAccess<T> ra = Views.extendMirrorSingle(img).randomAccess();
@@ -194,11 +195,10 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 								calcSegmentProperties(ra, segment);
 
-								boolean pass = true;
+								boolean pass = !varianceFilter || !(varianceUpperBound < segment
+										.getVariance());
 
 								// Check if the segment passes through filters
-								if (varianceFilter && varianceUpperBound < segment
-									.getVariance()) pass = false;
 
 								if (medianIntensityFilter && medianIntensityLowerBound > segment
 									.getMedianIntensity()) pass = false;
@@ -207,13 +207,13 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 									if (fit && fitSecondOrder) {
 
-										List<Peak> top = new ArrayList<Peak>();
+										List<Peak> top = new ArrayList<>();
 										top.add(new Peak(segment.getX1(), segment.getY1() + 1));
 										top = MarsImageUtils.fitPeaks(secondOrderImage,
 											secondOrderImage, top, fitRadius, dogFilterRadius, median,
 											true);
 
-										List<Peak> bottom = new ArrayList<Peak>();
+										List<Peak> bottom = new ArrayList<>();
 										bottom.add(new Peak(segment.getX2(), segment.getY2() - 1));
 										bottom = MarsImageUtils.fitPeaks(secondOrderImage,
 											secondOrderImage, bottom, fitRadius, dogFilterRadius,
@@ -249,10 +249,11 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 		return DNASegments;
 	}
 	
+	@SuppressWarnings("unused")
 	public List<DNASegment> findDNAs(RandomAccessibleInterval<T> img,
-		Interval interval, int theT, int numThreads)
+									 Interval interval, int theT, int numThreads)
 	{
-		List<DNASegment> DNASegments = new ArrayList<DNASegment>();
+		List<DNASegment> DNASegments = new ArrayList<>();
 
 		Img<DoubleType> input = opService.convert().float64(Views.iterable(img));
 		Img<DoubleType> gradImage = opService.create().img(input, new DoubleType());
@@ -286,8 +287,8 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 			}
 		}
 
-		List<Peak> topPeaks = new ArrayList<Peak>();
-		List<Peak> bottomPeaks = new ArrayList<Peak>();
+		List<Peak> topPeaks;
+		List<Peak> bottomPeaks;
 
 		if (useDogFilter) {
 			topPeaks = MarsImageUtils.findPeaks(filteredImg, interval, theT, threshold, minimumDistance,
@@ -312,13 +313,12 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 			if (!topPeaks.isEmpty() && !bottomPeaks.isEmpty()) {
 				// make sure they are all valid
 				// then we can remove them as we go.
-				for (int i = 0; i < bottomPeaks.size(); i++)
-					bottomPeaks.get(i).setValid(true);
+				for (Peak bottomPeak : bottomPeaks) bottomPeak.setValid(true);
 
-				KDTree<Peak> bottomPeakTree = new KDTree<Peak>(bottomPeaks,
-					bottomPeaks);
+				KDTree<Peak> bottomPeakTree = new KDTree<>(bottomPeaks,
+						bottomPeaks);
 				RadiusNeighborSearchOnKDTree<Peak> radiusSearch =
-					new RadiusNeighborSearchOnKDTree<Peak>(bottomPeakTree);
+						new RadiusNeighborSearchOnKDTree<>(bottomPeakTree);
 
 				// RandomAccessibleInterval<T> view = Views.interval(img, interval);
 				RandomAccess<T> ra = Views.extendMirrorSingle(img).randomAccess();
@@ -340,11 +340,10 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 							calcSegmentProperties(ra, segment);
 
-							boolean pass = true;
+							boolean pass = !varianceFilter || !(varianceUpperBound < segment
+									.getVariance());
 
 							// Check if the segment passes through filters
-							if (varianceFilter && varianceUpperBound < segment
-								.getVariance()) pass = false;
 
 							if (medianIntensityFilter && medianIntensityLowerBound > segment
 								.getMedianIntensity()) pass = false;
@@ -353,13 +352,13 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 								if (fit && fitSecondOrder) {
 
-									List<Peak> top = new ArrayList<Peak>();
+									List<Peak> top = new ArrayList<>();
 									top.add(new Peak(segment.getX1(), segment.getY1() + 1));
 									top = MarsImageUtils.fitPeaks(secondOrderImage,
 										secondOrderImage, top, fitRadius, dogFilterRadius, median,
 										true);
 
-									List<Peak> bottom = new ArrayList<Peak>();
+									List<Peak> bottom = new ArrayList<>();
 									bottom.add(new Peak(segment.getX2(), segment.getY2() - 1));
 									bottom = MarsImageUtils.fitPeaks(secondOrderImage,
 										secondOrderImage, bottom, fitRadius, dogFilterRadius,
@@ -415,7 +414,7 @@ public class DNAFinder<T extends RealType<T> & NativeType<T>> {
 
 		DoubleColumn col = new DoubleColumn("col");
 		for (int y = y1; y <= y2; y++) {
-			int x = 0;
+			int x;
 			// intercept doesn't exist.
 			if (x1 == x2) x = x1;
 			else x = (int) ((y - A) / B);

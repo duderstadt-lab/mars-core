@@ -55,7 +55,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.LogBuilder;
 import de.mpg.biochem.mars.util.MarsRegion;
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 @Plugin(type = Command.class, headless = true, label = "Sigma Calculator",
 	menu = { @Menu(label = MenuConstants.PLUGINS_LABEL,
@@ -104,9 +104,9 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 	private String regionName;
 
 	// -- Callback methods --
+	@SuppressWarnings("unused")
 	private void archiveSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(archive.properties().getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -120,9 +120,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
-			.getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(moleculeArchiveService.getArchives().get(0).properties()
+				.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> xColumnItems = getInfo().getMutableInput(
@@ -136,10 +135,8 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 
 	@Override
 	public void run() {
-		// Let's keep track of the time it takes
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
-		// Build log message
 		LogBuilder builder = new LogBuilder();
 
 		String log = LogBuilder.buildTitleBlock("Sigma Calculator");
@@ -147,15 +144,14 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 
-		// Output first part of log message...
+		// Output first part of log message.
 		logService.info(log);
-
 		archive.logln(log);
 
 		final String paramName = yColumn + "_sigma";
 
 		ConcurrentMap<String, MarsRegion> regionMap =
-			new ConcurrentHashMap<String, MarsRegion>();
+				new ConcurrentHashMap<>();
 
 		if (regionType.equals("Defined in Metadata")) {
 			archive.getMetadataUIDs().parallelStream().forEach(metaUID -> {
@@ -197,7 +193,7 @@ public class SigmaCalculatorCommand extends DynamicCommand implements Command,
 		});
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 		archive.logln("   ");

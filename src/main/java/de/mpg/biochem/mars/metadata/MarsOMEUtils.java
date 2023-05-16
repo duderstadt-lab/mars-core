@@ -67,57 +67,57 @@ public class MarsOMEUtils {
 	{
 		OMEXMLMetadata meta = omexmlService.createOMEXMLMetadata();
 
-		String dimensionOrderString = "";
+		StringBuilder dimensionOrderString = new StringBuilder();
 
 		for (int d = 0; d < dataset.numDimensions(); d++) {
 			if (dataset.axis(d).type().equals(Axes.X)) {
 				meta.setPixelsSizeX(new PositiveInteger((int) dataset.dimension(d)), 0);
-				dimensionOrderString += "X";
+				dimensionOrderString.append("X");
 			}
 			else if (dataset.axis(d).type().equals(Axes.Y)) {
 				meta.setPixelsSizeY(new PositiveInteger((int) dataset.dimension(d)), 0);
-				dimensionOrderString += "Y";
+				dimensionOrderString.append("Y");
 			}
 			else if (dataset.axis(d).type().equals(Axes.Z)) {
 				meta.setPixelsSizeZ(new PositiveInteger((int) dataset.dimension(d)), 0);
-				dimensionOrderString += "Z";
+				dimensionOrderString.append("Z");
 			}
 			else if (dataset.axis(d).type().equals(Axes.CHANNEL)) {
 				meta.setPixelsSizeC(new PositiveInteger((int) dataset.dimension(d)), 0);
-				dimensionOrderString += "C";
+				dimensionOrderString.append("C");
 			}
 			else if (dataset.axis(d).type().equals(Axes.TIME)) {
 				meta.setPixelsSizeT(new PositiveInteger((int) dataset.dimension(d)), 0);
-				dimensionOrderString += "T";
+				dimensionOrderString.append("T");
 			}
 		}
 
 		if (meta.getPixelsSizeX(0) == null) {
 			meta.setPixelsSizeX(new PositiveInteger(1), 0);
-			dimensionOrderString += "X";
+			dimensionOrderString.append("X");
 		}
 
 		if (meta.getPixelsSizeY(0) == null) {
 			meta.setPixelsSizeY(new PositiveInteger(1), 0);
-			dimensionOrderString += "Y";
+			dimensionOrderString.append("Y");
 		}
 
 		if (meta.getPixelsSizeZ(0) == null) {
 			meta.setPixelsSizeZ(new PositiveInteger(1), 0);
-			dimensionOrderString += "Z";
+			dimensionOrderString.append("Z");
 		}
 
 		if (meta.getPixelsSizeC(0) == null) {
 			meta.setPixelsSizeC(new PositiveInteger(1), 0);
-			dimensionOrderString += "C";
+			dimensionOrderString.append("C");
 		}
 
 		if (meta.getPixelsSizeT(0) == null) {
 			meta.setPixelsSizeT(new PositiveInteger(1), 0);
-			dimensionOrderString += "T";
+			dimensionOrderString.append("T");
 		}
 
-		meta.setPixelsDimensionOrder(DimensionOrder.valueOf(dimensionOrderString),
+		meta.setPixelsDimensionOrder(DimensionOrder.valueOf(dimensionOrderString.toString()),
 			0);
 
 		for (int c = 0; c < meta.getPixelsSizeC(0).getNumberValue()
@@ -137,13 +137,13 @@ public class MarsOMEUtils {
 
 		// We should retrieve any Date or time information and use that to try to
 		// generate a unique UID using a hash...
-		String uniqueDateTimeInfo = "";
+		StringBuilder uniqueDateTimeInfo = new StringBuilder();
 		for (int i = 0; i < omexmlMetadata.getImageCount(); i++)
 			if (omexmlMetadata.getImageAcquisitionDate(i) != null)
-				uniqueDateTimeInfo += omexmlMetadata.getImageAcquisitionDate(i);
+				uniqueDateTimeInfo.append(omexmlMetadata.getImageAcquisitionDate(i));
 
-		if (!uniqueDateTimeInfo.equals("")) return MarsMath.getFNV1aBase58(
-			uniqueDateTimeInfo);
+		if (!uniqueDateTimeInfo.toString().equals("")) return MarsMath.getFNV1aBase58(
+				uniqueDateTimeInfo.toString());
 		return null;
 	}
 
@@ -159,9 +159,8 @@ public class MarsOMEUtils {
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
 		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters()
 			.put(name, oldMetadata.getParameters().get(name)));
-		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
-		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
-			bdvSource));
+		oldMetadata.getTags().forEach(marsOME::addTag);
+		oldMetadata.getBdvSources().forEach(marsOME::putBdvSource);
 		oldMetadata.getRegionNames().forEach(name -> marsOME.putRegion(oldMetadata
 			.getRegion(name)));
 		oldMetadata.getPositionNames().forEach(name -> marsOME.putPosition(
@@ -174,7 +173,7 @@ public class MarsOMEUtils {
 		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
 		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
 		image.setSizeZ(new PositiveInteger(1));
-		// image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
+		// image.setAcquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
 
 		image.setName(oldMetadata.getSourceDirectory());
 		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
@@ -229,12 +228,12 @@ public class MarsOMEUtils {
 		else if (table.hasColumn("ChannelIndex")) {
 			format = "Micromanager";
 			// Must be Micromanager data.
-			Map<Integer, String> channelNames = new LinkedHashMap<Integer, String>();
+			Map<Integer, String> channelNames = new LinkedHashMap<>();
 			Map<Integer, String> channelBinning =
-				new LinkedHashMap<Integer, String>();
+					new LinkedHashMap<>();
 
 			table.rows().forEach(row -> {
-				int channelIndex = Integer.valueOf(row.getStringValue("ChannelIndex"));
+				int channelIndex = Integer.parseInt(row.getStringValue("ChannelIndex"));
 				channelBinning.put(channelIndex, row.getStringValue("Binning"));
 				channelNames.put(channelIndex, row.getStringValue("Channel"));
 			});
@@ -268,13 +267,12 @@ public class MarsOMEUtils {
 				plane.setImage(image);
 				plane.setImageID(0);
 
-				int c = Integer.valueOf(table.getStringValue("ChannelIndex", rowIndex));
-				int t = rowIndex;
+				int c = Integer.parseInt(table.getStringValue("ChannelIndex", rowIndex));
 
-				plane.setPlaneIndex((int) image.getPlaneIndex(0, c, t));
+				plane.setPlaneIndex((int) image.getPlaneIndex(0, c, rowIndex));
 				plane.setZ(new NonNegativeInteger(0));
 				plane.setC(new NonNegativeInteger(c));
-				plane.setT(new NonNegativeInteger(t));
+				plane.setT(new NonNegativeInteger(rowIndex));
 
 				for (String heading : table.getColumnHeadingList()) {
 					if (xDriftColumnName.equals(heading) || yDriftColumnName.equals(
@@ -299,11 +297,11 @@ public class MarsOMEUtils {
 				if (!yDriftColumnName.equals("")) plane.setYDrift(table.getValue(
 					yDriftColumnName, rowIndex));
 
-				image.setPlane(plane, 0, c, t);
+				image.setPlane(plane, 0, c, rowIndex);
 			}
 		}
 		else {
-			// Unknown. We should at least have a slice column..
+			// Unknown. We should at least have a slice column.
 			// Have to guess the rest.
 			image.setSizeC(new PositiveInteger(1));
 			image.setSizeT(new PositiveInteger((int) table.getValue("slice", table
@@ -358,9 +356,8 @@ public class MarsOMEUtils {
 		marsOME.setSourceDirectory(oldMetadata.getSourceDirectory());
 		oldMetadata.getParameters().keySet().forEach(name -> marsOME.getParameters()
 			.put(name, oldMetadata.getParameters().get(name)));
-		oldMetadata.getTags().forEach(tag -> marsOME.addTag(tag));
-		oldMetadata.getBdvSources().forEach(bdvSource -> marsOME.putBdvSource(
-			bdvSource));
+		oldMetadata.getTags().forEach(marsOME::addTag);
+		oldMetadata.getBdvSources().forEach(marsOME::putBdvSource);
 		oldMetadata.getRegionNames().forEach(name -> marsOME.putRegion(oldMetadata
 			.getRegion(name)));
 		oldMetadata.getPositionNames().forEach(name -> marsOME.putPosition(
@@ -373,7 +370,7 @@ public class MarsOMEUtils {
 		image.setPixelsPhysicalSizeX(new Length(1.0d, UNITS.PIXEL));
 		image.setPixelsPhysicalSizeY(new Length(1.0d, UNITS.PIXEL));
 		image.setSizeZ(new PositiveInteger(1));
-		// image.setAquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
+		// image.setAcquisitionDate(new Timestamp(oldMetadata.getCollectionDate()));
 
 		image.setName(oldMetadata.getSourceDirectory());
 		image.setDimensionOrder(DimensionOrder.valueOf("XYZCT"));
@@ -393,19 +390,19 @@ public class MarsOMEUtils {
 		}
 
 		// Discover channel names...
-		Map<String, String> channelToColumnSuffix = new HashMap<String, String>();
+		Map<String, String> channelToColumnSuffix = new HashMap<>();
 		for (int colIndex = 0; colIndex < table.getColumnCount(); colIndex++) {
 			if (table.get(colIndex).getHeader().startsWith("Channel "))
 				channelToColumnSuffix.put((String) table.get(colIndex).get(0), table
 					.get(colIndex).getHeader().substring(8));
 		}
 
-		Map<Integer, String> channelIndexToChannel = new HashMap<Integer, String>();
+		Map<Integer, String> channelIndexToChannel = new HashMap<>();
 		for (String ch : channelToColumnSuffix.keySet())
 			channelIndexToChannel.put(Integer.valueOf(table.getStringValue(
 				"ChannelIndex " + channelToColumnSuffix.get(ch), 0)), ch);
 
-		int imageID = Integer.valueOf(table.getStringValue("PositionIndex " +
+		int imageID = Integer.parseInt(table.getStringValue("PositionIndex " +
 			channelToColumnSuffix.get(channelIndexToChannel.get(0)), 0));
 		image.setImageID(imageID);
 
@@ -492,13 +489,13 @@ public class MarsOMEUtils {
 		MarsMetadata marsOMEMetadata)
 	{
 		Map<Integer, Map<Integer, Double>> channelToTtoDtMap =
-			new HashMap<Integer, Map<Integer, Double>>();
+				new HashMap<>();
 
 		// Let's build some maps from t to dt for each color...
 		for (int channelIndex = 0; channelIndex < marsOMEMetadata.getImage(0)
 			.getSizeC(); channelIndex++)
 		{
-			HashMap<Integer, Double> tToDtMap = new HashMap<Integer, Double>();
+			HashMap<Integer, Double> tToDtMap = new HashMap<>();
 
 			final int finalChannelIndex = channelIndex;
 			marsOMEMetadata.getImage(0).planes().filter(plane -> plane
@@ -512,9 +509,7 @@ public class MarsOMEUtils {
 	}
 	
 	public static boolean checkOMEMetadataForDt(MarsMetadata marsOMEMetadata) {
-		if (marsOMEMetadata.getImage(0).planes().filter(plane -> plane.getDeltaTinSeconds() != -1).count() > 0)
-			return true;
-		return false;
+		return marsOMEMetadata.getImage(0).planes().anyMatch(plane -> plane.getDeltaTinSeconds() != -1);
 	}
 
 	public static void getTimeFromNoprixSliceLabels(MarsMetadata marsMetadata,
@@ -525,12 +520,12 @@ public class MarsOMEUtils {
 			int DateTimeIndex1 = metaDataStack.get(0).indexOf("DateTime: ");
 			String DateTimeString1 = metaDataStack.get(0).substring(DateTimeIndex1 +
 				10);
-			marsMetadata.getImage(0).setAquisitionDate(getNorPixDate(
+			marsMetadata.getImage(0).setAcquisitionDate(getNorPixDate(
 				DateTimeString1));
 
-			final UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+			final UnitsTimeEnumHandler timeHandler = new UnitsTimeEnumHandler();
 
-			// Extract the exact time of collection of all frames..
+			// Extract the exact time of collection of all frames.
 			final long t0 = getNorPixMillisecondTime(DateTimeString1);
 
 			marsMetadata.getImage(0).planes().forEach(plane -> {
@@ -544,7 +539,7 @@ public class MarsOMEUtils {
 						double millisecondsDt = ((double) getNorPixMillisecondTime(
 							DateTimeString2) - t0) / 1000;
 						dt = new Time(millisecondsDt, UnitsTimeEnumHandler.getBaseUnit(
-							(UnitsTime) timehandler.getEnumeration("s")));
+							(UnitsTime) timeHandler.getEnumeration("s")));
 					}
 					catch (ParseException | EnumerationException e) {
 						e.printStackTrace();

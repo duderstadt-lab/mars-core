@@ -71,11 +71,9 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	}
 
 	/*
-	 * Utility methods from  SpotRoi from trackmate with small modifications for integration into Mars. Use of these 
-	 * features is covered under the GPL 3.0 license.
+	 * Utility methods from SpotRoi from TrackMate with small modifications for integration into Mars.
 	 * 
 	 * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
-	 * 
 	 */
 
 	/**
@@ -84,18 +82,18 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	 * 
 	 * @param calibration the pixel size in X, to convert physical coordinates to
 	 *          pixel coordinates.
-	 * @param xcorner the top-left X corner of the view in the image to paint.
-	 * @param xcenter the x coordinate of the Peak center.
+	 * @param xCorner the top-left X corner of the view in the image to paint.
+	 * @param xCenter the x coordinate of the Peak center.
 	 * @param magnification the magnification of the view.
 	 * @return a new <code>double</code> array.
 	 */
-	public double[] toPolygonX(final double calibration, final double xcorner,
-		final double xcenter, final double magnification)
+	public double[] toPolygonX(final double calibration, final double xCorner,
+		final double xCenter, final double magnification)
 	{
 		final double[] xp = new double[x.length];
 		for (int i = 0; i < xp.length; i++) {
-			final double xc = (xcenter + x[i]) / calibration;
-			xp[i] = (xc - xcorner) * magnification;
+			final double xc = (xCenter + x[i]) / calibration;
+			xp[i] = (xc - xCorner) * magnification;
 		}
 		return xp;
 	}
@@ -106,22 +104,23 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	 * 
 	 * @param calibration the pixel size in Y, to convert physical coordinates to
 	 *          pixel coordinates.
-	 * @param ycorner the top-left Y corner of the view in the image to paint.
-	 * @param ycenter the y coordinate of the Peak center.
+	 * @param yCorner the top-left Y corner of the view in the image to paint.
+	 * @param yCenter the y coordinate of the Peak center.
 	 * @param magnification the magnification of the view.
 	 * @return a new <code>int</code> array.
 	 */
-	public double[] toPolygonY(final double calibration, final double ycorner,
-		final double ycenter, final double magnification)
+	public double[] toPolygonY(final double calibration, final double yCorner,
+		final double yCenter, final double magnification)
 	{
 		final double[] yp = new double[y.length];
 		for (int i = 0; i < yp.length; i++) {
-			final double yc = (ycenter + y[i]) / calibration;
-			yp[i] = (yc - ycorner) * magnification;
+			final double yc = (yCenter + y[i]) / calibration;
+			yp[i] = (yc - yCorner) * magnification;
 		}
 		return yp;
 	}
 
+	@SuppressWarnings("unused")
 	public <T> IterableInterval<T> sample(final Peak peak, final ImgPlus<T> img) {
 		return sample(peak.getDoublePosition(0), peak.getDoublePosition(1), img, img
 			.averageScale(0), img.averageScale(1));
@@ -152,32 +151,33 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 	}
 
 	public double perimeter() {
-		final int npoints = x.length;
-		if (npoints < 2) return 0;
+		final int nPoints = x.length;
+		if (nPoints < 2) return 0;
 
 		double length = 0;
-		for (int i = 0; i < npoints - 1; i++) {
+		for (int i = 0; i < nPoints - 1; i++) {
 			final double dx = x[i + 1] - x[i];
 			final double dy = y[i + 1] - y[i];
 			length += Math.sqrt(dx * dx + dy * dy);
 		}
 
-		final double dx0 = x[0] - x[npoints - 1];
-		final double dy0 = y[0] - y[npoints - 1];
+		final double dx0 = x[0] - x[nPoints - 1];
+		final double dy0 = y[0] - y[nPoints - 1];
 		length += Math.sqrt(dx0 * dx0 + dy0 * dy0);
 
 		return length;
 	}
 
+	@SuppressWarnings("unused")
 	public void scale(final double alpha) {
 		for (int i = 0; i < x.length; i++) {
 			final double x = this.x[i];
 			final double y = this.y[i];
 			final double r = Math.sqrt(x * x + y * y);
-			final double costheta = x / r;
-			final double sintheta = y / r;
-			this.x[i] = costheta * r * alpha;
-			this.y[i] = sintheta * r * alpha;
+			final double cosTheta = x / r;
+			final double sinTheta = y / r;
+			this.x[i] = cosTheta * r * alpha;
+			this.y[i] = sinTheta * r * alpha;
 		}
 	}
 
@@ -198,7 +198,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		return peak;
 	}
 
-	private static final double[] centroid(final double[] x, final double[] y) {
+	private static double[] centroid(final double[] x, final double[] y) {
 		final double area = signedArea(x, y);
 		double ax = 0.0;
 		double ay = 0.0;
@@ -215,7 +215,7 @@ public class PeakShape extends AbstractJsonConvertibleRecord {
 		return new double[] { ax / 6. / area, ay / 6. / area };
 	}
 
-	private static final double signedArea(final double[] x, final double[] y) {
+	private static double signedArea(final double[] x, final double[] y) {
 		final int n = x.length;
 		double a = 0.0;
 		for (int i = 0; i < n - 1; i++)

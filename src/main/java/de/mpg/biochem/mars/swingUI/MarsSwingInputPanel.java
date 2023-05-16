@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -94,7 +95,7 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			addTab(group);
 
 			if (style.contains("tabbedPaneWidth:")) {
-				int width = Integer.valueOf(styleFieldValue(style, "tabbedPaneWidth"));
+				int width = Integer.parseInt(styleFieldValue(style, "tabbedPaneWidth"));
 				tabbedPane.setPreferredSize(new Dimension(width, tabbedPane
 					.getPreferredSize().height));
 			}
@@ -104,15 +105,16 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			.contains("image"))
 		{
 			try {
-				BufferedImage wPic = (isRetina()) ? ImageIO.read(getClass().getResource(
-					"/2x/" + (String) model.getValue())) : ImageIO.read(getClass()
-						.getResource("/1x/" + (String) model.getValue()));
+				BufferedImage wPic = (isRetina()) ? ImageIO.read(Objects.requireNonNull(getClass().getResource(
+						"/2x/" + model.getValue()))) : ImageIO.read(Objects.requireNonNull(getClass()
+						.getResource("/1x/" + model.getValue())));
 				JLabel wIcon = new JLabel(new RetinaImageIcon(wPic));
 				if (tabbedPane != null && !group.equals("")) {
 					if (!tabPanels.containsKey(group)) addTab(group);
 
 					// widget occupies entire row
-					getTabPanel(group).add(wIcon, "center, span");
+					JPanel groupPanel = getTabPanel(group);
+					if (groupPanel != null) groupPanel.add(wIcon, "center, span");
 				}
 				else {
 					// widget occupies entire row
@@ -131,8 +133,11 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			if (tabbedPane != null && !group.equals("")) {
 				if (!tabPanels.containsKey(group)) addTab(group);
 
-				getTabPanel(group).add(l);
-				getTabPanel(group).add(widgetPane);
+				JPanel groupPanel = getTabPanel(group);
+				if (groupPanel != null) {
+					groupPanel.add(l);
+					groupPanel.add(widgetPane);
+				}
 			}
 			else {
 				getComponent().add(l);
@@ -140,17 +145,18 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			}
 		}
 		else {
-			String alignent = (style.contains("align:")) ? this.styleFieldValue(style,
+			String alignment = (style.contains("align:")) ? this.styleFieldValue(style,
 				"align") + ", " : "";
 			if (tabbedPane != null && !group.equals("")) {
 				if (!tabPanels.containsKey(group)) addTab(group);
 
 				// widget occupies entire row
-				getTabPanel(group).add(widgetPane, alignent + "span");
+				JPanel groupPanel = getTabPanel(group);
+				if (groupPanel != null) groupPanel.add(widgetPane, alignment + "span");
 			}
 			else {
 				// widget occupies entire row
-				getComponent().add(widgetPane, alignent + "span");
+				getComponent().add(widgetPane, alignment + "span");
 			}
 		}
 	}
@@ -161,7 +167,7 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 			getComponent().add(tabbedPane, "growx, growy, span 2");
 		}
 
-		if (tabPanels == null) tabPanels = new HashMap<String, JPanel>();
+		if (tabPanels == null) tabPanels = new HashMap<>();
 
 		JPanel panel = new JPanel();
 		panel.setLayout(new MigLayout("fillx,wrap 2", "[right]10[fill,grow]"));
@@ -217,19 +223,17 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 
 		try {
 			Field field = graphicsDevice.getClass().getDeclaredField("scale");
-			if (field != null) {
-				field.setAccessible(true);
-				Object scale = field.get(graphicsDevice);
-				if (scale instanceof Integer && ((Integer) scale).intValue() == 2) {
-					isRetina = true;
-				}
+			field.setAccessible(true);
+			Object scale = field.get(graphicsDevice);
+			if (scale instanceof Integer && (Integer) scale == 2) {
+				isRetina = true;
 			}
 		}
-		catch (Exception e) {}
+		catch (Exception ignored) {}
 		return isRetina;
 	}
 
-	private class RetinaImageIcon extends ImageIcon {
+	private static class RetinaImageIcon extends ImageIcon {
 
 		/**
 		 * 
@@ -271,9 +275,6 @@ public class MarsSwingInputPanel extends AbstractInputPanel<JPanel, JPanel> {
 
 			if (isRetina()) {
 				g2d.scale(0.5, 0.5);
-			}
-			else {
-
 			}
 			g2d.drawImage(image, 0, 0, observer);
 			g2d.scale(1, 1);

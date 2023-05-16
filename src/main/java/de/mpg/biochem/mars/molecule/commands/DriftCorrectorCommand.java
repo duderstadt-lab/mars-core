@@ -117,18 +117,6 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	@Parameter(label = "Output Y (Y_drift_corr)")
 	private String output_y = "Y_drift_corr";
 
-	// @Parameter(label = "set output zero to mean of region")
-	// private boolean zeroToRegion = false;
-
-	// @Parameter(visibility = ItemVisibility.MESSAGE)
-	// private final String header = "Region:";
-
-	// @Parameter(label = "start T")
-	// private int start = 0;
-
-	// @Parameter(label = "end T")
-	// private int end = 100;
-
 	@Override
 	public void run() {
 

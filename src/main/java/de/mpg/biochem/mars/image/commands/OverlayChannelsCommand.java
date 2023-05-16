@@ -144,17 +144,13 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 		final MutableModuleItem<String> transformMeItems = getInfo()
 			.getMutableInput("transformMeName", String.class);
 
-		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
+		// HACK: IJ1 workaround for issues in scijava/scifio related to
 		// getting images.
 		int numberOfImages = WindowManager.getImageCount();
-		List<String> imageNames = new ArrayList<String>();
+		List<String> imageNames = new ArrayList<>();
 
 		for (int i = 0; i < numberOfImages; i++)
 			imageNames.add(WindowManager.getImage(i + 1).getTitle());
-
-		// List<String> datasetNames =
-		// datasetService.getDatasets().stream().map(dataset ->
-		// dataset.getName()).collect(Collectors.toList());
 
 		addToMeItems.setChoices(imageNames);
 		transformMeItems.setChoices(imageNames);
@@ -162,16 +158,6 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 	@Override
 	public void run() {
-		// Dataset addToMeDataset =
-		// datasetService.getDatasets().stream().filter(dataset ->
-		// dataset.getName().equals(addToMeName)).findFirst().get();
-		// Dataset transformMeDataset =
-		// datasetService.getDatasets().stream().filter(dataset ->
-		// dataset.getName().equals(addToMeName)).findFirst().get();
-
-		// addToMe = convertService.convert(addToMeDataset, ImagePlus.class);
-		// transformMe = convertService.convert(transformMeDataset,
-		// ImagePlus.class);
 		addToMe = WindowManager.getImage(addToMeName);
 		transformMe = WindowManager.getImage(transformMeName);
 
@@ -192,10 +178,10 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 
 		ImageStack oldStack = transformMe.getImageStack();
 
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 		logService.info("Transforming and Overlaying channels...");
 
-		List<Runnable> tasks = new ArrayList<Runnable>();
+		List<Runnable> tasks = new ArrayList<>();
 		IntStream.rangeClosed(1, transformMe.getStackSize()).forEach(t -> tasks.add(
 			() -> transformT(t, new ImagePlus("T " + t, oldStack.getProcessor(t)),
 				transform)));
@@ -210,9 +196,9 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 		ImageStack newStack = new ImageStack(transformMe.getWidth(), transformMe
 			.getHeight());
 
-		// I think this just works with references, so it should be super fast...
+		// I think this just works with references, so it should be very fast.
 		// otherwise the stack could be made in the parallel stream but might need
-		// to be placed in a synchronize block...
+		// to be placed in a synchronized block.
 		for (int slice = 1; slice <= transformedImageMap.size(); slice++)
 			newStack.addSlice(transformedImageMap.get(slice).getProcessor());
 
@@ -223,7 +209,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 		imgOut = ij.plugin.RGBStackMerge.mergeChannels(images, keep);
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 
 		logService.info(LogBuilder.endBlock(true));
 
@@ -241,6 +227,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	{
 		Img<T> img = ImagePlusAdapter.wrap(tImage);
 
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		RandomAccessibleInterval<T> ra = Views.interval(Views.raster(RealViews
 			.affine(Views.interpolate(Views.extendZero(img),
 				new NLinearInterpolatorFactory()), transform)), img);

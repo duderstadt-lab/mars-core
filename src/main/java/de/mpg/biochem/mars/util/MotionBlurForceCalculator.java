@@ -80,9 +80,7 @@ public class MotionBlurForceCalculator implements UnivariateFunction {
 			length = solver.solve(100, this, Math.pow(10, -10), L0 - L0 / 10000,
 				AllowedSolution.ANY_SIDE);
 		}
-		catch (LocalException le) {
-			length = Double.NaN;
-		}
+		catch (LocalException ignored) {}
 
 		double[] output = new double[3];
 		output[0] = getWLCForce(length);
@@ -94,8 +92,8 @@ public class MotionBlurForceCalculator implements UnivariateFunction {
 
 	public double value(double length) {
 		double wlcForce = getWLCForce(length);
-		double equiForce = getEquipartitionForce(length, wlcForce);
-		return equiForce - wlcForce;
+		double equipartitionForce = getEquipartitionForce(length, wlcForce);
+		return equipartitionForce - wlcForce;
 	}
 
 	public double getWLCForce(double length) {

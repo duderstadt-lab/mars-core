@@ -52,9 +52,9 @@ import de.mpg.biochem.mars.metadata.MarsMetadata;
  */
 @Plugin(type = InputWidget.class)
 public class MoleculeArchiveWidget extends
-	SwingInputWidget<MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties, ? extends MoleculeArchiveIndex>>
+	SwingInputWidget<MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>>>
 	implements
-	InputWidget<MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties, ? extends MoleculeArchiveIndex>, JPanel>,
+	InputWidget<MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>>, JPanel>,
 	ActionListener
 {
 
@@ -75,7 +75,7 @@ public class MoleculeArchiveWidget extends
 
 	@Override
 	public
-		MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties, ? extends MoleculeArchiveIndex>
+		MoleculeArchive<? extends Molecule, ? extends MarsMetadata, ? extends MoleculeArchiveProperties<?, ?>, ? extends MoleculeArchiveIndex<?, ?>>
 		getValue()
 	{
 		return moleculeArchiveService.getArchive((String) comboBox
@@ -115,8 +115,6 @@ public class MoleculeArchiveWidget extends
 
 	@Override
 	public void doRefresh() {
-		// final String value = get().getValue().toString();
-		// if (value.equals(comboBox.getSelectedItem())) return; // no change
-		// comboBox.setSelectedItem(value);
+		// TODO implement ComboBox refresh
 	}
 }

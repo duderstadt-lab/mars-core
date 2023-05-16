@@ -76,8 +76,8 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 	private double zDrift;
 
 	private Map<String, String> stringFields =
-		new LinkedHashMap<String, String>();
-	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
+			new LinkedHashMap<>();
+	private Map<String, Double> valueFields = new LinkedHashMap<>();
 
 	public MarsOMEPlane() {
 		super();
@@ -94,9 +94,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 		this.c = md.getPlaneTheC(imageIndex, planeIndex);
 		this.z = md.getPlaneTheZ(imageIndex, planeIndex);
 		this.t = md.getPlaneTheT(imageIndex, planeIndex);
-		// this.ifd = md.getTiffDataIFD(imageIndex, planeIndex);
-		// this.filename = md.getUUIDFileName(imageIndex, planeIndex);
-		// this.uuid = md.getUUIDValue(imageIndex, planeIndex);
+		this.ifd = md.getTiffDataIFD(imageIndex, planeIndex);
+		this.filename = md.getUUIDFileName(imageIndex, planeIndex);
+		this.uuid = md.getUUIDValue(imageIndex, planeIndex);
 
 		this.dt = md.getPlaneDeltaT(imageIndex, planeIndex);
 		this.exposureTime = md.getPlaneExposureTime(imageIndex, planeIndex);
@@ -106,7 +106,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 
 		if (md.getImageID(imageIndex) != null) {
 			try {
-				this.imageID = Integer.valueOf(md.getImageID(imageIndex).substring(6));
+				this.imageID = Integer.parseInt(md.getImageID(imageIndex).substring(6));
 			}
 			catch (NumberFormatException e) {
 				this.imageID = imageIndex;
@@ -144,7 +144,7 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 	@Override
 	protected void createIOMaps() {
 
-		UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+		UnitsTimeEnumHandler timeHandler = new UnitsTimeEnumHandler();
 
 		setJsonField("imageID", jGenerator -> jGenerator.writeNumberField("imageID",
 			imageID), jParser -> imageID = jParser.getIntValue());
@@ -187,15 +187,15 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				dt = new Time(value, UnitsTimeEnumHandler.getBaseUnit(
-					(UnitsTime) timehandler.getEnumeration(units)));
+					(UnitsTime) timeHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				// TODO Auto-generated catch block
@@ -215,15 +215,15 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				exposureTime = new Time(value, UnitsTimeEnumHandler.getBaseUnit(
-					(UnitsTime) timehandler.getEnumeration(units)));
+					(UnitsTime) timeHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				// TODO Auto-generated catch block
@@ -258,9 +258,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				stringFields.put(fieldname, jParser.getText());
+				stringFields.put(fieldName, jParser.getText());
 			}
 		});
 
@@ -273,9 +273,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				valueFields.put(fieldname, jParser.getDoubleValue());
+				valueFields.put(fieldName, jParser.getDoubleValue());
 			}
 		});
 
@@ -298,17 +298,17 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 
 		setJsonField("StringFields", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				stringFields.put(fieldname, jParser.getText());
+				stringFields.put(fieldName, jParser.getText());
 			}
 		});
 
 		setJsonField("ValueFields", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				valueFields.put(fieldname, jParser.getDoubleValue());
+				valueFields.put(fieldName, jParser.getDoubleValue());
 			}
 		});
 	}

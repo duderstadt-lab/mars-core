@@ -71,21 +71,21 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	GenericModel, JsonConvertibleRecord
 {
 
-	private Map<Integer, MarsOMEPlane> marsOMEPlanes =
-		new LinkedHashMap<Integer, MarsOMEPlane>();
+	private final Map<Integer, MarsOMEPlane> marsOMEPlanes =
+			new LinkedHashMap<>();
 
 	private String id;
 	private String pixelID;
 
 	private Time timeIncrement;
-	private Timestamp imageAquisitionDate;
+	private Timestamp imageAcquisitionDate;
 
 	// True index of the image (position) from collection.
 	private int imageID;
 	private String imageName;
 	private String imageDescription;
-	private Map<Integer, MarsOMEChannel> channels =
-		new LinkedHashMap<Integer, MarsOMEChannel>();
+	private final Map<Integer, MarsOMEChannel> channels =
+			new LinkedHashMap<>();
 
 	private Length pixelsPhysicalSizeX, pixelsPhysicalSizeY, pixelsPhysicalSizeZ;
 
@@ -101,9 +101,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	private PositiveInteger sizeY;
 	private PositiveInteger sizeZ;
 
-	private Map<String, String> stringFields =
-		new LinkedHashMap<String, String>();
-	private Map<String, Double> valueFields = new LinkedHashMap<String, Double>();
+	private final Map<String, String> stringFields =
+			new LinkedHashMap<>();
+	private final Map<String, Double> valueFields = new LinkedHashMap<>();
 
 	public MarsOMEImage() {
 		super();
@@ -119,7 +119,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 
 		id = md.getImageID(imageIndex);
 		pixelID = md.getPixelsID(imageIndex);
-		imageAquisitionDate = md.getImageAcquisitionDate(imageIndex);
+		imageAcquisitionDate = md.getImageAcquisitionDate(imageIndex);
 		imageName = md.getImageName(imageIndex);
 		imageDescription = md.getImageDescription(imageIndex);
 
@@ -168,13 +168,13 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 		{
 			for (int i = 0; i < md.getMapAnnotationCount(); i++) {
 				String[] strList = md.getMapAnnotationID(i).split("-");
-				int iIndex = Integer.valueOf(strList[1]);
-				int planeIndex = Integer.valueOf(strList[2]);
+				int iIndex = Integer.parseInt(strList[1]);
+				int planeIndex = Integer.parseInt(strList[2]);
 
 				if (iIndex == imageIndex) {
 					List<MapPair> omeFieldsList = md.getMapAnnotationValue(i);
 
-					Map<String, String> fieldsMap = new HashMap<String, String>();
+					Map<String, String> fieldsMap = new HashMap<>();
 					for (MapPair pair : omeFieldsList)
 						fieldsMap.put(pair.getName(), pair.getValue());
 
@@ -185,7 +185,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 		}
 		if (md.getImageID(imageIndex) != null) {
 			try {
-				this.imageID = Integer.valueOf(md.getImageID(imageIndex).substring(6));
+				this.imageID = Integer.parseInt(md.getImageID(imageIndex).substring(6));
 			}
 			catch (NumberFormatException e) {
 				this.imageID = imageIndex;
@@ -206,63 +206,65 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 				}
 	}
 
-	// This must exist somewhere but I can't find it...
+	// This must exist somewhere, but I can't find it...
 	public long getPlaneIndex(int z, int c, int t) {
 		long[] length = new long[3];
 		long[] position = new long[3];
-		if (dimensionOrder.getValue().equals("XYCTZ")) {
-			length[0] = sizeC.getValue();
-			length[1] = sizeT.getValue();
-			length[2] = sizeZ.getValue();
+		switch (dimensionOrder.getValue()) {
+			case "XYCTZ":
+				length[0] = sizeC.getValue();
+				length[1] = sizeT.getValue();
+				length[2] = sizeZ.getValue();
 
-			position[0] = c;
-			position[1] = t;
-			position[2] = z;
-		}
-		else if (dimensionOrder.getValue().equals("XYCZT")) {
-			length[0] = sizeC.getValue();
-			length[1] = sizeZ.getValue();
-			length[2] = sizeT.getValue();
+				position[0] = c;
+				position[1] = t;
+				position[2] = z;
+				break;
+			case "XYCZT":
+				length[0] = sizeC.getValue();
+				length[1] = sizeZ.getValue();
+				length[2] = sizeT.getValue();
 
-			position[0] = c;
-			position[1] = z;
-			position[2] = t;
-		}
-		else if (dimensionOrder.getValue().equals("XYTCZ")) {
-			length[0] = sizeT.getValue();
-			length[1] = sizeC.getValue();
-			length[2] = sizeZ.getValue();
+				position[0] = c;
+				position[1] = z;
+				position[2] = t;
+				break;
+			case "XYTCZ":
+				length[0] = sizeT.getValue();
+				length[1] = sizeC.getValue();
+				length[2] = sizeZ.getValue();
 
-			position[0] = t;
-			position[1] = c;
-			position[2] = z;
-		}
-		else if (dimensionOrder.getValue().equals("XYTZC")) {
-			length[0] = sizeT.getValue();
-			length[1] = sizeZ.getValue();
-			length[2] = sizeC.getValue();
+				position[0] = t;
+				position[1] = c;
+				position[2] = z;
+				break;
+			case "XYTZC":
+				length[0] = sizeT.getValue();
+				length[1] = sizeZ.getValue();
+				length[2] = sizeC.getValue();
 
-			position[0] = t;
-			position[1] = z;
-			position[2] = c;
-		}
-		else if (dimensionOrder.getValue().equals("XYZCT")) {
-			length[0] = sizeZ.getValue();
-			length[1] = sizeC.getValue();
-			length[2] = sizeT.getValue();
+				position[0] = t;
+				position[1] = z;
+				position[2] = c;
+				break;
+			case "XYZCT":
+				length[0] = sizeZ.getValue();
+				length[1] = sizeC.getValue();
+				length[2] = sizeT.getValue();
 
-			position[0] = z;
-			position[1] = c;
-			position[2] = t;
-		}
-		else if (dimensionOrder.getValue().equals("XYZTC")) {
-			length[0] = sizeZ.getValue();
-			length[1] = sizeT.getValue();
-			length[2] = sizeC.getValue();
+				position[0] = z;
+				position[1] = c;
+				position[2] = t;
+				break;
+			case "XYZTC":
+				length[0] = sizeZ.getValue();
+				length[1] = sizeT.getValue();
+				length[2] = sizeC.getValue();
 
-			position[0] = z;
-			position[1] = t;
-			position[2] = c;
+				position[0] = z;
+				position[1] = t;
+				position[2] = c;
+				break;
 		}
 		return FormatTools.positionToRaster(length, position);
 	}
@@ -283,12 +285,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 		return pixelID;
 	}
 
-	public void setAquisitionDate(Timestamp imageAquisitionDate) {
-		this.imageAquisitionDate = imageAquisitionDate;
+	public void setAcquisitionDate(Timestamp imageAcquisitionDate) {
+		this.imageAcquisitionDate = imageAcquisitionDate;
 	}
 
-	public Timestamp getAquisitionDate() {
-		return imageAquisitionDate;
+	public Timestamp getAcquisitionDate() {
+		return imageAcquisitionDate;
 	}
 
 	public void setName(String imageName) {
@@ -430,12 +432,11 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	}
 
 	public Stream<MarsOMEPlane> planes() {
-		ArrayList<Integer> planeIndexes = new ArrayList<Integer>();
-		marsOMEPlanes.keySet().forEach(index -> planeIndexes.add(index));
+		ArrayList<Integer> planeIndexes = new ArrayList<>(marsOMEPlanes.keySet());
 		Collections.sort(planeIndexes);
 
-		ArrayList<MarsOMEPlane> planeList = new ArrayList<MarsOMEPlane>();
-		planeIndexes.stream().forEach(index -> planeList.add(marsOMEPlanes.get(
+		ArrayList<MarsOMEPlane> planeList = new ArrayList<>();
+		planeIndexes.forEach(index -> planeList.add(marsOMEPlanes.get(
 			index)));
 
 		return planeList.stream();
@@ -505,14 +506,12 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 	@Override
 	protected void createIOMaps() {
 
-		UnitsLengthEnumHandler unitshandler = new UnitsLengthEnumHandler();
+		UnitsLengthEnumHandler unitsHandler = new UnitsLengthEnumHandler();
 
 		setJsonField("imageAcquisitionDate", jGenerator -> {
-			if (imageAquisitionDate != null) jGenerator.writeStringField(
-				"imageAcquisitionDate", imageAquisitionDate.getValue());
-		}, jParser -> {
-			imageAquisitionDate = new Timestamp(jParser.getText());
-		});
+			if (imageAcquisitionDate != null) jGenerator.writeStringField(
+				"imageAcquisitionDate", imageAcquisitionDate.getValue());
+		}, jParser -> imageAcquisitionDate = new Timestamp(jParser.getText()));
 
 		setJsonField("imageID", jGenerator -> jGenerator.writeNumberField("imageID",
 			imageID), jParser -> imageID = jParser.getIntValue());
@@ -582,15 +581,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeX = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -610,15 +609,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeY = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -638,15 +637,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeZ = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -665,16 +664,16 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
-				UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+				UnitsTimeEnumHandler timeHandler = new UnitsTimeEnumHandler();
 				timeIncrement = new Time(value, UnitsTimeEnumHandler.getBaseUnit(
-					(UnitsTime) timehandler.getEnumeration(units)));
+					(UnitsTime) timeHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				// TODO Auto-generated catch block
@@ -718,11 +717,11 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			UnitsTemperatureEnumHandler handler = new UnitsTemperatureEnumHandler();
 			try {
@@ -744,9 +743,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				stringFields.put(fieldname, jParser.getText());
+				stringFields.put(fieldName, jParser.getText());
 			}
 		});
 
@@ -759,9 +758,9 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				valueFields.put(fieldname, jParser.getDoubleValue());
+				valueFields.put(fieldName, jParser.getDoubleValue());
 			}
 		});
 
@@ -787,9 +786,7 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 		 * 
 		 */
 
-		setJsonField("ImageAcquisitionDate", null, jParser -> {
-			imageAquisitionDate = new Timestamp(jParser.getText());
-		});
+		setJsonField("ImageAcquisitionDate", null, jParser -> imageAcquisitionDate = new Timestamp(jParser.getText()));
 
 		setJsonField("ImageName", null, jParser -> imageName = jParser.getText());
 
@@ -829,15 +826,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeX = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -848,15 +845,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeY = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -867,15 +864,15 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
 				pixelsPhysicalSizeZ = new Length(value, UnitsLengthEnumHandler
-					.getBaseUnit((UnitsLength) unitshandler.getEnumeration(units)));
+					.getBaseUnit((UnitsLength) unitsHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				e.printStackTrace();
@@ -886,16 +883,16 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			try {
-				UnitsTimeEnumHandler timehandler = new UnitsTimeEnumHandler();
+				UnitsTimeEnumHandler timeHandler = new UnitsTimeEnumHandler();
 				timeIncrement = new Time(value, UnitsTimeEnumHandler.getBaseUnit(
-					(UnitsTime) timehandler.getEnumeration(units)));
+					(UnitsTime) timeHandler.getEnumeration(units)));
 			}
 			catch (EnumerationException e) {
 				// TODO Auto-generated catch block
@@ -926,11 +923,11 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 			double value = Double.NaN;
 			String units = "";
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String subfieldname = jParser.getCurrentName();
+				String subFieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				if (subfieldname.equals("value")) value = jParser.getDoubleValue();
+				if (subFieldName.equals("value")) value = jParser.getDoubleValue();
 
-				if (subfieldname.equals("units")) units = jParser.getText();
+				if (subFieldName.equals("units")) units = jParser.getText();
 			}
 			UnitsTemperatureEnumHandler handler = new UnitsTemperatureEnumHandler();
 			try {
@@ -945,17 +942,17 @@ public class MarsOMEImage extends AbstractJsonConvertibleRecord implements
 
 		setJsonField("StringFields", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				stringFields.put(fieldname, jParser.getText());
+				stringFields.put(fieldName, jParser.getText());
 			}
 		});
 
 		setJsonField("ValueFields", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 				jParser.nextToken();
-				valueFields.put(fieldname, jParser.getDoubleValue());
+				valueFields.put(fieldName, jParser.getDoubleValue());
 			}
 		});
 

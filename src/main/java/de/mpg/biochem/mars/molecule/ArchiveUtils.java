@@ -51,7 +51,7 @@ import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
 
-	public static final File yamaFileExtensionFixer(File file) {
+	public static File yamaFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (!file.getAbsolutePath().endsWith(".yama")) return new File(file
@@ -59,7 +59,7 @@ public class ArchiveUtils {
 		else return file;
 	}
 
-	public static final File jsonFileExtensionFixer(File file) {
+	public static File jsonFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (file.getAbsolutePath().endsWith(".yama.json")) return file;
@@ -68,7 +68,7 @@ public class ArchiveUtils {
 		else return new File(file.getAbsolutePath() + ".yama.json");
 	}
 
-	public static final File storeFileExtensionFixer(File file) {
+	public static File storeFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
 		if (file.getAbsolutePath().endsWith(".yama.store")) return file;
@@ -108,7 +108,7 @@ public class ArchiveUtils {
 		boolean use_incomplete_traces, String mode, String zeroPoint,
 		final boolean singleChannel, final int theC, LogService logService)
 	{
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		final int channel = (singleChannel) ? theC : 0;
 
@@ -142,9 +142,9 @@ public class ArchiveUtils {
 			int sizeT = meta.getImage(0).getSizeT();
 
 			HashMap<Integer, DoubleColumn> xValuesColumns =
-				new HashMap<Integer, DoubleColumn>();
+					new HashMap<>();
 			HashMap<Integer, DoubleColumn> yValuesColumns =
-				new HashMap<Integer, DoubleColumn>();
+					new HashMap<>();
 
 			for (int t = 0; t <= sizeT; t++) {
 				xValuesColumns.put(t, new DoubleColumn("X_" + t));
@@ -178,8 +178,7 @@ public class ArchiveUtils {
 			else {
 				// For all molecules in this dataset that are marked with the background
 				// tag and have all Ts
-				long[] num_full_traj = new long[1];
-				num_full_traj[0] = 0;
+				long[] numFullTrajectory = new long[1];
 				Stream<String> UIDs = archive.getMoleculeUIDs().stream().filter(
 					UID -> archive.getMetadataUIDforMolecule(UID).equals(meta.getUID()))
 					.filter(UID -> archive.moleculeHasTag(UID, backgroundTag));
@@ -200,11 +199,11 @@ public class ArchiveUtils {
 							yValuesColumns.get(t).add(datatable.getValue(input_y, row) -
 								y_mean);
 						}
-						num_full_traj[0]++;
+						numFullTrajectory[0]++;
 					}
 				});
 
-				if (num_full_traj[0] == 0) {
+				if (numFullTrajectory[0] == 0) {
 					archive.logln(
 						"Aborting. No complete molecules with all Ts found for dataset " +
 							meta.getUID() + "!");
@@ -225,8 +224,8 @@ public class ArchiveUtils {
 				if (xValuesColumns.get(t).size() == 0 || yValuesColumns.get(t)
 					.size() == 0) continue;
 
-				double xTFinalValue = Double.NaN;
-				double yTFinalValue = Double.NaN;
+				double xTFinalValue;
+				double yTFinalValue;
 
 				MarsTable xTempTable = new MarsTable();
 				xTempTable.add(xValuesColumns.get(t));
@@ -254,8 +253,8 @@ public class ArchiveUtils {
 				sizeT);
 
 			// Build Maps
-			Map<Integer, Double> TtoXMap = new HashMap<Integer, Double>();
-			Map<Integer, Double> TtoYMap = new HashMap<Integer, Double>();
+			Map<Integer, Double> TtoXMap = new HashMap<>();
+			Map<Integer, Double> TtoYMap = new HashMap<>();
 
 			driftTable.rows().forEach(row -> {
 				TtoXMap.put((int) row.getValue("T"), row.getValue("X"));
@@ -303,7 +302,7 @@ public class ArchiveUtils {
 		}
 		if (logService != null) {
 			logService.info("Time: " + DoubleRounder.round((System
-				.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+				.currentTimeMillis() - startTime) / 60000, 2) + " minutes.");
 			logService.info(LogBuilder.endBlock(true));
 		}
 		archive.logln("\n" + LogBuilder.endBlock(true));
@@ -389,7 +388,7 @@ public class ArchiveUtils {
 		// Map of header name changes to use for updating parameters and segments
 		// tables
 		Map<String, String> oldHeaderToNewHeader =
-			new ConcurrentHashMap<String, String>();
+				new ConcurrentHashMap<>();
 
 		// Check and update molecule table headers
 		archive.parallelMolecules().forEach(molecule -> {
@@ -405,21 +404,27 @@ public class ArchiveUtils {
 						.substring(0, header.length() - 1) + "Y");
 					else if (header.endsWith("_height")) table.setColumnHeader(col, header
 						.substring(0, header.length() - 6) + "Height");
-					else if (header.endsWith("_baseline")) table.setColumnHeader(col,
-						header.substring(0, header.length() - 8) + "Baseline");
-					else if (header.endsWith("_sigma")) table.setColumnHeader(col, header
-						.substring(0, header.length() - 5) + "Sigma");
-					else if (header.endsWith("_intensity")) table.setColumnHeader(col,
-						header.substring(0, header.length() - 9) + "Intensity");
-					else if (header.endsWith("_medianBackground")) table.setColumnHeader(
-						col, header.substring(0, header.length() - 16) +
-							"Median_background");
-					else if (header.endsWith("_Time (s)")) table.setColumnHeader(col,
-						header.substring(0, header.length() - 8) + "Time_(s)");
-					else if (header.endsWith("_x_drift_corr")) table.setColumnHeader(col,
-						header.substring(0, header.length() - 12) + "X_drift_corr");
-					else if (header.endsWith("_y_drift_corr")) table.setColumnHeader(col,
-						header.substring(0, header.length() - 12) + "Y_drift_corr");
+					else {
+						String substring = header.substring(0, header.length() - 8);
+						if (header.endsWith("_baseline")) table.setColumnHeader(col,
+							substring + "Baseline");
+						else if (header.endsWith("_sigma")) table.setColumnHeader(col, header
+							.substring(0, header.length() - 5) + "Sigma");
+						else if (header.endsWith("_intensity")) table.setColumnHeader(col,
+							header.substring(0, header.length() - 9) + "Intensity");
+						else if (header.endsWith("_medianBackground")) table.setColumnHeader(
+							col, header.substring(0, header.length() - 16) +
+								"Median_background");
+						else if (header.endsWith("_Time (s)")) table.setColumnHeader(col,
+							substring + "Time_(s)");
+						else {
+							String substring1 = header.substring(0, header.length() - 12);
+							if (header.endsWith("_x_drift_corr")) table.setColumnHeader(col,
+								substring1 + "X_drift_corr");
+							else if (header.endsWith("_y_drift_corr")) table.setColumnHeader(col,
+								substring1 + "Y_drift_corr");
+						}
+					}
 
 					if (!header.equals(table.getColumnHeader(col))) oldHeaderToNewHeader
 						.put(header, table.getColumnHeader(col));
@@ -522,10 +527,7 @@ public class ArchiveUtils {
 			// regions and positions... what am I forgetting??
 
 			final List<List<String>> segmentsTableNames =
-				new ArrayList<List<String>>();
-
-			for (List<String> tableColumnNames : molecule.getSegmentsTableNames())
-				segmentsTableNames.add(tableColumnNames);
+					new ArrayList<>(molecule.getSegmentsTableNames());
 
 			for (List<String> tableColumnNames : segmentsTableNames) {
 				MarsTable segmentsTable = molecule.getSegmentsTable(tableColumnNames);
@@ -603,7 +605,7 @@ public class ArchiveUtils {
 		final boolean singleChannel, final int theC, LogService logService)
 	{
 		// Let's keep track of the time it takes
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		final int channel = (singleChannel) ? theC : 0;
 
@@ -623,24 +625,22 @@ public class ArchiveUtils {
 		if (logService != null) logService.info(log);
 		archive.logln(log);
 
-		// Build maps from slice to x and slice to y for each metadataset
+		// Build maps from slice to x and slice to y for each metadata set
 		HashMap<String, Map<Double, Double>> metaToMapX =
-			new HashMap<String, Map<Double, Double>>();
+				new HashMap<>();
 		HashMap<String, Map<Double, Double>> metaToMapY =
-			new HashMap<String, Map<Double, Double>>();
+				new HashMap<>();
 
 		for (String metaUID : archive.getMetadataUIDs()) {
 			MarsMetadata meta = archive.getMetadata(metaUID);
 			metaToMapX.put(meta.getUID(), getToXDriftMap(meta, channel));
 			metaToMapY.put(meta.getUID(), getToYDriftMap(meta, channel));
 		}
+		
+		if (singleChannel)
+			archive.getMoleculeUIDs().parallelStream().filter(UID -> archive.getChannel(UID) == channel);
 
-		// Loop through each molecule and calculate drift corrected traces...
-		Stream<String> UIDs = archive.getMoleculeUIDs().parallelStream();
-
-		if (singleChannel) UIDs.filter(UID -> archive.getChannel(UID) == channel);
-
-		UIDs.forEach(UID -> {
+		archive.getMoleculeUIDs().parallelStream().forEach(UID -> {
 			Molecule molecule = archive.get(UID);
 
 			if (molecule == null) {
@@ -658,7 +658,7 @@ public class ArchiveUtils {
 			MarsTable datatable = molecule.getTable();
 
 			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
+			// instead we will just be overwriting the values below.
 			if (!datatable.hasColumn(output_x)) molecule.getTable().appendColumn(
 				output_x);
 
@@ -697,7 +697,7 @@ public class ArchiveUtils {
 
 		if (logService != null) {
 			logService.info("Time: " + DoubleRounder.round((System
-				.currentTimeMillis() - starttime) / 60000, 2) + " minutes.");
+				.currentTimeMillis() - startTime) / 60000, 2) + " minutes.");
 			logService.info(LogBuilder.endBlock(true));
 		}
 		archive.logln("\n" + LogBuilder.endBlock(true));
@@ -707,7 +707,7 @@ public class ArchiveUtils {
 	private static Map<Double, Double> getToXDriftMap(MarsMetadata meta,
 		final int channel)
 	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
+		HashMap<Double, Double> TtoColumn = new HashMap<>();
 
 		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
 			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getXDrift());
@@ -718,7 +718,7 @@ public class ArchiveUtils {
 	private static Map<Double, Double> getToYDriftMap(MarsMetadata meta,
 		final int channel)
 	{
-		HashMap<Double, Double> TtoColumn = new HashMap<Double, Double>();
+		HashMap<Double, Double> TtoColumn = new HashMap<>();
 
 		for (int t = 0; t < meta.getImage(0).getSizeT(); t++)
 			TtoColumn.put((double) t, meta.getPlane(0, 0, channel, t).getYDrift());

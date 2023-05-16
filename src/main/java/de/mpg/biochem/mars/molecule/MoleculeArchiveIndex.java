@@ -75,6 +75,6 @@ public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata
 
 	String getMetadataUIDforMolecule(String UID);
 
-	void save(File directory, JsonFactory jfactory, String fileExtension)
+	void save(File directory, JsonFactory jFactory, String fileExtension)
 		throws IOException;
 }

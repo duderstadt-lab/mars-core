@@ -31,7 +31,7 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import java.util.ArrayList;
 
-import net.imagej.ops.Initializable;
+import org.scijava.Initializable;
 
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
@@ -97,8 +97,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
   //-- Callback methods --
 
 	private void tableSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<>();
-		columns.addAll(table.getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(table.getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 		columns.add(0, "None");
 		
@@ -111,8 +110,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<>();
-		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(marsTableService.getTables().get(0).getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 		columns.add(0, "None");
 		
@@ -139,7 +137,7 @@ public class BuildArchiveFromTableCommand extends DynamicCommand implements
 			"Building SingleMoleculeArchive from Table");
 
 		builder.addParameter("Table", table.getName());
-		builder.addParameter("Ouput archive name", name);
+		builder.addParameter("Output archive name", name);
 		builder.addParameter("Molecule id column", columnName);
 
 		archive = (!columnName.equals("None")) ? new SingleMoleculeArchive(name, table, columnName) : new SingleMoleculeArchive(name, table);

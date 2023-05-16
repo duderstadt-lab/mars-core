@@ -61,9 +61,9 @@ public interface JsonConvertibleRecord {
 	 */
 	void fromJSON(JsonParser jParser) throws IOException;
 
-	public void setShowWarnings(boolean showWarnings);
+	void setShowWarnings(boolean showWarnings);
 
-	public void setJsonField(String field,
+	void setJsonField(String field,
 		ThrowingConsumer<JsonGenerator, IOException> output,
 		ThrowingConsumer<JsonParser, IOException> input);
 
@@ -73,7 +73,7 @@ public interface JsonConvertibleRecord {
 	 * @param field Json field.
 	 * @return JsonGenerator predicate for field.
 	 */
-	public Predicate<JsonGenerator> getJsonGenerator(String field);
+    Predicate<JsonGenerator> getJsonGenerator(String field);
 
 	/**
 	 * Get the JsonParser for a field.
@@ -81,7 +81,7 @@ public interface JsonConvertibleRecord {
 	 * @param field Json field.
 	 * @return JsonParser predicate for field.
 	 */
-	public Predicate<JsonParser> getJsonParser(String field);
+    Predicate<JsonParser> getJsonParser(String field);
 
 	/**
 	 * Get the record in Json string format.

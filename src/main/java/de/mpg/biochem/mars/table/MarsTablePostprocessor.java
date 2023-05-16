@@ -50,7 +50,7 @@ public class MarsTablePostprocessor extends AbstractPostprocessorPlugin {
 		
 		for (String key : module.getInputs().keySet()) {
 			Object obj = module.getInputs().get(key);
-			if (obj != null && obj instanceof MarsTable) {
+			if (obj instanceof MarsTable) {
 				if (((MarsTable) obj).getWindow() != null)
 					((MarsTable) obj).getWindow().update();
 			}
