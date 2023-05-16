@@ -105,7 +105,7 @@ public class MarsImageUtilsTest {
 
 	@Test
 	void removeNearestNeighbors() {
-		List<Peak> peaks = new ArrayList<Peak>();
+		List<Peak> peaks = new ArrayList<>();
 
 		Peak peak1 = new Peak("1", 10, 10);
 		peak1.setRsquared(0.99);

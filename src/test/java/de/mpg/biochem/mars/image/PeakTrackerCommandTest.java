@@ -48,7 +48,6 @@ import org.scijava.plugin.Parameter;
 
 import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
 import de.mpg.biochem.mars.molecule.*;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
 import de.mpg.biochem.mars.table.MarsTableService;
 import de.mpg.biochem.mars.util.Gaussian2D;
 import io.scif.ome.services.OMEXMLService;
@@ -78,7 +77,9 @@ public class PeakTrackerCommandTest {
 
 	@BeforeEach
 	public void setUp() {
-		createContext().inject(this);
+		try (Context context = createContext()) {
+			context.inject(this);
+		}
 	}
 
 	@AfterEach
@@ -130,43 +131,43 @@ public class PeakTrackerCommandTest {
 
 		SingleMolecule molecule1 = archive.molecules().filter(m -> m.getTable()
 			.getValue(Peak.X, 0) < 11).findFirst().get();
-		for (int t = 0; t < 50; t++) {
+		for (double t = 0; t < 50; t++) {
 			assertTrue(Math.abs(10d - molecule1.getTable().getValue(Peak.X,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 10 was " +
-					molecule1.getTable().getValue(Peak.X, t));
+					molecule1.getTable().getValue(Peak.X, (int)t));
 			assertTrue(Math.abs(10d + t / 4 - molecule1.getTable().getValue(Peak.Y,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " + (10d +
-					t / 4) + " was " + molecule1.getTable().getValue(Peak.Y, t));
+					t / 4) + " was " + molecule1.getTable().getValue(Peak.Y, (int)t));
 		}
 
 		SingleMolecule molecule2 = archive.molecules().filter(m -> m.getTable()
 			.getValue(Peak.X, 0) < 34 && m.getTable().getValue(Peak.X, 0) > 30).findFirst()
 			.get();
-		for (int t = 0; t < 50; t++) {
+		for (double t = 0; t < 50; t++) {
 			assertTrue(Math.abs(32.5d - molecule2.getTable().getValue(Peak.X,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 32.5 was " +
-					molecule2.getTable().getValue(Peak.X, t));
+					molecule2.getTable().getValue(Peak.X, (int)t));
 			assertTrue(Math.abs(20d + t / 4 - molecule2.getTable().getValue(Peak.Y,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " + (40d +
-					t / 4) + " was " + molecule2.getTable().getValue(Peak.Y, t));
+					t / 4) + " was " + molecule2.getTable().getValue(Peak.Y, (int)t));
 		}
 
 		SingleMolecule molecule3 = archive.molecules().filter(m -> m.getTable()
 			.getValue(Peak.X, 0) < 45 && m.getTable().getValue(Peak.X, 0) > 40).findFirst()
 			.get();
-		for (int t = 0; t < 50; t++) {
+		for (double t = 0; t < 50; t++) {
 			assertTrue(Math.abs(43.7d - molecule3.getTable().getValue(Peak.X,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak x position is off by more than the tolerance. Should be 43.7 was " +
-					molecule3.getTable().getValue(Peak.X, t));
+					molecule3.getTable().getValue(Peak.X, (int)t));
 			assertTrue(Math.abs(26.7d + t / 4 - molecule3.getTable().getValue(Peak.Y,
-				t)) < TOLERANCE,
+							(int)t)) < TOLERANCE,
 				"Peak y position is off by more than the tolerance. Should be " +
-					(26.7d + t / 4) + " was " + molecule3.getTable().getValue(Peak.Y, t));
+					(26.7d + t / 4) + " was " + molecule3.getTable().getValue(Peak.Y, (int)t));
 		}
 	}
 
@@ -176,7 +177,7 @@ public class PeakTrackerCommandTest {
 		Dataset dataset = datasetService.create(dim, "simulated image", axes, 16,
 			false, false);
 
-		for (int t = 0; t < dim[2]; t++)
+		for (double t = 0; t < dim[2]; t++)
 			for (int x = 0; x < dim[0]; x++)
 				for (int y = 0; y < dim[1]; y++) {
 					Gaussian2D peak1 = new Gaussian2D(1000d, 3000d, 10d, 10d + t / 4,
@@ -186,7 +187,7 @@ public class PeakTrackerCommandTest {
 					Gaussian2D peak3 = new Gaussian2D(1000d, 3000d, 43.7d, 26.7d + t / 4,
 						1.2d);
 
-					dataset.getImgPlus().randomAccess().setPositionAndGet(x, y, t)
+					dataset.getImgPlus().randomAccess().setPositionAndGet(x, y, (int)t)
 						.setReal(500 + peak1.getValue(x, y) + peak2.getValue(x, y) + peak3
 							.getValue(x, y));
 				}

@@ -29,16 +29,14 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
+
+import java.io.File;
+import java.io.IOException;
 
 public class DnaMoleculeArchive extends
 	AbstractMoleculeArchive<DnaMolecule, MarsOMEMetadata, DnaMoleculeArchiveProperties, DnaMoleculeArchiveIndex>

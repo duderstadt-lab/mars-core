@@ -29,16 +29,14 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import net.imagej.ImageJService;
 import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.object.ObjectService;
@@ -51,16 +49,13 @@ import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.UIService;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
-import de.mpg.biochem.mars.metadata.MarsMetadata;
-import net.imagej.ImageJService;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Optional;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Plugin(type = Service.class)
@@ -94,8 +89,7 @@ public class MoleculeArchiveService extends
 	public String getArchiveTypeFromYama(File file) throws
 			IOException
 	{
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(
-			file));
+		InputStream inputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
 
 		// Here we automatically detect the format of the JSON file
 		// Can be JSON text or Smile encoded binary file...
@@ -115,10 +109,10 @@ public class MoleculeArchiveService extends
 		{
 			jParser.nextToken();
 			while (jParser.nextToken() != JsonToken.END_OBJECT) {
-				String fieldname = jParser.getCurrentName();
+				String fieldName = jParser.getCurrentName();
 
-				if ("archiveType".equals(fieldname) || "ArchiveType".equals(
-					fieldname))
+				if ("archiveType".equals(fieldName) || "ArchiveType".equals(
+					fieldName))
 				{
 					jParser.nextToken();
 					archiveType = jParser.getText();
@@ -141,8 +135,7 @@ public class MoleculeArchiveService extends
 	public static String getArchiveTypeFromStore(File file)
 		throws IOException
 	{
-		InputStream inputStream = new BufferedInputStream(new FileInputStream(
-			file));
+		InputStream inputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
 
 		// Here we automatically detect the format of the JSON file
 		// Can be JSON text or Smile encoded binary file...
@@ -156,9 +149,9 @@ public class MoleculeArchiveService extends
 		String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
 
 		while (jParser.nextToken() != JsonToken.END_OBJECT) {
-			String fieldname = jParser.getCurrentName();
+			String fieldName = jParser.getCurrentName();
 
-			if ("archiveType".equals(fieldname) || "ArchiveType".equals(fieldname)) {
+			if ("archiveType".equals(fieldName) || "ArchiveType".equals(fieldName)) {
 				jParser.nextToken();
 				archiveType = jParser.getText();
 				break;
@@ -241,19 +234,20 @@ public class MoleculeArchiveService extends
 			return false;
 		}
 		else {
-			MoleculeArchive<?, ?, ?, ?> archive = archives.stream().filter(a -> a
-				.getName().equals(oldName)).findFirst().get();
-			archive.setName(newName);
-			displayService.getDisplay(oldName).setName(newName);
-			return true;
+			Optional<MoleculeArchive<?, ?, ?, ?>> archiveOptional = archives.stream().filter(a -> a
+					.getName().equals(oldName)).findFirst();
+			if (archiveOptional.isPresent()) {
+				archiveOptional.get().setName(newName);
+				displayService.getDisplay(oldName).setName(newName);
+				return true;
+			} else return false;
 		}
 	}
 
 	public ArrayList<String> getArchiveNames() {
 		List<MoleculeArchive<?, ?, ?, ?>> archives = getArchives();
 
-		return (ArrayList<String>) archives.stream().map(archive -> archive
-			.getName()).collect(Collectors.toList());
+		return (ArrayList<String>) archives.stream().map(MoleculeArchive::getName).collect(Collectors.toList());
 	}
 
 	public boolean contains(String name) {

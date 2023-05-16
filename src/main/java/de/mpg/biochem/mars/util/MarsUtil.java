@@ -29,14 +29,15 @@
 
 package de.mpg.biochem.mars.util;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import com.fasterxml.jackson.core.*;
+import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
+import org.scijava.app.StatusService;
+import org.scijava.log.LogService;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,27 +45,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-import javax.swing.JLabel;
-
-import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
-
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
-import de.mpg.biochem.mars.molecule.JsonConvertibleRecord;
-
 public class MarsUtil {
 
-	public static JsonFactory jfactory;
+	public static JsonFactory jFactory;
 
 	public static synchronized JsonFactory getJFactory() {
-		if (jfactory == null) jfactory = new JsonFactory();
+		if (jFactory == null) jFactory = new JsonFactory();
 
-		return jfactory;
+		return jFactory;
 	}
 
 	public static void readJsonObject(JsonParser jParser,
@@ -73,7 +61,7 @@ public class MarsUtil {
 		DefaultJsonConverter defaultParser = new DefaultJsonConverter();
 		defaultParser.setShowWarnings(false);
 		if (objects.length == 1) defaultParser.setJsonField(objects[0], null,
-			parser -> record.fromJSON(parser));
+				record::fromJSON);
 		else {
 			String[] remainingObjects = new String[objects.length - 1];
 			System.arraycopy(objects, 1, remainingObjects, 0, objects.length - 1);
@@ -110,7 +98,7 @@ public class MarsUtil {
 
 			progressThread.start();
 
-			tasks.forEach(task -> threadPool.submit(task));
+			tasks.forEach(threadPool::submit);
 			threadPool.shutdown();
 			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
@@ -132,8 +120,8 @@ public class MarsUtil {
 		String searchForPrefix, String newText)
 	{
 		for (Component c : parent.getComponents()) {
-			if (c instanceof JLabel && c != null && ((JLabel) c)
-				.getText() != null)
+			if (c instanceof JLabel && ((JLabel) c)
+					.getText() != null)
 			{
 				if (((JLabel) c).getText().startsWith(searchForPrefix)) ((JLabel) c)
 					.setText(newText);
@@ -155,12 +143,12 @@ public class MarsUtil {
 	{
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-		// Create a new jfactory.
-		JsonFactory jfactory = new JsonFactory();
+		// Create a new jFactory.
+		JsonFactory jFactory = new JsonFactory();
 
 		JsonGenerator jGenerator;
 		try {
-			jGenerator = jfactory.createGenerator(stream, JsonEncoding.UTF8);
+			jGenerator = jFactory.createGenerator(stream, JsonEncoding.UTF8);
 			jGenerator.useDefaultPrettyPrinter();
 			throwingConsumer.accept(jGenerator);
 			jGenerator.close();
@@ -176,10 +164,10 @@ public class MarsUtil {
 	}
 
 	public static void writeJsonRecord(JsonConvertibleRecord record, File file,
-		JsonFactory jfactory) throws IOException
+		JsonFactory jFactory) throws IOException
 	{
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-		JsonGenerator jGenerator = jfactory.createGenerator(stream);
+		OutputStream stream = new BufferedOutputStream(Files.newOutputStream(file.toPath()));
+		JsonGenerator jGenerator = jFactory.createGenerator(stream);
 		record.toJSON(jGenerator);
 		jGenerator.close();
 		stream.flush();

@@ -65,7 +65,7 @@ public class MarsPosition extends AbstractJsonConvertibleRecord implements
 	 * settings. This has a default black color and position value = 0. The
 	 * position can then be changed in the gui.
 	 * 
-	 * @param name Name of the MarsPositon to create.
+	 * @param name Name of the MarsPosition to create.
 	 */
 	public MarsPosition(String name) {
 		this.name = name;

@@ -186,7 +186,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 				" molecules found in manager for integration.");
 		}
 
-		ArrayList<String> archiveNames = new ArrayList<String>();
+		ArrayList<String> archiveNames = new ArrayList<>();
 		archiveNames.add("None");
 
 		for (MoleculeArchive<?, ?, ?, ?> archive : moleculeArchiveService
@@ -231,11 +231,11 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		addInputParameterLog(builder);
 		log += builder.buildParameterList();
 
-		// Output first part of log message...
+		// Output first part of log message.
 		logService.info(log);
 
 		// Used to store list of DNAs which are the basis for the DNA records.
-		ArrayList<DNASegment> DNASegments = new ArrayList<DNASegment>();
+		ArrayList<DNASegment> DNASegments = new ArrayList<>();
 
 		Roi[] rois = roiManager.getRoisAsArray();
 		if (rois.length == 0) {
@@ -260,14 +260,12 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 			return;
 		}
 
-		MarsOMEMetadata metadata1 = archive1.metadata().findFirst().get();
-		if (archive2 != null) {
-			metadata1.merge(archive2.metadata().findFirst().get());
-		}
+		MarsOMEMetadata metadata1 = archive1.getMetadata(0);
+		if (archive2 != null)
+			metadata1.merge(archive2.getMetadata(0));
 
-		if (archive3 != null) {
-			metadata1.merge(archive3.metadata().findFirst().get());
-		}
+		if (archive3 != null)
+			metadata1.merge(archive3.getMetadata(0));
 
 		metadata1.setParameter("DnaMoleculeCount", rois.length);
 
@@ -276,20 +274,11 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		dnaMoleculeArchive.putMetadata(metadata1);
 
 		// Build KDTrees for fast searching
-		RadiusNeighborSearchOnKDTree<MoleculePosition> archive1PositionSearcher =
-			null;
-		RadiusNeighborSearchOnKDTree<MoleculePosition> archive2PositionSearcher =
-			null;
-		RadiusNeighborSearchOnKDTree<MoleculePosition> archive3PositionSearcher =
-			null;
-
-		archive1PositionSearcher = getMoleculeSearcher(archive1);
-
-		if (archive2 != null) archive2PositionSearcher = getMoleculeSearcher(
-			archive2);
-
-		if (archive3 != null) archive3PositionSearcher = getMoleculeSearcher(
-			archive3);
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive1PositionSearcher = getMoleculeSearcher(archive1);
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive2PositionSearcher = (archive2 != null) ?
+				getMoleculeSearcher(archive2) : null;
+		RadiusNeighborSearchOnKDTree<MoleculePosition> archive3PositionSearcher = (archive3 != null) ?
+				getMoleculeSearcher(archive3) : null;
 
 		for (DNASegment dnaSegment : DNASegments) {
 			DnaMolecule dnaMolecule = new DnaMolecule(MarsMath.getUUID58());
@@ -310,7 +299,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 			}
 			dnaMolecule.setParameter("Number_" + archive1Name, moleculesOnDNA.size());
 
-			if (archive2 != null) {
+			if (archive2 != null && archive2PositionSearcher != null) {
 				moleculesOnDNA = findMoleculesOnDna(archive2PositionSearcher, archive2,
 					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
@@ -321,7 +310,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 					.size());
 			}
 
-			if (archive3 != null) {
+			if (archive3 != null && archive3PositionSearcher != null) {
 				moleculesOnDNA = findMoleculesOnDna(archive3PositionSearcher, archive3,
 					dnaSegment);
 				if (moleculesOnDNA.size() != 0) {
@@ -361,8 +350,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		for (SingleMolecule molecule : moleculesOnDNA) {
 			MarsTable table = molecule.getTable().clone();
 
-			// We need to make sure to fill the table with Double.NaN values
-			// this will over write the scijava default value of 0.0.
+			// We need to make sure to fill the table with Double.NaN values.
+			// This will overwrite the default double value of 0.0.
 			if (!mergedTable.isEmpty() && mergedTable.getRowCount() < table
 				.getRowCount())
 			{
@@ -410,16 +399,16 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		SingleMoleculeArchive archive)
 	{
 		ArrayList<MoleculePosition> moleculePositionList =
-			new ArrayList<MoleculePosition>();
+				new ArrayList<>();
 
 		archive.molecules().forEach(molecule -> moleculePositionList.add(
-			new MoleculePosition(molecule.getUID(), molecule.getTable().median(
-				Peak.X), molecule.getTable().median(Peak.Y))));
+				new MoleculePosition(molecule.getUID(), molecule.getTable().median(
+						Peak.X), molecule.getTable().median(Peak.Y))));
 
-		KDTree<MoleculePosition> moleculesTree = new KDTree<MoleculePosition>(
-			moleculePositionList, moleculePositionList);
+		KDTree<MoleculePosition> moleculesTree = new KDTree<>(
+				moleculePositionList, moleculePositionList);
 
-		return new RadiusNeighborSearchOnKDTree<MoleculePosition>(moleculesTree);
+		return new RadiusNeighborSearchOnKDTree<>(moleculesTree);
 	}
 
 	private ArrayList<SingleMolecule> findMoleculesOnDna(
@@ -427,7 +416,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		SingleMoleculeArchive archive, DNASegment dnaSegment)
 	{
 		ArrayList<SingleMolecule> moleculesLocated =
-			new ArrayList<SingleMolecule>();
+				new ArrayList<>();
 
 		archivePositionSearcher.search(dnaSegment, radius + dnaSegment.getLength() / 2,
 			false);
@@ -445,10 +434,10 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 
 			double distance;
 
-			// Before we add the the molecules we need to constrain positions to just
-			// within radius of DNA....
+			// Before we add the molecules we need to constrain positions to just
+			// within radius of DNA.
 			if (moleculePosition.getY() < y1) {
-				// the molecules is above the DNA
+				// the molecules are above the DNA
 				distance = Math.sqrt((moleculePosition.getX() - x1) * (moleculePosition
 					.getX() - x1) + (moleculePosition.getY() - y1) * (moleculePosition
 						.getY() - y1));
@@ -577,7 +566,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 		return archive3Name;
 	}
 
-	class MoleculePosition implements RealLocalizable {
+	static class MoleculePosition implements RealLocalizable {
 
 		private final String UID;
 
@@ -602,8 +591,8 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 			return y;
 		}
 
-		// Override from RealLocalizable interface.. so peaks can be passed to
-		// KDTree and other imglib2 functions.
+		// Override from RealLocalizable interface so peaks can be passed to
+		// KDTree and other ImgLib2 functions.
 		@Override
 		public int numDimensions() {
 			// We make no effort to think beyond 2 dimensions !

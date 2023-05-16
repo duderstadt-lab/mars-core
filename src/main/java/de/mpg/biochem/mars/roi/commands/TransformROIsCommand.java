@@ -258,14 +258,14 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
+		ArrayList<String> channels = new ArrayList<>();
 		for (int ch = 1; ch <= channelCount; ch++)
 			channels.add(String.valueOf(ch - 1));
 		channelItems.setChoices(channels);
 		channelItems.setValue(this, String.valueOf(image.getChannel() - 1));
 
-		fromRegionName = new DefaultMutableModuleItem<String>(this,
-			"Transform from region", String.class);
+		fromRegionName = new DefaultMutableModuleItem<>(this,
+				"Transform from region", String.class);
 		fromRegionName.setWidgetStyle("group:Output");
 
 		subRegionMode = roisHaveSuffixes();
@@ -277,8 +277,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		}
 		getInfo().addInput(fromRegionName);
 
-		toRegionName = new DefaultMutableModuleItem<String>(this,
-			"Transform to region", String.class);
+		toRegionName = new DefaultMutableModuleItem<>(this,
+				"Transform to region", String.class);
 		toRegionName.setWidgetStyle("group:Output");
 		toRegionName.setDefaultValue("SHORT");
 		getInfo().addInput(toRegionName);
@@ -321,8 +321,8 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		log += builder.buildParameterList();
 		logService.info(log);
 
-		List<Roi> originalROIs = new ArrayList<Roi>();
-		List<Roi> remainingROIs = new ArrayList<Roi>();
+		List<Roi> originalROIs = new ArrayList<>();
+		List<Roi> remainingROIs = new ArrayList<>();
 
 		int roiNum = roiManager.getCount();
 		for (int i = 0; i < roiNum; i++) {
@@ -333,20 +333,20 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			else originalROIs.add((Roi) roi.clone());
 		}
 
-		List<Roi> transformedROIs = new ArrayList<Roi>();
+		List<Roi> transformedROIs = new ArrayList<>();
 		transformROIs(transformedROIs, originalROIs);
 
-		List<Integer> colocalizedIndex = new ArrayList<Integer>();
+		List<Integer> colocalizedIndex;
 
-		List<Roi> combinedRoiList = new ArrayList<Roi>();
+		List<Roi> combinedRoiList = new ArrayList<>();
 		if (colocalize) {
-			colocalizedIndex = colocalize(transformedROIs, threshold, Integer.valueOf(
+			colocalizedIndex = colocalize(transformedROIs, threshold, Integer.parseInt(
 				channel), theT);
 
 			if (filterOriginalRois) {
-				for (int i = 0; i < colocalizedIndex.size(); i++) {
-					combinedRoiList.add(originalROIs.get(colocalizedIndex.get(i)));
-					combinedRoiList.add(transformedROIs.get(colocalizedIndex.get(i)));
+				for (Integer index : colocalizedIndex) {
+					combinedRoiList.add(originalROIs.get(index));
+					combinedRoiList.add(transformedROIs.get(index));
 				}
 			}
 			else {
@@ -370,8 +370,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		combinedRoiList.sort(Comparator.comparing(Roi::getName));
 
 		roiManager.reset();
-		for (int i = 0; i < combinedRoiList.size(); i++)
-			roiManager.addRoi(combinedRoiList.get(i));
+		for (Roi points : combinedRoiList) roiManager.addRoi(points);
 
 		if (!uiService.isHeadless()) roiManager.repaint();
 
@@ -387,7 +386,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	}
 
 	private List<String> getSubRegionNames() {
-		Set<String> uniqueSuffixes = new HashSet<String>();
+		Set<String> uniqueSuffixes = new HashSet<>();
 
 		int roiNum = roiManager.getCount();
 		for (int i = 0; i < roiNum; i++) {
@@ -395,7 +394,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			if (name.contains("_")) uniqueSuffixes.add(name.substring(name.indexOf(
 				"_") + 1));
 		}
-		return new ArrayList<String>(uniqueSuffixes);
+		return new ArrayList<>(uniqueSuffixes);
 	}
 
 	private void transformROIs(List<Roi> transformedROIs,
@@ -440,7 +439,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 		List<Roi> transformedROIs, double threshold, int channel, int t)
 	{
 
-		ArrayList<Integer> colocalizedIndex = new ArrayList<Integer>();
+		ArrayList<Integer> colocalizedIndex = new ArrayList<>();
 
 		RandomAccessibleInterval<T> img = (swapZandT) ? MarsImageUtils
 			.get2DHyperSlice((ImgPlus<T>) dataset.getImgPlus(), t, -1, -1)
@@ -460,16 +459,16 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 		for (int i = 0; i < transformedROIs.size(); i++) {
 
-			// The pixel origin for OvalRois is at the upper left corner !!
-			// The pixel origin for PointRois is at the center !!
-			// We always use pixel center as origin when integrating peaks !!
-			double pixelOrginOffset = (transformedROIs.get(0) instanceof OvalRoi)
+			// The pixel origin for OvalRois is in the upper left corner.
+			// The pixel origin for PointRois is in the center.
+			// We always use pixel center as origin when integrating peaks.
+			double pixelOriginOffset = (transformedROIs.get(0) instanceof OvalRoi)
 				? -0.5 : 0;
 
 			int x = (int) (transformedROIs.get(i).getFloatBounds().x +
-				pixelOrginOffset + transformedROIs.get(i).getFloatBounds().width / 2);
+				pixelOriginOffset + transformedROIs.get(i).getFloatBounds().width / 2);
 			int y = (int) (transformedROIs.get(i).getFloatBounds().y +
-				pixelOrginOffset + transformedROIs.get(i).getFloatBounds().height / 2);
+				pixelOriginOffset + transformedROIs.get(i).getFloatBounds().height / 2);
 
 			float max = 0;
 			for (int Sy = y - colocalizeRadius; Sy <= y + colocalizeRadius; Sy++)
@@ -490,13 +489,13 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 			try {
 				es.submit(() -> {
 					if (swapZandT) image.setSlice(theT + 1);
-					else image.setPosition(Integer.valueOf(channel) + 1, 1, theT + 1);
+					else image.setPosition(Integer.parseInt(channel) + 1, 1, theT + 1);
 
 					transformFrom = fromRegionName.getValue(this);
 					transformTo = toRegionName.getValue(this);
 
-					List<Roi> transformedROIs = new ArrayList<Roi>();
-					List<Roi> originalROIs = new ArrayList<Roi>();
+					List<Roi> transformedROIs = new ArrayList<>();
+					List<Roi> originalROIs = new ArrayList<>();
 					int roiNum = roiManager.getCount();
 					for (int i = 0; i < roiNum; i++) {
 						Roi roi = roiManager.getRoi(i);
@@ -520,17 +519,17 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 					transformROIs(transformedROIs, originalROIs);
 
-					List<Integer> colocalizedIndex = new ArrayList<Integer>();
+					List<Integer> colocalizedIndex;
 
 					Overlay overlay = new Overlay();
 					if (colocalize) {
 						colocalizedIndex = colocalize(transformedROIs, threshold, Integer
-							.valueOf(channel), theT);
+							.parseInt(channel), theT);
 
 						if (filterOriginalRois) {
-							for (int i = 0; i < colocalizedIndex.size(); i++) {
-								overlay.add(originalROIs.get(colocalizedIndex.get(i)));
-								overlay.add(transformedROIs.get(colocalizedIndex.get(i)));
+							for (Integer index : colocalizedIndex) {
+								overlay.add(originalROIs.get(index));
+								overlay.add(transformedROIs.get(index));
 							}
 						}
 						else {
@@ -657,7 +656,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	}
 
 	public int getChannel() {
-		return Integer.valueOf(channel);
+		return Integer.parseInt(channel);
 	}
 
 	public void setT(int theT) {

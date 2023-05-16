@@ -74,13 +74,13 @@ public class MarsTableRowCollector implements
 
 	@Override
 	public BiConsumer<MarsTable, MarsTableRow> accumulator() {
-		return (table, row) -> table.addRow(row);
+		return MarsTable::addRow;
 	}
 
 	@Override
 	public BinaryOperator<MarsTable> combiner() {
 		return (table1, table2) -> {
-			table1.rows().forEach(row -> table2.addRow(row));
+			table1.rows().forEach(table2::addRow);
 			return table1;
 		};
 	}
@@ -92,7 +92,7 @@ public class MarsTableRowCollector implements
 
 	@Override
 	public Set<Characteristics> characteristics() {
-		Set<Characteristics> characteristics = new HashSet<Characteristics>();
+		Set<Characteristics> characteristics = new HashSet<>();
 		characteristics.add(Collector.Characteristics.CONCURRENT);
 		characteristics.add(Collector.Characteristics.IDENTITY_FINISH);
 		return characteristics;

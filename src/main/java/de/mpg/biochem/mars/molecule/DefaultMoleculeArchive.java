@@ -29,17 +29,15 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
 import de.mpg.biochem.mars.molecule.commands.ImportVirtualStoreCommand;
 import de.mpg.biochem.mars.table.MarsTable;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Default implementation of {@link AbstractMoleculeArchive}.
@@ -70,12 +68,9 @@ public class DefaultMoleculeArchive extends
 	 * <p>
 	 * 
 	 * @param file The file or directory to load the archive from.
-	 * @throws JsonParseException if there is a problem parsing the file provided.
 	 * @throws IOException if there is a problem with the file location.
 	 */
-	public DefaultMoleculeArchive(File file) throws IOException,
-		JsonParseException
-	{
+	public DefaultMoleculeArchive(File file) throws IOException {
 		super(file);
 	}
 
@@ -93,11 +88,10 @@ public class DefaultMoleculeArchive extends
 	 * 
 	 * @param name The name of the archive.
 	 * @param file The file or directory to load the archive from.
-	 * @throws JsonParseException if there is a parsing exception.
 	 * @throws IOException if there is a problem with the file provided.
 	 */
 	public DefaultMoleculeArchive(String name, File file)
-		throws JsonParseException, IOException
+		throws IOException
 	{
 		super(name, file);
 	}

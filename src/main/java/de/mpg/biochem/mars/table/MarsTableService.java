@@ -49,6 +49,7 @@ import org.scijava.service.Service;
 import org.scijava.table.DoubleColumn;
 import org.scijava.table.GenericColumn;
 import org.scijava.ui.UIService;
+import java.util.Optional;
 
 import ij.measure.ResultsTable;
 
@@ -114,18 +115,20 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 			return false;
 		}
 		else {
-			MarsTable table = tables.stream().filter(t -> t.getName().equals(oldName))
-				.findFirst().get();
-			table.setName(newName);
-			displayService.getDisplay(oldName).setName(newName);
-			return true;
+			Optional<MarsTable> tableOptional = tables.stream().filter(t -> t.getName().equals(oldName))
+				.findFirst();
+			if (tableOptional.isPresent()) {
+				tableOptional.get().setName(newName);
+				displayService.getDisplay(oldName).setName(newName);
+				return true;
+			} else return false;
 		}
 	}
 
 	public ArrayList<String> getTableNames() {
 		List<MarsTable> archives = getTables();
 
-		return (ArrayList<String>) archives.stream().map(table -> table.getName())
+		return (ArrayList<String>) archives.stream().map(MarsTable::getName)
 			.collect(Collectors.toList());
 	}
 
@@ -134,11 +137,11 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 
 		String[] columnHeadings = resultsTable.getHeadings();
 
-		// For now we assume it is entirely numbers
-		for (int i = 0; i < columnHeadings.length; i++) {
-			DoubleColumn col = new DoubleColumn(columnHeadings[i]);
+		// For now, we assume it is entirely numbers
+		for (String columnHeading : columnHeadings) {
+			DoubleColumn col = new DoubleColumn(columnHeading);
 			for (int row = 0; row < resultsTable.getCounter(); row++)
-				col.add(resultsTable.getValue(columnHeadings[i], row));
+				col.add(resultsTable.getValue(columnHeading, row));
 			table.add(col);
 		}
 
@@ -151,7 +154,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 
 	// Utility method returning HashMap of molecule numbers and start and stop
 	// index positions.
-	// Here we are assuming the table is already sorted on the groupColumn..
+	// Here we are assuming the table is already sorted on the groupColumn.
 	public static Map<String, GroupIndices> find_group_indices(
 		MarsTable table, String groupColumn)
 	{
@@ -166,7 +169,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 			String key = table.getStringValue(groupColumn, 0);
 			for (int i = 1; i < table.getRowCount(); i++) {
 				if (!key.equals(table.getStringValue(groupColumn, i))) {
-					// Means we have encountered a new group so we add the key and start and
+					// Means we have encountered a new group, so we add the key and start and
 					// end values
 					map.put(key, new GroupIndices(groupStartIndex, i - 1));
 	
@@ -179,7 +182,7 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 			double key = table.getValue(groupColumn, 0);
 			for (int i = 1; i < table.getRowCount(); i++) {
 				if (key != table.getValue(groupColumn, i)) {
-					// Means we have encountered a new group so we add the key and start and
+					// Means we have encountered a new group, so we add the key and start and
 					// end values
 					map.put(String.valueOf(key), new GroupIndices(groupStartIndex, i - 1));
 	
@@ -198,8 +201,9 @@ public class MarsTableService extends AbstractPTService<MarsTableService>
 	}
 
 	public MarsTable getTable(String name) {
-		return getTables().stream().filter(a -> a.getName().equals(name))
-			.findFirst().get();
+		Optional<MarsTable> tableOptional = getTables().stream().filter(a -> a.getName().equals(name))
+				.findFirst();
+		return tableOptional.orElse(null);
 	}
 
 	public List<MarsTable> getTables() {

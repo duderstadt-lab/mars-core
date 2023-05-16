@@ -33,7 +33,14 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 public class KCPSegment {
 
-	public double x1, y1, x2, y2, a, sigma_a, b, sigma_b;
+	public final double x1;
+	public final double y1;
+	public final double x2;
+	public final double y2;
+	public final double a;
+	public final double sigma_a;
+	public final double b;
+	public final double sigma_b;
 	public String UID;
 
 	public static final String X1 = "X1";

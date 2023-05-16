@@ -75,8 +75,7 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 	// -- Callback methods --
 
 	private void tableSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(table.getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(table.getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -86,17 +85,15 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 		final MutableModuleItem<String> groupItems = getInfo().getMutableInput(
 			"group", String.class);
 
-		final ArrayList<String> colNames = columns;
-		colNames.add(0, "no group");
-		groupItems.setChoices(colNames);
+		columns.add(0, "no group");
+		groupItems.setChoices(columns);
 	}
 
 	// -- Initializable methods --
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(marsTableService.getTables().get(0).getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -106,9 +103,8 @@ public class MarsTableSorterCommand extends DynamicCommand implements
 		final MutableModuleItem<String> groupItems = getInfo().getMutableInput(
 			"group", String.class);
 
-		final ArrayList<String> colNames = columns;
-		colNames.add(0, "no group");
-		groupItems.setChoices(colNames);
+		columns.add(0, "no group");
+		groupItems.setChoices(columns);
 	}
 
 	// -- Runnable methods --

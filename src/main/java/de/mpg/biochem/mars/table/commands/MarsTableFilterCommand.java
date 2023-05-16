@@ -97,8 +97,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 	// -- Callback methods --
 
 	private void tableSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(table.getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(table.getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -125,8 +124,7 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(marsTableService.getTables().get(0).getColumnHeadingList());
+		ArrayList<String> columns = new ArrayList<>(marsTableService.getTables().get(0).getColumnHeadingList());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -140,8 +138,8 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 
 	@Override
 	public void run() {
-		boolean STDFilter = false;
-		boolean tableFilter = false;
+		boolean STDFilter;
+		boolean tableFilter;
 		if (FilterType.equals("Filter Table")) {
 			tableFilter = true;
 			STDFilter = false;
@@ -169,28 +167,27 @@ public class MarsTableFilterCommand extends DynamicCommand implements
 
 		// There is many better ways to do this....
 		// Another option is to take care of includeSelection only at the end.
-		ArrayList<Integer> deleteList = new ArrayList<Integer>();
+		ArrayList<Integer> deleteList = new ArrayList<>();
 		for (int row = 0; row < table.getRowCount(); row++) {
 			double value = table.getValue(columnName, row);
 
 			if (Double.isNaN(value)) {
-				// Lets just remove all of the null values... They can't be filtered
-				// correctly
+				// Let's just remove all null values. They can't be filtered correctly
 				deleteList.add(row);
 			}
 			else if (tableFilter) {
 				if (includeSelection) {
 					deleteList.add(row);
-					for (int q = 0; q < filterList.length; q++) {
-						if (value == filterList[q]) {
+					for (double v : filterList) {
+						if (value == v) {
 							deleteList.remove(deleteList.size() - 1);
 							break;
 						}
 					}
 				}
 				else {
-					for (int q = 0; q < filterList.length; q++) {
-						if (value == filterList[q]) {
+					for (double v : filterList) {
+						if (value == v) {
 							deleteList.add(row);
 							break;
 						}

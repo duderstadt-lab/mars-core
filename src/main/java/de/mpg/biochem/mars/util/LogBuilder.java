@@ -53,7 +53,7 @@ public class LogBuilder {
 			e.printStackTrace();
 		}
 
-		parameters = new ArrayList<String[]>();
+		parameters = new ArrayList<>();
 		addRunParameters();
 	}
 
@@ -111,7 +111,7 @@ public class LogBuilder {
 
 	public void addParameter(String parameter, String value) {
 		if (parameters == null) {
-			parameters = new ArrayList<String[]>();
+			parameters = new ArrayList<>();
 		}
 		String[] param = new String[2];
 		param[0] = parameter;
@@ -132,19 +132,18 @@ public class LogBuilder {
 		Arrays.fill(chars, ' ');
 		String spaces = new String(chars);
 
-		String output = "";
+		StringBuilder output = new StringBuilder();
 		// Now we build the parameter list text...
 		for (int i = 0; i < parameters.size() - 1; i++) {
 			String[] str = parameters.get(i);
-			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1] +
-				"\n";
+			output.append(str[0]).append(spaces.substring(str[0].length())).append(": ").append(str[1]).append("\n");
 		}
 		if (parameters.size() > 0) {
 			String[] str = parameters.get(parameters.size() - 1);
-			output += str[0] + spaces.substring(str[0].length()) + ": " + str[1];
+			output.append(str[0]).append(spaces.substring(str[0].length())).append(": ").append(str[1]);
 		}
 
-		return output;
+		return output.toString();
 	}
 
 	public static String endBlock(boolean success) {
@@ -154,6 +153,7 @@ public class LogBuilder {
 			return "********************************* Failure *********************************";
 	}
 
+	@SuppressWarnings("SameReturnValue")
 	public static String endBlock() {
 		return "***************************************************************************";
 	}

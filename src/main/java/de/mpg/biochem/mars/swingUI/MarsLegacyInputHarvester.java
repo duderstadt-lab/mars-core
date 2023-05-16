@@ -203,6 +203,7 @@ public class MarsLegacyInputHarvester extends
 		Set compatibleInputs = new HashSet(convertService.getCompatibleInputs(
 			type));
 		compatibleInputs.addAll(objectService.getObjects(type));
+		//noinspection rawtypes
 		return new ArrayList<>(compatibleInputs);
 	}
 

@@ -46,8 +46,8 @@ package de.mpg.biochem.mars.molecule;
 public interface MoleculeArchiveWindow {
 
 	/**
-	 * This is used to report the progress for a long running task working on the
-	 * archive when its locked. This should be a value between 0 and 1 with 1
+	 * This is used to report the progress for a long-running task working on the
+	 * archive when it is locked. This should be a value between 0 and 1 with 1
 	 * representing completion.
 	 * 
 	 * @param progress Fraction of job that is complete.

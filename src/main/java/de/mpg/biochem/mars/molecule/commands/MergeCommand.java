@@ -29,23 +29,19 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import de.mpg.biochem.mars.metadata.MarsMetadata;
+import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.util.LogBuilder;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.command.Command;
@@ -58,20 +54,9 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.UIService;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.format.DataFormatDetector;
-import com.fasterxml.jackson.core.format.DataFormatMatcher;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-
-import de.mpg.biochem.mars.metadata.MarsMetadata;
-import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveProperties;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.util.LogBuilder;
+import java.io.*;
+import java.nio.file.Files;
+import java.util.*;
 
 @Plugin(type = Command.class, label = "Merge Archives", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -109,25 +94,20 @@ public class MergeCommand extends DynamicCommand {
 		logService.info(log);
 
 		// create new filename filter
-		FilenameFilter fileNameFilter = new FilenameFilter() {
+		FilenameFilter fileNameFilter = (dir, name) -> {
+			if (name.startsWith(".")) return false;
 
-			@Override
-			public boolean accept(File dir, String name) {
-				if (name.startsWith(".")) return false;
-
-				return name.endsWith(".yama");
-			}
+			return name.endsWith(".yama");
 		};
 
 		File[] archiveFileList = directory.listFiles(fileNameFilter);
-		if (archiveFileList.length > 0) {
+		if (archiveFileList != null && archiveFileList.length > 0) {
 			// retrieve the types of all archives.
-			ArrayList<String> archiveTypes = new ArrayList<String>();
+			ArrayList<String> archiveTypes = new ArrayList<>();
 			for (File file : archiveFileList) {
 				try {
 					archiveTypes.add(moleculeArchiveService.getArchiveTypeFromYama(file));
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
@@ -137,30 +117,29 @@ public class MergeCommand extends DynamicCommand {
 			for (String type : archiveTypes) {
 				if (!archiveType.equals(type)) {
 					logService.info(
-						"Not all archives are of the same type. Aborting merge.");
+							"Not all archives are of the same type. Aborting merge.");
 					for (int i = 0; i < archiveTypes.size(); i++)
 						logService.info(archiveFileList[i].getName() + " is type " +
-							archiveTypes.get(i));
+								archiveTypes.get(i));
 					return;
 				}
 			}
 
-			// No conflicts found so we start building and writing the merged file
+			// No conflicts found, so we start building and writing the merged file
 			MoleculeArchive<?, ?, ?, ?> mergedArchiveType = moleculeArchiveService
-				.createArchive(archiveType);
-			MoleculeArchiveProperties mergedProperties = mergedArchiveType
-				.createProperties();
+					.createArchive(archiveType);
+			MoleculeArchiveProperties<?, ?> mergedProperties = mergedArchiveType
+					.createProperties();
 
 			mergedProperties.setParent(mergedArchiveType);
 
 			// Initialize all file streams and parsers
-			ArrayList<InputStream> fileInputStreams = new ArrayList<InputStream>();
-			ArrayList<JsonParser> jParsers = new ArrayList<JsonParser>();
+			ArrayList<InputStream> fileInputStreams = new ArrayList<>();
+			ArrayList<JsonParser> jParsers = new ArrayList<>();
 
 			try {
 				for (File file : archiveFileList) {
-					InputStream inputStream = new BufferedInputStream(new FileInputStream(
-						file));
+					InputStream inputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
 
 					JsonFactory jsonF = new JsonFactory();
 					SmileFactory smileF = new SmileFactory();
@@ -171,57 +150,49 @@ public class MergeCommand extends DynamicCommand {
 					jParser.nextToken();
 					jParser.nextToken();
 					if ("properties".equals(jParser.getCurrentName()) ||
-						"MoleculeArchiveProperties".equals(jParser.getCurrentName()))
-					{
+							"MoleculeArchiveProperties".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
 						mergedProperties.merge(mergedArchiveType.createProperties(jParser),
-							file.getName());
-					}
-					else {
+								file.getName());
+					} else {
 						logService.error(
-							"Can't find MoleculeArchiveProperties field in file " + file
-								.getName() + ". Aborting.");
+								"Can't find MoleculeArchiveProperties field in file " + file
+										.getName() + ". Aborting.");
 						return;
 					}
 					fileInputStreams.add(inputStream);
 					jParsers.add(jParser);
 				}
-			}
-			catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-			catch (IOException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 
-			String archiveList = "";
-			for (int i = 0; i < archiveFileList.length; i++)
-				archiveList += archiveFileList[i].getName() + ", ";
-			if (archiveFileList.length > 0) archiveList = archiveList.substring(0,
-				archiveList.length() - 2);
+			StringBuilder archiveList = new StringBuilder();
+			for (File file : archiveFileList) archiveList.append(file.getName()).append(", ");
+			archiveList = new StringBuilder(archiveList.substring(0,
+					archiveList.length() - 2));
 
 			log += "Merged " + archiveFileList.length +
-				" yama files into the output archive merged.yama\n";
+					" yama files into the output archive merged.yama\n";
 			log += "Including: " + archiveList + "\n";
 			log += "In total " + mergedProperties.getNumberOfMetadatas() +
-				" datasets were merged.\n";
+					" datasets were merged.\n";
 			log += "In total " + mergedProperties.getNumberOfMolecules() +
-				" molecules were merged.\n";
+					" molecules were merged.\n";
 			log += LogBuilder.endBlock(true);
 
 			// read in all MarsMetadata items from all archives - I hope they fit in
 			// memory :)
-			ArrayList<MarsMetadata> allMetadataItems = new ArrayList<MarsMetadata>();
-			ArrayList<String> metaUIDs = new ArrayList<String>();
+			ArrayList<MarsMetadata> allMetadataItems = new ArrayList<>();
+			ArrayList<String> metaUIDs = new ArrayList<>();
 
 			for (JsonParser jParser : jParsers) {
 				try {
 					while (jParser.nextToken() != JsonToken.END_OBJECT) {
 						String fieldName = jParser.getCurrentName();
 						if ("metadata".equals(fieldName) || "ImageMetaData".equals(
-							fieldName) || "ImageMetadata".equals(fieldName) || "Metadata"
-								.equals(fieldName))
-						{
+								fieldName) || "ImageMetadata".equals(fieldName) || "Metadata"
+								.equals(fieldName)) {
 							while (jParser.nextToken() != JsonToken.END_ARRAY) {
 								// This line would be more generic but the translator from old
 								// formats is blocking that for now
@@ -234,75 +205,67 @@ public class MergeCommand extends DynamicCommand {
 						if ("molecules".equals(fieldName) || "Molecules".equals(fieldName))
 							break;
 					}
-				}
-				catch (FileNotFoundException e) {
-					e.printStackTrace();
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 
-			Set<String> duplicateMetadataUIDs = new HashSet<String>();
+			Set<String> duplicateMetadataUIDs = new HashSet<>();
 
 			// First make a list of duplicates if there are duplicates
 			for (MarsMetadata metaItem : allMetadataItems) {
 				String metaUID = metaItem.getUID();
 				if (metaUIDs.contains(metaUID)) {
 					duplicateMetadataUIDs.add(metaUID);
-				}
-				else {
+				} else {
 					metaUIDs.add(metaUID);
 					metaItem.logln(log);
 				}
 			}
 
 			Map<String, ArrayList<MarsMetadata>> duplicateMetadatas =
-				new HashMap<String, ArrayList<MarsMetadata>>();
+					new HashMap<>();
 
 			for (String duplicateMetaUID : duplicateMetadataUIDs) {
-				Set<Integer> imageIndexes = new HashSet<Integer>();
-				ArrayList<MarsMetadata> listofDuplicates =
-					new ArrayList<MarsMetadata>();
+				Set<Integer> imageIndexes = new HashSet<>();
+				ArrayList<MarsMetadata> listOfDuplicates =
+						new ArrayList<>();
 				for (MarsMetadata metaItem : allMetadataItems) {
 					if (metaItem.getUID().equals(duplicateMetaUID)) {
-						listofDuplicates.add(metaItem);
+						listOfDuplicates.add(metaItem);
 						for (int imageIndex = 0; imageIndex < metaItem
-							.getImageCount(); imageIndex++)
-						{
+								.getImageCount(); imageIndex++) {
 							if (imageIndexes.contains(metaItem.getImage(imageIndex)
-								.getImageID()))
-							{
+									.getImageID())) {
 								logService.info("Duplicate metadata record " +
-									duplicateMetaUID + " image " + metaItem.getImage(imageIndex)
+										duplicateMetaUID + " image " + metaItem.getImage(imageIndex)
 										.getImageID() + " found.");
 								logService.info(
-									"Are you trying to merge copies of the same dataset?");
+										"Are you trying to merge copies of the same dataset?");
 								logService.info(
-									"Please resolve the conflict and run the merge command again.");
+										"Please resolve the conflict and run the merge command again.");
 								logService.info(LogBuilder.endBlock(false));
 								uiService.showDialog(
-									"Merge failed due to duplicate metadata record " +
-										duplicateMetaUID + " image " + metaItem.getImage(imageIndex)
-											.getImageID() + ".\n" +
-										"Please resolve the conflict before merging.",
-									MessageType.ERROR_MESSAGE);
+										"Merge failed due to duplicate metadata record " +
+												duplicateMetaUID + " image " + metaItem.getImage(imageIndex)
+												.getImageID() + ".\n" +
+												"Please resolve the conflict before merging.",
+										MessageType.ERROR_MESSAGE);
 								return;
-							}
-							else {
+							} else {
 								imageIndexes.add(metaItem.getImage(imageIndex).getImageID());
 							}
 						}
 					}
 				}
-				duplicateMetadatas.put(duplicateMetaUID, listofDuplicates);
+				duplicateMetadatas.put(duplicateMetaUID, listOfDuplicates);
 			}
 
 			// Now we need to merge any duplicate Metadata records that contain
 			// different positions
 			for (String duplicateMetaUID : duplicateMetadatas.keySet()) {
 				List<MarsMetadata> duplicates = duplicateMetadatas.get(
-					duplicateMetaUID);
+						duplicateMetaUID);
 				MarsMetadata mergedMetadata = duplicates.get(0);
 
 				for (int i = 1; i < duplicates.size(); i++) {
@@ -322,11 +285,10 @@ public class MergeCommand extends DynamicCommand {
 			// MoleculeArchiveProperties
 			File fileOUT = new File(directory.getAbsolutePath() + "/merged.yama");
 			try {
-				OutputStream stream = new BufferedOutputStream(new FileOutputStream(
-					fileOUT));
+				OutputStream stream = new BufferedOutputStream(Files.newOutputStream(fileOUT.toPath()));
 
-				SmileFactory jfactory = new SmileFactory();
-				JsonGenerator jGenerator = jfactory.createGenerator(stream);
+				SmileFactory jFactory = new SmileFactory();
+				JsonGenerator jGenerator = jFactory.createGenerator(stream);
 
 				// We have to have a starting { for the json...
 				jGenerator.writeStartObject();
@@ -351,36 +313,30 @@ public class MergeCommand extends DynamicCommand {
 				}
 				jGenerator.writeEndArray();
 
-				// Now we need to add the corresponding global closing bracket } for the
-				// json format...
+				// Add closing bracket.
 				jGenerator.writeEndObject();
 				jGenerator.close();
 
-				// flush and close streams...
+				// flush and close streams.
 				stream.flush();
 				stream.close();
 
 				for (InputStream inputStream : fileInputStreams)
 					inputStream.close();
 
-			}
-			catch (IOException e) {
+			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
 			logService.info("Merged " + archiveFileList.length +
-				" yama files into the output archive merged.yama");
+					" yama files into the output archive merged.yama");
 			logService.info("Including: " + archiveList);
 			logService.info("In total " + mergedProperties.getNumberOfMetadatas() +
-				" datasets were merged.");
+					" datasets were merged.");
 			logService.info("In total " + mergedProperties.getNumberOfMolecules() +
-				" molecules were merged.");
+					" molecules were merged.");
 			logService.info(LogBuilder.endBlock(true));
-		}
-		else {
-			logService.info("No .yama files in this directory.");
-			logService.info(LogBuilder.endBlock(false));
 		}
 	}
 

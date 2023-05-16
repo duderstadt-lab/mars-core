@@ -33,7 +33,9 @@ import net.imglib2.RealLocalizable;
 
 public class PeakPixel implements RealLocalizable {
 
-	public double x, y, pixelValue;
+	public final double x;
+	public final double y;
+	public final double pixelValue;
 	public boolean valid = true;
 
 	public PeakPixel(double x, double y, double pixelValue) {

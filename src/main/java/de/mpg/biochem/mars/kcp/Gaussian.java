@@ -31,7 +31,12 @@ package de.mpg.biochem.mars.kcp;
 
 public class Gaussian {
 
-	public double x0, y0, x_sigma, y_sigma, normalization, duration;
+	public final double x0;
+	public double y0;
+	public final double x_sigma;
+	public double y_sigma;
+	public final double normalization;
+	public double duration;
 
 	// 1D case
 	@SuppressWarnings("unused")

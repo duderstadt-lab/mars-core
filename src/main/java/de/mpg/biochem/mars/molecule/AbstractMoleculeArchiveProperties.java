@@ -29,24 +29,18 @@
 
 package de.mpg.biochem.mars.molecule;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.util.MarsDocument;
 import de.mpg.biochem.mars.util.MarsUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract superclass for MoleculeArchiveProperties objects that contain global
@@ -66,7 +60,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	protected String inputSchema;
 
 	// Additional documents
-	protected Map<String, MarsDocument> documents;
+	protected final Map<String, MarsDocument> documents;
 
 	// Format YYYY-MM-DD
 	public static final String SCHEMA = "2022-04-11";
@@ -92,7 +86,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		numMetadata = new AtomicInteger(0);
 
 		// Additional documents
-		documents = new LinkedHashMap<String, MarsDocument>();
+		documents = new LinkedHashMap<>();
 
 		// Initialize default Comments
 		documents.put(COMMENTS, new MarsDocument(COMMENTS));
@@ -149,9 +143,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (moleculeDataTableColumnSet.size() > 0) {
 				jGenerator.writeFieldName("moleculeTableColumnSet");
 				jGenerator.writeStartArray();
-				Iterator<String> iterator = moleculeDataTableColumnSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeString(iterator.next());
+				for (String s : moleculeDataTableColumnSet) jGenerator.writeString(s);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -163,14 +155,11 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (moleculeSegmentTableNames.size() > 0) {
 				jGenerator.writeFieldName("moleculeSegmentTableNames");
 				jGenerator.writeStartArray();
-				Iterator<List<String>> iterator = moleculeSegmentTableNames.iterator();
-				while (iterator.hasNext()) {
+				for (List<String> moleculeSegmentTableName : moleculeSegmentTableNames) {
 					jGenerator.writeStartObject();
 
-					List<String> SegmentTableName = iterator.next();
-
-					jGenerator.writeStringField("yColumnName", SegmentTableName.get(0));
-					jGenerator.writeStringField("xColumnName", SegmentTableName.get(1));
+					jGenerator.writeStringField("yColumnName", moleculeSegmentTableName.get(0));
+					jGenerator.writeStringField("xColumnName", moleculeSegmentTableName.get(1));
 
 					jGenerator.writeEndObject();
 				}
@@ -178,19 +167,19 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			}
 		}, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				List<String> segemntTableName = new ArrayList<String>();
+				List<String> segmentTableName = new ArrayList<>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					// Then move past field Name - yColumnName...
 					jParser.nextToken();
 
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 
 					// Then move past the field and next field Name - xColumnName...
 					jParser.nextToken();
 					jParser.nextToken();
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 				}
-				moleculeSegmentTableNames.add(segemntTableName);
+				moleculeSegmentTableNames.add(segmentTableName);
 			}
 		});
 
@@ -198,9 +187,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (tagSet.size() > 0) {
 				jGenerator.writeFieldName("moleculeTagSet");
 				jGenerator.writeStartArray();
-				Iterator<String> iterator = tagSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeString(iterator.next());
+				for (String s : tagSet) jGenerator.writeString(s);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -212,9 +199,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (channelSet.size() > 0) {
 				jGenerator.writeFieldName("moleculeChannelSet");
 				jGenerator.writeStartArray();
-				Iterator<Integer> iterator = channelSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeNumber(iterator.next());
+				for (Integer integer : channelSet) jGenerator.writeNumber(integer);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -226,9 +211,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (parameterSet.size() > 0) {
 				jGenerator.writeFieldName("moleculeParameterSet");
 				jGenerator.writeStartArray();
-				Iterator<String> iterator = parameterSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeString(iterator.next());
+				for (String s : parameterSet) jGenerator.writeString(s);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -240,9 +223,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (regionSet.size() > 0) {
 				jGenerator.writeFieldName("moleculeRegionSet");
 				jGenerator.writeStartArray();
-				Iterator<String> iterator = regionSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeString(iterator.next());
+				for (String s : regionSet) jGenerator.writeString(s);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -254,9 +235,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 			if (positionSet.size() > 0) {
 				jGenerator.writeFieldName("moleculePositionSet");
 				jGenerator.writeStartArray();
-				Iterator<String> iterator = positionSet.iterator();
-				while (iterator.hasNext())
-					jGenerator.writeString(iterator.next());
+				for (String s : positionSet) jGenerator.writeString(s);
 				jGenerator.writeEndArray();
 			}
 		}, jParser -> {
@@ -295,19 +274,19 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 		setJsonField("MoleculeSegmentTableNames", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				List<String> segemntTableName = new ArrayList<String>();
+				List<String> segmentTableName = new ArrayList<>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
-					// Then move past field Name - yColumnName...
+					// Then move past field Name - yColumnName.
 					jParser.nextToken();
 
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 
-					// Then move past the field and next field Name - xColumnName...
+					// Then move past the field and next field Name - xColumnName.
 					jParser.nextToken();
 					jParser.nextToken();
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 				}
-				moleculeSegmentTableNames.add(segemntTableName);
+				moleculeSegmentTableNames.add(segmentTableName);
 			}
 		});
 
@@ -329,19 +308,19 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 
 		setJsonField("moleculeSegmentTableNames", null, jParser -> {
 			while (jParser.nextToken() != JsonToken.END_ARRAY) {
-				List<String> segemntTableName = new ArrayList<String>();
+				List<String> segmentTableName = new ArrayList<>();
 				while (jParser.nextToken() != JsonToken.END_OBJECT) {
 					// Then move past field Name - yColumnName...
 					jParser.nextToken();
 
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 
 					// Then move past the field and next field Name - xColumnName...
 					jParser.nextToken();
 					jParser.nextToken();
-					segemntTableName.add(jParser.getText());
+					segmentTableName.add(jParser.getText());
 				}
-				moleculeSegmentTableNames.add(segemntTableName);
+				moleculeSegmentTableNames.add(segmentTableName);
 			}
 		});
 		setJsonField("comments", null, jParser -> documents.put(COMMENTS,
@@ -366,8 +345,8 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * @param properties MoleculeArchiveProperties record to merge into this one.
 	 * @param archiveName Name of the archive that is being merged with this one.
 	 */
-	public void merge(MoleculeArchiveProperties<M, I> properties,
-		String archiveName)
+	public void merge(MoleculeArchiveProperties<?, ?> properties,
+                      String archiveName)
 	{
 		this.numberOfMolecules.addAndGet(properties.getNumberOfMolecules());
 		this.numMetadata.addAndGet(properties.getNumberOfMetadatas());
@@ -457,7 +436,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	 * all unique parameter names that are being used.
 	 */
 	public void addAllParameters(Set<String> parameters) {
-		parameterSet.addAll(parameterSet);
+		parameterSet.addAll(parameters);
 	}
 
 	/**
@@ -688,12 +667,12 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		return documents.keySet();
 	}
 
-	public void save(File directory, JsonFactory jfactory, String fileExtension)
+	public void save(File directory, JsonFactory jFactory, String fileExtension)
 		throws IOException
 	{
 		File propertiesFile = new File(directory.getAbsolutePath() +
 			"/MoleculeArchiveProperties" + fileExtension);
-		MarsUtil.writeJsonRecord(this, propertiesFile, jfactory);
+		MarsUtil.writeJsonRecord(this, propertiesFile, jFactory);
 	}
 
 	public void clear() {
@@ -718,7 +697,7 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 	}
 
 	public void addMetadataProperties(I metadata) {
-		// Currently nothing is indexed..
+		// Currently nothing is indexed.
 	}
 
 	/**

@@ -62,9 +62,9 @@ public abstract class AbstractJsonConvertibleRecord implements
 {
 
 	private final LinkedHashMap<String, Predicate<JsonGenerator>> outputMap =
-		new LinkedHashMap<String, Predicate<JsonGenerator>>();
+			new LinkedHashMap<>();
 	private final HashMap<String, Predicate<JsonParser>> inputMap =
-		new HashMap<String, Predicate<JsonParser>>();
+			new HashMap<>();
 
 	/**
 	 * IOMaps are created during the first call to toJSON or fromJSON lazily This
@@ -76,7 +76,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	private boolean showWarnings = true;
 
 	/**
-	 * Constructor for creating a JsonConvertiableRecord.
+	 * Constructor for creating a JsonConvertibleRecord.
 	 */
 	public AbstractJsonConvertibleRecord() {}
 
@@ -97,7 +97,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 		jGenerator.writeStartObject();
 		for (String field : outputMap.keySet()) {
 			if (!outputMap.get(field).test(jGenerator)) throw new IOException(
-				"IOExcpetion: JsonGenerator encountered a problem writing to the output stream");
+				"IOException: JsonGenerator encountered a problem writing to the output stream");
 		}
 		jGenerator.writeEndObject();
 	}
@@ -117,7 +117,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 		}
 
 		JsonToken nextToken = JsonToken.NOT_AVAILABLE;
-		String fieldBlockName = "";
+		String fieldBlockName;
 		while (nextToken != JsonToken.END_OBJECT) {
 			nextToken = jParser.nextToken();
 			if (nextToken == null) {
@@ -125,15 +125,15 @@ public abstract class AbstractJsonConvertibleRecord implements
 				break;
 			}
 
-			String fieldname = jParser.getCurrentName();
+			String fieldName = jParser.getCurrentName();
 
-			if (fieldname == null) continue;
-			else fieldBlockName = fieldname;
+			if (fieldName == null) continue;
+			else fieldBlockName = fieldName;
 
-			if (inputMap.containsKey(fieldname)) {
+			if (inputMap.containsKey(fieldName)) {
 				jParser.nextToken();
-				if (!inputMap.get(fieldname).test(jParser)) throw new IOException(
-					"IOExcpetion: JsonParser encountered a problem reading from the input stream");
+				if (!inputMap.get(fieldName).test(jParser)) throw new IOException(
+					"IOException: JsonParser encountered a problem reading from the input stream");
 				continue;
 			}
 
@@ -151,10 +151,6 @@ public abstract class AbstractJsonConvertibleRecord implements
 				if (showWarnings) System.out.println("unknown array " + fieldBlockName +
 					" encountered in the record ... skipping");
 				MarsUtil.passThroughUnknownArrays(jParser);
-			}
-			else {
-				// Must just be a normal field... so it won't escape the loop
-				// prematurely.
 			}
 		}
 	}
@@ -205,7 +201,7 @@ public abstract class AbstractJsonConvertibleRecord implements
 	 */
 	@Override
 	public String dumpJSON() {
-		return MarsUtil.dumpJSON(jGenerator -> toJSON(jGenerator));
+		return MarsUtil.dumpJSON(this::toJSON);
 	}
 
 	/**

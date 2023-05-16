@@ -30,8 +30,10 @@
 package de.mpg.biochem.mars.table.commands;
 
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.scijava.ItemIO;
+import org.scijava.Named;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -41,6 +43,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.table.Table;
+import org.scijava.table.Column;
 import org.scijava.table.TableDisplay;
 
 import de.mpg.biochem.mars.table.MarsTable;
@@ -60,8 +63,7 @@ public class ScijavaTableConversionCommand extends DynamicCommand implements
 	@Parameter
 	private ObjectService objectService;
 
-	// For some reason this doesn't provide options when multiple tables are open
-	// so a workaround is implemented below.
+	// For some reason this does not provide options when multiple tables are open.
 	// @Parameter(label="SciJava Table")
 	// private TableDisplay display;
 
@@ -76,17 +78,18 @@ public class ScijavaTableConversionCommand extends DynamicCommand implements
 		final MutableModuleItem<String> tableNames = getInfo().getMutableInput(
 			"tableName", String.class);
 		tableNames.setChoices(objectService.getObjects(
-			org.scijava.table.TableDisplay.class).stream().map(display -> display
-				.getName()).collect(Collectors.toList()));
+			org.scijava.table.TableDisplay.class).stream().map(Named::getName).collect(Collectors.toList()));
 	}
 
 	@Override
 	public void run() {
-		TableDisplay display = objectService.getObjects(
+		Optional<TableDisplay> displayOptional = objectService.getObjects(
 			org.scijava.table.TableDisplay.class).stream().filter(obj -> obj.getName()
-				.equals(tableName)).findFirst().get();
-		table = new MarsTable((Table) display.get(0));
-		table.setName(tableName);
-		display.close();
+				.equals(tableName)).findFirst();
+		if (displayOptional.isPresent()) {
+			table = new MarsTable((Table<Column<?>, Object>) displayOptional.get().get(0));
+			table.setName(tableName);
+			displayOptional.get().close();
+		}
 	}
 }

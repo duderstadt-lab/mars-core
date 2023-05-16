@@ -149,7 +149,7 @@ public class MarsTableRow implements Iterator<MarsTableRow> {
 		else if (doubleColumnMap.containsKey(columnName)) {
 			double num = Double.NaN;
 			try {
-				num = Double.valueOf(value);
+				num = Double.parseDouble(value);
 			}
 			catch (NumberFormatException e) {
 				// Do nothing.. set NaN as value...

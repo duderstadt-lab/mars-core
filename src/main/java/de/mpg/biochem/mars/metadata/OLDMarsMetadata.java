@@ -51,18 +51,18 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements
 
 	protected String Microscope = "unknown";
 
-	// Directory where the images are stored..
+	// Directory where the images are stored.
 	protected String SourceDirectory = "unknown";
 
 	// Date and time when the data was collected...
 	protected String CollectionDate = "unknown";
 
 	// Table housing main record data.
-	protected MarsTable dataTable = new MarsTable("DataTable");
+	protected final MarsTable dataTable = new MarsTable("DataTable");
 
 	// BDV views
-	protected LinkedHashMap<String, MarsBdvSource> bdvSources =
-		new LinkedHashMap<String, MarsBdvSource>();
+	protected final LinkedHashMap<String, MarsBdvSource> bdvSources =
+			new LinkedHashMap<>();
 
 	/**
 	 * Constructor for loading a MarsMetadata record from a file. Typically, used
@@ -122,7 +122,7 @@ public class OLDMarsMetadata extends AbstractMarsRecord implements
 				jGenerator.writeFieldName("DataTable");
 				dataTable.toJSON(jGenerator);
 			}
-		}, jParser -> dataTable.fromJSON(jParser));
+		}, dataTable::fromJSON);
 
 	}
 

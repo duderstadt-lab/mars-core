@@ -52,8 +52,8 @@ public class DefaultMoleculeArchiveProperties extends
 
 	@Override
 	public void merge(
-		MoleculeArchiveProperties<DefaultMolecule, MarsOMEMetadata> properties,
-		String archiveName)
+            MoleculeArchiveProperties<?, ?> properties,
+            String archiveName)
 	{
 		super.merge(properties, archiveName);
 	}

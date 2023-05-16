@@ -101,7 +101,7 @@ public class IJ1ResultsTableConversionCommand extends DynamicCommand implements
 	public static ArrayList<String> getResultsTableTitles() {
 
 		Frame[] nonImageWindows = WindowManager.getNonImageWindows();
-		ArrayList<String> openTables = new ArrayList<String>();
+		ArrayList<String> openTables = new ArrayList<>();
 
 		for (Frame frame : nonImageWindows) {
 

@@ -12,7 +12,7 @@ An ImageJ update site has been created to help with maintenance and distribution
 4. If the plugins have been installed correctly, the submenu "Mars" should show up under Plugins.
 5. From now on all you need to do is run the updater to ensure you have the current version of Mars installed. Please update frequently to ensure you benefit from the most recent bug fixes.
 
-If you encounter errors running using Mars, go back to the updater and double-check all jars are up-to-date in the advanced mode, looking just at the jars from the Mars update site. If the error persists, please tell us by posting on the [Image.sc Forum](https://forum.image.sc) with the tag mars.
+If you encounter errors running using Mars, go back to the updater and double-check all jars are up-to-date in the advanced mode, looking just at the jars from the Mars update site. If the error persists, please tell us by posting on the [Image.sc Forum](https://forum.image.sc) with the tag Mars.
 
 Mars documentation can be found at https://duderstadt-lab.github.io/mars-docs/
 

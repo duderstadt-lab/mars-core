@@ -72,7 +72,9 @@ public class PeakFinderCommandTest {
 
 	@BeforeEach
 	public void setUp() {
-		createContext().inject(this);
+		try (Context context = createContext()) {
+			context.inject(this);
+		}
 	}
 
 	@AfterEach

@@ -86,8 +86,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 
 	// -- Callback methods --
 	private void archiveSelectionChanged() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(archive.properties().getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(archive.properties().getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -97,9 +96,8 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 
 	@Override
 	public void initialize() {
-		ArrayList<String> columns = new ArrayList<String>();
-		columns.addAll(moleculeArchiveService.getArchives().get(0).properties()
-			.getColumnSet());
+		ArrayList<String> columns = new ArrayList<>(moleculeArchiveService.getArchives().get(0).properties()
+				.getColumnSet());
 		columns.sort(String::compareToIgnoreCase);
 
 		final MutableModuleItem<String> columnItems = getInfo().getMutableInput(
@@ -110,7 +108,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 	@Override
 	public void run() {
 		// Let's keep track of the time it takes
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		// Build log message
 		LogBuilder builder = new LogBuilder();
@@ -136,7 +134,7 @@ public class VarianceCalculatorCommand extends DynamicCommand implements
 		});
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 		archive.logln(LogBuilder.endBlock(true));
 		archive.logln("   ");

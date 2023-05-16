@@ -47,7 +47,7 @@ import de.mpg.biochem.mars.table.MarsTable;
  * time-series data. Time-series data for each molecule in a dataset are stored
  * in the form of {@link Molecule} records, which may also contain calculated
  * parameters, tags, notes, and kinetic change point segments. These records are
- * assigned a UID string at the time of creation. This string provides univeral
+ * assigned a UID string at the time of creation. This string provides universal
  * molecule uniqueness throughout all datasets. MoleculeArchives contain a
  * collection of molecule records associated with a given experimental condition
  * or analysis pipeline.
@@ -91,14 +91,14 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void rebuildIndexes(final int nThreads) throws IOException;
 
 	/**
-	 * Saves the MoleculeAchive to the file from which it was opened.
+	 * Saves the MoleculeArchive to the file from which it was opened.
 	 * 
 	 * @throws IOException if something goes wrong saving the data.
 	 */
 	void save() throws IOException;
 
 	/**
-	 * Saves MoleculeAchive to the given file destination in smile format.
+	 * Saves MoleculeArchive to the given file destination in smile format.
 	 * 
 	 * @param file a yama file destination. If the .yama is not present it will be
 	 *          added.
@@ -108,7 +108,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	File saveAs(File file) throws IOException;
 
 	/**
-	 * Saves MoleculeAchive to the given file destination in json format.
+	 * Saves MoleculeArchive to the given file destination in json format.
 	 * 
 	 * @param file a yama.json file destination. If the .yama.json is not present
 	 *          it will be added.
@@ -118,8 +118,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	File saveAsJson(File file) throws IOException;
 
 	/**
-	 * Creates the directory given and a virtual store inside. Rebuilds indexes in
-	 * the process if the archive was loaded from a virtual store.
+	 * Creates the directory given and a virtual store inside. Indexes are rebuilt
+	 * while saving if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
@@ -128,8 +128,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
-	 * smile format with .sml file extension. This is the default format. Rebuilds
-	 * indexes in the process if the archive was loaded from a virtual store.
+	 * smile format with .sml file extension. This is the default format. Indexes
+	 * are rebuilt while saving if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @param nThreads The thread count.
@@ -140,8 +140,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
-	 * json format and with .json file extensions. Rebuilds indexes in the process
-	 * if the archive was loaded from a virtual store.
+	 * json format and with .json file extensions. Indexes are rebuilt while saving
+	 * 	 * 	 * if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
@@ -150,8 +150,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
-	 * json format with .json file extension. Rebuilds indexes in the process if
-	 * the archive was loaded from a virtual store.
+	 * json format with .json file extension. Indexes are rebuilt while saving
+	 * if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @param nThreads The thread count.
@@ -170,11 +170,11 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	void put(M molecule);
 
 	/**
-	 * Adds an MarsMetadata record to the archive. If an MarsMetadata record with
+	 * Adds a MarsMetadata record to the archive. If a MarsMetadata record with
 	 * the same UID is already in the archive, the record is updated. All indexes
 	 * are updated with the properties of the MarsMetadata record added.
 	 * 
-	 * @param metadata an metadata record to add or update.
+	 * @param metadata a metadata record to add or update.
 	 */
 	void putMetadata(I metadata);
 
@@ -468,7 +468,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	Stream<I> metadata();
 
 	/**
-	 * Convenience method to retrieve a multithreated Molecule stream. Can be used
+	 * Convenience method to retrieve a multithreaded Molecule stream. Can be used
 	 * to iterate over all molecules using forEach in a multithreaded manner.
 	 * 
 	 * @return Molecule stream.

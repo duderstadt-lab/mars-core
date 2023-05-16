@@ -90,7 +90,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 	@Override
 	public void run() {
 		// Let's keep track of the time it takes
-		double starttime = System.currentTimeMillis();
+		double startTime = System.currentTimeMillis();
 
 		if (archive.get(0) instanceof DnaMolecule) {
 			archive.getWindow().unlock();
@@ -125,7 +125,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			MarsTable datatable = molecule.getTable();
 
 			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
+			// instead we will just be overwriting the values below.
 			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
 			int imageIndex = 0;
@@ -156,7 +156,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 				.setTimeIncrementInSeconds(timeIncrement)));
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
-			starttime) / 60000, 2) + " minutes.");
+			startTime) / 60000, 2) + " minutes.");
 		logService.info(LogBuilder.endBlock(true));
 
 		archive.logln(LogBuilder.endBlock(true));
@@ -184,7 +184,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			MarsTable datatable = molecule.getTable();
 
 			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
+			// instead we will just be overwriting the values below.
 			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
 			datatable.rows().forEach(row -> row.setValue("Time_(s)", metadata
@@ -220,7 +220,7 @@ public class AddTimeCommand extends DynamicCommand implements Command {
 			MarsTable datatable = molecule.getTable();
 
 			// If the column already exists we don't need to add it
-			// instead we will just be overwriting the values below..
+			// instead we will just be overwriting the values below.
 			if (!datatable.hasColumn("Time_(s)")) datatable.appendColumn("Time_(s)");
 
 			molecule.getTable().rows().forEach(row -> row.setValue("Time_(s)", row

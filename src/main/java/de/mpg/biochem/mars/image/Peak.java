@@ -54,7 +54,7 @@ public class Peak extends AbstractJsonConvertibleRecord implements
 	RealLocalizable
 {
 
-	public static AtomicLong idGenerator = new AtomicLong(-1);
+	public static final AtomicLong idGenerator = new AtomicLong(-1);
 
 	private long id;
 	private long forwardLinkID = -1;

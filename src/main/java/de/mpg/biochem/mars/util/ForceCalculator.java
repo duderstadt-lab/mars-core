@@ -67,7 +67,7 @@ public class ForceCalculator implements UnivariateFunction {
 
 	public double[] calculate(double variance) {
 		this.variance = variance;
-		double length = Double.NaN;
+		double length;
 		try {
 			// the length must be longer than 0.1 nm and shorter than 1/10000 th of
 			// full length

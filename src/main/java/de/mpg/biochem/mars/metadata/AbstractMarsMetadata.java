@@ -87,11 +87,11 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 	// Directory where the images are stored.
 	protected String sourceDirectory = "unknown";
 
-	protected Map<Integer, MarsOMEImage> images =
+	protected final Map<Integer, MarsOMEImage> images =
 			new ConcurrentHashMap<>();
 
 	// BDV views
-	protected LinkedHashMap<String, MarsBdvSource> bdvSources =
+	protected final LinkedHashMap<String, MarsBdvSource> bdvSources =
 			new LinkedHashMap<>();
 
 	/**
@@ -428,8 +428,8 @@ public abstract class AbstractMarsMetadata extends AbstractMarsRecord implements
 
 	@Override
 	public String getCollectionDate() {
-		if (images.get(0) != null && images.get(0).getAquisitionDate() != null)
-			return images.get(0).getAquisitionDate().getValue();
+		if (images.get(0) != null && images.get(0).getAcquisitionDate() != null)
+			return images.get(0).getAcquisitionDate().getValue();
 		else return null;
 	}
 }
