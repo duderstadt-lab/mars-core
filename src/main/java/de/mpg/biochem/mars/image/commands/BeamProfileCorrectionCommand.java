@@ -136,7 +136,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
 		long channelCount = dataset.getChannels();
-		ArrayList<String> channels = new ArrayList<String>();
+		ArrayList<String> channels = new ArrayList<>();
 		for (int ch = 0; ch < channelCount; ch++)
 			channels.add(String.valueOf(ch));
 		channelItems.setChoices(channels);
@@ -150,7 +150,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 		// Super Hacky IJ1 workaround for issues in scijava/scifio related to
 		// getting images.
 		int numberOfImages = WindowManager.getImageCount();
-		List<String> imageNames = new ArrayList<String>();
+		List<String> imageNames = new ArrayList<>();
 
         for (int i = 0; i < numberOfImages; i++) {
             ImagePlus img = WindowManager.getImage(i + 1);
@@ -175,7 +175,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
         // Output first part of log message
         logService.info(log);
 
-		// We assume there is just a single frame..
+		// We assume there is just a single frame.
 		backgroundIp = backgroundImage.getProcessor();
 
         // determine maximum pixel value
@@ -191,11 +191,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
             }
         }
 
-		// Need to determine the number of threads
-		// final int PARALLELISM_LEVEL = Runtime.getRuntime().availableProcessors();
-
 		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
-		// ForkJoinPool forkJoinPool = new ForkJoinPool(1);
 		try {
 			// Start a thread to keep track of the progress of the number of frames
 			// that have been processed.
@@ -222,7 +218,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 			// in individual frames
 			// in parallel
 			forkJoinPool.submit(() -> IntStream.range(0, image.getNFrames())
-				.parallel().forEach(t -> correctFrame(Integer.valueOf(channel), t)))
+				.parallel().forEach(t -> correctFrame(Integer.parseInt(channel), t)))
 				.get();
 
             progressUpdating.set(false);
@@ -300,7 +296,7 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
     }
 
 	public int getChannel() {
-		return Integer.valueOf(channel);
+		return Integer.parseInt(channel);
 	}
 
     public void setImage(ImagePlus image) {
