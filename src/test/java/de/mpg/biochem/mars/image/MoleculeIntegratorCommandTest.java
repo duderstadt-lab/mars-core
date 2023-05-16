@@ -29,17 +29,21 @@
 
 package de.mpg.biochem.mars.image;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
+import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
+import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.table.MarsTableService;
+import de.mpg.biochem.mars.util.Gaussian2D;
+import io.scif.ome.services.OMEXMLService;
+import io.scif.services.DatasetIOService;
+import io.scif.services.FormatService;
+import io.scif.services.TranslatorService;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.axis.Axes;
 import net.imagej.axis.AxisType;
 import net.imagej.ops.OpService;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,17 +53,10 @@ import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 
-import de.mpg.biochem.mars.image.commands.MoleculeIntegratorMultiViewCommand;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveService;
-import de.mpg.biochem.mars.molecule.SingleMoleculeArchive;
-import de.mpg.biochem.mars.table.MarsTable;
-import de.mpg.biochem.mars.table.MarsTableService;
-import de.mpg.biochem.mars.util.Gaussian2D;
-import de.mpg.biochem.mars.util.MarsMath;
-import io.scif.ome.services.OMEXMLService;
-import io.scif.services.DatasetIOService;
-import io.scif.services.FormatService;
-import io.scif.services.TranslatorService;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MoleculeIntegratorCommandTest {
 
@@ -83,7 +80,9 @@ public class MoleculeIntegratorCommandTest {
 
 	@BeforeEach
 	public void setUp() {
-		createContext().inject(this);
+		try (Context context = createContext()) {
+			context.inject(this);
+		}
 	}
 
 	@AfterEach
@@ -167,12 +166,11 @@ public class MoleculeIntegratorCommandTest {
 		MarsTable table3 = archive.get("molecule3").getTable();
 		for (int t = 0; t < 50; t++) {
 			// FRET Red
-			Gaussian2D peak1 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) * 2000d +
-				2000d, 10.0d, 10.0d, 1.2d);
-			Gaussian2D peak2 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) * 2000d +
-				2000d, 32.5d, 8d, 1.2d);
-			Gaussian2D peak3 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) * 2000d +
-				2000d, 43.7d, 16.7d, 1.2d);
+			double h0 = Math.cos(Math.PI * t / 10) * 2000d +
+					2000d;
+			Gaussian2D peak1 = new Gaussian2D(0, h0, 10.0d, 10.0d, 1.2d);
+			Gaussian2D peak2 = new Gaussian2D(0, h0, 32.5d, 8d, 1.2d);
+			Gaussian2D peak3 = new Gaussian2D(0, h0, 43.7d, 16.7d, 1.2d);
 
 			double integratedPeak1 = integratePeak(peak1, 2);
 			assertTrue(Math.abs(table1.getValue("FRET Red", t) -
@@ -191,12 +189,9 @@ public class MoleculeIntegratorCommandTest {
 					integratedPeak3 + " was " + table3.getValue("FRET Red", t));
 
 			// FRET Green
-			Gaussian2D peak4 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) * 2000d +
-				2000d, 10.0d, 35d, 1.2d);
-			Gaussian2D peak5 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) * 2000d +
-				2000d, 32.5d, 33d, 1.2d);
-			Gaussian2D peak6 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) * 2000d +
-				2000d, 43.7d, 41.7d, 1.2d);
+			Gaussian2D peak4 = new Gaussian2D(0, h0, 10.0d, 35d, 1.2d);
+			Gaussian2D peak5 = new Gaussian2D(0, h0, 32.5d, 33d, 1.2d);
+			Gaussian2D peak6 = new Gaussian2D(0, h0, 43.7d, 41.7d, 1.2d);
 
 			double integratedPeak4 = integratePeak(peak4, 2);
 			assertTrue(Math.abs(table1.getValue("FRET Green", t) -
@@ -215,12 +210,11 @@ public class MoleculeIntegratorCommandTest {
 					integratedPeak6 + " was " + table3.getValue("FRET Green", t));
 
 			// Blue
-			Gaussian2D peak7 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 10.0d, 35d, 1.2d);
-			Gaussian2D peak8 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 32.5d, 33d, 1.2d);
-			Gaussian2D peak9 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 43.7d, 41.7d, 1.2d);
+			double h1 = Math.sin(Math.PI * t / 5) * 500d +
+					2500d;
+			Gaussian2D peak7 = new Gaussian2D(0, h1, 10.0d, 35d, 1.2d);
+			Gaussian2D peak8 = new Gaussian2D(0, h1, 32.5d, 33d, 1.2d);
+			Gaussian2D peak9 = new Gaussian2D(0, h1, 43.7d, 41.7d, 1.2d);
 
 			double integratedPeak7 = integratePeak(peak7, 2);
 			assertTrue(Math.abs(table1.getValue("Blue", t) -
@@ -239,12 +233,9 @@ public class MoleculeIntegratorCommandTest {
 					integratedPeak9 + " was " + table3.getValue("Blue", t));
 
 			// Red
-			Gaussian2D peak10 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 10.0d, 10.0d, 1.2d);
-			Gaussian2D peak11 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 32.5d, 8d, 1.2d);
-			Gaussian2D peak12 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) * 500d +
-				2500d, 43.7d, 16.7d, 1.2d);
+			Gaussian2D peak10 = new Gaussian2D(0, h1, 10.0d, 10.0d, 1.2d);
+			Gaussian2D peak11 = new Gaussian2D(0, h1, 32.5d, 8d, 1.2d);
+			Gaussian2D peak12 = new Gaussian2D(0, h1, 43.7d, 16.7d, 1.2d);
 
 			double integratedPeak10 = integratePeak(peak10, 2);
 			assertTrue(Math.abs(table1.getValue("Red", t) -
@@ -286,43 +277,36 @@ public class MoleculeIntegratorCommandTest {
 		Dataset dataset = datasetService.create(dim, "Simulated Image", axes, 16,
 			false, false);
 
+
 		for (int t = 0; t < dim[3]; t++)
 			for (int x = 0; x < dim[0]; x++)
 				for (int y = 0; y < dim[1]; y++) {
-					Gaussian2D peak1 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) *
-						2000d + 2000d, 10.0d, 10.0d, 1.2d);
-					Gaussian2D peak2 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) *
-						2000d + 2000d, 32.5d, 8d, 1.2d);
-					Gaussian2D peak3 = new Gaussian2D(0, Math.cos(Math.PI * t / 10) *
-						2000d + 2000d, 43.7d, 16.7d, 1.2d);
-					Gaussian2D peak4 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) *
-						2000d + 2000d, 10.0d, 35d, 1.2d);
-					Gaussian2D peak5 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) *
-						2000d + 2000d, 32.5d, 33d, 1.2d);
-					Gaussian2D peak6 = new Gaussian2D(0, Math.sin(Math.PI * t / 10) *
-						2000d + 2000d, 43.7d, 41.7d, 1.2d);
+					double h2 = Math.cos(Math.PI * t / 10) *
+							2000d + 2000d;
+					Gaussian2D peak1 = new Gaussian2D(0, h2, 10.0d, 10.0d, 1.2d);
+					Gaussian2D peak2 = new Gaussian2D(0, h2, 32.5d, 8d, 1.2d);
+					Gaussian2D peak3 = new Gaussian2D(0, h2, 43.7d, 16.7d, 1.2d);
+					Gaussian2D peak4 = new Gaussian2D(0, h2, 10.0d, 35d, 1.2d);
+					Gaussian2D peak5 = new Gaussian2D(0, h2, 32.5d, 33d, 1.2d);
+					Gaussian2D peak6 = new Gaussian2D(0, h2, 43.7d, 41.7d, 1.2d);
 
 					dataset.getImgPlus().randomAccess().setPositionAndGet(x, y, 0, t)
 						.setReal(peak1.getValue(x, y) + peak2.getValue(x, y) + peak3
 							.getValue(x, y) + peak4.getValue(x, y) + peak5.getValue(x, y) +
 							peak6.getValue(x, y));
 
-					Gaussian2D peak7 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 10.0d, 35d, 1.2d);
-					Gaussian2D peak8 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 32.5d, 33d, 1.2d);
-					Gaussian2D peak9 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 43.7d, 41.7d, 1.2d);
+					double h3 = Math.sin(Math.PI * t / 5) *
+							500d + 2500d;
+					Gaussian2D peak7 = new Gaussian2D(0, h3, 10.0d, 35d, 1.2d);
+					Gaussian2D peak8 = new Gaussian2D(0, h3, 32.5d, 33d, 1.2d);
+					Gaussian2D peak9 = new Gaussian2D(0, h3, 43.7d, 41.7d, 1.2d);
 					dataset.getImgPlus().randomAccess().setPositionAndGet(x, y, 1, t)
 						.setReal(peak7.getValue(x, y) + peak8.getValue(x, y) + peak9
 							.getValue(x, y));
 
-					Gaussian2D peak10 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 10.0d, 10.0d, 1.2d);
-					Gaussian2D peak11 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 32.5d, 8d, 1.2d);
-					Gaussian2D peak12 = new Gaussian2D(0, Math.sin(Math.PI * t / 5) *
-						500d + 2500d, 43.7d, 16.7d, 1.2d);
+					Gaussian2D peak10 = new Gaussian2D(0, h3, 10.0d, 10.0d, 1.2d);
+					Gaussian2D peak11 = new Gaussian2D(0, h3, 32.5d, 8d, 1.2d);
+					Gaussian2D peak12 = new Gaussian2D(0, h3, 43.7d, 16.7d, 1.2d);
 					dataset.getImgPlus().randomAccess().setPositionAndGet(x, y, 2, t)
 						.setReal(peak10.getValue(x, y) + peak11.getValue(x, y) + peak12
 							.getValue(x, y));

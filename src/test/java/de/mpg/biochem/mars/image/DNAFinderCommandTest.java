@@ -70,6 +70,7 @@ public class DNAFinderCommandTest {
 			OpService.class, MarsTableService.class, PlatformService.class);
 	}
 
+	@SuppressWarnings("resource")
 	@BeforeEach
 	public void setUp() {
 		createContext().inject(this);
