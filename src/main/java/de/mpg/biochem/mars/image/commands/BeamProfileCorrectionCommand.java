@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,6 +32,7 @@ import de.mpg.biochem.mars.util.LogBuilder;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.Roi;
 import ij.process.ImageProcessor;
 import io.scif.ome.services.OMEXMLService;
 import io.scif.services.TranslatorService;
@@ -48,6 +49,7 @@ import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.widget.ChoiceWidget;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,12 +62,18 @@ import java.util.stream.IntStream;
 /**
  * This command corrects images collected with uneven illumination. The most common
  * use is to correct images collected using a fluorescence microscope with a
- * gaussian beam profile that is maximum in the middle and lowest at the edges. The command
- * requires two images: a background image with the beam profile and the image
+ * gaussian beam profile that is maximum in the middle and lowest at the edges.
+ * <p>
+ * The command requires two images: a 2D background image with the beam profile and the video
  * that should be corrected. For each pixel at position x, y the following is calculated:
+ * </p>
+ * <p>
  * (Image(x,y) - electronic_offset) / ((Background(x,y) - electronic_offset) /
- * (maximum_pixel_background - electronic_offset)). When finished the active image or
- * image provided will be corrected.
+ * (maximum_pixel_background - electronic_offset)).
+ * </p>
+ * <p>
+ * When finished the active image or image provided will be corrected.
+ * </p>
  *
  * @author Karl Duderstadt
  */
@@ -103,6 +111,11 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
     @Parameter(label = "Image to correct")
     private ImageDisplay imageDisplay;
 
+    @Parameter(label = "Region",
+            style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
+            choices = { "whole image", "ROI from image"}, persist = false)
+    private String region = "whole image";
+
     @Parameter(label = "Channel", choices = {"a", "b", "c"}, persist = false)
     private String channel = "0";
 
@@ -122,16 +135,28 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
     ImageProcessor backgroundIp;
     double maximumPixelValue;
 
+    private Roi imageRoi, processRegion;
+
     private Dataset dataset;
     private ImagePlus image;
     private ImagePlus backgroundImage;
 
     @Override
     public void initialize() {
-        if (imageDisplay == null) return;
+        if (dataset == null && imageDisplay != null) {
+            dataset = (Dataset) imageDisplay.getActiveView().getData();
+            image = convertService.convert(imageDisplay, ImagePlus.class);
+        }
+        else return;
 
-        dataset = (Dataset) imageDisplay.getActiveView().getData();
-        image = convertService.convert(imageDisplay, ImagePlus.class);
+        if (image.getRoi() != null) {
+            imageRoi = image.getRoi();
+            processRegion = image.getRoi();
+            region = "ROI from image";
+            final MutableModuleItem<String> regionItem = getInfo().getMutableInput(
+                    "region", String.class);
+            regionItem.setValue(this, "ROI from image");
+        }
 
 		final MutableModuleItem<String> channelItems = getInfo().getMutableInput(
 			"channel", String.class);
@@ -175,19 +200,30 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
         // Output first part of log message
         logService.info(log);
 
+        if (image != null && imageRoi == null && image.getRoi() != null) {
+            imageRoi = image.getRoi();
+            processRegion = image.getRoi();
+        }
+
+        if (imageRoi == null || region.equals("whole image"))
+            processRegion = new Roi(0, 0, (int) dataset.dimension(0),
+                    (int) dataset.dimension(1));
+
+        if (image != null) {
+            image.deleteRoi();
+            image.setOverlay(null);
+        }
+
 		// We assume there is just a single frame.
 		backgroundIp = backgroundImage.getProcessor();
 
         // determine maximum pixel value
-        maximumPixelValue = backgroundIp.getf(0, 0);
+        maximumPixelValue = 0;
 
-        for (int y = 0; y < backgroundIp.getHeight(); y++) {
-            for (int x = 0; x < backgroundIp.getWidth(); x++) {
-
+        for (int y = (int)processRegion.getYBase(); y < processRegion.getYBase() + processRegion.getFloatHeight(); y++) {
+            for (int x = (int)processRegion.getXBase(); x < processRegion.getXBase() + processRegion.getFloatWidth(); x++) {
                 double value = backgroundIp.getf(x, y);
-
                 if (value > maximumPixelValue) maximumPixelValue = value;
-
             }
         }
 
@@ -236,41 +272,43 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
             forkJoinPool.shutdown();
         }
 
-        // Need to add if statement to check if headless or not
-        // This might crash a headless run...
-        image.updateAndDraw();
+        if (image != null && imageRoi != null) image.setRoi(imageRoi);
+        if (image != null) image.updateAndDraw();
         logService.info(LogBuilder.endBlock(true));
     }
 
     public void correctFrame(int channel, int t) {
         ImageStack stack = image.getImageStack();
         int index = image.getStackIndex(channel + 1, 1, t + 1);
-
         ImageProcessor processor = stack.getProcessor(index);
 
-        // subtract electronic offset and
-        // divide by background
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-
+        // subtract electronic offset and divide by background
+        for (int y = (int)processRegion.getYBase(); y < processRegion.getYBase() + processRegion.getFloatHeight(); y++) {
+            for (int x = (int)processRegion.getXBase(); x < processRegion.getXBase() + processRegion.getFloatWidth(); x++) {
                 double backgroundValue = (backgroundIp.getf(x, y) - electronicOffset) /
                         (maximumPixelValue - electronicOffset);
                 double value = processor.getf(x, y) - electronicOffset;
-
                 processor.setf(x, y, (float) Math.abs(value / backgroundValue));
             }
         }
-
         framesDone.incrementAndGet();
     }
 
     private void addInputParameterLog(LogBuilder builder) {
-        builder.addParameter("Image Title", image.getTitle());
-        if (image.getOriginalFileInfo() != null && image
-                .getOriginalFileInfo().directory != null) {
-            builder.addParameter("Image Directory", image
-                    .getOriginalFileInfo().directory);
+        if (image != null) {
+            builder.addParameter("Image title", image.getTitle());
+            if (image.getOriginalFileInfo() != null && image
+                    .getOriginalFileInfo().directory != null)
+            {
+                builder.addParameter("Image directory", image
+                        .getOriginalFileInfo().directory);
+            }
         }
+        else builder.addParameter("Dataset name", dataset.getName());
+
+        builder.addParameter("Region", region);
+        if (region.equals("ROI from image") && imageRoi != null) builder
+                .addParameter("ROI from image", imageRoi.toString());
         builder.addParameter("Channel", channel);
         if (backgroundImage.getTitle() != null) builder.addParameter(
                 "Background Image Title", backgroundImage.getTitle());
@@ -289,6 +327,14 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
 
     public void setDataset(Dataset dataset) {
         this.dataset = dataset;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getRegion() {
+        return region;
     }
 
     public void setChannel(int channel) {
