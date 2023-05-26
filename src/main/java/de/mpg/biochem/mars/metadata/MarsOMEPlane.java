@@ -94,9 +94,9 @@ public class MarsOMEPlane extends AbstractJsonConvertibleRecord implements
 		this.c = md.getPlaneTheC(imageIndex, planeIndex);
 		this.z = md.getPlaneTheZ(imageIndex, planeIndex);
 		this.t = md.getPlaneTheT(imageIndex, planeIndex);
-		this.ifd = md.getTiffDataIFD(imageIndex, planeIndex);
-		this.filename = md.getUUIDFileName(imageIndex, planeIndex);
-		this.uuid = md.getUUIDValue(imageIndex, planeIndex);
+		//this.ifd = md.getTiffDataIFD(imageIndex, planeIndex);
+		//this.filename = md.getUUIDFileName(imageIndex, planeIndex);
+		//this.uuid = md.getUUIDValue(imageIndex, planeIndex);
 
 		this.dt = md.getPlaneDeltaT(imageIndex, planeIndex);
 		this.exposureTime = md.getPlaneExposureTime(imageIndex, planeIndex);
