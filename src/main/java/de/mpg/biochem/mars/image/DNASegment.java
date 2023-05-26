@@ -34,11 +34,8 @@ import net.imglib2.RealLocalizable;
 public class DNASegment implements RealLocalizable {
 
 	private double x1, y1, x2, y2;
-	private final double centerX;
-	private final double centerY;
 	private int medianIntensity;
 	private double variance;
-
 	public static final String X1 = "X1";
 	public static final String Y1 = "Y1";
 	public static final String X2 = "X2";
@@ -52,9 +49,6 @@ public class DNASegment implements RealLocalizable {
 		this.y1 = y1;
 		this.x2 = x2;
 		this.y2 = y2;
-		
-		centerX = x1 + (x2 - x1) / 2;
-		centerY = y1 + (y2 - y1) / 2;
 	}
 
 	public double getX1() {
@@ -72,6 +66,10 @@ public class DNASegment implements RealLocalizable {
 	public double getY2() {
 		return y2;
 	}
+
+	public double getXCenter() { return x1 + (x2 - x1) / 2;}
+
+	public double getYCenter() { return y1 + (y2 - y1) / 2;}
 
 	public void setX1(double x1) {
 		this.x1 = x1;
@@ -125,10 +123,10 @@ public class DNASegment implements RealLocalizable {
 	@Override
 	public double getDoublePosition(int arg0) {
 		if (arg0 == 0) {
-			return centerX;
+			return getXCenter();
 		}
 		else if (arg0 == 1) {
-			return centerY;
+			return getYCenter();
 		}
 		else {
 			return -1;
@@ -138,10 +136,10 @@ public class DNASegment implements RealLocalizable {
 	@Override
 	public float getFloatPosition(int arg0) {
 		if (arg0 == 0) {
-			return (float) centerX;
+			return (float) getXCenter();
 		}
 		else if (arg0 == 1) {
-			return (float) centerY;
+			return (float) getYCenter();
 		}
 		else {
 			return -1;
@@ -150,13 +148,13 @@ public class DNASegment implements RealLocalizable {
 
 	@Override
 	public void localize(float[] arg0) {
-		arg0[0] = (float) centerX;
-		arg0[1] = (float) centerY;
+		arg0[0] = (float) getXCenter();
+		arg0[1] = (float) getYCenter();
 	}
 
 	@Override
 	public void localize(double[] arg0) {
-		arg0[0] = centerX;
-		arg0[1] = centerY;
+		arg0[0] = getXCenter();
+		arg0[1] = getYCenter();
 	}
 }
