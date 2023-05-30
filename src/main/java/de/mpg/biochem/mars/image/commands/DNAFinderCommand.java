@@ -165,19 +165,19 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String inputDetails = "Images with Y-axis aligned DNA molecules";
+	private String inputDetails = "Images with Y-axis aligned DNA molecules";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "DNAImageInput.png";
+	private String inputFigure = "DNAImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "name";
+	private String imageName = "name";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -193,7 +193,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String findGroup = "Find";
+	private String findGroup = "Find";
 
 	@Parameter(label = "Gaussian Smoothing Sigma", style = "group:Find")
 	private double gaussSigma = 2;
@@ -235,7 +235,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String fitGroup = "Fit";
+	private String fitGroup = "Fit";
 
 	@Parameter(label = "Fit ends", style = "group:Fit")
 	private boolean fit = false;
@@ -250,7 +250,7 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(label = "Generate DNA count table", style = "group:Output")
 	private boolean generateDNACountTable;
@@ -273,25 +273,25 @@ public class DNAFinderCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String previewGroup = "Preview";
+	private String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private final boolean preview = false;
+	private boolean preview = false;
 
 	@Parameter(label = "Label", style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE +
 		", group:Preview", choices = { "Median intensity", "Variance intensity" })
 	private String previewLabelType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private final String tDNACount = "count: 0";
+	private String tDNACount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int theT;
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private final int previewTimeout = 10;
+	private int previewTimeout = 10;
 
 	@Parameter(label = "Help",
 		description = "View a web page detailing DNA Finder options",

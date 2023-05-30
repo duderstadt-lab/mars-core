@@ -159,26 +159,26 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "MoleculeIntegratorInput.png";
+	private String inputFigure = "MoleculeIntegratorInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "?";
+	private String imageName = "?";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String roiCount = "No ROIs in manager!";
+	private String roiCount = "No ROIs in manager!";
 
 	/**
 	 * INTEGRATION SETTINGS
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integration";
+	private String integrateGroup = "Integration";
 
 	@Parameter(label = "Inner radius", style = "group:Integration")
 	private int innerRadius = 2;
@@ -191,14 +191,14 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private final String outputFigure = "SingleMoleculeArchive.png";
+	private String outputFigure = "SingleMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private final String outputArchiveType = "type: SingleMoleculeArchive";
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
@@ -233,20 +233,20 @@ public class MoleculeIntegratorCommand extends DynamicCommand implements
 	/**
 	 * List of IntegrationMaps containing T -> UID peak maps, name and channel.
 	 */
-	private final List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
+	private List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
 
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
 
-	private final AtomicInteger progressInteger = new AtomicInteger(0);
+	private AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
 	private OMEXMLMetadata omexmlMetadata;
 
 	private List<MutableModuleItem<String>> channelColors;
 
-	private final List<String> channelColorOptions = new ArrayList<>(Arrays
+	private List<String> channelColorOptions = new ArrayList<>(Arrays
 			.asList("Do not integrate", "Integrate"));
 
 	@Override

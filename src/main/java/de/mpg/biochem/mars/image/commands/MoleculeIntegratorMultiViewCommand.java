@@ -164,33 +164,33 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "MoleculeIntegratorDualInput.png";
+	private String inputFigure = "MoleculeIntegratorDualInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "?";
+	private String imageName = "?";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String roiCount = "No ROIs in manager!";
+	private String roiCount = "No ROIs in manager!";
 
 	/**
 	 * BOUNDARY SETTINGS
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String regionGroup = "Boundaries";
+	private String regionGroup = "Boundaries";
 
 	/**
 	 * INTEGRATION SETTINGS
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integration";
+	private String integrateGroup = "Integration";
 
 	@Parameter(label = "Inner Radius", style = "group:Integration")
 	private int innerRadius = 2;
@@ -203,14 +203,14 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private final String outputFigure = "SingleMoleculeArchive.png";
+	private String outputFigure = "SingleMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private final String outputArchiveType = "type: SingleMoleculeArchive";
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output")
 	private String microscope = "Unknown";
@@ -241,22 +241,22 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 	/**
 	 * List of IntegrationMaps containing T -> UID peak maps, name and channel.
 	 */
-	private final List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
+	private List<IntegrationMap> peakIntegrationMaps = new ArrayList<>();
 
 	private Dataset dataset;
 	private ImagePlus image;
 	private String imageID;
 
-	private final AtomicInteger progressInteger = new AtomicInteger(0);
+	private AtomicInteger progressInteger = new AtomicInteger(0);
 
 	private MarsOMEMetadata marsOMEMetadata;
 	private OMEXMLMetadata omexmlMetadata;
 
 	private List<MutableModuleItem<String>> channelColors;
 	private List<String> regionNames;
-	private final Map<String, MutableModuleItem<Integer>> regionBoundaryInputItems =
+	private Map<String, MutableModuleItem<Integer>> regionBoundaryInputItems =
 			new HashMap<>();
-	private final Map<String, Interval> regionIntervals =
+	private Map<String, Interval> regionIntervals =
 			new HashMap<>();
 
 	@Override

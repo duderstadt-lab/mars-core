@@ -79,7 +79,7 @@ public class MergeCommand extends DynamicCommand {
 	private UIService uiService;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image")
-	private final String inputFigure = "MergeArchives.png";
+	private String inputFigure = "MergeArchives.png";
 
 	@Parameter(label = "Directory", style = "directory")
 	private File directory;

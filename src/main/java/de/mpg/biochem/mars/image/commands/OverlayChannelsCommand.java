@@ -106,7 +106,7 @@ public class OverlayChannelsCommand extends DynamicCommand implements Command {
 	private boolean keep = false;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String affineTitle = "Affine2D Transformation Matrix:";
+	private String affineTitle = "Affine2D Transformation Matrix:";
 
 	@Parameter(label = "m00")
 	private double m00;

@@ -117,7 +117,7 @@ public class GradientCommand extends DynamicCommand implements Command {
 	private Dataset output;
 
 	// For the progress thread
-	private final AtomicInteger slicesDone = new AtomicInteger(0);
+	private AtomicInteger slicesDone = new AtomicInteger(0);
 
 	@Override
 	public void run() {

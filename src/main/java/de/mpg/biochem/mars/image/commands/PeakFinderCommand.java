@@ -159,15 +159,15 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel",
 		persist = false)
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "ImageInput.png";
+	private String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "?";
+	private  String imageName = "?";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -182,7 +182,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String findGroup = "Find";
+	private String findGroup = "Find";
 
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
@@ -203,7 +203,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String fitGroup = "Fit";
+	private String fitGroup = "Fit";
 
 	@Parameter(label = "Fit", style = "group:Fit")
 	private boolean fitPeaks = false;
@@ -219,7 +219,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * INTEGRATION SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integrate";
+	private String integrateGroup = "Integrate";
 
 	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
@@ -234,7 +234,7 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(label = "Generate peak count table", style = "group:Output")
 	private boolean generatePeakCountTable;
@@ -260,25 +260,25 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String previewGroup = "Preview";
+	private String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private final boolean preview = false;
+	private boolean preview = false;
 
 	@Parameter(label = "Roi", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE +
 		", group:Preview", choices = { "circle", "point" })
 	private String roiType;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
-	private final String tPeakCount = "count: 0";
+	private String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int theT;
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private final int previewTimeout = 10;
+	private int previewTimeout = 10;
 
 	@Parameter(label = "Help",
 		description = "View a web page detailing Peak Finder options",

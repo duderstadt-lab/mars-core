@@ -129,8 +129,8 @@ public class BeamProfileCorrectionCommand extends DynamicCommand implements
     private int nThreads = 1;
 
     // For the progress thread
-    private final AtomicBoolean progressUpdating = new AtomicBoolean(true);
-    private final AtomicInteger framesDone = new AtomicInteger(0);
+    private AtomicBoolean progressUpdating = new AtomicBoolean(true);
+    private AtomicInteger framesDone = new AtomicInteger(0);
 
     ImageProcessor backgroundIp;
     double maximumPixelValue;

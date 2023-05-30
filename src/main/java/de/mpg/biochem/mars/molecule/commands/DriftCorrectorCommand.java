@@ -80,7 +80,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private int theC = 0;
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String calcDriftMessage = "Drift calculator:";
+	private String calcDriftMessage = "Drift calculator:";
 
 	@Parameter(label = "Calculate drift")
 	private boolean calculateDrift = true;
@@ -106,7 +106,7 @@ public class DriftCorrectorCommand extends DynamicCommand implements Command {
 	private String zeroPoint = "end";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private final String corrDriftMessage = "Drift corrector:";
+	private String corrDriftMessage = "Drift corrector:";
 
 	@Parameter(label = "Correct drift")
 	private boolean correctDrift = true;

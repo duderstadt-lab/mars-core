@@ -108,13 +108,13 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "groupLabel, tabbedPaneWidth:450")
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input")
-	private final String inputFigure = "BuildDNAArchiveInput.png";
+	private String inputFigure = "BuildDNAArchiveInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Input")
-	private final String roiCount = "No ROIs in manager!";
+	private String roiCount = "No ROIs in manager!";
 
 	@Parameter(label = "SingleMoleculeArchive 1", choices = { "a", "b", "c" },
 		style = "group:Input")
@@ -141,7 +141,7 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String mergeGroup = "Search Parameters";
+	private String mergeGroup = "Search Parameters";
 
 	@Parameter(label = "Search radius around DNA",
 		style = "group:Search Parameters")
@@ -162,14 +162,14 @@ public class BuildDnaArchiveCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private final String outputFigure = "DnaMoleculeArchive.png";
+	private String outputFigure = "DnaMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private final String outputArchiveType = "type: DnaMoleculeArchive";
+	private String outputArchiveType = "type: DnaMoleculeArchive";
 
 	// OUTPUT PARAMETERS
 	@Parameter(label = "DnaArchive.yama", type = ItemIO.OUTPUT)

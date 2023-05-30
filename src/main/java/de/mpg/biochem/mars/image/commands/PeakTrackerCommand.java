@@ -187,15 +187,15 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "groupLabel, tabbedPaneWidth:480", persist = false)
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "ImageInput.png";
+	private String inputFigure = "ImageInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "?";
+	private String imageName = "?";
 
 	@Parameter(label = "Region",
 		style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE + ", group:Input",
@@ -210,7 +210,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * FINDER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String findGroup = "Find";
+	private String findGroup = "Find";
 
 	@Parameter(label = "DoG filter", style = "group:Find")
 	private boolean useDogFilter = true;
@@ -231,7 +231,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * FITTER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String fitGroup = "Fit";
+	private String fitGroup = "Fit";
 
 	@Parameter(label = "Radius", style = "group:Fit")
 	private int fitRadius = 4;
@@ -244,7 +244,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * TRACKER SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String trackGroup = "Track";
+	private String trackGroup = "Track";
 
 	@Parameter(label = "Max ΔX", style = "group:Track")
 	private double maxDifferenceX = 1;
@@ -262,7 +262,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * INTEGRATION SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String integrateGroup = "Integrate";
+	private String integrateGroup = "Integrate";
 
 	@Parameter(label = "Integrate", style = "group:Integrate")
 	private boolean integrate = false;
@@ -277,7 +277,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * PROCESS SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String processGroup = "Process";
+	private String processGroup = "Process";
 
 	@Parameter(label = "Use grid", style = "group:Process")
 	private boolean gridProcess = false;
@@ -289,7 +289,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private int verticalGridRegions = 5;
 
 	@Parameter(label = "New virtual archive name", style = "group:Process")
-	private final String archiveName = "archive.yama.store";
+	private String archiveName = "archive.yama.store";
 
 	@Parameter(label = "New virtual archive location", style="group:Process, directory")
 	private File virtualArchiveLocation = new File(System.getProperty("user.home"));
@@ -298,14 +298,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output")
-	private final String outputFigure = "SingleMoleculeArchive.png";
+	private String outputFigure = "SingleMoleculeArchive.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Output, align:center")
-	private final String outputArchiveType = "type: SingleMoleculeArchive";
+	private String outputArchiveType = "type: SingleMoleculeArchive";
 
 	@Parameter(label = "Microscope", style = "group:Output", required = false)
 	private String microscope = "unknown";
@@ -318,7 +318,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	private String pixelUnits = "pixel";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
-	private final String excludeTitle =
+	private String excludeTitle =
 		"List of time points to exclude (T0, T1-T2, ...)";
 
 	@Parameter(label = "Exclude", style = "group:Output", required = false)
@@ -345,11 +345,11 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String previewGroup = "Preview";
+	private String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private final boolean preview = false;
+	private boolean preview = false;
 
 	@Parameter(label = "Roi", style = ChoiceWidget.RADIO_BUTTON_HORIZONTAL_STYLE +
 		", group:Preview", choices = { "circle", "point" })
@@ -357,14 +357,14 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview",
 		persist = false)
-	private final String tPeakCount = "count: 0";
+	private String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int previewT;
 
 	@Parameter(label = "Timeout (s)", style = "group:Preview")
-	private final int previewTimeout = 10;
+	private int previewTimeout = 10;
 
 	@Parameter(label = "Help",
 		description = "View a web page detailing Peak Tracker options",

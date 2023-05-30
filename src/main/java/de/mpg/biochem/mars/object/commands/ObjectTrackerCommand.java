@@ -276,7 +276,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 	private String pixelUnits = "pixel";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Output")
-	private final String excludeTitle =
+	private String excludeTitle =
 		"List of time points to exclude (T0, T1-T2, ...)";
 
 	@Parameter(label = "Exclude", style = "group:Output", required = false)
