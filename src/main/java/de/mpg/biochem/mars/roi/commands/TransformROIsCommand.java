@@ -135,19 +135,19 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	 * INPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String inputGroup = "Input";
+	private String inputGroup = "Input";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Input",
 		persist = false)
-	private final String inputFigure = "TransformROIsInput.png";
+	private String inputFigure = "TransformROIsInput.png";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:center", persist = false)
-	private final String imageName = "name";
+	private String imageName = "name";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE,
 		style = "group:Input, align:left", persist = false)
-	private final String affineTitle = "Affine2D Transformation Matrix";
+	private String affineTitle = "Affine2D Transformation Matrix";
 	
 	@Parameter(label = "m00", style = "format:#####.#####, group:Input")
 	private double m00;
@@ -174,7 +174,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	 * COLOCALIZE SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String colocalizeGroup = "Colocalize";
+	private String colocalizeGroup = "Colocalize";
 
 	@Parameter(label = "Colocalize", style = "group:Colocalize")
 	private boolean colocalize = false;
@@ -205,29 +205,29 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	 * OUTPUT SETTINGS
 	 */
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String outputGroup = "Output";
+	private String outputGroup = "Output";
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "image, group:Output",
 		persist = false)
-	private final String outputFigure = "TransformROIsOutput.png";
+	private String outputFigure = "TransformROIsOutput.png";
 
 	/**
 	 * PREVIEW SETTINGS
 	 */
 
 	@Parameter(visibility = ItemVisibility.MESSAGE, style = "groupLabel")
-	private final String previewGroup = "Preview";
+	private String previewGroup = "Preview";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
-	private final boolean preview = false;
+	private boolean preview = false;
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
 	private int theT;
 
 	@Parameter(label = "Preview timeout (s)", style = "group:Preview")
-	private final int previewTimeout = 10;
+	private int previewTimeout = 10;
 
 	private Dataset dataset;
 	private ImagePlus image;
