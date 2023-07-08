@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +51,22 @@ import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
 public class ArchiveUtils {
+
+	public static boolean isVirtualArchive(File file) {
+		if (file.isDirectory() && file.getName().endsWith(".yama.store")) return true;
+		else return false;
+	}
+
+	public static boolean isVirtualArchive(URI uri) {
+		if (uri.getPath().endsWith(".yama.store")) return true;
+		else return false;
+	}
+
+
+	public static boolean isVirtualArchive(String url) {
+		if (url.endsWith(".yama.store")) return true;
+		else return false;
+	}
 
 	public static File yamaFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));

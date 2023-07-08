@@ -59,7 +59,7 @@ import static java.util.stream.Collectors.toList;
  * 
  * @author Karl Duderstadt
  */
-public class PeakTracker {
+public class  PeakTracker {
 
 	private final double[] maxDifference;
 	private final boolean[] ckMaxDifference;

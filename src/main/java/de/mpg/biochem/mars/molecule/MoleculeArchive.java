@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,6 +108,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	File saveAs(File file) throws IOException;
 
+	void saveAs(OutputStream outputStream) throws IOException;
+
 	/**
 	 * Saves MoleculeArchive to the given file destination in json format.
 	 * 
@@ -116,6 +119,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong saving the data.
 	 */
 	File saveAsJson(File file) throws IOException;
+
+	void saveAsJson(OutputStream outputStream) throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside. Indexes are rebuilt

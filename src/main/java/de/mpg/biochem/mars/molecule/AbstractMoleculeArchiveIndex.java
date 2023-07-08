@@ -356,21 +356,6 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		});
 	}
 
-	/**
-	 * Save the archive properties to a file.
-	 * 
-	 * @param directory Folder to save to.
-	 * @param jFactory JsonFactory to use when saving.
-	 * @param fileExtension The file extension (.json or .sml).
-	 */
-	public void save(File directory, JsonFactory jFactory, String fileExtension)
-		throws IOException
-	{
-		File indexFile = new File(directory.getAbsolutePath() + "/indexes" +
-			fileExtension);
-		MarsUtil.writeJsonRecord(this, indexFile, jFactory);
-	}
-
 	@Override
 	public void addMolecule(M molecule) {
 		moleculeUIDs.add(molecule.getUID());

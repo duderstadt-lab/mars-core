@@ -174,6 +174,17 @@ public class MarsUtil {
 		stream.close();
 	}
 
+	public static void writeJsonRecord(JsonConvertibleRecord record, OutputStream outputStream,
+									   JsonFactory jFactory) throws IOException
+	{
+		OutputStream stream = new BufferedOutputStream(outputStream);
+		JsonGenerator jGenerator = jFactory.createGenerator(stream);
+		record.toJSON(jGenerator);
+		jGenerator.close();
+		stream.flush();
+		stream.close();
+	}
+
 	/**
 	 * Used to bypass unknown Json objects with JacksonJson streaming interface.
 	 * This will also pass through all arrays contained within the objects.

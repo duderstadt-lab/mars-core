@@ -27,51 +27,42 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.io;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
 
-import com.fasterxml.jackson.core.JsonFactory;
+/**
+ * Basic interface for
+ * 
+ * @author Karl Duderstadt
+ */
+public interface MoleculeArchiveVirtualSource {
+    String getName();
 
-import de.mpg.biochem.mars.metadata.MarsMetadata;
+    InputStream getPropertiesInputStream() throws IOException;
 
-public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata>
-	extends JsonConvertibleRecord
-{
+    OutputStream getPropertiesOutputStream() throws IOException;
 
-	void addMolecule(M molecule);
+    InputStream getIndexesInputStream() throws IOException;
 
-	void removeMolecule(M molecule);
+    OutputStream getIndexesOutputStream() throws IOException;
 
-	void removeMolecule(String UID);
+    InputStream getMoleculeInputStream(String UID) throws IOException;
 
-	void addMetadata(I metadata);
+    OutputStream getMoleculeOutputStream(String UID) throws IOException;
 
-	void removeMetadata(I metadata);
+    void removeMolecule(String UID);
 
-	void removeMetadata(String metadataUID);
+    InputStream getMetadataInputStream(String metaUID) throws IOException;
 
-	boolean containsMoleculeUID(String UID);
+    OutputStream getMetadataOutputStream(String metaUID) throws IOException;
 
-	boolean containsMetadataUID(String metadataUID);
+    public List<String> getMoleculeUIDs();
 
-	ConcurrentSkipListSet<String> getMoleculeUIDSet();
+    public List<String> getMetadataUIDs();
 
-	ConcurrentSkipListSet<String> getMetadataUIDSet();
-
-	Map<String, Set<String>> getMetadataUIDtoTagListMap();
-
-	Map<String, Set<String>> getMoleculeUIDtoTagListMap();
-
-	Map<String, Integer> getMoleculeUIDtoImageMap();
-
-	Map<String, Integer> getMoleculeUIDtoChannelMap();
-
-	Map<String, String> getMoleculeUIDtoMetadataUIDMap();
-
-	String getMetadataUIDforMolecule(String UID);
+    void removeMetadata(String metaUID);
 }

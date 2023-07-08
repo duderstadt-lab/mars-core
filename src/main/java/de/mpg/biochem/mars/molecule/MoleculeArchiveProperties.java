@@ -381,18 +381,6 @@ public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMet
 	void merge(MoleculeArchiveProperties<?, ?> properties, String archiveName);
 
 	/**
-	 * Save the archive properties to a file.
-	 * 
-	 * @param directory Folder to save to.
-	 * @param jFactory JsonFactory to use when saving.
-	 * @param fileExtension The file extension (.json or .sml).
-	 * @throws IOException An exception is thrown if there is a problem with the
-	 *           file path.
-	 */
-	void save(File directory, JsonFactory jFactory, String fileExtension)
-		throws IOException;
-
-	/**
 	 * Clear contents of all global sets and records counts. Does not clear
 	 * comments. Used when rebuilding indexes.
 	 */

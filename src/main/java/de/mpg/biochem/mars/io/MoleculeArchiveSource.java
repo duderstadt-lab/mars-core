@@ -27,51 +27,23 @@
  * #L%
  */
 
-package de.mpg.biochem.mars.molecule;
+package de.mpg.biochem.mars.io;
 
-import java.io.File;
+import de.mpg.biochem.mars.molecule.Molecule;
+
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import com.fasterxml.jackson.core.JsonFactory;
+/**
+ * Basic interface for
+ * 
+ * @author Karl Duderstadt
+ */
+public interface MoleculeArchiveSource {
+    String getName();
 
-import de.mpg.biochem.mars.metadata.MarsMetadata;
+    InputStream getInputStream() throws IOException;
 
-public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata>
-	extends JsonConvertibleRecord
-{
-
-	void addMolecule(M molecule);
-
-	void removeMolecule(M molecule);
-
-	void removeMolecule(String UID);
-
-	void addMetadata(I metadata);
-
-	void removeMetadata(I metadata);
-
-	void removeMetadata(String metadataUID);
-
-	boolean containsMoleculeUID(String UID);
-
-	boolean containsMetadataUID(String metadataUID);
-
-	ConcurrentSkipListSet<String> getMoleculeUIDSet();
-
-	ConcurrentSkipListSet<String> getMetadataUIDSet();
-
-	Map<String, Set<String>> getMetadataUIDtoTagListMap();
-
-	Map<String, Set<String>> getMoleculeUIDtoTagListMap();
-
-	Map<String, Integer> getMoleculeUIDtoImageMap();
-
-	Map<String, Integer> getMoleculeUIDtoChannelMap();
-
-	Map<String, String> getMoleculeUIDtoMetadataUIDMap();
-
-	String getMetadataUIDforMolecule(String UID);
+    OutputStream getOutputStream() throws IOException;
 }

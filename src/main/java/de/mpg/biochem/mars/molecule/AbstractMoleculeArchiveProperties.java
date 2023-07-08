@@ -667,14 +667,6 @@ public abstract class AbstractMoleculeArchiveProperties<M extends Molecule, I ex
 		return documents.keySet();
 	}
 
-	public void save(File directory, JsonFactory jFactory, String fileExtension)
-		throws IOException
-	{
-		File propertiesFile = new File(directory.getAbsolutePath() +
-			"/MoleculeArchiveProperties" + fileExtension);
-		MarsUtil.writeJsonRecord(this, propertiesFile, jFactory);
-	}
-
 	public void clear() {
 		tagSet.clear();
 		positionSet.clear();
