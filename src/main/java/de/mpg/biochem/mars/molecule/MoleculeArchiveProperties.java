@@ -51,7 +51,6 @@ import de.mpg.biochem.mars.util.MarsDocument;
 public interface MoleculeArchiveProperties<M extends Molecule, I extends MarsMetadata>
 	extends JsonConvertibleRecord
 {
-
 	/**
 	 * Get the Json input schema for the archive. Returns a string with the date
 	 * for the schema definition using to save the archive that has just been

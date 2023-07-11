@@ -60,7 +60,6 @@ import org.scijava.table.GenericColumn;
 
 import java.io.*;
 import java.net.URI;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -892,7 +891,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void removeMetadata(String metaUID) {
 		if (virtual) {
 			archiveIndex.removeMetadata(metaUID);
-			virtualSource.removeMetadata(metaUID);
+			try { virtualSource.removeMetadata(metaUID); } catch (IOException e) { e.printStackTrace(); }
 		}
 
 		metadataMap.remove(metaUID);
@@ -1079,7 +1078,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void remove(String UID) {
 		if (virtual) {
-			virtualSource.removeMolecule(UID);
+			try { virtualSource.removeMolecule(UID); } catch (IOException e) { e.printStackTrace(); }
 			archiveIndex.removeMolecule(UID);
 		}
 		else {

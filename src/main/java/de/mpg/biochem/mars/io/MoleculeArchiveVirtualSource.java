@@ -40,6 +40,10 @@ import java.util.List;
  * @author Karl Duderstadt
  */
 public interface MoleculeArchiveVirtualSource {
+    public static final String PROPERTIES_FILE_NAME = "MoleculeArchiveProperties";
+    public static final String INDEXES_FILE_NAME = "indexes";
+    public static final String MOLECULES_SUBDIRECTORY_NAME = "Molecules";
+    public static final String METADATA_SUBDIRECTORY_NAME = "Metadata";
     String getName();
 
     InputStream getPropertiesInputStream() throws IOException;
@@ -54,7 +58,7 @@ public interface MoleculeArchiveVirtualSource {
 
     OutputStream getMoleculeOutputStream(String UID) throws IOException;
 
-    void removeMolecule(String UID);
+    void removeMolecule(String UID) throws IOException;
 
     InputStream getMetadataInputStream(String metaUID) throws IOException;
 
@@ -64,5 +68,5 @@ public interface MoleculeArchiveVirtualSource {
 
     public List<String> getMetadataUIDs();
 
-    void removeMetadata(String metaUID);
+    void removeMetadata(String metaUID) throws IOException;
 }

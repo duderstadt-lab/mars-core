@@ -34,6 +34,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
@@ -85,6 +86,20 @@ public class SingleMoleculeArchive extends
 		JsonParseException
 	{
 		super(file);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
+	 * yama virtual store directory. Virtual mode will automatically be activated
+	 * if a directory is provided.
+	 *
+	 * @param uri The URI to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public SingleMoleculeArchive(URI uri) throws
+			IOException
+	{
+		super(uri);
 	}
 
 	/**
