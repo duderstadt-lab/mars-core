@@ -1,13 +1,21 @@
 package de.mpg.biochem.mars.io;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 
 //import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 //Placed here for testing purposes but will ultimately go into mars-minio..
 
@@ -72,6 +80,48 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
     public String getName() {
         String[] parts = containerPath.split("/");
         return parts[parts.length - 1];
+    }
+
+    @Override
+    public String getArchiveType() throws IOException {
+        InputStream inputStream = new BufferedInputStream(getInputStream());
+
+        // Here we automatically detect the format of the JSON file
+        // Can be JSON text or Smile encoded binary file...
+        JsonFactory jsonF = new JsonFactory();
+        SmileFactory smileF = new SmileFactory();
+        DataFormatDetector det = new DataFormatDetector(jsonF,
+                smileF);
+        DataFormatMatcher match = det.findFormat(inputStream);
+        JsonParser jParser = match.createParserWithMatch();
+
+        String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+
+        jParser.nextToken();
+        jParser.nextToken();
+        if ("properties".equals(jParser.getCurrentName()) ||
+                "MoleculeArchiveProperties".equals(jParser.getCurrentName()))
+        {
+            jParser.nextToken();
+            while (jParser.nextToken() != JsonToken.END_OBJECT) {
+                String fieldName = jParser.getCurrentName();
+
+                if ("archiveType".equals(fieldName) || "ArchiveType".equals(
+                        fieldName))
+                {
+                    jParser.nextToken();
+                    archiveType = jParser.getText();
+                    break;
+                }
+            }
+        }
+        //logService.warn("The file " + file.getName() +
+        //        " doesn't have a MoleculeArchiveProperties field. Is this a proper yama file?");
+
+        jParser.close();
+        inputStream.close();
+
+        return archiveType;
     }
 
     @Override

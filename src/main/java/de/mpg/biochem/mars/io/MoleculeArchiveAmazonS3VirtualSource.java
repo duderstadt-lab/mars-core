@@ -2,12 +2,17 @@ package de.mpg.biochem.mars.io;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.format.DataFormatDetector;
+import com.fasterxml.jackson.core.format.DataFormatMatcher;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchiveProperties;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchiveIndex;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
 
 public class MoleculeArchiveAmazonS3VirtualSource implements MoleculeArchiveVirtualSource {
@@ -84,6 +89,37 @@ public class MoleculeArchiveAmazonS3VirtualSource implements MoleculeArchiveVirt
     public String getName() {
         String[] parts = containerPath.split("/");
         return parts[parts.length - 1];
+    }
+
+    @Override
+    public String getArchiveType() throws IOException {
+        InputStream propertiesInputStream = new BufferedInputStream(getPropertiesInputStream());
+
+        // Here we automatically detect the format of the JSON file
+        // Can be JSON text or Smile encoded binary file...
+        JsonFactory jsonF = new JsonFactory();
+        SmileFactory smileF = new SmileFactory();
+        DataFormatDetector det = new DataFormatDetector(jsonF,
+                smileF);
+        DataFormatMatcher match = det.findFormat(propertiesInputStream);
+        JsonParser jParser = match.createParserWithMatch();
+
+        String archiveType = "de.mpg.biochem.mars.molecule.SingleMoleculeArchive";
+
+        while (jParser.nextToken() != JsonToken.END_OBJECT) {
+            String fieldName = jParser.getCurrentName();
+
+            if ("archiveType".equals(fieldName) || "ArchiveType".equals(fieldName)) {
+                jParser.nextToken();
+                archiveType = jParser.getText();
+                break;
+            }
+        }
+
+        jParser.close();
+        propertiesInputStream.close();
+
+        return archiveType;
     }
 
     @Override
