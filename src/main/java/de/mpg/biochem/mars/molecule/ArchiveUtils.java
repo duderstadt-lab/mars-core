@@ -53,18 +53,18 @@ import de.mpg.biochem.mars.util.MarsRegion;
 public class ArchiveUtils {
 
 	public static boolean isVirtualArchive(File file) {
-		if (file.isDirectory() && file.getName().endsWith(".yama.store")) return true;
+		if (file.isDirectory() && (file.getName().endsWith(".yama.store") || file.getName().endsWith(".yama.store/"))) return true;
 		else return false;
 	}
 
 	public static boolean isVirtualArchive(URI uri) {
-		if (uri.getPath().endsWith(".yama.store")) return true;
+		if (uri.getPath().endsWith(".yama.store") || uri.getPath().endsWith(".yama.store/")) return true;
 		else return false;
 	}
 
 
 	public static boolean isVirtualArchive(String url) {
-		if (url.endsWith(".yama.store")) return true;
+		if (url.endsWith(".yama.store") || url.endsWith(".yama.store/")) return true;
 		else return false;
 	}
 

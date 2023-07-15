@@ -30,12 +30,15 @@
 package de.mpg.biochem.mars.object;
 
 import com.fasterxml.jackson.core.JsonParser;
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.molecule.AbstractMoleculeArchive;
 import de.mpg.biochem.mars.table.MarsTable;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.stream.Stream;
 
 public class ObjectArchive extends
@@ -58,6 +61,44 @@ public class ObjectArchive extends
 			IOException
 	{
 		super(name, file);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
+	 * yama virtual store directory. Virtual mode will automatically be activated
+	 * if a directory is provided.
+	 *
+	 * @param uri The URI to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public ObjectArchive(URI uri) throws
+			IOException
+	{
+		super(uri);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveSource.
+	 *
+	 * @param source The MoleculeArchiveSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public ObjectArchive(MoleculeArchiveSource source) throws
+			IOException
+	{
+		super(source);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
+	 *
+	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public ObjectArchive(MoleculeArchiveVirtualSource virtualSource) throws
+			IOException
+	{
+		super(virtualSource);
 	}
 
 	public Stream<MartianObject> objects() {

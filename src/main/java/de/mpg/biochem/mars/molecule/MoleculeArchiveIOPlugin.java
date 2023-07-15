@@ -32,6 +32,9 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 
+import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
@@ -102,32 +105,23 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 	@Override
 	public MoleculeArchive open(final String source) throws IOException {
-		File file = new File(source);
-		if (!file.exists()) logService.error("File not found.");
-		String archiveType;
+		MoleculeArchive archive;
+		String name = "archive";
 
-		if (file.isDirectory()) {
-			File smlPropertiesFile = new File(file.getAbsolutePath() +
-				"/MoleculeArchiveProperties.sml");
-			if (smlPropertiesFile.exists()) archiveType = MoleculeArchiveService
-				.getArchiveTypeFromStore(smlPropertiesFile);
-			else if (new File(file.getAbsolutePath() +
-				"/MoleculeArchiveProperties.json").exists()) archiveType =
-					MoleculeArchiveService.getArchiveTypeFromStore(new File(file
-						.getAbsolutePath() + "/MoleculeArchiveProperties.json"));
-			else {
-				uiService.showDialog(
-					"The virtual store directory given can not be opened because it does not contain a MoleculeArchiveProperties file.",
-					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
-				return null;
-			}
+		//Now we need to determine what kind of source it is virtual or regular...
+		//Make sure this method removes the trailing slash?
+		boolean virtual = ArchiveUtils.isVirtualArchive(source);
+		if (virtual) {
+			MoleculeArchiveVirtualSource virtualSource = new MoleculeArchiveIOFactory().openVirtualSource(source);
+			String archiveType = virtualSource.getArchiveType();
+			name = virtualSource.getName();
+			archive = moleculeArchiveService.createArchive(archiveType, virtualSource);
+		} else {
+			MoleculeArchiveSource maSource = new MoleculeArchiveIOFactory().openSource(source);
+			String archiveType = maSource.getArchiveType();
+			name = maSource.getName();
+			archive = moleculeArchiveService.createArchive(archiveType, maSource);
 		}
-		else archiveType = moleculeArchiveService.getArchiveTypeFromYama(file);
-
-		String name = file.getName();
-
-		MoleculeArchive archive = moleculeArchiveService.createArchive(archiveType,
-			file);
 
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " is already open.",
@@ -141,7 +135,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		LogBuilder builder = new LogBuilder();
 
 		String log = LogBuilder.buildTitleBlock("Opening MoleculeArchive");
-		builder.addParameter("Loading File", file.getAbsolutePath());
+		builder.addParameter("Loading source", source);
 		builder.addParameter("Archive Name", name);
 
 		log += builder.buildParameterList();
@@ -158,7 +152,7 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 
 	@Override
 	public MoleculeArchive open(final Location source) throws IOException {
-		return open(source.getURI().getPath());
+		return open(source.getURI().toString());
 	}
 
 	@Override

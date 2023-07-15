@@ -30,6 +30,8 @@
 package de.mpg.biochem.mars.molecule;
 
 import com.fasterxml.jackson.core.JsonParser;
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
@@ -38,6 +40,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Default implementation of {@link AbstractMoleculeArchive}.
@@ -108,6 +111,44 @@ public class DefaultMoleculeArchive extends
 	 */
 	public DefaultMoleculeArchive(String name, MarsTable table) {
 		super(name, table);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
+	 * yama virtual store directory. Virtual mode will automatically be activated
+	 * if a directory is provided.
+	 *
+	 * @param uri The URI to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public DefaultMoleculeArchive(URI uri) throws
+			IOException
+	{
+		super(uri);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveSource.
+	 *
+	 * @param source The MoleculeArchiveSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public DefaultMoleculeArchive(MoleculeArchiveSource source) throws
+			IOException
+	{
+		super(source);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
+	 *
+	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public DefaultMoleculeArchive(MoleculeArchiveVirtualSource virtualSource) throws
+			IOException
+	{
+		super(virtualSource);
 	}
 
 	/**

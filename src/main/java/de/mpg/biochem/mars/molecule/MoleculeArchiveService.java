@@ -35,6 +35,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import net.imagej.ImageJService;
 import org.scijava.display.DisplayService;
@@ -193,6 +195,44 @@ public class MoleculeArchiveService extends
 			uiService.showDialog(archiveType +
 				" type not found. Is the class in the classpath?",
 				MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public MoleculeArchive<?, ?, ?, ?> createArchive(String archiveType,
+													 MoleculeArchiveSource source)
+	{
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(MoleculeArchiveSource.class);
+			return (MoleculeArchive<?, ?, ?, ?>) constructor.newInstance(source);
+		}
+		catch (ClassNotFoundException e) {
+			uiService.showDialog(archiveType +
+							" type not found. Is the class in the classpath?",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public MoleculeArchive<?, ?, ?, ?> createArchive(String archiveType,
+													 MoleculeArchiveVirtualSource virtualSource)
+	{
+		try {
+			Class<?> clazz = Class.forName(archiveType);
+			Constructor<?> constructor = clazz.getConstructor(MoleculeArchiveVirtualSource.class);
+			return (MoleculeArchive<?, ?, ?, ?>) constructor.newInstance(virtualSource);
+		}
+		catch (ClassNotFoundException e) {
+			uiService.showDialog(archiveType +
+							" type not found. Is the class in the classpath?",
+					MessageType.ERROR_MESSAGE, OptionType.DEFAULT_OPTION);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

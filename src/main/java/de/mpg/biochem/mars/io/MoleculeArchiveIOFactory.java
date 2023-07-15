@@ -117,7 +117,7 @@ public class MoleculeArchiveIOFactory {
             final URI uri = new URI(url);
             final String scheme = uri.getScheme();
             if (scheme == null);
-            if (uri.getHost()!= null && scheme.equals("https") || scheme.equals("http")) {
+            else if (uri.getHost()!= null && scheme.equals("https") || scheme.equals("http")) {
                 if (uri.getHost().matches(".*s3\\..*")) {
                     String[] parts = uri.getHost().split("\\.",3);
                     String bucket = parts[0];
@@ -157,7 +157,7 @@ public class MoleculeArchiveIOFactory {
             final URI uri = new URI(url);
             final String scheme = uri.getScheme();
             if (scheme == null);
-            if (uri.getHost()!= null && scheme.equals("https") || scheme.equals("http")) {
+            else if (uri.getHost() != null && scheme.equals("https") || scheme.equals("http")) {
                 if (uri.getHost().matches(".*s3\\..*")) {
                     String[] parts = uri.getHost().split("\\.",3);
                     String bucket = parts[0];

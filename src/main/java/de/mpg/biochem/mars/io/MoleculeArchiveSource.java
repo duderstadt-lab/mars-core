@@ -43,6 +43,8 @@ import java.io.OutputStream;
 public interface MoleculeArchiveSource {
     String getName();
 
+    String getArchiveType() throws IOException;
+
     InputStream getInputStream() throws IOException;
 
     OutputStream getOutputStream() throws IOException;

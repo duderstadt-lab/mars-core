@@ -273,6 +273,56 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	}
 
 	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveSource.
+	 *
+	 * @param source The MoleculeArchiveSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public AbstractMoleculeArchive(MoleculeArchiveSource source) throws
+			IOException
+	{
+		super();
+		this.virtual = false;
+		this.source = source;
+		this.name = source.getName();
+
+		initializeVariables();
+
+		load(source);
+
+		if (properties().getInputSchema() == null || Integer.parseInt(properties()
+				.getInputSchema().replace("-", "")) < 20210713) //noinspection unchecked
+			ArchiveUtils
+					.updateTableHeaders(
+							(MoleculeArchive<Molecule, MarsMetadata, ?, ?>) this);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
+	 *
+	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public AbstractMoleculeArchive(MoleculeArchiveVirtualSource virtualSource) throws
+			IOException
+	{
+		super();
+		this.virtual = true;
+		this.virtualSource = virtualSource;
+		this.name = virtualSource.getName();
+
+		initializeVariables();
+
+		loadVirtualStore(virtualSource);
+
+		if (properties().getInputSchema() == null || Integer.parseInt(properties()
+				.getInputSchema().replace("-", "")) < 20210713) //noinspection unchecked
+			ArchiveUtils
+					.updateTableHeaders(
+							(MoleculeArchive<Molecule, MarsMetadata, ?, ?>) this);
+	}
+
+	/**
 	 * Constructor for loading a MoleculeArchive. A yama file can be given or a
 	 * yama virtual store directory. Virtual mode will automatically be activated
 	 * if a directory is provided. If the MoleculeArchiveService is provided the

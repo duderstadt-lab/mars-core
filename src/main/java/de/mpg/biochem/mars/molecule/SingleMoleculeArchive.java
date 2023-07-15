@@ -36,6 +36,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
@@ -100,6 +102,30 @@ public class SingleMoleculeArchive extends
 			IOException
 	{
 		super(uri);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveSource.
+	 *
+	 * @param source The MoleculeArchiveSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public SingleMoleculeArchive(MoleculeArchiveSource source) throws
+			IOException
+	{
+		super(source);
+	}
+
+	/**
+	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
+	 *
+	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
+	 * @throws IOException if there is a problem with the file location.
+	 */
+	public SingleMoleculeArchive(MoleculeArchiveVirtualSource virtualSource) throws
+			IOException
+	{
+		super(virtualSource);
 	}
 
 	/**

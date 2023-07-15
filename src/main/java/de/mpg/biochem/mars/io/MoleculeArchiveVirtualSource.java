@@ -46,6 +46,8 @@ public interface MoleculeArchiveVirtualSource {
     public static final String METADATA_SUBDIRECTORY_NAME = "Metadata";
     String getName();
 
+    String getArchiveType() throws IOException;
+
     InputStream getPropertiesInputStream() throws IOException;
 
     OutputStream getPropertiesOutputStream() throws IOException;
