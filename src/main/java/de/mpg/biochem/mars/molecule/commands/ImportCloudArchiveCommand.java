@@ -29,8 +29,9 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
-import de.mpg.biochem.mars.molecule.MoleculeArchive;
-import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
+import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
+import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
+import javafx.application.Platform;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -39,11 +40,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import java.net.URI;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.function.Consumer;
 
 @Plugin(type = Command.class, label = "Open Virtual Store", menu = { @Menu(
 	label = MenuConstants.PLUGINS_LABEL, weight = MenuConstants.PLUGINS_WEIGHT,
@@ -61,9 +59,28 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 
 	@Override
 	public void run() {
+		MoleculeArchiveSelectorDialog selectionDialog = new MoleculeArchiveSelectorDialog("");
 
-		//Here we need to open the fancy dialog from N5 but rewritten for Mars.
+		//selectionDialog.setTreeRenderer(new N5DatasetTreeCellRenderer(
+		//		true));
 
+		// Prevents NullPointerException
+		selectionDialog.setContainerPathUpdateCallback(x -> {});
+
+		final Consumer<MoleculeArchiveSelection> callback = (
+				MoleculeArchiveSelection dataSelection) -> {
+			Platform.runLater(new Runnable() {
+
+				@Override
+				public void run() {
+					//Update the source
+					//Get the path...
+				}
+			});
+		};
+
+		selectionDialog.run(callback);
+/*
 		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
 			new MoleculeArchiveIOPlugin();
 		moleculeArchiveIOPlugin.setContext(getContext());
@@ -80,5 +97,6 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		*/
 	}
 }
