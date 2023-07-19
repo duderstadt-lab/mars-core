@@ -42,7 +42,6 @@ import de.mpg.biochem.mars.image.commands.PeakTrackerCommand;
 import de.mpg.biochem.mars.io.MoleculeArchiveFSSource;
 import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
-import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.kcp.commands.SigmaCalculatorCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
@@ -148,11 +147,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	protected MoleculeArchiveSource source;
 
 	/**
-	 * The archive IO Source.
-	 */
-	protected MoleculeArchiveVirtualSource virtualSource;
-
-	/**
 	 * JsonFactory instance used. Can be either smile or json.
 	 */
 	protected JsonFactory jFactory;
@@ -219,17 +213,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	{
 		super();
 		this.virtual = ArchiveUtils.isVirtualArchive(file);
-		if (virtual) {
-			virtualSource = new MoleculeArchiveIOFactory().openFSVirtualSource(file);
-			this.name = virtualSource.getName();
-		} else {
-			source = new MoleculeArchiveIOFactory().openFSSource(file);
-			this.name = source.getName();
-		}
+		source = new MoleculeArchiveIOFactory().openFSSource(file);
+		this.name = source.getName();
 
 		initializeVariables();
 
-		if (virtual) loadVirtualStore(virtualSource);
+		if (virtual) loadVirtualStore(source);
 		else load(source);
 
 		if (properties().getInputSchema() == null || Integer.parseInt(properties()
@@ -252,17 +241,12 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	{
 		super();
 		this.virtual = ArchiveUtils.isVirtualArchive(uri);
-		if (virtual) {
-			virtualSource = new MoleculeArchiveIOFactory().openVirtualSource(uri);
-			this.name = virtualSource.getName();
-		} else {
-			source = new MoleculeArchiveIOFactory().openSource(uri);
-			this.name = source.getName();
-		}
+		source = new MoleculeArchiveIOFactory().openSource(uri);
+		this.name = source.getName();
 
 		initializeVariables();
 
-		if (virtual) loadVirtualStore(virtualSource);
+		if (virtual) loadVirtualStore(source);
 		else load(source);
 
 		if (properties().getInputSchema() == null || Integer.parseInt(properties()
@@ -282,38 +266,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			IOException
 	{
 		super();
-		this.virtual = false;
+		this.virtual = source.isVirtual();
 		this.source = source;
 		this.name = source.getName();
 
 		initializeVariables();
 
-		load(source);
-
-		if (properties().getInputSchema() == null || Integer.parseInt(properties()
-				.getInputSchema().replace("-", "")) < 20210713) //noinspection unchecked
-			ArchiveUtils
-					.updateTableHeaders(
-							(MoleculeArchive<Molecule, MarsMetadata, ?, ?>) this);
-	}
-
-	/**
-	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
-	 *
-	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
-	 * @throws IOException if there is a problem with the file location.
-	 */
-	public AbstractMoleculeArchive(MoleculeArchiveVirtualSource virtualSource) throws
-			IOException
-	{
-		super();
-		this.virtual = true;
-		this.virtualSource = virtualSource;
-		this.name = virtualSource.getName();
-
-		initializeVariables();
-
-		loadVirtualStore(virtualSource);
+		if (virtual) loadVirtualStore(source);
+		else load(source);
 
 		if (properties().getInputSchema() == null || Integer.parseInt(properties()
 				.getInputSchema().replace("-", "")) < 20210713) //noinspection unchecked
@@ -339,12 +299,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		super();
 		this.name = name;
 		this.virtual = ArchiveUtils.isVirtualArchive(file);
-		if (virtual) virtualSource = new MoleculeArchiveIOFactory().openFSVirtualSource(file);
-		else source = new MoleculeArchiveIOFactory().openFSSource(file);
+		source = new MoleculeArchiveIOFactory().openFSSource(file);
 
 		initializeVariables();
 
-		if (virtual) loadVirtualStore(virtualSource);
+		if (virtual) loadVirtualStore(source);
 		else load(source);
 
 		if (properties().getInputSchema() == null || Integer.parseInt(properties()
@@ -428,7 +387,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return jParser;
 	}
 
-	protected void loadVirtualStore(MoleculeArchiveVirtualSource virtualSource) throws
+	protected void loadVirtualStore(MoleculeArchiveSource virtualSource) throws
 			IOException
 	{
 
@@ -549,10 +508,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		if (virtual) {
 			MoleculeArchiveIndex<M, I> newIndex = createIndex();
 
-			List<String> moleculeUIDs = virtualSource.getMoleculeUIDs();
+			List<String> moleculeUIDs = source.getMoleculeUIDs();
 			newIndex.getMoleculeUIDSet().addAll(moleculeUIDs);
 
-			List<String> metadataUIDs = virtualSource.getMetadataUIDs();
+			List<String> metadataUIDs = source.getMetadataUIDs();
 			newIndex.getMetadataUIDSet().addAll(metadataUIDs);
 
 			try {
@@ -582,8 +541,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			properties().setNumberOfMolecules(newIndex.getMoleculeUIDSet().size());
 			properties().setNumberOfMetadatas(newIndex.getMetadataUIDSet().size());
 
-			MarsUtil.writeJsonRecord(archiveIndex, virtualSource.getIndexesOutputStream(), jFactory);
-			MarsUtil.writeJsonRecord(properties(), virtualSource.getPropertiesOutputStream(), jFactory);
+			MarsUtil.writeJsonRecord(archiveIndex, source.getIndexesOutputStream(), jFactory);
+			MarsUtil.writeJsonRecord(properties(), source.getPropertiesOutputStream(), jFactory);
 		}
 		else {
 			try {
@@ -620,8 +579,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void save() throws IOException {
 		if (virtual) {
-			MarsUtil.writeJsonRecord(properties(), virtualSource.getPropertiesOutputStream(), jFactory);
-			MarsUtil.writeJsonRecord(archiveIndex, virtualSource.getIndexesOutputStream(), jFactory);
+			MarsUtil.writeJsonRecord(properties(),source.getPropertiesOutputStream(), jFactory);
+			MarsUtil.writeJsonRecord(archiveIndex, source.getIndexesOutputStream(), jFactory);
 		}
 		else if (smileEncoding) saveAs(source.getOutputStream());
 		else saveAsJson(source.getOutputStream());
@@ -823,7 +782,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	private void saveAsVirtualStore(File virtualDirectory, JsonFactory jFactory,
 		String fileExtension, final int nThreads) throws IOException
 	{
-		MoleculeArchiveVirtualSource newVirtualSource = new MoleculeArchiveIOFactory().openFSVirtualSource(virtualDirectory);
+		MoleculeArchiveSource newVirtualSource = new MoleculeArchiveIOFactory().openFSSource(virtualDirectory);
+		newVirtualSource.initializeLocation();
 
 		MoleculeArchiveIndex<M, I> newIndex = createIndex();
 		properties().clear();
@@ -886,7 +846,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveIndex.addMolecule(molecule);
 
 			try {
-				saveMoleculeToSource(virtualSource, molecule, jFactory);
+				saveMoleculeToSource(source, molecule, jFactory);
 			}
 			catch (IOException e) {
 				e.printStackTrace();
@@ -914,7 +874,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			archiveIndex.addMetadata(metadata);
 
 			try {
-				saveMetadataToSource(virtualSource, metadata, jFactory);
+				saveMetadataToSource(source, metadata, jFactory);
 			}
 			catch (IOException e) {
 				e.printStackTrace();
@@ -941,7 +901,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public void removeMetadata(String metaUID) {
 		if (virtual) {
 			archiveIndex.removeMetadata(metaUID);
-			try { virtualSource.removeMetadata(metaUID); } catch (IOException e) { e.printStackTrace(); }
+			try { source.removeMetadata(metaUID); } catch (IOException e) { e.printStackTrace(); }
 		}
 
 		metadataMap.remove(metaUID);
@@ -999,7 +959,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 				recordLocks.get(metaUID).lock();
 				try {
-					InputStream inputStream = virtualSource.getMetadataInputStream(metaUID);
+					InputStream inputStream = source.getMetadataInputStream(metaUID);
 					JsonParser jParser = jFactory.createParser(inputStream);
 
 					metadata = createMetadata(jParser);
@@ -1128,7 +1088,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public void remove(String UID) {
 		if (virtual) {
-			try { virtualSource.removeMolecule(UID); } catch (IOException e) { e.printStackTrace(); }
+			try { source.removeMolecule(UID); } catch (IOException e) { e.printStackTrace(); }
 			archiveIndex.removeMolecule(UID);
 		}
 		else {
@@ -1269,8 +1229,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 *          text encoding is used.
 	 * @throws IOException if the molecule can't be saved to the file given.
 	 */
-	protected void saveMoleculeToSource(MoleculeArchiveVirtualSource virtualSource, M molecule,
-		JsonFactory jFactory) throws IOException
+	protected void saveMoleculeToSource(MoleculeArchiveSource virtualSource, M molecule,
+										JsonFactory jFactory) throws IOException
 	{
 		if (!recordLocks.containsKey(molecule.getUID())) recordLocks.put(molecule
 			.getUID(), new ReentrantLock());
@@ -1298,8 +1258,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 *          text encoding is used.
 	 * @throws IOException if the MarsMetadata can't be saved to the file given.
 	 */
-	protected void saveMetadataToSource(MoleculeArchiveVirtualSource virtualSource, I metadata,
-		JsonFactory jFactory) throws IOException
+	protected void saveMetadataToSource(MoleculeArchiveSource virtualSource, I metadata,
+										JsonFactory jFactory) throws IOException
 	{
 		if (!recordLocks.containsKey(metadata.getUID())) recordLocks.put(metadata
 			.getUID(), new ReentrantLock());
@@ -1590,7 +1550,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 			recordLocks.get(UID).lock();
 			try {
-				InputStream inputStream = virtualSource.getMoleculeInputStream(UID);
+				InputStream inputStream = source.getMoleculeInputStream(UID);
 				JsonParser jParser = jFactory.createParser(inputStream);
 
 				molecule = createMolecule(jParser);
@@ -1685,7 +1645,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public File getFile() {
-		if (source instanceof MoleculeArchiveFSSource) return ((MoleculeArchiveFSSource) source).getFile();
+		if (source instanceof MoleculeArchiveFSSource) return new File(source.getPath());
 		else return null;
 	}
 

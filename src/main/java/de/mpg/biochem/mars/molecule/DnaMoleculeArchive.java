@@ -31,7 +31,6 @@ package de.mpg.biochem.mars.molecule;
 
 import com.fasterxml.jackson.core.JsonParser;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
-import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import de.mpg.biochem.mars.metadata.MarsOMEMetadata;
 import de.mpg.biochem.mars.metadata.MarsOMEUtils;
 import de.mpg.biochem.mars.metadata.OLDMarsMetadata;
@@ -87,18 +86,6 @@ public class DnaMoleculeArchive extends
 			IOException
 	{
 		super(source);
-	}
-
-	/**
-	 * Constructor for loading a MoleculeArchive from a MoleculeArchiveVirtualSource.
-	 *
-	 * @param virtualSource The MoleculeArchiveVirtualSource to load the archive from.
-	 * @throws IOException if there is a problem with the file location.
-	 */
-	public DnaMoleculeArchive(MoleculeArchiveVirtualSource virtualSource) throws
-			IOException
-	{
-		super(virtualSource);
 	}
 
 	public DnaMoleculeArchiveProperties createProperties() {

@@ -29,23 +29,58 @@
 
 package de.mpg.biochem.mars.io;
 
-import de.mpg.biochem.mars.molecule.Molecule;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * Basic interface for
  * 
  * @author Karl Duderstadt
  */
-public interface MoleculeArchiveSource {
+public interface MoleculeArchiveSource extends MoleculeArchiveStorage {
+    public static final String PROPERTIES_FILE_NAME = "MoleculeArchiveProperties";
+    public static final String INDEXES_FILE_NAME = "indexes";
+    public static final String MOLECULES_SUBDIRECTORY_NAME = "Molecules";
+    public static final String METADATA_SUBDIRECTORY_NAME = "Metadata";
+    void setPath(String path);
+
+    String getPath();
+
     String getName();
+
+    void initializeLocation();
+
+    boolean isVirtual();
 
     String getArchiveType() throws IOException;
 
     InputStream getInputStream() throws IOException;
 
     OutputStream getOutputStream() throws IOException;
+
+    InputStream getPropertiesInputStream() throws IOException;
+
+    OutputStream getPropertiesOutputStream() throws IOException;
+
+    InputStream getIndexesInputStream() throws IOException;
+
+    OutputStream getIndexesOutputStream() throws IOException;
+
+    InputStream getMoleculeInputStream(String UID) throws IOException;
+
+    OutputStream getMoleculeOutputStream(String UID) throws IOException;
+
+    void removeMolecule(String UID) throws IOException;
+
+    InputStream getMetadataInputStream(String metaUID) throws IOException;
+
+    OutputStream getMetadataOutputStream(String metaUID) throws IOException;
+
+    public List<String> getMoleculeUIDs();
+
+    public List<String> getMetadataUIDs();
+
+    void removeMetadata(String metaUID) throws IOException;
 }

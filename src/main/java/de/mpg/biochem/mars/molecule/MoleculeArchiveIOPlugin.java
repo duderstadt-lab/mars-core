@@ -34,7 +34,6 @@ import java.io.IOException;
 
 import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
-import de.mpg.biochem.mars.io.MoleculeArchiveVirtualSource;
 import org.scijava.Priority;
 import org.scijava.event.EventService;
 import org.scijava.io.AbstractIOPlugin;
@@ -108,20 +107,10 @@ public class MoleculeArchiveIOPlugin extends AbstractIOPlugin<MoleculeArchive> {
 		MoleculeArchive archive;
 		String name = "archive";
 
-		//Now we need to determine what kind of source it is virtual or regular...
-		//Make sure this method removes the trailing slash?
-		boolean virtual = ArchiveUtils.isVirtualArchive(source);
-		if (virtual) {
-			MoleculeArchiveVirtualSource virtualSource = new MoleculeArchiveIOFactory().openVirtualSource(source);
-			String archiveType = virtualSource.getArchiveType();
-			name = virtualSource.getName();
-			archive = moleculeArchiveService.createArchive(archiveType, virtualSource);
-		} else {
-			MoleculeArchiveSource maSource = new MoleculeArchiveIOFactory().openSource(source);
-			String archiveType = maSource.getArchiveType();
-			name = maSource.getName();
-			archive = moleculeArchiveService.createArchive(archiveType, maSource);
-		}
+		MoleculeArchiveSource virtualSource = new MoleculeArchiveIOFactory().openSource(source);
+		String archiveType = virtualSource.getArchiveType();
+		name = virtualSource.getName();
+		archive = moleculeArchiveService.createArchive(archiveType, virtualSource);
 
 		if (moleculeArchiveService.contains(name)) {
 			uiService.showDialog("The MoleculeArchive " + name + " is already open.",

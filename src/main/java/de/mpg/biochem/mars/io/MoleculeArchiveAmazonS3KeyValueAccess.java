@@ -47,7 +47,6 @@ public class MoleculeArchiveAmazonS3KeyValueAccess {
         if (!s3.doesBucketExistV2(bucketName)) throw new IOException("Bucket " + bucketName + " does not exist.");
     }
 
-
     public String[] components(final String path) {
 
         return Arrays.stream(path.split("/"))

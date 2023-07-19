@@ -25,6 +25,9 @@
  */
 package de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector;
 
+import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveStorage;
 import ij.IJ;
 import se.sawano.java.text.AlphanumericComparator;
 
@@ -40,11 +43,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.io.IOException;
 import java.text.Collator;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -268,138 +268,6 @@ public class MoleculeArchiveSelectorDialog {
         return dialog;
     }
 
-    /**
-     * Recursively list all groups (including datasets) in the given group, in
-     * parallel, using the given {@link ExecutorService}. Only paths that
-     * satisfy
-     * the provided filter will be included, but the children of paths that were
-     * excluded may be included (filter does not apply to the subtree).
-     *
-     * @param pathName
-     *            base group path
-     * @param filter
-     *            filter for children to be included
-     * @param executor
-     *            executor service
-     * @return list of datasets
-     * @throws N5Exception
-     * 				an exception is thrown if pathName is not a valid group
-     * @throws ExecutionException
-     *             the execution exception
-     * @throws InterruptedException
-     *             the interrupted exception
-     */
-    /*
-    default String[] deepList(
-            final String pathName,
-            final Predicate<String> filter,
-            final ExecutorService executor) throws N5Exception, InterruptedException, ExecutionException {
-
-        final String groupSeparator = getGroupSeparator();
-        final String normalPathName = pathName.replaceAll("(^" + groupSeparator + "*)|(" + groupSeparator + "*$)", "");
-        final ArrayList<String> results = new ArrayList<String>();
-        final LinkedBlockingQueue<Future<String>> datasetFutures = new LinkedBlockingQueue<>();
-        deepListHelper(this, normalPathName, false, filter, executor, datasetFutures);
-
-        datasetFutures.poll().get(); // skip self
-        while (!datasetFutures.isEmpty()) {
-            final String result = datasetFutures.poll().get();
-            if (result != null)
-                results.add(result.substring(normalPathName.length() + groupSeparator.length()));
-        }
-
-        return results.stream().toArray(String[]::new);
-    }
-*/
-    /**
-     * Recursively list all datasets in the given path. Only paths that satisfy the
-     * provided filter will be included, but the children of paths that were
-     * excluded may be included (filter does not apply to the subtree).
-     *
-     * <p>
-     * This method delivers the same results as
-     * </p>
-     *
-     * <pre>
-     * {@code
-     * n5.deepList(prefix, a -> {
-     * 	try {
-     * 		return n5.datasetExists(a) && filter.test(a);
-     * 	} catch (final N5Exception e) {
-     * 		return false;
-     * 	}
-     * });
-     * }
-     * </pre>
-     * <p>
-     * but will execute {@link #datasetExists(String)} only once per node. This can
-     * be relevant for performance on high latency backends such as cloud stores.
-     * </p>
-     *
-     * @param pathName base group path
-     * @param filter   filter for datasets to be included
-     * @return list of groups
-     * @throws N5Exception
-     * 				an exception is thrown if pathName is not a valid group
-     */
-    /*
-    default String[] deepListDatasets(
-            final String pathName,
-            final Predicate<String> filter) throws N5Exception {
-
-        final String groupSeparator = getGroupSeparator();
-        final String normalPathName = pathName
-                .replaceAll(
-                        "(^" + groupSeparator + "*)|(" + groupSeparator + "*$)",
-                        "");
-
-        final List<String> absolutePaths = deepList(this, normalPathName, true, filter);
-        return absolutePaths
-                .stream()
-                .map(a -> a.replaceFirst(normalPathName + "(" + groupSeparator + "?)", ""))
-                .filter(a -> !a.isEmpty())
-                .toArray(String[]::new);
-    }
-*/
-    /**
-     * Helper method to recursively list all groups and datasets. This method is not part of the
-     * public API and is accessible only because Java 8 does not support private
-     * interface methods yet.
-     *
-     * TODO make private when committing to Java versions newer than 8
-     *
-     * @param n5           the n5 reader
-     * @param pathName     the base group path
-     * @param datasetsOnly true if only dataset paths should be returned
-     * @param filter       a dataset filter
-     * @return the list of all children
-     * @throws N5Exception
-     * 				an exception is thrown if pathName is not a valid group
-     */
-    /*
-    static ArrayList<String> deepList(
-            final N5Reader n5,
-            final String pathName,
-            final boolean datasetsOnly,
-            final Predicate<String> filter) throws N5Exception {
-
-        final ArrayList<String> children = new ArrayList<>();
-        final boolean isDataset = n5.datasetExists(pathName);
-
-        final boolean passDatasetTest = datasetsOnly && !isDataset;
-        if (!passDatasetTest && filter.test(pathName))
-            children.add(pathName);
-
-        if (!isDataset) {
-            final String groupSeparator = n5.getGroupSeparator();
-            final String[] baseChildren = n5.list(pathName);
-            for (final String child : baseChildren)
-                children.addAll(deepList(n5, pathName + groupSeparator + child, datasetsOnly, filter));
-        }
-
-        return children;
-    }
-*/
     public class CreateChildNodes implements Runnable {
 
         private DefaultMutableTreeNode root;
@@ -520,25 +388,26 @@ public class MoleculeArchiveSelectorDialog {
             messageLabel.repaint();
         });
 
-        final String path = opener.get();
-        /*
-				datasetPaths = n5.deepList(rootPath, loaderExecutor);
-				N5SwingTreeNode.fromFlatList(tmpRootNode, datasetPaths, "/" );
-				for( String p : datasetPaths )
-					rootNode.addPath( p );
+        final String url = opener.get();
 
-				sortRecursive( rootNode );
-				containerTree.expandRow( 0 );
-         */
+        //A bit messy here. We open it as a normal MoleculeArchiveSource.
+        //Then if it is a virtual source we create a new object later.
+        MoleculeArchiveSource source = null;
+        try {
+            source = new MoleculeArchiveIOFactory().openSource(url);
 
+            String[] list = source.deepList(source.getPath());
 
-        File fileRoot = new File(path);
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode(new FileNode(fileRoot));
-        treeModel.setRoot(root);
+            System.out.println(list);
+        } catch (IOException e) { e.printStackTrace(); }
 
-        CreateChildNodes ccn =
-                new CreateChildNodes(new File(path), root);
-        new Thread(ccn).start();
+        //File fileRoot = new File(path);
+        //DefaultMutableTreeNode root = new DefaultMutableTreeNode(new FileNode(fileRoot));
+        //treeModel.setRoot(root);
+
+        //CreateChildNodes ccn =
+        //        new CreateChildNodes(new File(path), root);
+        //new Thread(ccn).start();
     }
 
     public void ok() {
