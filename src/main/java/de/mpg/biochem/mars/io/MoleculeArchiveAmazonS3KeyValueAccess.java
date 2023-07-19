@@ -302,7 +302,7 @@ public class MoleculeArchiveAmazonS3KeyValueAccess {
     }
 
     private String[] list(final String normalPath, final boolean onlyDirectories) {
-        final List<String> subGroups = new ArrayList<>();
+        final List<String> items = new ArrayList<>();
         final String prefix = removeLeadingSlash(addTrailingSlash(normalPath));
         final ListObjectsV2Request listObjectsRequest = new ListObjectsV2Request()
                 .withBucketName(bucketName)
@@ -311,23 +311,18 @@ public class MoleculeArchiveAmazonS3KeyValueAccess {
         ListObjectsV2Result objectsListing;
         do {
             objectsListing = s3.listObjectsV2(listObjectsRequest);
-            for (final String commonPrefix : objectsListing.getCommonPrefixes()) {
-                if (!onlyDirectories || commonPrefix.endsWith("/")) {
-                    //Need to understand what this is doing. I guess removing the base path, but what is specific to N5?
-                    //We need to make sure this is general enough for archives and not specific to N5.
-
-                    //final String relativePath = relativize(commonPrefix, prefix);
-                    // TODO: N5AmazonS3Reader#list used replaceBackSlashes(relativePath) here. Is this necessary?
-                    //if (!relativePath.isEmpty())
-                    //    subGroups.add(relativePath);
-                    subGroups.add(commonPrefix);
-                }
-            }
+            for (final String commonPrefix : objectsListing.getCommonPrefixes()) items.add(lastGroupName(commonPrefix));
+            if (!onlyDirectories)
+                for (final S3ObjectSummary objectSummary : objectsListing.getObjectSummaries()) items.add(lastGroupName(objectSummary.getKey()));
             listObjectsRequest.setContinuationToken(objectsListing.getNextContinuationToken());
         } while (objectsListing.isTruncated());
-        return subGroups.toArray(new String[subGroups.size()]);
+        return items.toArray(new String[items.size()]);
     }
 
+    private String lastGroupName(final String pathName) {
+        String[] parts = pathName.split("/");
+        return parts[parts.length - 1];
+    }
 
     public String[] list(final String normalPath) throws IOException {
         return list(normalPath, false);

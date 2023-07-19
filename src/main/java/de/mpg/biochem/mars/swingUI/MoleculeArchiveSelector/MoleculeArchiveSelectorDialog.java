@@ -398,7 +398,7 @@ public class MoleculeArchiveSelectorDialog {
 
             String[] list = source.deepList(source.getPath());
 
-            System.out.println(list);
+            for (String item : list) System.out.println(item);
         } catch (IOException e) { e.printStackTrace(); }
 
         //File fileRoot = new File(path);

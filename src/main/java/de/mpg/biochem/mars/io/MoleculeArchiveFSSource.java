@@ -260,6 +260,7 @@ public class MoleculeArchiveFSSource implements MoleculeArchiveSource {
 
     @Override
     public String[] list(String pathName) throws IOException {
+        pathName = (pathName.startsWith(getGroupSeparator())) ? pathName : getGroupSeparator() + pathName;
         File path = new File(pathName);
         if (!path.isDirectory()) {
             return new String[0];

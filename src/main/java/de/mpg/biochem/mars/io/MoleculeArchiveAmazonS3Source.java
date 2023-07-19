@@ -89,7 +89,7 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
     @Override
     public String getPath() {
-        return null;
+        return containerPath;
     }
 
     @Override
@@ -270,6 +270,13 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
     @Override
     public String[] list(String pathName) throws IOException {
-        return this.keyValueAccess.listObjectKeys(containerPath).stream().toArray(String[]::new);
+        if (pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)) {
+            String[] parts = pathName.split(getGroupSeparator());
+            String[] strings = new String[1];
+            strings[0] = parts[parts.length - 1];
+            return strings;
+        } else if (keyValueAccess.isDirectory(pathName)) return keyValueAccess.list(pathName);
+
+        return new String[0];
     }
 }
