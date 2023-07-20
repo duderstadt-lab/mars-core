@@ -262,13 +262,17 @@ public class MoleculeArchiveFSSource implements MoleculeArchiveSource {
     public String[] list(String pathName) throws IOException {
         pathName = (pathName.startsWith(getGroupSeparator())) ? pathName : getGroupSeparator() + pathName;
         File path = new File(pathName);
-        if (!path.isDirectory()) {
+        if (!path.isDirectory()
+                || path.getName().endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || path.getName().endsWith("." + N5_DATASET_DIRECTORY_ENDING))
             return new String[0];
-        }
-        else if (pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)) {
-            String[] strings = new String[1];
-            strings[0] = path.getName();
-            return strings;
-        } else return path.list();
+
+        return path.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (name.startsWith(".") || name.startsWith("~$")) return false;
+                return true;
+            }
+        });
     }
 }

@@ -270,13 +270,11 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
     @Override
     public String[] list(String pathName) throws IOException {
-        if (pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)) {
-            String[] parts = pathName.split(getGroupSeparator());
-            String[] strings = new String[1];
-            strings[0] = parts[parts.length - 1];
-            return strings;
-        } else if (keyValueAccess.isDirectory(pathName)) return keyValueAccess.list(pathName);
+        if (!keyValueAccess.isDirectory(pathName)
+                || pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || pathName.endsWith("." + N5_DATASET_DIRECTORY_ENDING))
+            return new String[0];
 
-        return new String[0];
+        return keyValueAccess.list(pathName);
     }
 }

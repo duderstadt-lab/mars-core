@@ -364,7 +364,6 @@ public class MoleculeArchiveSelectorDialog {
         if( treeRenderer != null  && treeRenderer instanceof MoleculeArchiveTreeCellRenderer )
             ((MoleculeArchiveTreeCellRenderer)treeRenderer ).setRootName(rootName);
 
-        //MoleculeArchiveTreeNode tmpRootNode = new MoleculeArchiveTreeNode( rootPath );
         rootNode = new MoleculeArchiveSwingTreeNode( rootPath, treeModel );
         treeModel.setRoot(rootNode);
 
@@ -382,13 +381,8 @@ public class MoleculeArchiveSelectorDialog {
                     messageLabel.repaint();
                 });
 
-                // build a temporary tree
-                String[] datasetPaths = finalSource.deepList(rootPath, loaderExecutor);
-                System.out.println("rootPath " + rootPath + " " + datasetPaths.length);
-                for (String item : datasetPaths) System.out.println(item);
-                MoleculeArchiveSwingTreeNode.fromFlatList(rootNode, datasetPaths, finalSource.getGroupSeparator() );
-                for( String p : datasetPaths )
-                    rootNode.addPath( p );
+                String[] sourcePaths = finalSource.deepList(rootPath, loaderExecutor);
+                MoleculeArchiveSwingTreeNode.fromFlatList(rootNode, sourcePaths, finalSource.getGroupSeparator() );
 
                 sortRecursive( rootNode );
                 containerTree.expandRow( 0 );
