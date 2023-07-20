@@ -220,10 +220,7 @@ public interface MoleculeArchiveStorage extends AutoCloseable {
 
         final String groupSeparator = store.getGroupSeparator();
 
-        //TODO TEST ME!!
         datasetFutures.add(executor.submit(() -> {
-            if (!path.endsWith("." + N5_DATASET_DIRECTORY_ENDING) &&
-                    !path.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)) return null;
                 String[] children = null;
                 try {
                     children = store.list(path);
