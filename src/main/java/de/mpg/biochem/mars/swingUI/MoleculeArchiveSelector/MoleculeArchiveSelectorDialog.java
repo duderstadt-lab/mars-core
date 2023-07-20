@@ -96,6 +96,8 @@ public class MoleculeArchiveSelectorDialog {
 
     private ExecutorService parseExec;
 
+    private MoleculeArchiveSource source;
+
     private final AlphanumericComparator comp = new AlphanumericComparator(Collator.getInstance());
 
     public MoleculeArchiveSelectorDialog(String url) {
@@ -341,7 +343,7 @@ public class MoleculeArchiveSelectorDialog {
             return;
         }
 
-        MoleculeArchiveSource source = null;
+        source = null;
         try {
             source = new MoleculeArchiveIOFactory().openSource(path);
         } catch (IOException e) { e.printStackTrace(); }
@@ -408,11 +410,22 @@ public class MoleculeArchiveSelectorDialog {
     }
 
     public void ok() {
+        // stop parsing things
+        if( parseExec != null )
+            parseExec.shutdownNow();
+
         // check if we can skip explicit dataset detection
         if (containerTree.getSelectionCount() == 0) {
             containerPathUpdateCallback.accept(getPath());
+            okCallback.accept(new MoleculeArchiveSelection(getPath()));
+        } else {
+            // archive was selected by the user
+            String treePath = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getPath();
+            String fullPath = (treePath.startsWith("/")) ? treePath : source.getGroupSeparator() + treePath;
+            if (fullPath.startsWith(getPath())) okCallback.accept(new MoleculeArchiveSelection(fullPath));
+            else okCallback.accept(new MoleculeArchiveSelection(getPath() + treePath));
         }
-        okCallback.accept(new MoleculeArchiveSelection(getPath()));
+        source.close();
         dialog.setVisible(false);
         dialog.dispose();
     }
@@ -423,10 +436,6 @@ public class MoleculeArchiveSelectorDialog {
 
         if (cancelCallback != null)
             cancelCallback.accept(null);
-    }
-
-    public void detectDatasets() {
-        //openContainer(n5Fun, () -> getN5RootPath(), pathFun);
     }
 
     private void sortRecursive( final MoleculeArchiveSwingTreeNode node )

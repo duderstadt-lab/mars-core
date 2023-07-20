@@ -29,6 +29,8 @@
 
 package de.mpg.biochem.mars.molecule.commands;
 
+import de.mpg.biochem.mars.molecule.MoleculeArchive;
+import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
 import javafx.application.Platform;
@@ -41,6 +43,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 @Plugin(type = Command.class, label = "Open Virtual Store", menu = { @Menu(
@@ -67,36 +70,25 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 		// Prevents NullPointerException
 		selectionDialog.setContainerPathUpdateCallback(x -> {});
 
-		final Consumer<MoleculeArchiveSelection> callback = (
-				MoleculeArchiveSelection dataSelection) -> {
-			Platform.runLater(new Runnable() {
+		final Consumer<MoleculeArchiveSelection> callback = (MoleculeArchiveSelection dataSelection) -> {
+			final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
+					new MoleculeArchiveIOPlugin();
+			moleculeArchiveIOPlugin.setContext(getContext());
 
-				@Override
-				public void run() {
-					//Update the source
-					//Get the path...
-				}
-			});
+			try {
+				MoleculeArchive<?, ?, ?, ?> archive = moleculeArchiveIOPlugin.open(dataSelection.url);
+
+				final boolean newStyleIO = optionsService.getOptions(
+						net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
+
+				if (!newStyleIO) uiService.show(archive);
+
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
 		};
 
 		selectionDialog.run(callback);
-/*
-		final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
-			new MoleculeArchiveIOPlugin();
-		moleculeArchiveIOPlugin.setContext(getContext());
-
-		try {
-			MoleculeArchive<?, ?, ?, ?> archive = moleculeArchiveIOPlugin.open("http://cmg-2023.s3.turing.biochem.mpg.de:9000/HJ_Archive.yama");
-
-			final boolean newStyleIO = optionsService.getOptions(
-				net.imagej.legacy.ImageJ2Options.class).isSciJavaIO();
-
-			if (!newStyleIO) uiService.show(archive);
-
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		*/
 	}
 }
