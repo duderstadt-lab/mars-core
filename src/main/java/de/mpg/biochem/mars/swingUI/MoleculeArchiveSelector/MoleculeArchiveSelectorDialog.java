@@ -423,7 +423,10 @@ public class MoleculeArchiveSelectorDialog {
             String treePath = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getPath();
             String fullPath = (treePath.startsWith("/")) ? treePath : source.getGroupSeparator() + treePath;
             if (fullPath.startsWith(getPath())) okCallback.accept(new MoleculeArchiveSelection(fullPath));
-            else okCallback.accept(new MoleculeArchiveSelection(getPath() + treePath));
+            else {
+                String uri = (getPath().endsWith(source.getGroupSeparator())) ? getPath().substring(0, getPath().length()-1) : getPath();
+                okCallback.accept(new MoleculeArchiveSelection( uri + fullPath));
+            }
         }
         source.close();
         dialog.setVisible(false);
