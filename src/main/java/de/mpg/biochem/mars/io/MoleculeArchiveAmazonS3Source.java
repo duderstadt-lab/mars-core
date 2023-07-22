@@ -10,6 +10,9 @@ import com.fasterxml.jackson.core.format.DataFormatMatcher;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.List;
 
 public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
@@ -106,6 +109,21 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
     @Override
     public boolean isVirtual() {
         return this.keyValueAccess.isDirectory(this.containerPath);
+    }
+
+    public boolean isReachable() {
+        try{
+            URL url = s3.getUrl(bucketName,"/");
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setRequestMethod("OPTIONS");
+            connection.connect();
+            //int respCode = connection.getResponseCode();
+            return true;
+        } catch(UnknownHostException e){
+            return false;
+        } catch(IOException e){
+            return false;
+        }
     }
 
     @Override

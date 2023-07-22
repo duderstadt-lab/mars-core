@@ -1220,6 +1220,10 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else return metadataMap.get(UID).getTags();
 	}
 
+	public MoleculeArchiveSource getMoleculeArchiveSource() {
+		return source;
+	}
+
 	/**
 	 * Saves a molecule record as a json file.
 	 * 

@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParser;
 
+import de.mpg.biochem.mars.io.MoleculeArchiveSource;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
 
@@ -328,6 +329,13 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The set of tags for the given metadata record.
 	 */
 	Set<String> getMetadataTagSet(String UID);
+
+	/**
+	 * MoleculeArchiveSource backing the MoleculeArchive.
+	 *
+	 * @return MoleculeArchiveSource.
+	 */
+	MoleculeArchiveSource getMoleculeArchiveSource();
 
 	/**
 	 * Utility function to generate batches of molecules data in an optimal format

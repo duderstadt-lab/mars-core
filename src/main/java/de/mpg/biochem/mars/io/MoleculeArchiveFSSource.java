@@ -80,6 +80,10 @@ public class MoleculeArchiveFSSource implements MoleculeArchiveSource {
         return file.isDirectory();
     }
 
+    public boolean isReachable() {
+        return file.exists();
+    }
+
     public InputStream getInputStream() throws IOException {
         return Files.newInputStream(file.toPath());
     }

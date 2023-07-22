@@ -54,6 +54,8 @@ public interface MoleculeArchiveSource extends MoleculeArchiveStorage {
 
     boolean isVirtual();
 
+    boolean isReachable();
+
     String getArchiveType() throws IOException;
 
     InputStream getInputStream() throws IOException;
