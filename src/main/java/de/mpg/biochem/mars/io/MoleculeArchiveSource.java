@@ -44,13 +44,15 @@ public interface MoleculeArchiveSource extends MoleculeArchiveStorage {
     public static final String INDEXES_FILE_NAME = "indexes";
     public static final String MOLECULES_SUBDIRECTORY_NAME = "Molecules";
     public static final String METADATA_SUBDIRECTORY_NAME = "Metadata";
+
+    public static final String ROVER_FILE_EXTENSION = ".rover";
     void setPath(String path);
 
     String getPath();
 
     String getName();
 
-    void initializeLocation();
+    void initializeLocation() throws IOException;
 
     boolean isVirtual();
 
@@ -61,6 +63,10 @@ public interface MoleculeArchiveSource extends MoleculeArchiveStorage {
     InputStream getInputStream() throws IOException;
 
     OutputStream getOutputStream() throws IOException;
+
+    InputStream getRoverInputStream() throws IOException;
+
+    OutputStream getRoverOutputStream() throws IOException;
 
     InputStream getPropertiesInputStream() throws IOException;
 

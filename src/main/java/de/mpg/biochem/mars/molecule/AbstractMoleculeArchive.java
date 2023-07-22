@@ -1220,7 +1220,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		else return metadataMap.get(UID).getTags();
 	}
 
-	public MoleculeArchiveSource getMoleculeArchiveSource() {
+	public MoleculeArchiveSource getSource() {
 		return source;
 	}
 
@@ -1640,28 +1640,6 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public String getMetadataUIDforMolecule(String UID) {
 		if (virtual) return archiveIndex.getMetadataUIDforMolecule(UID);
 		else return get(UID).getMetadataUID();
-	}
-
-	/**
-	 * Returns the File from which the archive was opened.
-	 * 
-	 * @return The File the archive was opened from.
-	 */
-	@Override
-	public File getFile() {
-		if (source instanceof MoleculeArchiveFSSource) return new File(source.getPath());
-		else return null;
-	}
-
-	/**
-	 * Set the file the archive should save to. Does nothing if called on a
-	 * virtual archive.
-	 * 
-	 * @param file The File where the archive should be saved.
-	 */
-	@Override
-	public void setFile(File file) {
-		if (!virtual) new MoleculeArchiveIOFactory().openFSSource(file);
 	}
 
 	/**

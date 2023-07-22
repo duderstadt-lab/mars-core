@@ -102,8 +102,15 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
     }
 
     @Override
-    public void initializeLocation() {
+    public void initializeLocation() throws IOException {
+        //Create directories if they do not exist.
+        if (!keyValueAccess.exists(this.containerPath)) keyValueAccess.createDirectories(this.containerPath);
 
+        String metadataDirPath = this.containerPath + "/" + METADATA_SUBDIRECTORY_NAME;
+        if (!keyValueAccess.exists(metadataDirPath)) keyValueAccess.createDirectories(metadataDirPath);
+
+        String moleculesDirPath = this.containerPath + "/" + MOLECULES_SUBDIRECTORY_NAME;
+        if (!keyValueAccess.exists(moleculesDirPath)) keyValueAccess.createDirectories(moleculesDirPath);
     }
 
     @Override
@@ -205,6 +212,17 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
     @Override
     public OutputStream getOutputStream() throws IOException {
         final LockedChannel lockedChannel = keyValueAccess.lockForWriting(containerPath);
+        return lockedChannel.newOutputStream();
+    }
+
+    public InputStream getRoverInputStream() throws IOException {
+        final LockedChannel lockedChannel = keyValueAccess.lockForReading(containerPath + ROVER_FILE_EXTENSION);
+        return lockedChannel.newInputStream();
+    }
+
+    @Override
+    public OutputStream getRoverOutputStream() throws IOException {
+        final LockedChannel lockedChannel = keyValueAccess.lockForWriting(containerPath + ROVER_FILE_EXTENSION);
         return lockedChannel.newOutputStream();
     }
 

@@ -335,7 +335,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 *
 	 * @return MoleculeArchiveSource.
 	 */
-	MoleculeArchiveSource getMoleculeArchiveSource();
+	MoleculeArchiveSource getSource();
 
 	/**
 	 * Utility function to generate batches of molecules data in an optimal format
@@ -507,20 +507,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 *         record whose UID was provided.
 	 */
 	String getMetadataUIDforMolecule(String UID);
-
-	/**
-	 * Returns the File from which the archive was opened.
-	 * 
-	 * @return The File the archive was opened from.
-	 */
-	File getFile();
-
-	/**
-	 * Set the file the archive should save to.
-	 * 
-	 * @param file The File the archive was opened from.
-	 */
-	void setFile(File file);
 
 	/**
 	 * Set the name of the archive.

@@ -92,6 +92,16 @@ public class MoleculeArchiveFSSource implements MoleculeArchiveSource {
         return Files.newOutputStream(file.toPath());
     }
 
+    public InputStream getRoverInputStream() throws IOException {
+        File roverFile = new File(file.getAbsolutePath() + ROVER_FILE_EXTENSION);
+        return Files.newInputStream(roverFile.toPath());
+    }
+
+    public OutputStream getRoverOutputStream() throws IOException {
+        File roverFile = new File(file.getAbsolutePath() + ROVER_FILE_EXTENSION);
+        return Files.newOutputStream(roverFile.toPath());
+    }
+
     public String getArchiveType() throws IOException {
         // We will automatically detect the format of the JSON file
         // Can be JSON text or Smile encoded binary file...
