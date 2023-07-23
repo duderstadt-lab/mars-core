@@ -582,8 +582,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			MarsUtil.writeJsonRecord(properties(),source.getPropertiesOutputStream(), jFactory);
 			MarsUtil.writeJsonRecord(archiveIndex, source.getIndexesOutputStream(), jFactory);
 		}
-		else if (smileEncoding) saveAs(source.getOutputStream());
-		else saveAsJson(source.getOutputStream());
+		else if (smileEncoding) MarsUtil.writeJsonRecord(this, source.getOutputStream(), new SmileFactory());
+		else MarsUtil.writeJsonRecord(this, source.getOutputStream(), new JsonFactory());
 	}
 
 	/**
@@ -596,9 +596,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public File saveAs(File file) throws IOException {
 		file = ArchiveUtils.yamaFileExtensionFixer(file);
-
+		if (source == null) source = new MoleculeArchiveIOFactory().openFSSource(file);
 		MarsUtil.writeJsonRecord(this, file, new SmileFactory());
-
 		return file;
 	}
 
@@ -612,35 +611,25 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	@Override
 	public String saveAs(String url) throws IOException {
 		url = ArchiveUtils.yamaFileExtensionFixer(url);
-
 		MoleculeArchiveSource saveSource = new MoleculeArchiveIOFactory().openSource(url);
 		MarsUtil.writeJsonRecord(this, saveSource.getOutputStream(), new SmileFactory());
-
+		if (source == null) source = saveSource;
 		return url;
 	}
 
 	@Override
 	public File saveAsJson(File file) throws IOException {
 		file = ArchiveUtils.jsonFileExtensionFixer(file);
-
+		if (source == null) source = new MoleculeArchiveIOFactory().openFSSource(file);
 		MarsUtil.writeJsonRecord(this, file, new JsonFactory());
-
 		return file;
-	}
-	@Override
-	public void saveAs(OutputStream outputStream) throws IOException {
-		MarsUtil.writeJsonRecord(this, outputStream, new SmileFactory());
-	}
-
-	@Override
-	public void saveAsJson(OutputStream outputStream) throws IOException {
-		MarsUtil.writeJsonRecord(this, outputStream, new JsonFactory());
 	}
 
 	public String saveAsJson(String url) throws IOException {
 		url = ArchiveUtils.jsonFileExtensionFixer(url);
 		MoleculeArchiveSource saveSource = new MoleculeArchiveIOFactory().openSource(url);
 		MarsUtil.writeJsonRecord(this, saveSource.getOutputStream(), new JsonFactory());
+		if (source == null) source = saveSource;
 		return url;
 	}
 

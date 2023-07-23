@@ -120,14 +120,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	String saveAs(String url) throws IOException;
 
 	/**
-	 * Saves MoleculeArchive to the given file destination in smile format.
-	 *
-	 * @param outputStream the output stream to save the archive to.
-	 * @throws IOException if something goes wrong saving the data.
-	 */
-	void saveAs(OutputStream outputStream) throws IOException;
-
-	/**
 	 * Saves MoleculeArchive to the given file destination in json format.
 	 * 
 	 * @param file a yama.json file destination. If the .yama.json is not present
@@ -146,14 +138,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @throws IOException if something goes wrong saving the data.
 	 */
 	String saveAsJson(String url) throws IOException;
-
-	/**
-	 * Saves MoleculeArchive to the given file destination in json format.
-	 *
-	 * @param outputStream a yama.json file destination.
-	 * @throws IOException if something goes wrong saving the data.
-	 */
-	void saveAsJson(OutputStream outputStream) throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside. Indexes are rebuilt
