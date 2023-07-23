@@ -123,7 +123,6 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * Saves MoleculeArchive to the given file destination in smile format.
 	 *
 	 * @param outputStream the output stream to save the archive to.
-	 * @return File with correct extensions where archive was saved.
 	 * @throws IOException if something goes wrong saving the data.
 	 */
 	void saveAs(OutputStream outputStream) throws IOException;
