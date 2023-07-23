@@ -109,8 +109,23 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	File saveAs(File file) throws IOException;
 
+	/**
+	 * Saves MoleculeArchive to the given file destination in smile format.
+	 *
+	 * @param url a yama file destination. If the .yama is not present it will be
+	 *          added.
+	 * @return File with correct extensions where archive was saved.
+	 * @throws IOException if something goes wrong saving the data.
+	 */
 	String saveAs(String url) throws IOException;
 
+	/**
+	 * Saves MoleculeArchive to the given file destination in smile format.
+	 *
+	 * @param outputStream the output stream to save the archive to.
+	 * @return File with correct extensions where archive was saved.
+	 * @throws IOException if something goes wrong saving the data.
+	 */
 	void saveAs(OutputStream outputStream) throws IOException;
 
 	/**
@@ -123,8 +138,22 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	File saveAsJson(File file) throws IOException;
 
+	/**
+	 * Saves MoleculeArchive to the given file destination in json format.
+	 *
+	 * @param url a yama.json file destination. If the .yama.json is not present
+	 *          it will be added.
+	 * @return url with correct extensions where archive was saved.
+	 * @throws IOException if something goes wrong saving the data.
+	 */
 	String saveAsJson(String url) throws IOException;
 
+	/**
+	 * Saves MoleculeArchive to the given file destination in json format.
+	 *
+	 * @param outputStream a yama.json file destination.
+	 * @throws IOException if something goes wrong saving the data.
+	 */
 	void saveAsJson(OutputStream outputStream) throws IOException;
 
 	/**
@@ -132,12 +161,32 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * while saving if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @return the directory where the store was saved.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	File saveAsVirtualStore(File virtualDirectory) throws IOException;
 
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Indexes
+	 * are rebuilt while saving if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @return the directory where the store was saved.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
 	String saveAsVirtualStore(String url) throws IOException;
 
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Indexes
+	 * are rebuilt while saving if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @return the directory where the store was saved.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
 	String saveAsVirtualStore(String url, final int nThreads)
 			throws IOException;
 
@@ -148,6 +197,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @param nThreads The thread count.
+	 * @return the directory where the store was saved.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	File saveAsVirtualStore(File virtualDirectory, final int nThreads)
@@ -156,15 +206,35 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
 	 * json format and with .json file extensions. Indexes are rebuilt while saving
-	 * 	 * 	 * if the archive was loaded from a virtual store.
+	 * if the archive was loaded from a virtual store.
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
+	 * @return the directory where the store was saved.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	File saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
 
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format and with .json file extensions. Indexes are rebuilt while saving
+	 * if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @return the url where the store was saved.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
 	String saveAsJsonVirtualStore(String url) throws IOException;
 
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format and with .json file extensions. Indexes are rebuilt while saving
+	 * if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @param nThreads The thread count.
+	 * @return the url where the store was saved.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
 	String saveAsJsonVirtualStore(String url, final int nThreads) throws IOException;
 
 	/**
@@ -174,6 +244,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * 
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @param nThreads The thread count.
+	 * @return the directory where the store was saved.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	File saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)

@@ -31,9 +31,9 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
      * If the bucket does not exist, it will not be created and
      * all subsequent attempts to read attributes, groups, or datasets will fail.
      *
-     * @param s3
-     * @param bucketName
-     * @throws IOException
+     * @param s3 AmazonS3 location.
+     * @param bucketName the name of the bucket.
+     * @throws IOException thrown when reading or writing to the location fails.
      */
     public MoleculeArchiveAmazonS3Source(final AmazonS3 s3, final String bucketName) throws IOException {
 
@@ -46,9 +46,9 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
      * If the bucket and/or container does not exist, it will not be created and
      * all subsequent attempts to read attributes, groups, or datasets will fail.
      *
-     * @param s3
-     * @param containerURI
-     * @throws IOException
+     * @param s3 AmazonS3 location.
+     * @param containerURI the container uri.
+     * @throws IOException thrown when reading or writing to the location fails.
      */
     public MoleculeArchiveAmazonS3Source(final AmazonS3 s3, final AmazonS3URI containerURI) throws IOException {
 
@@ -61,10 +61,10 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
      * If the bucket and/or container does not exist, it will not be created and
      * all subsequent attempts to read attributes, groups, or datasets will fail.
      *
-     * @param s3
-     * @param bucketName
-     * @param containerPath
-     * @throws IOException
+     * @param s3 AmazonS3 location.
+     * @param bucketName the name of the bucket.
+     * @param containerPath the object path within the bucket.
+     * @throws IOException thrown when reading or writing to the location fails.
      */
     public MoleculeArchiveAmazonS3Source(
             final AmazonS3 s3,

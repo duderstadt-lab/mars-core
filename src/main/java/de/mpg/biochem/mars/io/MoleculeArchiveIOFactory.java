@@ -65,7 +65,7 @@ public class MoleculeArchiveIOFactory {
      * @return the MoleculeArchiveFSSource
      * @throws IOException the io exception
      */
-    public MoleculeArchiveFSSource openFSSource(final File file) {
+    public MoleculeArchiveFSSource openFSSource(final File file) throws IOException {
         return new MoleculeArchiveFSSource(file);
     }
 
