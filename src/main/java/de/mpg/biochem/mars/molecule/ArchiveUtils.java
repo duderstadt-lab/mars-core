@@ -76,6 +76,11 @@ public class ArchiveUtils {
 		else return file;
 	}
 
+	public static String yamaFileExtensionFixer(String url) {
+		if (!url.endsWith(".yama")) return url + ".yama";
+		else return url;
+	}
+
 	public static File jsonFileExtensionFixer(File file) {
 		if (file == null) file = new File(System.getProperty("user.home"));
 
@@ -83,6 +88,12 @@ public class ArchiveUtils {
 		else if (file.getAbsolutePath().endsWith(".yama")) return new File(file
 			.getAbsolutePath() + ".json");
 		else return new File(file.getAbsolutePath() + ".yama.json");
+	}
+
+	public static String jsonFileExtensionFixer(String url) {
+		if (url.endsWith(".yama.json")) return url;
+		else if (url.endsWith(".yama")) return url + ".json";
+		else return url + ".yama.json";
 	}
 
 	public static File storeFileExtensionFixer(File file) {
@@ -98,6 +109,16 @@ public class ArchiveUtils {
 			.getAbsolutePath().substring(0, file.getAbsolutePath().length() - 10) +
 			".yama.store");
 		else return new File(file.getAbsolutePath() + ".yama.store");
+	}
+
+	public static String storeFileExtensionFixer(String url) {
+		if (url.endsWith(".yama.store")) return url;
+		else if (url.endsWith(".yama")) return url + ".store";
+		else if (url.endsWith(".json")) return url.substring(0, url.length() - 5) +
+				".yama.store";
+		else if (url.endsWith(".yama.json")) return url.substring(0, url.length() - 10) +
+				".yama.store";
+		else return url + ".yama.store";
 	}
 
 	public static void calculateDrift(

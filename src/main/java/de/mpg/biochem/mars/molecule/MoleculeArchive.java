@@ -109,6 +109,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	File saveAs(File file) throws IOException;
 
+	String saveAs(String url) throws IOException;
+
 	void saveAs(OutputStream outputStream) throws IOException;
 
 	/**
@@ -121,6 +123,8 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 */
 	File saveAsJson(File file) throws IOException;
 
+	String saveAsJson(String url) throws IOException;
+
 	void saveAsJson(OutputStream outputStream) throws IOException;
 
 	/**
@@ -130,7 +134,12 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsVirtualStore(File virtualDirectory) throws IOException;
+	File saveAsVirtualStore(File virtualDirectory) throws IOException;
+
+	String saveAsVirtualStore(String url) throws IOException;
+
+	String saveAsVirtualStore(String url, final int nThreads)
+			throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
@@ -141,7 +150,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param nThreads The thread count.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsVirtualStore(File virtualDirectory, final int nThreads)
+	File saveAsVirtualStore(File virtualDirectory, final int nThreads)
 		throws IOException;
 
 	/**
@@ -152,7 +161,11 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param virtualDirectory a directory destination for the virtual store.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
+	File saveAsJsonVirtualStore(File virtualDirectory) throws IOException;
+
+	String saveAsJsonVirtualStore(String url) throws IOException;
+
+	String saveAsJsonVirtualStore(String url, final int nThreads) throws IOException;
 
 	/**
 	 * Creates the directory given and a virtual store inside with all files in
@@ -163,7 +176,7 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @param nThreads The thread count.
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
-	void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)
+	File saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)
 		throws IOException;
 
 	/**

@@ -602,6 +602,23 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		return file;
 	}
 
+	/**
+	 * Saves MoleculeArchive to the given file destination.
+	 *
+	 * @param url a url destination. If the .yama is not present it will be
+	 *          added.
+	 * @throws IOException if there is a problem with the source.
+	 */
+	@Override
+	public String saveAs(String url) throws IOException {
+		url = ArchiveUtils.yamaFileExtensionFixer(url);
+
+		MoleculeArchiveSource saveSource = new MoleculeArchiveIOFactory().openSource(url);
+		MarsUtil.writeJsonRecord(this, saveSource.getOutputStream(), new SmileFactory());
+
+		return url;
+	}
+
 	@Override
 	public File saveAsJson(File file) throws IOException {
 		file = ArchiveUtils.jsonFileExtensionFixer(file);
@@ -610,17 +627,21 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 
 		return file;
 	}
-
 	@Override
 	public void saveAs(OutputStream outputStream) throws IOException {
-		//file = ArchiveUtils.yamaFileExtensionFixer(file);
 		MarsUtil.writeJsonRecord(this, outputStream, new SmileFactory());
 	}
 
 	@Override
 	public void saveAsJson(OutputStream outputStream) throws IOException {
-		//file = ArchiveUtils.jsonFileExtensionFixer(file);
 		MarsUtil.writeJsonRecord(this, outputStream, new JsonFactory());
+	}
+
+	public String saveAsJson(String url) throws IOException {
+		url = ArchiveUtils.jsonFileExtensionFixer(url);
+		MoleculeArchiveSource saveSource = new MoleculeArchiveIOFactory().openSource(url);
+		MarsUtil.writeJsonRecord(this, saveSource.getOutputStream(), new JsonFactory());
+		return url;
 	}
 
 	@Override
@@ -728,9 +749,45 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	@Override
-	public void saveAsJsonVirtualStore(File virtualDirectory) throws IOException {
+	public File saveAsJsonVirtualStore(File virtualDirectory) throws IOException {
+		virtualDirectory = ArchiveUtils.storeFileExtensionFixer(virtualDirectory);
+
 		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json", Runtime
 			.getRuntime().availableProcessors());
+
+		return virtualDirectory;
+	}
+
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format with .json file extension. Indexes are rebuilt while saving
+	 * if the archive was loaded from a virtual store.
+	 *
+	 * @param url a url destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	@Override
+	public String saveAsJsonVirtualStore(String url) throws IOException {
+		return saveAsJsonVirtualStore(url, Runtime
+				.getRuntime().availableProcessors());
+	}
+
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * json format with .json file extension. Indexes are rebuilt while saving
+	 * if the archive was loaded from a virtual store.
+	 *
+	 * @param url a url destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	@Override
+	public String saveAsJsonVirtualStore(String url, final int nThreads) throws IOException {
+		url = ArchiveUtils.storeFileExtensionFixer(url);
+
+		MoleculeArchiveSource newVirtualSource = new MoleculeArchiveIOFactory().openSource(url);
+		saveAsVirtualStore(newVirtualSource, new JsonFactory(), ".json", nThreads);
+
+		return url;
 	}
 
 	/**
@@ -743,10 +800,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	@Override
-	public void saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)
+	public File saveAsJsonVirtualStore(File virtualDirectory, final int nThreads)
 		throws IOException
 	{
+		virtualDirectory = ArchiveUtils.storeFileExtensionFixer(virtualDirectory);
+
 		saveAsVirtualStore(virtualDirectory, new JsonFactory(), ".json", nThreads);
+
+		return virtualDirectory;
 	}
 
 	/**
@@ -758,9 +819,50 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	@Override
-	public void saveAsVirtualStore(File virtualDirectory) throws IOException {
+	public File saveAsVirtualStore(File virtualDirectory) throws IOException {
+		virtualDirectory = ArchiveUtils.storeFileExtensionFixer(virtualDirectory);
+
 		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml", Runtime
 			.getRuntime().availableProcessors());
+
+		return virtualDirectory;
+	}
+
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Indexes
+	 * are rebuilt while saving if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	@Override
+	public String saveAsVirtualStore(String url) throws IOException {
+		url = ArchiveUtils.storeFileExtensionFixer(url);
+
+		MoleculeArchiveSource newVirtualSource = new MoleculeArchiveIOFactory().openSource(url);
+		saveAsVirtualStore(newVirtualSource, new SmileFactory(), ".sml", Runtime
+				.getRuntime().availableProcessors());
+
+		return url;
+	}
+
+	/**
+	 * Creates the directory given and a virtual store inside with all files in
+	 * smile format with .sml file extension. This is the default format. Indexes
+	 * are rebuilt while saving if the archive was loaded from a virtual store.
+	 *
+	 * @param url the destination for the virtual store.
+	 * @throws IOException if something goes wrong creating the virtual store.
+	 */
+	@Override
+	public String saveAsVirtualStore(String url, final int nThreads) throws IOException {
+		url = ArchiveUtils.storeFileExtensionFixer(url);
+
+		MoleculeArchiveSource newVirtualSource = new MoleculeArchiveIOFactory().openSource(url);
+		saveAsVirtualStore(newVirtualSource, new SmileFactory(), ".sml", nThreads);
+
+		return url;
 	}
 
 	/**
@@ -773,16 +875,26 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 * @throws IOException if something goes wrong creating the virtual store.
 	 */
 	@Override
-	public void saveAsVirtualStore(File virtualDirectory, final int nThreads)
+	public File saveAsVirtualStore(File virtualDirectory, final int nThreads)
 		throws IOException
 	{
+		virtualDirectory = ArchiveUtils.storeFileExtensionFixer(virtualDirectory);
+
 		saveAsVirtualStore(virtualDirectory, new SmileFactory(), ".sml", nThreads);
+
+		return virtualDirectory;
 	}
 
 	private void saveAsVirtualStore(File virtualDirectory, JsonFactory jFactory,
-		String fileExtension, final int nThreads) throws IOException
+									String fileExtension, final int nThreads) throws IOException
 	{
 		MoleculeArchiveSource newVirtualSource = new MoleculeArchiveIOFactory().openFSSource(virtualDirectory);
+		saveAsVirtualStore(newVirtualSource, jFactory, fileExtension, nThreads);
+	}
+
+	private void saveAsVirtualStore(MoleculeArchiveSource newVirtualSource, JsonFactory jFactory,
+		String fileExtension, final int nThreads) throws IOException
+	{
 		newVirtualSource.initializeLocation();
 
 		MoleculeArchiveIndex<M, I> newIndex = createIndex();
