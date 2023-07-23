@@ -33,7 +33,6 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
-import javafx.application.Platform;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
