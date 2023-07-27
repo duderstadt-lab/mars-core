@@ -79,12 +79,16 @@ public class MoleculeArchiveTreeCellRenderer extends DefaultTreeCellRenderer
         {
             node = ( ( MoleculeArchiveSwingTreeNode ) value );
             final String name = node.getParent() == null ? rootName : node.getNodeName();
-
-            setText( String.join( "", new String[]{
-                    "<html>",
-                    String.format( nameFormat, name ),
-                    "</html>"
-            }));
+            if (name.endsWith(".yama") || name.endsWith(".yama.store"))
+                setText( String.join( "", new String[]{
+                        "<html>",
+                        String.format( nameFormat, name ),
+                        "</html>"
+                }));
+            else
+                setText( String.join( "", new String[]{
+                        "<html>", name, "</html>"
+                }));
         }
         return this;
     }

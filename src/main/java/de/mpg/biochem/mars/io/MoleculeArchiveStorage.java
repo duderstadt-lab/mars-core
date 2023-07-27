@@ -78,6 +78,28 @@ public interface MoleculeArchiveStorage extends AutoCloseable {
     String[] list(final String pathName) throws IOException;
 
     /**
+     * List all groups (including datasets) in a group.
+     *
+     * @param pathName
+     *            group path
+     * @return list of directories
+     * @throws IOException
+     *             an exception is thrown if pathName is not a valid group
+     */
+    String[] listDirectories(final String pathName) throws IOException;
+
+    /**
+     * List all groups (including datasets) in a group.
+     *
+     * @param pathName
+     *            group path
+     * @return list of files
+     * @throws IOException
+     *             an exception is thrown if pathName is not a valid group
+     */
+    String[] listFiles(final String pathName) throws IOException;
+
+    /**
      * Recursively list all groups and datasets in the given path.
      * Only paths that satisfy the provided filter will be included, but the
      * children of paths that were excluded may be included (filter does not

@@ -155,9 +155,9 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
             connection.connect();
             //int respCode = connection.getResponseCode();
             return true;
-        } catch(UnknownHostException e){
+        } catch(UnknownHostException e) {
             return false;
-        } catch(IOException e){
+        } catch(IOException e) {
             return false;
         }
     }

@@ -33,6 +33,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
+import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveTreeCellRenderer;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -40,9 +41,11 @@ import org.scijava.options.OptionsService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
 import org.scijava.ui.UIService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
 
 @Plugin(type = Command.class, label = "Open Virtual Store", menu = { @Menu(
@@ -59,15 +62,17 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 	@Parameter
 	private OptionsService optionsService;
 
+	@Parameter
+	private PrefService prefService;
+
 	@Override
 	public void run() {
 		MoleculeArchiveSelectorDialog selectionDialog = new MoleculeArchiveSelectorDialog("");
-
-		//selectionDialog.setTreeRenderer(new N5DatasetTreeCellRenderer(
-		//		true));
-
+		selectionDialog.setTreeRenderer(new MoleculeArchiveTreeCellRenderer(true));
 		// Prevents NullPointerException
 		selectionDialog.setContainerPathUpdateCallback(x -> {});
+		List<String> recentOpenURLs = prefService.getList(ImportCloudArchiveCommand.class, "recentOpenURLs");
+		selectionDialog.setRecentURLList(recentOpenURLs.toArray(new String[0]));
 
 		final Consumer<MoleculeArchiveSelection> callback = (MoleculeArchiveSelection dataSelection) -> {
 			final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
@@ -75,6 +80,11 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 			moleculeArchiveIOPlugin.setContext(getContext());
 
 			try {
+				if (recentOpenURLs.contains(dataSelection.url))
+					recentOpenURLs.remove(recentOpenURLs.indexOf(dataSelection.url));
+				recentOpenURLs.add(0, dataSelection.url);
+				prefService.put(ImportCloudArchiveCommand.class, "recentOpenURLs", recentOpenURLs);
+
 				MoleculeArchive<?, ?, ?, ?> archive = moleculeArchiveIOPlugin.open(dataSelection.url);
 
 				final boolean newStyleIO = optionsService.getOptions(

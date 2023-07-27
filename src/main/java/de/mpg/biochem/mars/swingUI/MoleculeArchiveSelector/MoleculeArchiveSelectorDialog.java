@@ -44,6 +44,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.Collator;
@@ -71,11 +73,15 @@ public class MoleculeArchiveSelectorDialog {
 
     private JTree containerTree;
 
+    private JList recentList;
+
     private JButton browseBtn;
 
     private JButton detectBtn;
 
     private JLabel messageLabel;
+
+    private String[] recentURLs;
 
     private JButton okBtn;
 
@@ -110,6 +116,10 @@ public class MoleculeArchiveSelectorDialog {
     public void setTreeRenderer(final TreeCellRenderer treeRenderer) {
 
         this.treeRenderer = treeRenderer;
+    }
+
+    public void setRecentURLList(String[] list) {
+        this.recentURLs = list;
     }
 
     public void setCancelCallback(final Consumer<Void> cancelCallback) {
@@ -168,15 +178,28 @@ public class MoleculeArchiveSelectorDialog {
 
         final JPanel panel = new JPanel(false);
         panel.setLayout(new GridBagLayout());
-        //tabs.addTab("Recent", spatialMetaSpec.buildPanel() );
         tabs.addTab("Browse", panel);
 
-        //Then we could add only a right panel with property summary for either Recent or Browse.
+        recentList = new JList();
+        recentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane listScroller = new JScrollPane(recentList);
+        if (this.recentURLs != null) recentList.setListData(recentURLs);
+        tabs.addTab("Recent", recentList );
 
         containerPathText = new JTextField();
         containerPathText.setText(initialContainerPath);
         containerPathText.setPreferredSize(new Dimension(frameSizeX / 3, containerPathText.getPreferredSize().height));
         containerPathText.addActionListener(e -> openContainer(() -> getPath()));
+
+        recentList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList)evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    // Double-click detected
+                    containerPathText.setText((String) list.getSelectedValue());
+                }
+            }
+        });
 
         final GridBagConstraints ctxt = new GridBagConstraints();
         ctxt.gridx = 0;
@@ -387,6 +410,8 @@ public class MoleculeArchiveSelectorDialog {
                 });
 
                 String[] sourcePaths = finalSource.deepList(rootPath, loaderExecutor);
+                //for (String childPath : sourcePaths)
+                //    rootNode.addPath(childPath);
                 MoleculeArchiveSwingTreeNode.fromFlatList(rootNode, sourcePaths, finalSource.getGroupSeparator() );
 
                 sortRecursive( rootNode );
@@ -428,10 +453,13 @@ public class MoleculeArchiveSelectorDialog {
             if (fullPath.startsWith(getPath())) okCallback.accept(new MoleculeArchiveSelection(fullPath));
             else {
                 String uri = (getPath().endsWith(source.getGroupSeparator())) ? getPath().substring(0, getPath().length()-1) : getPath();
-                okCallback.accept(new MoleculeArchiveSelection( uri + fullPath));
+                if (uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING))
+                    okCallback.accept(new MoleculeArchiveSelection( uri));
+                else
+                    okCallback.accept(new MoleculeArchiveSelection( uri + fullPath));
             }
         }
-        source.close();
+        if (source != null) source.close();
         dialog.setVisible(false);
         dialog.dispose();
     }
