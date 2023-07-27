@@ -250,17 +250,15 @@ public class MoleculeArchiveSelectorDialog {
 
         treeModel = new DefaultTreeModel(null);
         containerTree = new JTree(treeModel);
-        containerTree.setMinimumSize(new Dimension(550, 230));
-
+        containerTree.setMinimumSize(new Dimension(350, 230));
         containerTree.getSelectionModel().setSelectionMode(
-                TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+                TreeSelectionModel.SINGLE_TREE_SELECTION);
+        containerTree.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) ok();
+            }
+        });
 
-        // disable selection of nodes that are not open-able
-        //containerTree.addTreeSelectionListener(
-        //        new N5IjTreeSelectionListener(containerTree.getSelectionModel()));
-
-        // By default leaf nodes (datasets) are displayed as files. This changes the default behavior to display them as folders
-        //        final DefaultTreeCellRenderer treeCellRenderer = (DefaultTreeCellRenderer) containerTree.getCellRenderer();
         if (treeRenderer != null)
             containerTree.setCellRenderer(treeRenderer);
 
