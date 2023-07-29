@@ -45,6 +45,8 @@ public class MoleculeArchiveSwingTreeNode extends MoleculeArchiveTreeNode implem
 
     private DefaultTreeModel treeModel;
 
+    private boolean leaf = true;
+
     public MoleculeArchiveSwingTreeNode( final String path ) {
         super( path );
     }
@@ -79,7 +81,7 @@ public class MoleculeArchiveSwingTreeNode extends MoleculeArchiveTreeNode implem
     @Override
     public MoleculeArchiveSwingTreeNode addPath( final String path ) {
         final String normPath = removeLeadingSlash(path);
-        if( getPath().equals(normPath))
+        if( removeLeadingSlash(getPath()).equals(normPath))
             return this;
 
         final String relativePath = removeLeadingSlash( normPath.replaceAll( "^"+getPath(), "" ));
@@ -107,6 +109,38 @@ public class MoleculeArchiveSwingTreeNode extends MoleculeArchiveTreeNode implem
                 treeModel.nodesWereInserted( this, new int[]{childrenList().size() - 1 });
         }
         return (MoleculeArchiveSwingTreeNode) child.addPath(normPath);
+    }
+
+    public MoleculeArchiveSwingTreeNode addChildPath( final String path ) {
+        final String normPath = removeLeadingSlash(path);
+        if( removeLeadingSlash(getPath()).equals(normPath))
+            return this;
+
+        final String relativePath = removeLeadingSlash( normPath.replaceAll( "^"+getPath(), "" ));
+        final int sepIdx = relativePath.indexOf("/");
+        final String childName;
+        if( sepIdx < 0 )
+            childName = relativePath;
+        else
+            childName = relativePath.substring(0, sepIdx);
+
+        // get the appropriate child along the path if it exists, otherwise add it
+        MoleculeArchiveTreeNode child = null;
+        Stream<MoleculeArchiveTreeNode> cs = childrenList().stream().filter( n -> n.getNodeName().equals(childName));;
+        Optional<MoleculeArchiveTreeNode> copt = cs.findFirst();
+        if( copt.isPresent() )
+            child = copt.get();
+        else {
+            child = new MoleculeArchiveSwingTreeNode(
+                    getPath().isEmpty() ? childName : getPath() + "/" + childName,
+                    this, treeModel );
+
+            add( child );
+
+            if( treeModel != null)
+                treeModel.nodesWereInserted( this, new int[]{childrenList().size() - 1 });
+        }
+        return (MoleculeArchiveSwingTreeNode) child;
     }
 
     @Override
@@ -137,7 +171,11 @@ public class MoleculeArchiveSwingTreeNode extends MoleculeArchiveTreeNode implem
 
     @Override
     public boolean isLeaf() {
-        return getChildCount() < 1;
+        return leaf;
+    }
+
+    public void setLeaf(boolean leaf) {
+        this.leaf = leaf;
     }
 
     public static void fromFlatList(final MoleculeArchiveSwingTreeNode root, final String[] pathList, final String groupSeparator) {

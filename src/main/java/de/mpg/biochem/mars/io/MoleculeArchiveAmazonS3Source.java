@@ -342,4 +342,24 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
         return keyValueAccess.list(pathName);
     }
+
+    @Override
+    public String[] listDirectories(String pathName) throws IOException {
+        if (!keyValueAccess.isDirectory(pathName)
+                || pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || pathName.endsWith("." + N5_DATASET_DIRECTORY_ENDING))
+            return new String[0];
+
+        return keyValueAccess.listDirectories(pathName);
+    }
+
+    @Override
+    public String[] listFiles(String pathName) throws IOException {
+        if (!keyValueAccess.isDirectory(pathName)
+                || pathName.endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || pathName.endsWith("." + N5_DATASET_DIRECTORY_ENDING))
+            return new String[0];
+
+        return keyValueAccess.listObjectKeys(pathName).toArray(new String[0]);
+    }
 }

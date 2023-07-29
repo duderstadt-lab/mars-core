@@ -30,6 +30,7 @@ package de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector;
 
 import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
+import de.mpg.biochem.mars.io.MoleculeArchiveStorage;
 import ij.IJ;
 import se.sawano.java.text.AlphanumericComparator;
 
@@ -255,7 +256,12 @@ public class MoleculeArchiveSelectorDialog {
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         containerTree.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) ok();
+                if (e.getClickCount() == 1) {
+                    if(containerTree.getLastSelectedPathComponent() instanceof MoleculeArchiveSwingTreeNode)
+                        addNodePaths((MoleculeArchiveSwingTreeNode) containerTree.getLastSelectedPathComponent());
+                } else if (e.getClickCount() == 2) {
+                    ok();
+                }
             }
         });
 
@@ -391,6 +397,7 @@ public class MoleculeArchiveSelectorDialog {
             ((MoleculeArchiveTreeCellRenderer)treeRenderer ).setRootName(rootName);
 
         rootNode = new MoleculeArchiveSwingTreeNode( rootPath, treeModel );
+        rootNode.setLeaf(false);
         treeModel.setRoot(rootNode);
 
         containerTree.setEnabled(true);
@@ -407,10 +414,7 @@ public class MoleculeArchiveSelectorDialog {
                     messageLabel.repaint();
                 });
 
-                String[] sourcePaths = finalSource.deepList(rootPath, loaderExecutor);
-                //for (String childPath : sourcePaths)
-                //    rootNode.addPath(childPath);
-                MoleculeArchiveSwingTreeNode.fromFlatList(rootNode, sourcePaths, finalSource.getGroupSeparator() );
+                addNodePaths(rootNode);
 
                 sortRecursive( rootNode );
                 containerTree.expandRow( 0 );
@@ -428,11 +432,35 @@ public class MoleculeArchiveSelectorDialog {
                 });
             }
             catch (InterruptedException e) { }
-            catch (ExecutionException e) { }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
         });
+    }
+
+    private void addNodePaths(MoleculeArchiveSwingTreeNode node) {
+        if (node.isLeaf()) return;
+
+        try {
+            String treePath = node.getPath();
+            String fullPath = (treePath.startsWith("/")) ? treePath : source.getGroupSeparator() + treePath;
+            String[] directoryPaths = source.listDirectories(fullPath);
+            for (String dir : directoryPaths) {
+                String[] parts = dir.split("/");
+                MoleculeArchiveSwingTreeNode child = node.addChildPath(parts[parts.length - 1]);
+                if (dir.endsWith("." + MoleculeArchiveStorage.MOLECULE_ARCHIVE_STORE_ENDING)
+                        || dir.endsWith("." + MoleculeArchiveStorage.N5_DATASET_DIRECTORY_ENDING))
+                    child.setLeaf(true);
+                else
+                    child.setLeaf(false);
+            }
+            String[] filePaths = source.listFiles(fullPath);
+            for (String file : filePaths) {
+                String[] parts = file.split("/");
+                MoleculeArchiveSwingTreeNode child = node.addChildPath(parts[parts.length - 1]);
+                child.setLeaf(true);
+            }
+            sortRecursive(node);
+        } catch (IOException error) {
+            throw new RuntimeException(error);
+        }
     }
 
     public void ok() {
@@ -440,23 +468,26 @@ public class MoleculeArchiveSelectorDialog {
         if( parseExec != null )
             parseExec.shutdownNow();
 
+        String url;
         // check if we can skip explicit dataset detection
         if (containerTree.getSelectionCount() == 0) {
             containerPathUpdateCallback.accept(getPath());
-            okCallback.accept(new MoleculeArchiveSelection(getPath()));
+            url = getPath();
         } else {
             // archive was selected by the user
             String treePath = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getPath();
             String fullPath = (treePath.startsWith("/")) ? treePath : source.getGroupSeparator() + treePath;
-            if (fullPath.startsWith(getPath())) okCallback.accept(new MoleculeArchiveSelection(fullPath));
+            if (fullPath.startsWith(getPath())) url = fullPath;
             else {
                 String uri = (getPath().endsWith(source.getGroupSeparator())) ? getPath().substring(0, getPath().length()-1) : getPath();
                 if (uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING))
-                    okCallback.accept(new MoleculeArchiveSelection( uri));
+                    url = uri;
                 else
-                    okCallback.accept(new MoleculeArchiveSelection( uri + fullPath));
+                    url = uri + fullPath;
             }
         }
+        System.out.println("url " + url);
+        okCallback.accept(new MoleculeArchiveSelection(url));
         if (source != null) source.close();
         dialog.setVisible(false);
         dialog.dispose();

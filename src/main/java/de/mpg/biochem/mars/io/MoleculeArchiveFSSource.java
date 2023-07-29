@@ -318,4 +318,43 @@ public class MoleculeArchiveFSSource implements MoleculeArchiveSource {
             }
         });
     }
+
+    @Override
+    public String[] listDirectories(String pathName) throws IOException {
+        pathName = (pathName.startsWith(getGroupSeparator())) ? pathName : getGroupSeparator() + pathName;
+        File path = new File(pathName);
+        if (!path.isDirectory()
+                || path.getName().endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || path.getName().endsWith("." + N5_DATASET_DIRECTORY_ENDING))
+            return new String[0];
+
+        return path.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (name.startsWith(".") || name.startsWith("~$")) return false;
+                else if (new File(dir.getAbsolutePath() + "/" + name).isDirectory()) return true;
+
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public String[] listFiles(String pathName) throws IOException {
+        pathName = (pathName.startsWith(getGroupSeparator())) ? pathName : getGroupSeparator() + pathName;
+        File path = new File(pathName);
+        if (!path.isDirectory()
+                || path.getName().endsWith("." + MOLECULE_ARCHIVE_STORE_ENDING)
+                || path.getName().endsWith("." + N5_DATASET_DIRECTORY_ENDING))
+            return new String[0];
+
+        return path.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (name.startsWith(".") || name.startsWith("~$")) return false;
+                else if (new File(dir.getAbsolutePath() + "/" + name).isDirectory()) return false;
+                return true;
+            }
+        });
+    }
 }
