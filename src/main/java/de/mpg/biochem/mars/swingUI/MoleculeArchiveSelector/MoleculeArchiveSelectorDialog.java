@@ -31,7 +31,11 @@ package de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector;
 import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
 import de.mpg.biochem.mars.io.MoleculeArchiveStorage;
+import de.mpg.biochem.mars.molecule.commands.ImportCloudArchiveCommand;
 import ij.IJ;
+import org.scijava.Context;
+import org.scijava.plugin.Parameter;
+import org.scijava.prefs.PrefService;
 import se.sawano.java.text.AlphanumericComparator;
 
 import com.formdev.flatlaf.util.UIScale;
@@ -52,6 +56,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.Collator;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -78,13 +83,15 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
 
     private JList recentList;
 
+    private List<String> recentURLs;
+
     private JButton browseBtn;
 
     private JButton detectBtn;
 
-    private JLabel messageLabel;
+    private JButton clearRecentBtn;
 
-    private String[] recentURLs;
+    private JLabel messageLabel;
 
     private JButton okBtn;
 
@@ -112,17 +119,17 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
 
     private final AlphanumericComparator comp = new AlphanumericComparator(Collator.getInstance());
 
-    public MoleculeArchiveSelectorDialog(String url) {
+    @Parameter
+    private PrefService prefService;
+
+    public MoleculeArchiveSelectorDialog(String url, Context context) {
+        context.inject(this);
         this.initialContainerPath = url;
     }
 
     public void setTreeRenderer(final TreeCellRenderer treeRenderer) {
 
         this.treeRenderer = treeRenderer;
-    }
-
-    public void setRecentURLList(String[] list) {
-        this.recentURLs = list;
     }
 
     public void setCancelCallback(final Consumer<Void> cancelCallback) {
@@ -151,6 +158,7 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
 
         browseBtn.addActionListener(e -> openContainer(this::openBrowseDialog));
         detectBtn.addActionListener(e -> openContainer(() -> getPath()));
+        clearRecentBtn.addActionListener(e -> clearRecent());
 
         // ok and cancel buttons
         okBtn.addActionListener(e -> ok());
@@ -168,26 +176,25 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         final int BUTTON_PAD = DEFAULT_BUTTON_PAD;
         final int MID_PAD = DEFAULT_MID_PAD;
 
-        final int frameSizeX = UIScale.scale( 600 );
-        final int frameSizeY = UIScale.scale( 400 );
+        final int frameSizeX = UIScale.scale( 800 );
+        final int frameSizeY = UIScale.scale( 600 );
 
         dialog = new JFrame("Open Molecule Archive");
         dialog.setPreferredSize(new Dimension(frameSizeX, frameSizeY));
         dialog.setMinimumSize(dialog.getPreferredSize());
 
         final Container pane = dialog.getContentPane();
-        final JTabbedPane tabs = new JTabbedPane();
-        pane.add( tabs );
+        //final JTabbedPane tabs = new JTabbedPane();
 
-        final JPanel panel = new JPanel(false);
-        panel.setLayout(new GridBagLayout());
-        tabs.addTab("Browse", panel);
+        final JPanel browsePanel = new JPanel(false);
+        browsePanel.setLayout(new GridBagLayout());
+        pane.add( browsePanel );
 
         recentList = new JList();
         recentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane listScroller = new JScrollPane(recentList);
-        if (this.recentURLs != null) recentList.setListData(recentURLs);
-        tabs.addTab("Recent", recentList );
+        recentURLs = prefService.getList(ImportCloudArchiveCommand.class, "recentOpenURLs");
+        recentList.setListData(recentURLs.toArray(new String[0]));
 
         containerPathText = new JTextField();
         containerPathText.setText(initialContainerPath);
@@ -213,9 +220,9 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         ctxt.weighty = 0.0;
         ctxt.fill = GridBagConstraints.HORIZONTAL;
         ctxt.insets = new Insets(OUTER_PAD, OUTER_PAD, MID_PAD, BUTTON_PAD);
-        panel.add(containerPathText, ctxt);
+        browsePanel.add(containerPathText, ctxt);
 
-        browseBtn = new JButton("Browse");
+        browseBtn = new JButton("Browse local");
         final GridBagConstraints cbrowse = new GridBagConstraints();
         cbrowse.gridx = 3;
         cbrowse.gridy = 0;
@@ -225,19 +232,31 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         cbrowse.weighty = 0.0;
         cbrowse.fill = GridBagConstraints.HORIZONTAL;
         cbrowse.insets = new Insets(OUTER_PAD, BUTTON_PAD, MID_PAD, BUTTON_PAD);
-        panel.add(browseBtn, cbrowse);
+        browsePanel.add(browseBtn, cbrowse);
 
         detectBtn = new JButton("Load path");
         final GridBagConstraints cdetect = new GridBagConstraints();
         cdetect.gridx = 4;
         cdetect.gridy = 0;
-        cdetect.gridwidth = 2;
+        cdetect.gridwidth = 1;
         cdetect.gridheight = 1;
         cdetect.weightx = 0.0;
         cdetect.weighty = 0.0;
         cdetect.fill = GridBagConstraints.HORIZONTAL;
         cdetect.insets = new Insets(OUTER_PAD, BUTTON_PAD, MID_PAD, OUTER_PAD);
-        panel.add(detectBtn, cdetect);
+        browsePanel.add(detectBtn, cdetect);
+
+        clearRecentBtn = new JButton("Clear recent");
+        final GridBagConstraints cClear = new GridBagConstraints();
+        cClear.gridx = 5;
+        cClear.gridy = 0;
+        cClear.gridwidth = 1;
+        cClear.gridheight = 1;
+        cClear.weightx = 0.0;
+        cClear.weighty = 0.0;
+        cClear.fill = GridBagConstraints.HORIZONTAL;
+        cClear.insets = new Insets(OUTER_PAD, BUTTON_PAD, MID_PAD, OUTER_PAD);
+        browsePanel.add(clearRecentBtn, cClear);
 
         final GridBagConstraints ctree = new GridBagConstraints();
         ctree.gridx = 0;
@@ -271,7 +290,9 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         final JScrollPane treeScroller = new JScrollPane(containerTree);
         treeScroller.setViewportView(containerTree);
         treeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        panel.add(treeScroller, ctree);
+
+        final JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScroller, listScroller);
+        browsePanel.add(split, ctree);
 
         // bottom button
         final GridBagConstraints cbot = new GridBagConstraints();
@@ -288,15 +309,15 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         messageLabel.setVisible(false);
         cbot.gridx = 2;
         cbot.anchor = GridBagConstraints.CENTER;
-        panel.add(messageLabel, cbot);
+        browsePanel.add(messageLabel, cbot);
 
-        okBtn = new JButton("OK");
+        okBtn = new JButton("Open");
         cbot.gridx = 4;
         cbot.ipadx = (int)(20);
         cbot.anchor = GridBagConstraints.EAST;
         cbot.fill = GridBagConstraints.HORIZONTAL;
         cbot.insets = new Insets(MID_PAD, OUTER_PAD, OUTER_PAD, BUTTON_PAD);
-        panel.add(okBtn, cbot);
+        browsePanel.add(okBtn, cbot);
 
         cancelBtn = new JButton("Cancel");
         cbot.gridx = 5;
@@ -304,12 +325,23 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         cbot.anchor = GridBagConstraints.EAST;
         cbot.fill = GridBagConstraints.HORIZONTAL;
         cbot.insets = new Insets(MID_PAD, BUTTON_PAD, OUTER_PAD, OUTER_PAD);
-        panel.add(cancelBtn, cbot);
+        browsePanel.add(cancelBtn, cbot);
 
-        containerTree.addMouseListener( new MarsNodePopupMenu(this).getPopupListener() );
+        //containerTree.addMouseListener( new MarsNodePopupMenu(this).getPopupListener() );
 
         dialog.pack();
+        SwingUtilities.invokeLater(() -> split.setDividerLocation(split.getSize().width
+                    - split.getInsets().right
+                    - split.getDividerSize()
+                    - 300));
         return dialog;
+    }
+
+    private void clearRecent() {
+        this.recentURLs = new ArrayList<>();
+        recentList.setListData(new String[0]);
+        recentList.repaint();
+        prefService.remove(ImportCloudArchiveCommand.class, "recentOpenURLs");
     }
 
     public JTree getJTree() {
@@ -490,6 +522,11 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
             if (source != null) source.close();
             dialog.setVisible(false);
             dialog.dispose();
+
+            if (recentURLs.contains(url))
+                recentURLs.remove(recentURLs.indexOf(url));
+            recentURLs.add(0, url);
+            prefService.put(ImportCloudArchiveCommand.class, "recentOpenURLs", recentURLs);
         }
     }
 

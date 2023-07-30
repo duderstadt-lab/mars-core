@@ -34,6 +34,7 @@ import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveTreeCellRenderer;
+import org.scijava.Context;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -67,12 +68,10 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 
 	@Override
 	public void run() {
-		MoleculeArchiveSelectorDialog selectionDialog = new MoleculeArchiveSelectorDialog("");
+		MoleculeArchiveSelectorDialog selectionDialog = new MoleculeArchiveSelectorDialog("", getContext());
 		selectionDialog.setTreeRenderer(new MoleculeArchiveTreeCellRenderer(true));
 		// Prevents NullPointerException
 		selectionDialog.setContainerPathUpdateCallback(x -> {});
-		List<String> recentOpenURLs = prefService.getList(ImportCloudArchiveCommand.class, "recentOpenURLs");
-		selectionDialog.setRecentURLList(recentOpenURLs.toArray(new String[0]));
 
 		final Consumer<MoleculeArchiveSelection> callback = (MoleculeArchiveSelection dataSelection) -> {
 			final MoleculeArchiveIOPlugin moleculeArchiveIOPlugin =
@@ -80,11 +79,6 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 			moleculeArchiveIOPlugin.setContext(getContext());
 
 			try {
-				if (recentOpenURLs.contains(dataSelection.url))
-					recentOpenURLs.remove(recentOpenURLs.indexOf(dataSelection.url));
-				recentOpenURLs.add(0, dataSelection.url);
-				prefService.put(ImportCloudArchiveCommand.class, "recentOpenURLs", recentOpenURLs);
-
 				MoleculeArchive<?, ?, ?, ?> archive = moleculeArchiveIOPlugin.open(dataSelection.url);
 
 				final boolean newStyleIO = optionsService.getOptions(

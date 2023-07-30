@@ -137,8 +137,8 @@ public class MoleculeArchiveSwingTreeNode extends MoleculeArchiveTreeNode implem
 
             add( child );
 
-            if( treeModel != null)
-                treeModel.nodesWereInserted( this, new int[]{childrenList().size() - 1 });
+            //if( treeModel != null)
+            //    treeModel.nodesWereInserted( this, new int[]{childrenList().size() - 1 });
         }
         return (MoleculeArchiveSwingTreeNode) child;
     }
