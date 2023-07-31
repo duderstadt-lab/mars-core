@@ -72,7 +72,7 @@ public class MoleculeArchiveSaveDialog extends AbstractMoleculeArchiveDialog {
             if (recentURLs.contains(url))
                 recentURLs.remove(recentURLs.indexOf(url));
             recentURLs.add(0, url);
-            prefService.remove(MoleculeArchiveSaveDialog.class, "recentSaveURLs");
+            prefService.put(MoleculeArchiveSaveDialog.class, "recentSaveURLs", recentURLs);
             close();
         }
     }
