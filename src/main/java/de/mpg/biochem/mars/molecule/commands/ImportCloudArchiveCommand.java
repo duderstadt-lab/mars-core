@@ -31,10 +31,9 @@ package de.mpg.biochem.mars.molecule.commands;
 
 import de.mpg.biochem.mars.molecule.MoleculeArchive;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveIOPlugin;
+import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveOpenDialog;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelection;
-import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveSelectorDialog;
 import de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector.MoleculeArchiveTreeCellRenderer;
-import org.scijava.Context;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.menu.MenuConstants;
@@ -46,7 +45,6 @@ import org.scijava.prefs.PrefService;
 import org.scijava.ui.UIService;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.function.Consumer;
 
 @Plugin(type = Command.class, label = "Open Virtual Store", menu = { @Menu(
@@ -68,7 +66,7 @@ public class ImportCloudArchiveCommand extends DynamicCommand {
 
 	@Override
 	public void run() {
-		MoleculeArchiveSelectorDialog selectionDialog = new MoleculeArchiveSelectorDialog("", getContext());
+		MoleculeArchiveOpenDialog selectionDialog = new MoleculeArchiveOpenDialog("", getContext());
 		selectionDialog.setTreeRenderer(new MoleculeArchiveTreeCellRenderer(true));
 		// Prevents NullPointerException
 		selectionDialog.setContainerPathUpdateCallback(x -> {});

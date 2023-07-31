@@ -31,7 +31,6 @@ package de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector;
 import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
 import de.mpg.biochem.mars.io.MoleculeArchiveStorage;
-import de.mpg.biochem.mars.molecule.commands.ImportCloudArchiveCommand;
 import ij.IJ;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
@@ -42,8 +41,6 @@ import com.formdev.flatlaf.util.UIScale;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import java.awt.Container;
@@ -59,70 +56,68 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
+abstract public class AbstractMoleculeArchiveDialog implements TreeWillExpandListener {
 
-    private Consumer<MoleculeArchiveSelection> okCallback;
+    protected Consumer<MoleculeArchiveSelection> okCallback;
 
-    private JFrame dialog;
+    protected JFrame dialog;
 
-    private JTextField containerPathText;
+    protected JTextField containerPathText;
 
-    private JCheckBox virtualBox;
+    protected JTree containerTree;
 
-    private JCheckBox cropBox;
+    protected JList recentList;
 
-    private JTree containerTree;
+    protected List<String> recentURLs;
 
-    private JList recentList;
+    protected JButton browseBtn;
 
-    private List<String> recentURLs;
+    protected JButton detectBtn;
 
-    private JButton browseBtn;
+    protected JButton clearRecentBtn;
 
-    private JButton detectBtn;
+    protected JLabel messageLabel;
 
-    private JButton clearRecentBtn;
+    protected JButton okBtn;
 
-    private JLabel messageLabel;
+    protected JButton cancelBtn;
 
-    private JButton okBtn;
+    protected DefaultTreeModel treeModel;
 
-    private JButton cancelBtn;
+    protected String lastBrowsePath;
 
-    private DefaultTreeModel treeModel;
+    protected ExecutorService loaderExecutor;
 
-    private String lastBrowsePath;
+    protected final String initialContainerPath;
 
-    private ExecutorService loaderExecutor;
+    protected Consumer<String> containerPathUpdateCallback;
 
-    private final String initialContainerPath;
+    protected Consumer<Void> cancelCallback;
 
-    private Consumer<String> containerPathUpdateCallback;
+    protected TreeCellRenderer treeRenderer;
 
-    private Consumer<Void> cancelCallback;
+    protected MoleculeArchiveSwingTreeNode rootNode;
 
-    private TreeCellRenderer treeRenderer;
+    protected ExecutorService parseExec;
 
-    private MoleculeArchiveSwingTreeNode rootNode;
+    protected MoleculeArchiveSource source;
 
-    private ExecutorService parseExec;
-
-    private MoleculeArchiveSource source;
-
-    private final AlphanumericComparator comp = new AlphanumericComparator(Collator.getInstance());
+    protected final AlphanumericComparator comp = new AlphanumericComparator(Collator.getInstance());
 
     @Parameter
-    private PrefService prefService;
+    protected PrefService prefService;
 
-    public MoleculeArchiveSelectorDialog(String url, Context context) {
+    public AbstractMoleculeArchiveDialog(Context context) {
+        context.inject(this);
+        this.initialContainerPath = "";
+    }
+
+    public AbstractMoleculeArchiveDialog(String url, Context context) {
         context.inject(this);
         this.initialContainerPath = url;
     }
@@ -170,7 +165,7 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
     private static final int DEFAULT_BUTTON_PAD = 3;
     private static final int DEFAULT_MID_PAD = 5;
 
-    private JFrame buildDialog() {
+    protected JFrame buildDialog() {
 
         final int OUTER_PAD = DEFAULT_OUTER_PAD;
         final int BUTTON_PAD = DEFAULT_BUTTON_PAD;
@@ -179,7 +174,7 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         final int frameSizeX = UIScale.scale( 800 );
         final int frameSizeY = UIScale.scale( 600 );
 
-        dialog = new JFrame("Open Molecule Archive");
+        dialog = new JFrame();
         dialog.setPreferredSize(new Dimension(frameSizeX, frameSizeY));
         dialog.setMinimumSize(dialog.getPreferredSize());
 
@@ -193,8 +188,6 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         recentList = new JList();
         recentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane listScroller = new JScrollPane(recentList);
-        recentURLs = prefService.getList(ImportCloudArchiveCommand.class, "recentOpenURLs");
-        recentList.setListData(recentURLs.toArray(new String[0]));
 
         containerPathText = new JTextField();
         containerPathText.setText(initialContainerPath);
@@ -275,13 +268,7 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         containerTree.setMinimumSize(new Dimension(350, 230));
         containerTree.getSelectionModel().setSelectionMode(
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
-        containerTree.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    ok();
-                }
-            }
-        });
+
         containerTree.addTreeWillExpandListener(this);
 
         if (treeRenderer != null)
@@ -307,11 +294,11 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
 
         messageLabel = new JLabel("");
         messageLabel.setVisible(false);
-        cbot.gridx = 2;
+        cbot.gridx = 0;
         cbot.anchor = GridBagConstraints.CENTER;
         browsePanel.add(messageLabel, cbot);
 
-        okBtn = new JButton("Open");
+        okBtn = new JButton("Ok");
         cbot.gridx = 4;
         cbot.ipadx = (int)(20);
         cbot.anchor = GridBagConstraints.EAST;
@@ -335,13 +322,6 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
                     - split.getDividerSize()
                     - 300));
         return dialog;
-    }
-
-    private void clearRecent() {
-        this.recentURLs = new ArrayList<>();
-        recentList.setListData(new String[0]);
-        recentList.repaint();
-        prefService.remove(ImportCloudArchiveCommand.class, "recentOpenURLs");
     }
 
     public JTree getJTree() {
@@ -494,45 +474,18 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
         }
     }
 
-    public void ok() {
+    public void close() {
         // stop parsing things
         if( parseExec != null )
             parseExec.shutdownNow();
 
-        String url;
-        // check if we can skip explicit dataset detection
-        if (containerTree.getSelectionCount() == 0) {
-            containerPathUpdateCallback.accept(getPath());
-            url = getPath();
-        } else {
-            // archive was selected by the user
-            String fullPath = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getPath();
-            //String fullPath = (treePath.startsWith("/")) ? treePath : source.getGroupSeparator() + treePath;
-            if (fullPath.startsWith(getPath())) url = fullPath;
-            else {
-                String uri = (getPath().endsWith(source.getGroupSeparator())) ? getPath().substring(0, getPath().length()-1) : getPath();
-                if (uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING))
-                    url = uri;
-                else
-                    url = uri + fullPath;
-            }
-        }
-        if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
-            okCallback.accept(new MoleculeArchiveSelection(url));
-            if (source != null) source.close();
-            dialog.setVisible(false);
-            dialog.dispose();
-
-            if (recentURLs.contains(url))
-                recentURLs.remove(recentURLs.indexOf(url));
-            recentURLs.add(0, url);
-            prefService.put(ImportCloudArchiveCommand.class, "recentOpenURLs", recentURLs);
-        }
+        if (source != null) source.close();
+        dialog.setVisible(false);
+        dialog.dispose();
     }
 
     public void cancel() {
-        dialog.setVisible(false);
-        dialog.dispose();
+        close();
 
         if (cancelCallback != null)
             cancelCallback.accept(null);
@@ -593,4 +546,8 @@ public class MoleculeArchiveSelectorDialog implements TreeWillExpandListener {
     public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
         //No implementation required.
     }
+
+    abstract public void clearRecent();
+
+    abstract public void ok();
 }
