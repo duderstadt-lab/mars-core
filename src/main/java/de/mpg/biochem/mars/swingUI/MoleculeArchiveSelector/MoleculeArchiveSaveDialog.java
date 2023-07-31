@@ -12,16 +12,12 @@ import java.util.ArrayList;
 
 public class MoleculeArchiveSaveDialog extends AbstractMoleculeArchiveDialog {
 
-    private MoleculeArchiveWindow archiveWindow;
-
-    public MoleculeArchiveSaveDialog(String url, Context context, MoleculeArchiveWindow archiveWindow) {
+    public MoleculeArchiveSaveDialog(String url, Context context) {
         super(url, context);
-        this.archiveWindow = archiveWindow;
     }
 
-    public MoleculeArchiveSaveDialog(Context context, MoleculeArchiveWindow archiveWindow) {
+    public MoleculeArchiveSaveDialog(Context context) {
         super(context);
-        this.archiveWindow = archiveWindow;
     }
 
     protected JFrame buildDialog() {
