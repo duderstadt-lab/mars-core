@@ -887,17 +887,15 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		newVirtualSource.initializeLocation();
 
 		MoleculeArchiveIndex<M, I> newIndex = createIndex();
-		properties().clear();
 
 		ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
 
 		try {
-			forkJoinPool.submit(() -> metadataMap.keySet().parallelStream().forEach(
+			forkJoinPool.submit(() -> getMetadataUIDs().parallelStream().forEach(
 				metaUID -> {
 					try {
 						I metadata = getMetadata(metaUID);
 						newIndex.addMetadata(metadata);
-						properties().addMetadataProperties(metadata);
 						saveMetadataToSource(newVirtualSource, metadata, jFactory);
 					}
 					catch (IOException e) {
@@ -905,12 +903,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 					}
 				})).get();
 
-			forkJoinPool.submit(() -> moleculeMap.keySet().parallelStream().forEach(
+			forkJoinPool.submit(() -> getMoleculeUIDs().parallelStream().forEach(
 				UID -> {
 					try {
 						M molecule = get(UID);
 						newIndex.addMolecule(molecule);
-						properties().addMoleculeProperties(molecule);
 						saveMoleculeToSource(newVirtualSource, molecule, jFactory);
 					}
 					catch (IOException e) {
@@ -925,13 +922,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			forkJoinPool.shutdown();
 		}
 
-		properties().setNumberOfMolecules(moleculeMap.size());
-		properties().setNumberOfMetadatas(metadataMap.size());
-
 		MarsUtil.writeJsonRecord(newIndex, newVirtualSource.getIndexesOutputStream(), jFactory);
 		MarsUtil.writeJsonRecord(properties(), newVirtualSource.getPropertiesOutputStream(), jFactory);
-
-		if (virtual) this.archiveIndex = newIndex;
 	}
 
 	/**
@@ -953,13 +945,13 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				e.printStackTrace();
 			}
 		}
-		else if (!moleculeMap.containsKey(molecule.getUID())) {
+		else {
 			molecule.setParent(this);
 			moleculeMap.put(molecule.getUID(), molecule);
 		}
 
 		properties().addMoleculeProperties(molecule);
-		properties().setNumberOfMolecules(moleculeMap.size());
+		properties().setNumberOfMolecules(getNumberOfMolecules());
 	}
 
 	/**
@@ -983,13 +975,11 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 		}
 
 		// Also, do this in virtual mode to lazy load records into memory.
-		if (!metadataMap.containsKey(metadata.getUID())) {
-			metadata.setParent(this);
-			metadataMap.put(metadata.getUID(), metadata);
-		}
+		metadata.setParent(this);
+		metadataMap.put(metadata.getUID(), metadata);
 
 		properties().addMetadataProperties(metadata);
-		properties().setNumberOfMetadatas(metadataMap.size());
+		properties().setNumberOfMetadatas(getNumberOfMetadatas());
 	}
 
 	/**

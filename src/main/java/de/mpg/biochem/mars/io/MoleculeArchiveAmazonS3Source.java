@@ -132,14 +132,17 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
     @Override
     public void initializeLocation() throws IOException {
+        //all folders are created as needed..
+        //These appear to create subfolders with the same name and are not required, so I commented them out.
+
         //Create directories if they do not exist.
-        if (!keyValueAccess.exists(this.containerPath)) keyValueAccess.createDirectories(this.containerPath);
+        //if (!keyValueAccess.exists(this.containerPath)) keyValueAccess.createDirectories(this.containerPath);
 
-        String metadataDirPath = this.containerPath + "/" + METADATA_SUBDIRECTORY_NAME;
-        if (!keyValueAccess.exists(metadataDirPath)) keyValueAccess.createDirectories(metadataDirPath);
+        //String metadataDirPath = this.containerPath + "/" + METADATA_SUBDIRECTORY_NAME;
+        //if (!keyValueAccess.exists(metadataDirPath)) keyValueAccess.createDirectories(metadataDirPath);
 
-        String moleculesDirPath = this.containerPath + "/" + MOLECULES_SUBDIRECTORY_NAME;
-        if (!keyValueAccess.exists(moleculesDirPath)) keyValueAccess.createDirectories(moleculesDirPath);
+        //String moleculesDirPath = this.containerPath + "/" + MOLECULES_SUBDIRECTORY_NAME;
+        //if (!keyValueAccess.exists(moleculesDirPath)) keyValueAccess.createDirectories(moleculesDirPath);
     }
 
     @Override
