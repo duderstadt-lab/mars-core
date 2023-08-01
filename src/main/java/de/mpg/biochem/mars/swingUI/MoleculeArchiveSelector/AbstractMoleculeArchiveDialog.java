@@ -35,6 +35,7 @@ import ij.IJ;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
+import org.scijava.ui.UIService;
 import se.sawano.java.text.AlphanumericComparator;
 
 import com.formdev.flatlaf.util.UIScale;
@@ -111,6 +112,9 @@ abstract public class AbstractMoleculeArchiveDialog implements TreeWillExpandLis
 
     @Parameter
     protected PrefService prefService;
+
+    @Parameter
+    protected UIService uiService;
 
     public AbstractMoleculeArchiveDialog(Context context) {
         context.inject(this);

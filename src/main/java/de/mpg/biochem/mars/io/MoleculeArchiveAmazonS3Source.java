@@ -333,6 +333,8 @@ public class MoleculeArchiveAmazonS3Source implements MoleculeArchiveSource {
 
     @Override
     public boolean exists(String pathName) throws IOException {
+        if (pathName.startsWith("http://") || pathName.startsWith("https://"))
+            pathName = pathName.substring(pathName.indexOf("/", pathName.indexOf("s3")) + 1);
         return this.keyValueAccess.exists(pathName);
     }
 

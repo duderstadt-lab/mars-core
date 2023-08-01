@@ -1,13 +1,16 @@
 package de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector;
 
+import de.mpg.biochem.mars.io.MoleculeArchiveIOFactory;
 import de.mpg.biochem.mars.io.MoleculeArchiveSource;
 import de.mpg.biochem.mars.molecule.MoleculeArchiveWindow;
 import de.mpg.biochem.mars.molecule.commands.ImportCloudArchiveCommand;
 import org.scijava.Context;
+import org.scijava.ui.DialogPrompt;
 
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class MoleculeArchiveSaveDialog extends AbstractMoleculeArchiveDialog {
@@ -67,6 +70,22 @@ public class MoleculeArchiveSaveDialog extends AbstractMoleculeArchiveDialog {
         url = getPath();
 
         if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
+            try {
+                if (source == null)
+                    source = new MoleculeArchiveIOFactory().openSource(getPath());
+
+                if (source.exists(url)) {
+                    //Show confirmation dialog
+                    DialogPrompt.Result result = uiService.showDialog("An archive already exists at the location. Do you want to overwrite it?",
+                            "Overwrite?", DialogPrompt.MessageType.QUESTION_MESSAGE, DialogPrompt.OptionType.YES_NO_OPTION);
+                    if (result == DialogPrompt.Result.YES_OPTION) {
+                        //Continue saving and overwrite..
+                    } else return;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             okCallback.accept(new MoleculeArchiveSelection(url));
 
             if (recentURLs.contains(url))
