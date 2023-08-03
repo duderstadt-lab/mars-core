@@ -75,26 +75,18 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
     }
 
     public void ok() {
-        String url;
-        // check if we can skip explicit dataset detection
-        if (containerTree.getSelectionCount() == 0) {
-            containerPathUpdateCallback.accept(getPath());
-            url = getPath();
-        } else {
-            // archive was selected by the user
-            String fullPath = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getPath();
-            if (fullPath.startsWith("//")) fullPath = fullPath.substring(1, fullPath.length());
+        String url = getPath();
+        containerPathUpdateCallback.accept(getPath());
 
-            if (fullPath.startsWith(getPath())) url = fullPath;
-            else {
-                String uri = (getPath().endsWith(source.getGroupSeparator())) ? getPath().substring(0, getPath().length()-1) : getPath();
-                if (uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || uri.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING))
-                    url = uri;
-                else
-                    url = uri + fullPath;
-            }
+        if (!url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING)
+                && !url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING) && containerTree.getSelectionCount() != 0) {
+            String nodeName = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getNodeName();
+            if (!url.endsWith("/")) url = url + "/";
+            url = url + nodeName;
         }
+
         if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
+            System.out.println(url);
             okCallback.accept(new MoleculeArchiveSelection(url));
 
             if (recentURLs.contains(url))
