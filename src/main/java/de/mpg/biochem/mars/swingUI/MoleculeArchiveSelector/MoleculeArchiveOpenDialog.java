@@ -81,12 +81,23 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
         if (!url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING)
                 && !url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING) && containerTree.getSelectionCount() != 0) {
             String nodeName = ((MoleculeArchiveSwingTreeNode)containerTree.getLastSelectedPathComponent()).getNodeName();
+
+            String nodePath = "";
+            MoleculeArchiveSwingTreeNode node = (MoleculeArchiveSwingTreeNode) containerTree.getLastSelectedPathComponent();
+
+            //If the parent of the parent is null than the parent is the root of the tree
+            //and should already be included in the path
+            while (node.getParent() != null && node.getParent().getParent() != null) {
+                node = (MoleculeArchiveSwingTreeNode) node.getParent();
+                nodePath += node.getNodeName() + "/";
+            }
+
             if (!url.endsWith("/")) url = url + "/";
-            url = url + nodeName;
+            url = url + nodePath + nodeName;
+            System.out.println("final url " + url);
         }
 
         if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
-            System.out.println(url);
             okCallback.accept(new MoleculeArchiveSelection(url));
 
             if (recentURLs.contains(url))
