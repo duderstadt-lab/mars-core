@@ -72,9 +72,9 @@ abstract public class AbstractMoleculeArchiveDialog implements TreeWillExpandLis
 
     protected JTree containerTree;
 
-    protected JList recentPathList, recentFileList;
+    protected JList recentList;
 
-    protected List<String> savedRecentPaths, savedRecentFiles;
+    protected List<String> recentURLs;
 
     protected JButton browseBtn;
 
@@ -189,37 +189,21 @@ abstract public class AbstractMoleculeArchiveDialog implements TreeWillExpandLis
         browsePanel.setLayout(new GridBagLayout());
         pane.add( browsePanel );
 
+        recentList = new JList();
+        recentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane listScroller = new JScrollPane(recentList);
+
         containerPathText = new JTextField();
         containerPathText.setText(initialContainerPath);
         containerPathText.setPreferredSize(new Dimension(frameSizeX / 3, containerPathText.getPreferredSize().height));
         containerPathText.addActionListener(e -> openContainer(() -> getPath()));
 
-
-        recentPathList = new JList();
-        recentPathList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JScrollPane recentPathListScroller = new JScrollPane(recentPathList);
-
-        recentPathList.addMouseListener(new MouseAdapter() {
+        recentList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
                 JList list = (JList)evt.getSource();
                 if (evt.getClickCount() == 2) {
                     // Double-click detected
                     containerPathText.setText((String) list.getSelectedValue());
-                }
-            }
-        });
-
-        recentFileList = new JList();
-        recentFileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JScrollPane recentFileListScroller = new JScrollPane(recentFileList);
-
-        recentFileList.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent evt) {
-                JList list = (JList)evt.getSource();
-                if (evt.getClickCount() == 2) {
-                    // Double-click detected
-                    containerPathText.setText((String) list.getSelectedValue());
-                    ok();
                 }
             }
         });
@@ -298,8 +282,7 @@ abstract public class AbstractMoleculeArchiveDialog implements TreeWillExpandLis
         treeScroller.setViewportView(containerTree);
         treeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        final JSplitPane recentSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, recentPathListScroller, recentFileListScroller);
-        final JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScroller, recentSplit);
+        final JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScroller, listScroller);
         browsePanel.add(split, ctree);
 
         // bottom button
