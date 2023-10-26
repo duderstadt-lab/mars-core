@@ -51,8 +51,8 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
         super.buildDialog();
         dialog.setTitle("Open Molecule Archive");
 
-        recentURLs = prefService.getList(MoleculeArchiveOpenDialog.class, "recentOpenURLs");
-        recentList.setListData(recentURLs.toArray(new String[0]));
+        savedRecentPaths = prefService.getList(MoleculeArchiveOpenDialog.class, "recentOpenURLs");
+        recentPathList.setListData(savedRecentPaths.toArray(new String[0]));
 
         okBtn.setText("Open");
 
@@ -68,9 +68,9 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
     }
 
     public void clearRecent() {
-        this.recentURLs = new ArrayList<>();
-        recentList.setListData(new String[0]);
-        recentList.repaint();
+        this.savedRecentPaths = new ArrayList<>();
+        recentPathList.setListData(new String[0]);
+        recentPathList.repaint();
         prefService.remove(MoleculeArchiveOpenDialog.class, "recentOpenURLs");
     }
 
@@ -94,16 +94,16 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
 
             if (!url.endsWith("/")) url = url + "/";
             url = url + nodePath + nodeName;
-            System.out.println("final url " + url);
         }
 
         if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
             okCallback.accept(new MoleculeArchiveSelection(url));
 
-            if (recentURLs.contains(url))
-                recentURLs.remove(recentURLs.indexOf(url));
-            recentURLs.add(0, url);
-            prefService.put(MoleculeArchiveOpenDialog.class, "recentOpenURLs", recentURLs);
+            url = url.substring(0, url.lastIndexOf("/") + 1);
+            if (savedRecentPaths.contains(url))
+                savedRecentPaths.remove(savedRecentPaths.indexOf(url));
+            savedRecentPaths.add(0, url);
+            prefService.put(MoleculeArchiveOpenDialog.class, "recentOpenURLs", savedRecentPaths);
             close();
         }
     }
