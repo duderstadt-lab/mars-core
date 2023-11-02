@@ -784,7 +784,7 @@ public class MoleculeIntegratorMultiViewCommand extends DynamicCommand
 			}
 		}
 		else builder.addParameter("Dataset name", dataset.getName());
-
+		builder.addParameter("Dataset source", dataset.getSource());
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Inner radius", String.valueOf(innerRadius));
 		builder.addParameter("Outer radius", String.valueOf(outerRadius));
