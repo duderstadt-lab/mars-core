@@ -857,7 +857,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 			}
 		}
 		else builder.addParameter("Dataset Name", dataset.getName());
-
+		builder.addParameter("Dataset source", dataset.getSource());
 		builder.addParameter("Region", region);
 		if (region.equals("ROI from image") && imageRoi != null) builder
 			.addParameter("ROI from image", imageRoi.toString());
