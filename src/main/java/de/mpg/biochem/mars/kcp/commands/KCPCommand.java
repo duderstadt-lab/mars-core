@@ -103,7 +103,7 @@ public class KCPCommand extends DynamicCommand implements Command,
 	@Parameter(label = "Confidence value")
 	private double confidenceLevel = 0.99;
 
-	@Parameter(label = "Global sigma")
+	@Parameter(label = "Global sigma", style="format:0.000")
 	private double global_sigma = 1;
 
 	@Parameter(label = "Region source:",
