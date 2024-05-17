@@ -29,7 +29,7 @@
 
 package de.mpg.biochem.mars.roi.commands;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -41,8 +41,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
+import de.mpg.biochem.mars.util.MarsUtil;
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 import net.imagej.display.ImageDisplay;
@@ -221,6 +222,9 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 	@Parameter(visibility = ItemVisibility.INVISIBLE, persist = false,
 		callback = "previewChanged", style = "group:Preview")
 	private boolean preview = false;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, style = "group:Preview")
+	private String tPeakCount = "count: 0";
 
 	@Parameter(label = "T", min = "0", style = NumberWidget.SCROLL_BAR_STYLE +
 		", group:Preview", persist = false)
@@ -521,6 +525,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 
 					List<Integer> colocalizedIndex;
 
+					int peakCount = 0;
 					Overlay overlay = new Overlay();
 					if (colocalize) {
 						colocalizedIndex = colocalize(transformedROIs, threshold, Integer
@@ -530,6 +535,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 							for (Integer index : colocalizedIndex) {
 								overlay.add(originalROIs.get(index));
 								overlay.add(transformedROIs.get(index));
+								peakCount++;
 							}
 						}
 						else {
@@ -538,6 +544,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 								if (colocalizedIndex.contains(i)) {
 									overlay.add(transformedROIs.get(colocalizedIndex.get(
 										colocalizedIndex.indexOf(i))));
+									peakCount++;
 								}
 							}
 						}
@@ -546,6 +553,7 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 						for (int i = 0; i < transformedROIs.size(); i++) {
 							overlay.add(originalROIs.get(i));
 							overlay.add(transformedROIs.get(i));
+							peakCount++;
 						}
 					}
 
@@ -553,6 +561,24 @@ public class TransformROIsCommand extends DynamicCommand implements Command,
 						if (image != null) {
 							image.deleteRoi();
 							image.setOverlay(overlay);
+						}
+					});
+
+					final String countString = "count: " + peakCount;
+					final MutableModuleItem<String> preFrameCount = getInfo()
+							.getMutableInput("tPeakCount", String.class);
+					preFrameCount.setValue(this, countString);
+
+					SwingUtilities.invokeLater(() -> {
+						if (image != null) {
+							image.deleteRoi();
+							image.setOverlay(overlay);
+
+							for (Window window : Window.getWindows())
+								if (window instanceof JDialog && ((JDialog) window).getTitle()
+										.equals(getInfo().getLabel())) MarsUtil
+										.updateJLabelTextInContainer(window, "count: ",
+												countString);
 						}
 					});
 				}).get(previewTimeout, TimeUnit.SECONDS);
