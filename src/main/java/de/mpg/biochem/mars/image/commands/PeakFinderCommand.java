@@ -410,8 +410,14 @@ public class PeakFinderCommand extends DynamicCommand implements Command,
 				.showStatus(peakLabelsStack.get(0).size(), frameCount,
 					"Finding Peaks for " + dataset.getName()), tasks, nThreads);
 		}
-		else peakLabelsStack.get(0).put(theT, findPeaksInT(Integer.parseInt(channel),
-			theT, useDogFilter, fitPeaks, integrate, rois).get(0));
+		else {
+			List<List<Peak>> labelPeakLists = findPeaksInT(Integer.parseInt(channel),
+					theT, useDogFilter, fitPeaks, integrate, rois);
+			List<Peak> allPeaks = new ArrayList<>();
+			for (List<Peak> labelPeaks : labelPeakLists)
+				allPeaks.addAll(labelPeaks);
+			peakLabelsStack.get(0).put(theT, allPeaks);
+		}
 
 		logService.info("Time: " + DoubleRounder.round((System.currentTimeMillis() -
 			startTime) / 60000, 2) + " minutes.");
