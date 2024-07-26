@@ -67,9 +67,9 @@ public class DNASegment implements RealLocalizable {
 		return y2;
 	}
 
-	public double getXCenter() { return x1 + (x2 - x1) / 2;}
+	public double getXCenter() { return (x1 < x2) ? (x1 + (x2 - x1) / 2) : (x2 + (x1 - x2) / 2); }
 
-	public double getYCenter() { return y1 + (y2 - y1) / 2;}
+	public double getYCenter() { return (y1 < y2) ? (y1 + (y2 - y1) / 2) : (y2 + (y1 - y2) / 2); }
 
 	public void setX1(double x1) {
 		this.x1 = x1;
