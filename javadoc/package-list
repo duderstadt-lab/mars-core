@@ -1,5 +1,6 @@
 de.mpg.biochem.mars.image
 de.mpg.biochem.mars.image.commands
+de.mpg.biochem.mars.io
 de.mpg.biochem.mars.kcp
 de.mpg.biochem.mars.kcp.commands
 de.mpg.biochem.mars.metadata
@@ -9,6 +10,7 @@ de.mpg.biochem.mars.object
 de.mpg.biochem.mars.object.commands
 de.mpg.biochem.mars.roi.commands
 de.mpg.biochem.mars.swingUI
+de.mpg.biochem.mars.swingUI.MoleculeArchiveSelector
 de.mpg.biochem.mars.table
 de.mpg.biochem.mars.table.commands
 de.mpg.biochem.mars.table.event
