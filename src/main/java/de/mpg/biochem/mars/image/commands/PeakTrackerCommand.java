@@ -479,7 +479,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		double startTime = System.currentTimeMillis();
 
 		//We do not grid process int he case of ROIs from manager...
-		if (gridProcess && !region.equals("ROIs from manager")) {
+		if (gridProcess) {
 			archive = new SingleMoleculeArchive("archive.yama");
 			for (int gridH = 0; gridH < horizontalGridRegions; gridH++) {
 				for (int gridV = 0; gridV < verticalGridRegions; gridV++) {
