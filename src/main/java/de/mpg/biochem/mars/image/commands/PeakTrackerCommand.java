@@ -996,6 +996,8 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 				horizontalGridRegions));
 		builder.addParameter("Vertical grid regions", String.valueOf(
 				verticalGridRegions));
+		builder.addParameter("Virtual archive name", archiveName);
+		builder.addParameter("Virtual archive parent directory", virtualArchiveLocation.getAbsolutePath());
 		builder.addParameter("Microscope", microscope);
 		builder.addParameter("Pixel length", String.valueOf(this.pixelLength));
 		builder.addParameter("Pixel units", this.pixelUnits);
@@ -1169,6 +1171,22 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 
 	public boolean getGridProcess() {
 		return gridProcess;
+	}
+
+	public void setVirtualArchiveDirectory(String path) {
+		this.virtualArchiveLocation = new File(path);
+	}
+
+	public File getVirtualArchiveDirectory() {
+		return this.virtualArchiveLocation;
+	}
+
+	public void setVirtualArchiveName(String archiveName) {
+		this.archiveName = archiveName;
+	}
+
+	public String getVirtualArchiveName() {
+		return this.archiveName;
 	}
 
 	public void setHorizontalGridRegions(int horizontalGridRegions) {
