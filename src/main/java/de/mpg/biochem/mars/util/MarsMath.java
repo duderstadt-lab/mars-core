@@ -62,6 +62,95 @@ public class MarsMath {
 		return output;
 	}
 
+	/**
+	 * Creates a histogram from an array of double values.
+	 *
+	 * @param data    The array of double values to create a histogram from
+	 * @param min     The minimum value to consider for the histogram (inclusive)
+	 * @param max     The maximum value to consider for the histogram (inclusive)
+	 * @param numBins The number of bins to divide the range into
+	 * @return An array of doubles where each element contains the count of values
+	 *         that fall into the corresponding bin
+	 *
+	 * @throws IllegalArgumentException if numBins is less than or equal to zero, or if min is greater than or equal to max
+	 */
+	public static double[] histogram(double[] data, double min, double max, int numBins) {
+		if (numBins <= 0) {
+			throw new IllegalArgumentException("Number of bins must be positive");
+		}
+		if (min >= max) {
+			throw new IllegalArgumentException("Min must be less than max");
+		}
+
+		double[] result = new double[numBins];
+		double binWidth = (max - min) / numBins;
+
+		for (double value : data) {
+			if (value >= min && value <= max) {
+				int binIndex = (int) ((value - min) / binWidth);
+				// Handle the case where value == max
+				if (binIndex == numBins) {
+					binIndex--;
+				}
+				result[binIndex]++;
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Creates a normalized histogram from an array of double values.
+	 * The normalized histogram returns the proportion of values in each bin
+	 * rather than the raw counts, allowing for easier comparison between
+	 * histograms with different sample sizes.
+	 *
+	 * @param data    The array of double values to create a normalized histogram from
+	 * @param min     The minimum value to consider for the histogram (inclusive)
+	 * @param max     The maximum value to consider for the histogram (inclusive)
+	 * @param numBins The number of bins to divide the range into
+	 * @return An array of doubles where each element contains the proportion of values
+	 *         that fall into the corresponding bin (values sum to 1.0 if all data points
+	 *         are within the min-max range)
+	 *
+	 * @throws IllegalArgumentException if numBins is less than or equal to zero, or if min is greater than or equal to max
+	 */
+	public static double[] normalizedHistogram(double[] data, double min, double max, int numBins) {
+		if (numBins <= 0) {
+			throw new IllegalArgumentException("Number of bins must be positive");
+		}
+		if (min >= max) {
+			throw new IllegalArgumentException("Min must be less than max");
+		}
+
+		// First get the raw counts using integers
+		int[] counts = new int[numBins];
+		double binWidth = (max - min) / numBins;
+		int totalCount = 0;
+
+		for (double value : data) {
+			if (value >= min && value <= max) {
+				int binIndex = (int) ((value - min) / binWidth);
+				// Handle the case where value == max
+				if (binIndex == numBins) {
+					binIndex--;
+				}
+				counts[binIndex]++;
+				totalCount++;
+			}
+		}
+
+		// Now normalize by dividing each bin by the total count
+		double[] normalized = new double[numBins];
+		if (totalCount > 0) {  // Prevent division by zero
+			for (int i = 0; i < numBins; i++) {
+				normalized[i] = (double) counts[i] / totalCount;
+			}
+		}
+
+		return normalized;
+	}
+
 	// Equations and notation taken directly from "An Introduction to Error
 	// Analysis" by Taylor 2nd edition
 	// y = A + Bx
