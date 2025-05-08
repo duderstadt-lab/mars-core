@@ -94,7 +94,7 @@ public class MoleculeArchiveOpenDialog extends AbstractMoleculeArchiveDialog {
 
             if (!url.endsWith("/")) url = url + "/";
             url = url + nodePath + nodeName;
-            System.out.println("final url " + url);
+            //System.out.println("final url " + url);
         }
 
         if (url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_ENDING) || url.endsWith("." + MoleculeArchiveSource.MOLECULE_ARCHIVE_STORE_ENDING)) {
