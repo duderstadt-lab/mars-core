@@ -30,9 +30,7 @@
 package de.mpg.biochem.mars.util;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -47,6 +45,7 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 	private String name;
 	private String content = "";
 	private final Map<String, String> media = new LinkedHashMap<>();
+	private final Map<String, String[]> mediaArray = new LinkedHashMap<>();
 
 	public MarsDocument(String name) {
 		this.name = name;
@@ -82,6 +81,36 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 				String id = jParser.getCurrentName();
 				jParser.nextToken();
 				putMedia(id, jParser.getValueAsString());
+			}
+		});
+
+		setJsonField("mediaArray", jGenerator -> {
+			if (mediaArray.size() > 0) {
+				jGenerator.writeObjectFieldStart("mediaArray");
+				for (String id : getMediaArrayIDs()) {
+					jGenerator.writeStringField("id", id);
+					jGenerator.writeFieldName("value");
+					jGenerator.writeStartArray();
+					for (String item : mediaArray.get(id)) jGenerator.writeString(item);
+					jGenerator.writeEndArray();
+				}
+				jGenerator.writeEndObject();
+			}
+		}, jParser -> {
+			String currentId = null;
+			while (jParser.nextToken() != JsonToken.END_OBJECT) {
+				String fieldName = jParser.getCurrentName();
+
+				if ("id".equals(fieldName)) {
+					jParser.nextToken();
+					currentId = jParser.getText();
+				}
+				else if ("value".equals(fieldName)) {
+					jParser.nextToken();
+					List<String> currentValues = new ArrayList<>();
+					while (jParser.nextToken() != JsonToken.END_ARRAY) currentValues.add(jParser.getText());
+					if (currentId != null) mediaArray.put(currentId, currentValues.toArray(new String[0]));
+				}
 			}
 		});
 	}
@@ -125,8 +154,21 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 		return media.keySet();
 	}
 
+	public void putMediaArray(String id, String[] mediaData) {
+		mediaArray.put(id, mediaData);
+	}
+
+	public String[] getMediaArray(String id) {
+		return mediaArray.get(id);
+	}
+
+	public Set<String> getMediaArrayIDs() {
+		return mediaArray.keySet();
+	}
+
 	public void removeMedia(String id) {
 		media.remove(id);
+		mediaArray.remove(id);
 	}
 
 	public void removeAllMedia() {

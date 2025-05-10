@@ -30,11 +30,14 @@
 package de.mpg.biochem.mars.molecule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import de.mpg.biochem.mars.util.MarsDocument;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
@@ -177,6 +180,9 @@ public class MoleculeArchiveTests {
 
 		for (int mol = 0; mol < archive1.getNumberOfMolecules(); mol++)
 			isEqual(archive1.get(archive1.getMoleculeUIDs().get(0)), archive2.get(archive2.getMoleculeUIDs().get(0)));
+
+		for (String name : archive1.properties().getDocumentNames())
+			isEqual(archive1.properties().getDocument(name), archive2.properties().getDocument(name));
 	}
 
 	void isEqual(Molecule molecule1, Molecule molecule2) {
@@ -222,6 +228,37 @@ public class MoleculeArchiveTests {
 		for (int imageIndex = 0; imageIndex < metadata1
 			.getImageCount(); imageIndex++)
 			isEqual(metadata1.getImage(imageIndex), metadata2.getImage(imageIndex));
+	}
+
+	void isEqual(MarsDocument doc1, MarsDocument doc2) {
+		// Compare basic fields
+		assertEquals(doc1.getName(), doc2.getName(), "Document names should match");
+		assertEquals(doc1.getContent(), doc2.getContent(), "Document content should match");
+
+		// Compare media map
+		assertEquals(doc1.getMediaIDs().size(), doc2.getMediaIDs().size(), "Number of media items should match");
+		for (String mediaId : doc1.getMediaIDs()) {
+			assertTrue(doc2.getMediaIDs().contains(mediaId), "Media ID '" + mediaId + "' should exist in both documents");
+			assertEquals(doc1.getMedia(mediaId), doc2.getMedia(mediaId), "Media content for ID '" + mediaId + "' should match");
+		}
+
+		// Compare mediaArray map
+		assertEquals(doc1.getMediaArrayIDs().size(), doc2.getMediaArrayIDs().size(), "Number of media arrays should match");
+		for (String arrayId : doc1.getMediaArrayIDs()) {
+			assertTrue(doc2.getMediaArrayIDs().contains(arrayId), "Media array ID '" + arrayId + "' should exist in both documents");
+
+			String[] array1 = doc1.getMediaArray(arrayId);
+			String[] array2 = doc2.getMediaArray(arrayId);
+
+			assertNotNull(array1, "Media array '" + arrayId + "' should not be null in first document");
+			assertNotNull(array2, "Media array '" + arrayId + "' should not be null in second document");
+			assertEquals(array1.length, array2.length, "Length of media array '" + arrayId + "' should match");
+
+			// Compare each element in the arrays
+			for (int i = 0; i < array1.length; i++) {
+				assertEquals(array1[i], array2[i], "Element " + i + " in media array '" + arrayId + "' should match");
+			}
+		}
 	}
 
 	void isEqual(MarsOMEImage image1, MarsOMEImage image2) {
@@ -418,6 +455,25 @@ public class MoleculeArchiveTests {
 		}
 
 		archive.putMetadata(metadata);
+
+		// Create a new MarsDocument with sample data
+		MarsDocument document = new MarsDocument("TestMediaArrayDoc", "Test content for media array document");
+
+		// Add regular media items
+		document.putMedia("thumbnail", "base64encodedimage...");
+		document.putMedia("note", "Some text note content");
+
+		// Add string arrays to mediaArray
+		String[] imageFiles = new String[]{"image1.tif", "image2.tif", "image3.tif"};
+		document.putMediaArray("imageFiles", imageFiles);
+
+		String[] tags = new String[]{"microscopy", "timelapse", "fluorescence", "tracking"};
+		document.putMediaArray("tags", tags);
+
+		String[] coordinates = new String[]{"10.5,20.3", "15.7,22.1", "18.2,25.9"};
+		document.putMediaArray("coordinates", coordinates);
+
+		archive.properties().putDocument(document);
 
 		return archive;
 	}
