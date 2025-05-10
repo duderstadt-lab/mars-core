@@ -173,5 +173,6 @@ public class MarsDocument extends AbstractJsonConvertibleRecord implements
 
 	public void removeAllMedia() {
 		media.clear();
+		mediaArray.clear();
 	}
 }
