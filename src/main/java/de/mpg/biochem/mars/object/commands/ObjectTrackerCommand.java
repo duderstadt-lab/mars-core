@@ -508,7 +508,7 @@ public class ObjectTrackerCommand extends DynamicCommand implements Command,
 		archive.putMetadata(marsOMEMetadata);
 
 		for (int i = 0; i < rois.length; i++)
-			tracker.track(objectLabelsStack.get(i), archive, Integer.parseInt(channel),
+			tracker.track(objectLabelsStack.get(i), archive, archive.getMetadataUIDs().get(0), Integer.parseInt(channel),
 				processTimePoints, nThreads);
 
 		// Make sure the output archive has the correct name

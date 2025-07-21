@@ -69,7 +69,7 @@ public class  PeakTracker {
 	private final int minimumDistance;
 	private final double pixelSize;
 
-	private String metaDataUID;
+	//private String metaDataUID;
 
 	// Stores the KDTree list for Peaks for each T.
 	private ConcurrentMap<Integer, KDTree<Peak>> KDTreeStack;
@@ -125,14 +125,13 @@ public class  PeakTracker {
 	{
 		List<Integer> trackingTimePoints = peakStack.keySet()
 			.stream().sorted().collect(toList());
-		track(peakStack, archive, channel, trackingTimePoints, nThreads);
+		track(peakStack, archive, archive.getMetadataUIDs().get(0), channel, trackingTimePoints, nThreads);
 	}
 
 	public void track(ConcurrentMap<Integer, List<Peak>> peakStack,
-		MoleculeArchive<?, ?, ?, ?> archive, int channel,
+		MoleculeArchive<?, ?, ?, ?> archive, String metaDataUID, int channel,
 		List<Integer> trackingTimePoints, final int nThreads)
 	{
-		metaDataUID = archive.getMetadataUIDs().get(0);
 
 		KDTreeStack = new ConcurrentHashMap<>();
 		possibleLinks = new ConcurrentHashMap<>();
@@ -259,7 +258,7 @@ public class  PeakTracker {
 		try {
 			forkJoinPool.submit(() -> trackFirstT.parallelStream().forEach(
 				startingPeak -> buildMolecule(startingPeak, trackLengths, archive,
-					channel, channelToTtoDtMap))).get();
+						metaDataUID, channel, channelToTtoDtMap))).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			// handle exceptions
@@ -339,7 +338,7 @@ public class  PeakTracker {
 
 	private <M extends Molecule> void buildMolecule(Peak startingPeak,
 		HashMap<String, Integer> trajectoryLengths,
-		MoleculeArchive<M, ?, ?, ?> archive, int channel,
+		MoleculeArchive<M, ?, ?, ?> archive, String metaDataUID, int channel,
 		Map<Integer, Map<Integer, Double>> channelToTtoDtMap)
 	{
 		// don't add the molecule if the trajectory length is below

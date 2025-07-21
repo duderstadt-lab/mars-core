@@ -642,7 +642,7 @@ public class PeakTrackerCommand extends DynamicCommand implements Command,
 		}
 
 		for (int i = 0; i < rois.length; i++)
-			tracker.track(peakLabelsStack.get(i), archive, Integer.parseInt(channel),
+			tracker.track(peakLabelsStack.get(i), archive, archive.getMetadataUIDs().get(0), Integer.parseInt(channel),
 					processTimePoints, nThreads);
 	}
 
