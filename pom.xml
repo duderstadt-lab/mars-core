@@ -85,6 +85,9 @@
 	</ciManagement>
 
 	<properties>
+		<scijava.jvm.build.version>21</scijava.jvm.build.version>
+		<scijava.jvm.version>21</scijava.jvm.version>
+
 		<package-name>de.mpg.biochem.mars</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Karl Duderstadt</license.copyrightOwners>
