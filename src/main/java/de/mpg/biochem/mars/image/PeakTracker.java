@@ -249,7 +249,7 @@ public class  PeakTracker {
 		forkJoinPool = new ForkJoinPool(nThreads);
 
 		Map<Integer, Map<Integer, Double>> channelToTtoDtMap = MarsOMEUtils
-			.buildChannelToTtoDtMap(archive.getMetadata(0));
+			.buildChannelToTtoDtMap(archive.getMetadata(metaDataUID));
 
 		// Now we build a MoleculeArchive in a multithreaded manner in which
 		// each molecule is build by a different thread just following the

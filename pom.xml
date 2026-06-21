@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>40.0.0</version>
+		<version>43.0.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>de.mpg.biochem</groupId>
 	<artifactId>mars-core</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 
 	<name>mars-core</name>
 	<description>Molecule Archive Suite (Mars) - core data storage and processing algorithms.</description>
