@@ -92,8 +92,13 @@ public class DNASegment implements RealLocalizable {
 	}
 	
 	public double getPositionOnDNA(double x, double y, double DNALength) {
-		return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) *
-			(DNALength / getLength());
+		//return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) *
+		//	(DNALength / getLength());
+        double[] v = {x - x1, y - y1};
+        double[] v12 = {x2 - x1, y2 - y1};
+        double r12 = getLength();
+        double r = (v12[1] * v[1] + v12[0] * v[0]) / r12;
+        return r * (DNALength / r12);
 	}
 
 	public void setMedianIntensity(int medianIntensity) {
