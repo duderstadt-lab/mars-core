@@ -32,6 +32,7 @@ package de.mpg.biochem.mars.molecule;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -380,6 +381,16 @@ public interface MoleculeArchive<M extends Molecule, I extends MarsMetadata, P e
 	 * @return The image index of the molecule in question.
 	 */
 	int getImage(String UID);
+
+	/**
+	 * Creation instant for the molecule with the given UID. Served from the
+	 * index for virtual archives so it does not require loading the record.
+	 * 
+	 * @param UID The UID of the molecule.
+	 * @return The creation instant, or null if the record predates the created
+	 *         field.
+	 */
+	Instant getMoleculeCreated(String UID);
 
 	/**
 	 * Comma separated list of tags for the metadata record with the given UID.

@@ -37,6 +37,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -68,6 +69,14 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	 * Unique ID for storage in maps and universal identification.
 	 */
 	private String uid;
+
+	/**
+	 * Moment the record was created. Only stamped by the UID constructor, which
+	 * is the path taken when a new record is created; records loaded from JSON
+	 * go through the no-arg constructor and take the value stored in the file,
+	 * or remain null for archives written before this field existed.
+	 */
+	private Instant created;
 
 	/**
 	 * Reference to MoleculeArchive containing the record.
@@ -103,7 +112,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
 		this.uid = UID;
-
+		this.created = Instant.now();
 	}
 
 	@Override
@@ -114,6 +123,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 
 		setJsonField("type", jGenerator -> jGenerator.writeStringField("type", this
 			.getClass().getName()), null);
+
+		setJsonField("created", jGenerator -> {
+			if (created != null) jGenerator.writeStringField("created", created
+				.toString());
+		}, jParser -> created = Instant.parse(jParser.getText()));
 
 		setJsonField("notes", jGenerator -> {
 			if (notes != null) jGenerator.writeStringField("notes", notes);
@@ -324,6 +338,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	@Override
 	public String getUID() {
 		return uid;
+	}
+
+	@Override
+	public Instant getCreated() {
+		return created;
+	}
+
+	@Override
+	public void setCreated(Instant created) {
+		this.created = created;
 	}
 
 	/**

@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -73,5 +74,16 @@ public interface MoleculeArchiveIndex<M extends Molecule, I extends MarsMetadata
 
 	Map<String, String> getMoleculeUIDtoMetadataUIDMap();
 
+	Map<String, Instant> getMoleculeUIDtoCreatedMap();
+
 	String getMetadataUIDforMolecule(String UID);
+
+	/**
+	 * Creation instant of the molecule with the given UID, or null if the record
+	 * predates the created field.
+	 * 
+	 * @param UID The UID of the molecule.
+	 * @return The creation instant or null.
+	 */
+	Instant getMoleculeCreated(String UID);
 }

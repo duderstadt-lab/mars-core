@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.molecule;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -61,6 +62,23 @@ public interface MarsRecord extends JsonConvertibleRecord {
 	 * @return Returns the UID.
 	 */
 	String getUID();
+
+	/**
+	 * Get the moment this record was created. Set automatically when a record is
+	 * constructed with a UID and stored with the record, so it survives saving
+	 * and reloading. Records created before this field existed return null.
+	 * 
+	 * @return Returns the creation instant, or null if unknown.
+	 */
+	Instant getCreated();
+
+	/**
+	 * Set the moment this record was created. Normally set automatically at
+	 * construction; exposed for migrations and scripts.
+	 * 
+	 * @param created The creation instant, or null to clear it.
+	 */
+	void setCreated(Instant created);
 
 	/**
 	 * Get notes for this record. Notes can be added during manual sorting to

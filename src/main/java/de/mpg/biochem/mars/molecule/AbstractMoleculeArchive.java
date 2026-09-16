@@ -59,6 +59,7 @@ import org.scijava.table.GenericColumn;
 
 import java.io.*;
 import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1733,6 +1734,14 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	public String getMetadataUIDforMolecule(String UID) {
 		if (virtual) return archiveIndex.getMetadataUIDforMolecule(UID);
 		else return get(UID).getMetadataUID();
+	}
+
+	@Override
+	public Instant getMoleculeCreated(String UID) {
+		if (UID == null) return null;
+		else if (virtual) return archiveIndex.getMoleculeCreated(UID);
+		M molecule = get(UID);
+		return (molecule == null) ? null : molecule.getCreated();
 	}
 
 	/**

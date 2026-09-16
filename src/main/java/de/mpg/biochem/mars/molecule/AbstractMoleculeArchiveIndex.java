@@ -31,6 +31,7 @@ package de.mpg.biochem.mars.molecule;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -84,6 +85,8 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 	 */
 	private ConcurrentMap<String, String> moleculeUIDtoMetadataUID;
 
+	private ConcurrentMap<String, Instant> moleculeUIDtoCreated;
+
 	public AbstractMoleculeArchiveIndex() {
 		super();
 		initializeVariables();
@@ -101,6 +104,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		moleculeUIDtoImage = new ConcurrentHashMap<>();
 		metadataUIDtoTagList = new ConcurrentHashMap<>();
 		moleculeUIDtoMetadataUID = new ConcurrentHashMap<>();
+		moleculeUIDtoCreated = new ConcurrentHashMap<>();
 
 		moleculeUIDs = new ConcurrentSkipListSet<>();// ConcurrentHashMap.newKeySet();
 		metadataUIDs = new ConcurrentSkipListSet<>();// ConcurrentHashMap.newKeySet();
@@ -175,6 +179,11 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 					jGenerator.writeNumberField("image", moleculeUIDtoImage.get(UID));
 				}
 
+				if (moleculeUIDtoCreated.containsKey(UID)) {
+					jGenerator.writeStringField("created", moleculeUIDtoCreated.get(UID)
+						.toString());
+				}
+
 				jGenerator.writeEndObject();
 			}
 			jGenerator.writeEndArray();
@@ -210,6 +219,11 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 					if ("image".equals(jParser.getCurrentName())) {
 						jParser.nextToken();
 						moleculeUIDtoImage.put(UID, jParser.getIntValue());
+					}
+
+					if ("created".equals(jParser.getCurrentName())) {
+						jParser.nextToken();
+						moleculeUIDtoCreated.put(UID, Instant.parse(jParser.getText()));
 					}
 				}
 			}
@@ -363,6 +377,9 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		moleculeUIDtoChannel.put(molecule.getUID(), molecule.getChannel());
 		moleculeUIDtoImage.put(molecule.getUID(), molecule.getImage());
 		moleculeUIDtoMetadataUID.put(molecule.getUID(), molecule.getMetadataUID());
+		if (molecule.getCreated() != null) moleculeUIDtoCreated.put(molecule
+			.getUID(), molecule.getCreated());
+		else moleculeUIDtoCreated.remove(molecule.getUID());
 	}
 
 	@Override
@@ -377,6 +394,7 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 		moleculeUIDtoChannel.remove(UID);
 		moleculeUIDtoImage.remove(UID);
 		moleculeUIDtoMetadataUID.remove(UID);
+		moleculeUIDtoCreated.remove(UID);
 	}
 
 	@Override
@@ -443,5 +461,15 @@ public abstract class AbstractMoleculeArchiveIndex<M extends Molecule, I extends
 
 	public Map<String, String> getMoleculeUIDtoMetadataUIDMap() {
 		return moleculeUIDtoMetadataUID;
+	}
+
+	@Override
+	public Map<String, Instant> getMoleculeUIDtoCreatedMap() {
+		return moleculeUIDtoCreated;
+	}
+
+	@Override
+	public Instant getMoleculeCreated(String UID) {
+		return moleculeUIDtoCreated.get(UID);
 	}
 }
