@@ -89,7 +89,9 @@ public class CreatedFieldTests {
 
 	@Test
 	void createdIsServedFromIndexForVirtualArchives() throws IOException {
-		Context context = new Context();
+		//Only the services the IO plugin needs; a full Context would try to load
+		//LegacyService, which fails once other tests have touched ij.* classes.
+		Context context = MoleculeArchiveTests.createContext();
 		try {
 			SingleMoleculeArchive archive = new SingleMoleculeArchive("test");
 			SingleMolecule molecule = new SingleMolecule(MarsMath.getUUID58());
