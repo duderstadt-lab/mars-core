@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.scijava.Context;
 
+import de.mpg.biochem.mars.object.MartianObject;
 import de.mpg.biochem.mars.util.MarsMath;
 
 public class CreatedFieldTests {
@@ -85,6 +86,21 @@ public class CreatedFieldTests {
 		jParser.close();
 
 		assertNull(reloaded.getCreated());
+	}
+
+	@Test
+	void legacyMartianObjectStaysNull() throws IOException {
+		//MartianObject(JsonParser) chains through AbstractMolecule(), which
+		//generates a UID, so it must still not be stamped when loaded.
+		String legacyJson = "{\"uid\":\"" + MarsMath.getUUID58() +
+			"\",\"type\":\"de.mpg.biochem.mars.object.MartianObject\"}";
+
+		JsonParser jParser = new JsonFactory().createParser(legacyJson);
+		MartianObject reloaded = new MartianObject(jParser);
+		jParser.close();
+
+		assertNull(reloaded.getCreated());
+		assertNotNull(new MartianObject().getCreated());
 	}
 
 	@Test

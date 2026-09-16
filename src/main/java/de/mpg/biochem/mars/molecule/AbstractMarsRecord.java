@@ -29,6 +29,7 @@
 
 package de.mpg.biochem.mars.molecule;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.AbstractMarsMetadata;
@@ -37,6 +38,7 @@ import de.mpg.biochem.mars.table.MarsTable;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -71,10 +73,11 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 	private String uid;
 
 	/**
-	 * Moment the record was created. Only stamped by the UID constructor, which
-	 * is the path taken when a new record is created; records loaded from JSON
-	 * go through the no-arg constructor and take the value stored in the file,
-	 * or remain null for archives written before this field existed.
+	 * Moment the record was created. Every constructor stamps the current time,
+	 * and {@link #fromJSON(JsonParser)} replaces that with the value stored in
+	 * the file (or null for archives written before this field existed), so a
+	 * record ends up stamped only if it was genuinely created in this session,
+	 * regardless of which constructor chain a subclass uses when loading.
 	 */
 	private Instant created;
 
@@ -98,6 +101,7 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 		tags = new LinkedHashSet<>();
 		regionsOfInterest = new LinkedHashMap<>();
 		positionsOfInterest = new LinkedHashMap<>();
+		this.created = Instant.now();
 	}
 
 	/**
@@ -113,6 +117,16 @@ public abstract class AbstractMarsRecord extends AbstractJsonConvertibleRecord
 		positionsOfInterest = new LinkedHashMap<>();
 		this.uid = UID;
 		this.created = Instant.now();
+	}
+
+	/**
+	 * A record loaded from JSON is not new: drop the constructor's stamp so the
+	 * stored created value is used, or none if the file predates the field.
+	 */
+	@Override
+	public void fromJSON(JsonParser jParser) throws IOException {
+		created = null;
+		super.fromJSON(jParser);
 	}
 
 	@Override
