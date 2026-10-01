@@ -191,6 +191,10 @@ public class MarsBdvSource extends AbstractJsonConvertibleRecord implements
 		this.driftCorrect = driftCorrect;
 	}
 
+	/**
+	 * @return true if the source is opened via the N5 API. This covers both N5
+	 *         and Zarr containers (a path ending in .n5 or .zarr).
+	 */
 	public boolean isN5() {
 		return this.isN5;
 	}
