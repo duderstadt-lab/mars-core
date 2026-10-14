@@ -1063,8 +1063,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				}
 				catch (IOException e) {
 					logln("MarsMetadata record " + metaUID + " has been corrupted.");
-					recordLocks.get(metaUID).unlock();
-					return null;
+					return null; // the finally block releases the lock
 				}
 				finally {
 					recordLocks.get(metaUID).unlock();
@@ -1658,8 +1657,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 			catch (IOException e) {
 				logln("Molecule record " + UID + " has been corrupted.");
-				recordLocks.get(UID).unlock();
-				return null;
+				return null; // the finally block releases the lock
 			}
 			finally {
 				recordLocks.get(UID).unlock();
