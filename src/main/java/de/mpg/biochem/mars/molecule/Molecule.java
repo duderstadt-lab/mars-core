@@ -35,6 +35,7 @@ import java.util.Set;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsFigure;
 
 /**
  * Molecule records act as the storage location for molecule properties.
@@ -245,6 +246,27 @@ public interface Molecule extends JsonConvertibleRecord, MarsRecord {
 	 *         index positions 0, 1 and 2, respectively.
 	 */
 	Set<List<String>> getSegmentsTableNames();
+
+	/**
+	 * Get the figure, such as a kymograph or montage, stored with this record.
+	 * 
+	 * @return The figure or null if there is none.
+	 */
+	MarsFigure getFigure();
+
+	/**
+	 * Set the figure, such as a kymograph or montage, stored with this record.
+	 * 
+	 * @param figure The figure or null to remove it.
+	 */
+	void setFigure(MarsFigure figure);
+
+	/**
+	 * Check if this record has a figure.
+	 * 
+	 * @return True if there is a figure.
+	 */
+	boolean hasFigure();
 
 	/**
 	 * Used to merge another molecule record into this one.

@@ -42,6 +42,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import de.mpg.biochem.mars.kcp.commands.KCPCommand;
 import de.mpg.biochem.mars.metadata.MarsMetadata;
 import de.mpg.biochem.mars.table.MarsTable;
+import de.mpg.biochem.mars.util.MarsFigure;
 import de.mpg.biochem.mars.util.MarsMath;
 import de.mpg.biochem.mars.util.MarsPosition;
 import de.mpg.biochem.mars.util.MarsRegion;
@@ -82,6 +83,7 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	private int channel = -1;
 	private int image = -1;
 	private MarsTable table = new MarsTable();
+	private MarsFigure figure;
 	/**
 	 * Segments tables resulting from change point fitting: xColumn is at index 0
 	 * yColumn is at index 1 region is at index 2
@@ -154,6 +156,13 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 
 		setJsonField("channel", jGenerator -> jGenerator.writeNumberField("channel",
 			channel), jParser -> channel = jParser.getIntValue());
+
+		setJsonField("figure", jGenerator -> {
+			if (figure != null) {
+				jGenerator.writeFieldName("figure");
+				figure.toJSON(jGenerator);
+			}
+		}, jParser -> figure = new MarsFigure(jParser));
 
 		setJsonField("segmentTables", jGenerator -> {
 			if (segmentTables.size() > 0) {
@@ -693,6 +702,37 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 	}
 
 	/**
+	 * Get the figure, such as a kymograph or montage, stored with this record.
+	 * 
+	 * @return The figure or null if there is none.
+	 */
+	@Override
+	public MarsFigure getFigure() {
+		return figure;
+	}
+
+	/**
+	 * Set the figure, such as a kymograph or montage, stored with this record.
+	 * 
+	 * @param figure The figure or null to remove it.
+	 */
+	@Override
+	public void setFigure(MarsFigure figure) {
+		this.figure = figure;
+		markModified();
+	}
+
+	/**
+	 * Check if this record has a figure.
+	 * 
+	 * @return True if there is a figure.
+	 */
+	@Override
+	public boolean hasFigure() {
+		return figure != null;
+	}
+
+	/**
 	 * Used to merge another molecule record into this one.
 	 * 
 	 * @param molecule Molecule to merge into this one.
@@ -732,6 +772,11 @@ public abstract class AbstractMolecule extends AbstractMarsRecord implements
 		if (getNotes() != null) previousNotes = getNotes() + "\n";
 
 		setNotes(previousNotes + "merged " + molecule.getUID());
+
+		// Keep the figure of this record and only take the other one if there is
+		// none, the figure should be regenerated after merging.
+		if (figure == null && molecule.hasFigure()) setFigure(molecule
+			.getFigure());
 
 		// For now, we ignore channel, image, metadataUID, and all segmentTables
 		// KCP should be rerun after merging. Combining the segmentTables would not
