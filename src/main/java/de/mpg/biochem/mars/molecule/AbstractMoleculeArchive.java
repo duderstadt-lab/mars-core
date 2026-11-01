@@ -1063,8 +1063,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 				}
 				catch (IOException e) {
 					logln("MarsMetadata record " + metaUID + " has been corrupted.");
-					recordLocks.get(metaUID).unlock();
-					return null;
+					return null; // the finally block releases the lock
 				}
 				finally {
 					recordLocks.get(metaUID).unlock();
@@ -1658,8 +1657,7 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 			}
 			catch (IOException e) {
 				logln("Molecule record " + UID + " has been corrupted.");
-				recordLocks.get(UID).unlock();
-				return null;
+				return null; // the finally block releases the lock
 			}
 			finally {
 				recordLocks.get(UID).unlock();
@@ -1693,7 +1691,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<I> metadata() {
-		return this.metadataMap.keySet().stream().map(this::getMetadata);
+		// getMetadataUIDs() covers records not yet loaded from a virtual store.
+		return getMetadataUIDs().stream().map(this::getMetadata);
 	}
 
 	/**
@@ -1704,7 +1703,8 @@ public abstract class AbstractMoleculeArchive<M extends Molecule, I extends Mars
 	 */
 	@Override
 	public Stream<I> parallelMetadata() {
-		return this.metadataMap.keySet().parallelStream().map(this::getMetadata);
+		// getMetadataUIDs() covers records not yet loaded from a virtual store.
+		return getMetadataUIDs().parallelStream().map(this::getMetadata);
 	}
 
 	/**

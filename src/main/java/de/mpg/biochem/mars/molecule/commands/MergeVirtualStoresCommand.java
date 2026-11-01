@@ -377,7 +377,7 @@ public class MergeVirtualStoresCommand extends DynamicCommand {
 							Files.newOutputStream(metadataFile.toPath()));
 					JsonGenerator jGenerator = jFactory.createGenerator(metaStream);
 
-					mergedIndex.toJSON(jGenerator);
+					marsMetadata.toJSON(jGenerator);
 
 					jGenerator.close();
 					metaStream.flush();
